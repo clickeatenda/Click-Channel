@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
-import '../core/theme/app_typography.dart';
+import 'search_bar.dart' as search_widgets;
 
 class Header extends StatelessWidget {
   final VoidCallback onRefresh;
   final Function(String) onFilterChanged;
   final String currentFilter;
   final VoidCallback onSettings;
+  final Function(String)? onSearch;
+  final VoidCallback? onClearSearch;
 
   const Header({
     super.key,
@@ -14,12 +16,13 @@ class Header extends StatelessWidget {
     required this.onFilterChanged,
     required this.currentFilter,
     required this.onSettings,
+    this.onSearch,
+    this.onClearSearch,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 80, 
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -28,26 +31,40 @@ class Header extends StatelessWidget {
           end: Alignment.bottomCenter,
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.movie_filter, color: AppColors.primary, size: 40),
-          const SizedBox(width: 20),
-          
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                _navBtn(context, "Início", "all"),
-                _navBtn(context, "Filmes", "movie"),
-                _navBtn(context, "Séries", "series"),
-                _navBtn(context, "Canais", "channel"),
-              ],
+          Row(
+            children: [
+              const Icon(Icons.movie_filter, color: AppColors.primary, size: 40),
+              const SizedBox(width: 20),
+              
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    _navBtn(context, "Início", "all"),
+                    _navBtn(context, "Filmes", "movie"),
+                    _navBtn(context, "Séries", "series"),
+                    _navBtn(context, "Canais", "channel"),
+                  ],
+                ),
+              ),
+
+              _iconBtn(Icons.refresh, onRefresh),
+              const SizedBox(width: 10),
+              _iconBtn(Icons.settings, onSettings),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: search_widgets.CustomSearchBar(
+              onSearch: onSearch ?? (_) {},
+              onClear: onClearSearch,
+              placeholder: 'Buscar conteúdo...',
             ),
           ),
-
-          _iconBtn(Icons.refresh, onRefresh),
-          const SizedBox(width: 10),
-          _iconBtn(Icons.settings, onSettings),
         ],
       ),
     );

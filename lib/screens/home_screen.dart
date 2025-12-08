@@ -20,8 +20,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String currentFilter = 'all'; 
   List<String> categories = [];
+  List<String> filteredCategories = [];
   List<ContentItem> heroItems = [];
   bool loading = true;
+  String searchQuery = "";
 
   @override
   void initState() {
@@ -43,14 +45,34 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    if (mounted) setState(() { categories = cats; heroItems = heroes; loading = false; });
+    if (mounted) setState(() { categories = cats; filteredCategories = cats; heroItems = heroes; loading = false; });
   }
 
   void _onFilterChange(String newFilter) {
     if (currentFilter != newFilter) {
-      setState(() { currentFilter = newFilter; categories = []; heroItems = []; });
+      setState(() { currentFilter = newFilter; categories = []; heroItems = []; searchQuery = ""; filteredCategories = []; });
       _loadData();
     }
+  }
+
+  void _performSearch(String query) {
+    setState(() {
+      searchQuery = query.toLowerCase();
+      if (searchQuery.isEmpty) {
+        filteredCategories = categories;
+      } else {
+        filteredCategories = categories
+            .where((category) => category.toLowerCase().contains(searchQuery))
+            .toList();
+      }
+    });
+  }
+
+  void _clearSearch() {
+    setState(() {
+      searchQuery = "";
+      filteredCategories = categories;
+    });
   }
 
   void _openPlayer(ContentItem item) {
@@ -79,7 +101,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     onRefresh: _loadData, 
                     onFilterChanged: _onFilterChange, 
                     currentFilter: currentFilter, 
-                    onSettings: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()))
+                    onSettings: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                    onSearch: _performSearch,
+                    onClearSearch: _clearSearch,
                   )
                 ),
               ],
@@ -122,13 +146,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             delegate: SliverChildBuilderDelegate(
               (ctx, i) => CategoryCard(
-                name: categories[i],
+                name: filteredCategories[i],
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CategoryScreen(
-                  categoryName: categories[i],
+                  categoryName: filteredCategories[i],
                   type: currentFilter,
                 ))),
               ),
-              childCount: categories.length,
+              childCount: filteredCategories.length,
             ),
           ),
         ),
