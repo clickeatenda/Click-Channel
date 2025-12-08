@@ -10,12 +10,14 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # Pacotes Essenciais (Alinhamento é vital aqui)
+  # Pacotes Funcionais
   http: ^1.2.0
   video_player: ^2.8.2
   chewie: ^1.7.1
   cached_network_image: ^3.3.1
-  google_fonts: ^6.1.0
+  
+  # Pacotes Visuais
+  google_fonts: ^6.2.1
   cupertino_icons: ^1.0.2
 
 dev_dependencies:

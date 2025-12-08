@@ -1,0 +1,13 @@
+--------- beginning of main
+--------- beginning of system
+12-06 14:39:40.454 25388 25388 I flutter : [IMPORTANT:flutter/shell/common/shell.cc(527)] [Action Required]: Impeller opt-out deprecated.
+12-06 14:39:40.454 25388 25388 I flutter :     The application opted out of Impeller by either using the
+12-06 14:39:40.454 25388 25388 I flutter :     `--no-enable-impeller` flag or the
+12-06 14:39:40.454 25388 25388 I flutter :     `io.flutter.embedding.android.EnableImpeller` `AndroidManifest.xml` entry.
+12-06 14:39:40.454 25388 25388 I flutter :     These options are going to go away in an upcoming Flutter release. Remove
+12-06 14:39:40.454 25388 25388 I flutter :     the explicit opt-out. If you need to opt-out, please report a bug describing
+12-06 14:39:40.454 25388 25388 I flutter :     the issue.
+12-06 14:39:40.454 25388 25388 I flutter : 
+12-06 14:39:40.454 25388 25388 I flutter :     https://github.com/flutter/flutter/issues/new?template=02_bug.yml
+12-06 14:39:40.454 25388 25388 I flutter : 
+12-06 14:39:40.922 25388 25421 I flutter : The Dart VM service is listening on http://127.0.0.1:34819/KQTwFQNljOs=/
