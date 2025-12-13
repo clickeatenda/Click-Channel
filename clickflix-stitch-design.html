@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClickFlix - Stitch Design (Glassmorphism)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #111318;
+            --bg-darker: #0F1620;
+            --primary: #E11D48;
+            --primary-light: #EC4C63;
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(to bottom, #111318, #0F1620);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* GLASS EFFECT BASE */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+        }
+
+        /* HEADER */
+        .header {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-btn:hover,
+        .nav-btn.active {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-btn.active {
+            background: var(--primary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* MAIN CONTENT */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* LOGIN SCREEN */
+        .login-container {
+            display: none;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+        }
+
+        .login-container.active {
+            display: flex;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin: 0 auto 24px;
+            box-shadow: 0 20px 50px rgba(225, 29, 72, 0.3);
+        }
+
+        .login-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .auth-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .auth-tab.active {
+            color: var(--text-primary);
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .auth-form {
+            padding: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .glass-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .glass-input:focus {
+            outline: none;
+            background: rgba(225, 29, 72, 0.1);
+            border-color: var(--primary);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 8px;
+        }
+
+        .forgot-password a {
+            font-size: 12px;
+            color: var(--primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: var(--primary-light);
+        }
+
+        .glass-button {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 24px;
+        }
+
+        .glass-button:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .divider-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .social-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .social-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        /* HOME SCREEN */
+        .home-container {
+            display: none;
+        }
+
+        .home-container.active {
+            display: block;
+        }
+
+        .hero-section {
+            margin-bottom: 48px;
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+            height: 400px;
+            background: linear-gradient(135deg, rgba(225, 29, 72, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%);
+            display: flex;
+            align-items: flex-end;
+            padding: 32px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 600px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(225, 29, 72, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .hero-title {
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .hero-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .hero-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hero-button:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        /* CATEGORIES SECTION */
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+
+        .category-card {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .category-icon {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .category-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+
+            .header-left {
+                gap: 16px;
+                order: 1;
+                width: 100%;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            .header-right {
+                order: 2;
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .hero-section {
+                height: 300px;
+                padding: 20px;
+            }
+
+            .hero-title {
+                font-size: 24px;
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .login-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">🎬</div>
+                ClickFlix
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-screen="home">Home</button>
+                <button class="nav-btn" data-screen="categories">Categories</button>
+                <button class="nav-btn" data-screen="live">Live TV</button>
+            </nav>
+        </div>
+        <div class="header-right">
+            <button class="icon-btn" title="Notificações">🔔</button>
+            <button class="icon-btn" title="Buscar">🔍</button>
+            <div class="user-avatar">SJ</div>
+            <button class="icon-btn" title="Logout" onclick="goToLogin()">🚪</button>
+        </div>
+    </header>
+
+    <!-- LOGIN SCREEN -->
+    <div class="login-container active" id="loginScreen">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="login-logo">🎬</div>
+                <h1 class="login-title">ClickFlix</h1>
+                <p class="login-subtitle">Seu portal de streaming premium</p>
+            </div>
+
+            <div class="auth-card">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab(0)">Login</button>
+                    <button class="auth-tab" onclick="switchAuthTab(1)">Register</button>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <div class="auth-form" id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="glass-input" placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="glass-input" placeholder="••••••••">
+                    </div>
+                    <div class="forgot-password">
+                        <a href="#">Forgot password?</a>
+                    </div>
+                    <button class="glass-button" onclick="goToHome()">Sign In</button>
+
+                    <div class="divider">
+                        <div class="divider-line"></div>
+                        <div class="divider-text">Or continue with</div>
+                        <div class="divider-line"></div>
+                    </div>
+
+                    <div class="social-buttons">
+                        <button class="social-btn">🔵</button>
+                        <button class="social-btn">🍎</button>
+                        <button class="social-btn">🌐</button>
+                    </div>
+                </div>
+
+                <!-- REGISTER FORM -->
+                <div class="auth-form" id="registerForm" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="glass-input" placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="glass-input" placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="glass-input" placeholder="••••••••">
+                    </div>
+                    <button class="glass-button" onclick="goToHome()">Create Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="home-container" id="homeScreen">
+        <div class="container">
+            <!-- HERO SECTION -->
+            <div class="hero-section glass">
+                <div class="hero-content">
+                    <div class="hero-badge">FEATURED</div>
+                    <h2 class="hero-title">Inception</h2>
+                    <p class="hero-meta">Sci-Fi • Thriller • 2h 28m</p>
+                    <button class="hero-button">▶ Watch Now</button>
+                </div>
+            </div>
+
+            <!-- POPULAR CATEGORIES -->
+            <h2 class="section-title">Popular Categories</h2>
+            <div class="categories-grid">
+                <div class="category-card glass">
+                    <div class="category-icon">🔥</div>
+                    <div class="category-name">Action</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">😂</div>
+                    <div class="category-name">Comedy</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">💔</div>
+                    <div class="category-name">Drama</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">😱</div>
+                    <div class="category-name">Horror</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">🚀</div>
+                    <div class="category-name">Sci-Fi</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">💕</div>
+                    <div class="category-name">Romance</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">🎬</div>
+                    <div class="category-name">Animation</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">📚</div>
+                    <div class="category-name">Documentary</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchAuthTab(tabIndex) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const tabs = document.querySelectorAll('.auth-tab');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            tabs[tabIndex].classList.add('active');
+
+            if (tabIndex === 0) {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
+        }
+
+        function goToHome() {
+            document.getElementById('loginScreen').classList.remove('active');
+            document.getElementById('homeScreen').classList.add('active');
+        }
+
+        function goToLogin() {
+            document.getElementById('homeScreen').classList.remove('active');
+            document.getElementById('loginScreen').classList.add('active');
+        }
+
+        // Navigation
+        document.querySelectorAll('[data-screen]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
