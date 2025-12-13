@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Series Library - Click Channel</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#3b82f6",
+                        "background-light": "#f3f4f6",
+                        "background-dark": "#020617", // Deepened to Slate 950 for darker theme
+                        "surface-dark": "#0f172a",    // Deepened to Slate 900
+                    },
+                    fontFamily: {
+                        sans: ["Poppins", "sans-serif"],
+                    },
+                    borderRadius: {
+                        'xl': '1rem',
+                        '2xl': '1.5rem',
+                        '3xl': '2rem',
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.65);border: 1px solid rgba(255, 255, 255, 0.08);backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);}
+        .glass-card-overlay {
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.4) 60%, rgba(15, 23, 42, 0) 100%);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155; 
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300 relative selection:bg-primary selection:text-white">
+<div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+<div class="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 mix-blend-multiply dark:mix-blend-screen"></div>
+<div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] translate-x-1/3 translate-y-1/3 mix-blend-multiply dark:mix-blend-screen"></div>
+<div class="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 mix-blend-multiply dark:mix-blend-screen"></div>
+</div>
+<div class="relative z-10 max-w-[1600px] mx-auto p-4 md:p-8">
+<header class="sticky top-4 z-50 flex flex-col md:flex-row items-center justify-between mb-8 gap-4 glass-panel rounded-2xl px-6 py-4 shadow-lg shadow-black/5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg flex items-center justify-center text-white overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 p-1.5 shadow-lg shadow-indigo-500/20">
+<span class="material-symbols-outlined text-[28px]">smart_toy</span>
+</div>
+<div class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Click<span class="text-primary">Channel</span>
+</div>
+</div>
+<nav class="flex items-center bg-slate-100 dark:bg-black/30 rounded-full p-1 border border-slate-200 dark:border-white/5">
+<a class="px-5 py-2 rounded-full text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors" href="#">Movies</a>
+<a class="px-5 py-2 rounded-full text-sm font-medium bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10" href="#">Series</a>
+<a class="px-5 py-2 rounded-full text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors" href="#">Originals</a>
+</nav>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="relative w-10 h-10 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-background-dark"></span>
+</button>
+<div class="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<img alt="User Avatar" class="w-9 h-9 rounded-full object-cover ring-2 ring-transparent group-hover:ring-primary transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB30lb4nsmsk9yi96fRv18rVJBs6VRPrzbu_pRXWcy9j78Pm9GhTGJB8ZxStm8Bf0M9JmWTtZ10mdhkokKrIFp-RGA_RrEWNiYBdoUcSmLi_-w1BQYvAhawSPQPVUPzdZA8Jf_PNAkkAcC2QTJ5vnbhN29W56orJbWe_qbUdaLjbnjT9jolGWMtoOU1Q5Uay-m-JJTA7NvDzXp5QfvACbX5ZI6As-XEfrTqcxlhwUeqLMX7K0LeLy7bNzR9EYEh88ebpYSg1ifDMaA1"/>
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">expand_more</span>
+</div>
+</div>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
+<div class="lg:col-span-8 group relative h-[380px] rounded-3xl overflow-hidden cursor-pointer shadow-2xl">
+<img alt="The Last Kingdom Poster" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4vl-7it5D6OJgMNHiyVgZrR94C8oQEsu5RR1vBhib925EveR3vKUZkmooX8qiCx6Qm5Mo3NfCbHCqv06U3nvxNkK7o6f5UbVXqfHjFl3lhnX0dmOXp9H0N25utHTdJ3EdThYdcQMdx8cPJmYMzQPvzLAZVSKa1ZAna_a0lEjsSoL6c0RIHxT966JFtXW-N041Y_FfSpqfiFOLj46JyMvDhnhnDmU93zKgHNTKCOEo_JzhcZGPLYe9BhjwCrKGdnqgRFPaE9svM1_n"/>
+<div class="absolute inset-0 bg-gradient-to-r from-[#020617] via-[#020617]/60 to-transparent"></div>
+<div class="relative h-full flex flex-col justify-center p-8 md:p-12 max-w-2xl">
+<div class="flex items-center gap-3 mb-4">
+<span class="px-3 py-1 text-xs font-bold tracking-wide text-white uppercase bg-primary rounded-lg shadow-lg shadow-primary/30">New Season</span>
+<span class="px-2 py-1 text-xs font-medium text-white/80 border border-white/20 rounded-lg backdrop-blur-sm">Historical Drama</span>
+</div>
+<h2 class="text-4xl md:text-5xl font-bold text-white mb-3 leading-tight drop-shadow-lg">The Last Kingdom</h2>
+<div class="flex items-center gap-4 text-sm text-slate-300 mb-4 font-medium">
+<span class="text-green-400">98% Match</span>
+<span>2022</span>
+<span>5 Seasons</span>
+<span class="px-1.5 py-0.5 border border-slate-500 rounded text-[10px]">TV-MA</span>
+</div>
+<p class="text-slate-300 text-sm md:text-base mb-8 line-clamp-2 max-w-lg opacity-90">As Alfred the Great defends his kingdom from Norse invaders, Uhtred, born a Saxon but raised by Vikings, seeks to claim his ancestral birthright.</p>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 px-6 py-3 bg-white text-slate-900 hover:bg-slate-200 rounded-xl transition-all font-semibold shadow-lg shadow-white/10 group-hover:scale-105">
+<span class="material-symbols-outlined fill-current">play_arrow</span>
+<span>Play S5 E1</span>
+</button>
+<button class="flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all font-medium">
+<span class="material-symbols-outlined">add</span>
+<span>My List</span>
+</button>
+</div>
+</div>
+</div>
+<div class="lg:col-span-4 group relative h-[380px] rounded-3xl overflow-hidden cursor-pointer shadow-xl">
+<img alt="Stranger Things Vibes" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBA5g_cU58mrIjAkJYpE0GWZkBG7PLNwmaaLw7vy_mfC1wZ7XV9XKWsPBNv5KfhaGd20_O3PUs6fDFHczFMDvru-Agg4SVWL-ZewyTCKHcOkDbO_Ak6C6xTRlAduSTyhQ4M9sDjNyUNybbsYiW_fMa6j0qrw4XFULbtLPkg4UaHXva8wHCUXP4-gym5w5Ib9DyXFlHk2Q0rSqHGDgUPzu7yoePOsjYj0enpNhqpYXrjtwxfdD55Tbdif6tBFEHDUtf7y3d3sHlFJmXG"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/50 to-transparent"></div>
+<div class="absolute top-4 right-4">
+<div class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
+<span class="material-symbols-outlined">volume_up</span>
+</div>
+</div>
+<div class="relative h-full flex flex-col justify-end p-8">
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#E2B616] text-black">IMDb 9.2</span>
+<span class="text-xs text-slate-300 font-medium">Sci-Fi • Horror</span>
+</div>
+<h2 class="text-2xl font-bold text-white mb-2 drop-shadow-md">Midnight Echoes</h2>
+<div class="flex items-center gap-3 text-xs text-slate-300 mb-4">
+<span>Season 4 Coming Soon</span>
+</div>
+<button class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary/90 hover:bg-primary text-white rounded-xl transition-all shadow-lg shadow-primary/20 backdrop-blur-sm">
+<span class="material-symbols-outlined">play_arrow</span>
+<span class="font-medium">Resume: S2 E4</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-6 mb-4">
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/20 min-w-max transition-transform hover:-translate-y-0.5 border border-white/10">
+<span class="material-symbols-outlined text-[20px]">local_fire_department</span>
+<span class="font-semibold text-sm">Trending</span>
+</button>
+<button class="glass-panel hover:bg-white/40 dark:hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-xl min-w-max transition-all hover:-translate-y-0.5 border border-slate-200 dark:border-white/5">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[20px]">movie</span>
+<span class="font-medium text-sm text-slate-600 dark:text-slate-300">Action</span>
+</button>
+<button class="glass-panel hover:bg-white/40 dark:hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-xl min-w-max transition-all hover:-translate-y-0.5 border border-slate-200 dark:border-white/5">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[20px]">favorite</span>
+<span class="font-medium text-sm text-slate-600 dark:text-slate-300">Romance</span>
+</button>
+<button class="glass-panel hover:bg-white/40 dark:hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-xl min-w-max transition-all hover:-translate-y-0.5 border border-slate-200 dark:border-white/5">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[20px]">rocket_launch</span>
+<span class="font-medium text-sm text-slate-600 dark:text-slate-300">Sci-Fi</span>
+</button>
+<button class="glass-panel hover:bg-white/40 dark:hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-xl min-w-max transition-all hover:-translate-y-0.5 border border-slate-200 dark:border-white/5">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[20px]">sentiment_very_satisfied</span>
+<span class="font-medium text-sm text-slate-600 dark:text-slate-300">Comedy</span>
+</button>
+<button class="glass-panel hover:bg-white/40 dark:hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-xl min-w-max transition-all hover:-translate-y-0.5 border border-slate-200 dark:border-white/5">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[20px]">local_police</span>
+<span class="font-medium text-sm text-slate-600 dark:text-slate-300">Crime</span>
+</button>
+<button class="glass-panel hover:bg-white/40 dark:hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-xl min-w-max transition-all hover:-translate-y-0.5 border border-slate-200 dark:border-white/5">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[20px]">child_care</span>
+<span class="font-medium text-sm text-slate-600 dark:text-slate-300">Kids</span>
+</button>
+</div>
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<h3 class="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            Trending Series 
+            <span class="text-xs font-normal text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-white/5 border border-transparent dark:border-white/5 px-2 py-1 rounded-full">342 titles</span>
+</h3>
+<div class="flex items-center gap-3">
+<div class="relative group">
+<button class="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-sm font-medium text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-lg">sort</span>
+<span>Sort: Popularity</span>
+<span class="material-symbols-outlined text-lg">expand_more</span>
+</button>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl glass-panel hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-lg">filter_list</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl glass-panel hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-lg">grid_view</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-12">
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="The Crown" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQWPTNDFiHnhYfFG1ejnbDEB2D-4ioiDp6S3-Z51YvfXHW4gRcl54GSC70wlGXIcsyHnlvahCCpBH0_Gbj2bnTqKr4v54_NjMb-DpZ0AARk-Zgv4eDUU7MLmy8el7tXRG7lxYHMMmmAxLrg6CPTX80u_ESyyZtj7LbiAvutOo5PujpiA-XT_d-OLeffWevd6kZEMgw50Rs1v7AOE0sQjqN-Vf8xy_PFYJG4qYtUSpsGP6adB2-4XqS20qayaqSHO3lcNAISnkKM5y5"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/40 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-white border border-white/10">4K</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">Royal Secrets</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">9.5</span>
+</div>
+<span class="text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 border dark:border-white/5 px-2 py-0.5 rounded text-[10px]">4 Seasons</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="Lost in Space" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2q91WCQBDYR_LfW15QM-ZrSCG5006ENg9ksWXYGT0cJ2L5v8ZvPeRZjRc9UfRYZWCAMuCh7nKdBzn1o2ZVGto0ZuCff2Axwlx8QaTP9zsWiIgSXc8GqgeT5DgoI9JtGgjh3qZUdfr6zGGRzyyGsExuUJdLJ-3NgOtPfc98XT6zSXqSp8u9_8DXl0a6XE5j0Cj400IXiPoe6hGA05NJwPwI5mKo0HSf5SkdU9L5CAE10bcP1oYbRiDZfe7Q2hi_NCZTSfMLKYW2X9B"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">Galactic Frontier</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">8.8</span>
+</div>
+<span class="text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 border dark:border-white/5 px-2 py-0.5 rounded text-[10px]">2 Seasons</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="Modern Family" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQn6U4BYbYoOOUMELDo0Uhq0rtjFo89Lj_NRzBZOG7GasRYc_lCQzgxjCZhcYogBPZ3XtFn5xfq6tVd0OkCDYoOI-fLlHmIwbJF-RsEMk-GBnjLVQB0giD0SMKAKwBHuX7QoQb8b-6HrMMGXQOju1DPyAumRIkwZl304bzziOhApdUA6hS_9Ljox24vs0_Z1tJy90XiVeNKnzVfST4gapfgC-5psOro148oGXVe5t6zFfGGgqvjUavl-87R5bgIqMVMhX-h1KcyLWc"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+<div class="absolute top-2 right-2 px-2.5 py-1 bg-primary text-white text-[10px] font-bold rounded-lg shadow-lg shadow-primary/30">New Ep</div>
+<div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-700/50">
+<div class="h-full w-2/3 bg-primary"></div>
+</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">Suburban Chaos</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">8.4</span>
+</div>
+<span class="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-[10px]">S5 • E12</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="Peaky Blinders" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyZbqGsYWxpy465HCLj8Bcr5j7Hcb1WAN5a7eiuViLK3GFQtIu4BeL-GhYVDG7XchUG_olhVRfqk70ogAFoWQdk76SXiWxgoJMQbNMDP6Xy7ySuNk30t6so_nYWyTCFFg840Fmx-Kw4LSyklryjCAp3pj182nVNcOEk4MPGjNwk674QVszmXN0JyC2tVnCy15Y6G5ZSRMIcfksHOv18p1Rbyf9UqeWjV6ExUDPseIVX7ggPbqvD3AIPBCYET2Cv03X8cilL-JQwAKb"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">Birmingham Gangs</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">9.7</span>
+</div>
+<span class="text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 border dark:border-white/5 px-2 py-0.5 rounded text-[10px]">6 Seasons</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="Dark" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 grayscale-[30%] group-hover:grayscale-0 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-KvxEDVQU9xGAyb171R0hVkvFJdxQqo5x9_4WnbIbhr-PEblOmDDgYjeraJQzognOtFV8AzhG4a41iv1-XvczEAzAay0nLmiXLxm0tYwjbZwOxCoc8GmaLWskJtqTN-HF0sVwwxCOWrxAt0tbKlSU0tNP9XDSD7fRBtY-QkN1ticS0I7Wh4Yliu_tAlzVNkJuyKnE8JmnOF5rHUp_Bs2htUlb-6pg_JLNpBpIMnYpUfOk2i1UXBlLf58qU9QLZxjoZ8nLTk0RTo_w"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-green-500/90 backdrop-blur-md rounded-lg text-[10px] font-bold text-white shadow-sm">Complete</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">Time Paradox</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">9.0</span>
+</div>
+<span class="text-green-500 font-medium bg-green-500/10 px-2 py-0.5 rounded text-[10px]">3 Seasons</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="Friends" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOJ-poTW_HaWVwB9oENnfDxSLhwA3waMJRGK7hbeyJkYICG9LDyMk3OqbBmDmHCSePIkBdmjb1X8YfO0vs2JOhThq1psJJV3fgwQvYr2DuPYmd8BgI0Lwjqrg8XxK_rQWQQhZU4xq-xFixsXkYLafcUlwCyQ6PH5fpn2R_bRD2Z1nsgP5CfsYPKk0Nf5gTY5tz4J0ULQS8BydRWICdhUllxoFGscdQXZPW33pGq3hplV1eIhduL3gRXDDpzHS78yjGUJ7ensKa8aq2"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">The Apartment</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">8.9</span>
+</div>
+<span class="text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 border dark:border-white/5 px-2 py-0.5 rounded text-[10px]">10 Seasons</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="Breaking Bad" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7fUB_SPFo6aQn4jo8D-Y3kcFDNvw49zGBZZCPqeB2ynJrojLLeayK8NIAQLoTGBYaYc6EASXhQIg0bKz_NezJ08DmffmvY_VjT7DPx14zIC09ZdH4vgDjIdKQkJRoOrcRn6vJfZReYVdk9Nhs9So4UQ725O7xWjG1piw8X4IVAx3Qn9mvXR4wkyJrMZgx0CNGQkc9xTAkd7GoduX0TkR3y6GH_xsr6Una5n27H2TFvCYjSUbW8WSbbc6I7aCqWqlXf_7oEsO2IMi6"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">Chemistry Teacher</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">9.9</span>
+</div>
+<span class="text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 border dark:border-white/5 px-2 py-0.5 rounded text-[10px]">5 Seasons</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="The Witcher" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCs2kI56R54QEul-RHWrMs7091KyIn1We35wJPRWV6VTLi7vYZ4GpHFBwVzBTwFRid5Wp_RDVnK6KOKoxw9-yguMz88ybzZkOtI3BkZyd8sVbdr2ML8kpxab4s86izfFu6vIMJ9UlIq0mYqAV_jeRykB6gADSureb9HxGHriSVLk2Hy4hOsehd6jorkh5tzwuIr0X2MyDPPFnm2LykbQQE-LidKKi6bSRVaKxWJDtA9r7wnv4uzfQZ7Ha-gArTeeVsREiG1oxPjjMeg"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-red-500/90 backdrop-blur-md rounded-lg text-[10px] font-bold text-white shadow-sm">Trending</div>
+<div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-700/50">
+<div class="h-full w-1/3 bg-primary"></div>
+</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">Monster Hunter</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">8.5</span>
+</div>
+<span class="text-primary font-bold bg-primary/10 px-2 py-0.5 rounded text-[10px]">S3 • E5</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="Stranger Things" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfQElxR69pxhN_vipU68epkUIh2Nrj5qoMVjnSBJXK7ZjGw7MaJQpwFyqJxNf4G6PaxQPumMgz75Zpyar4s4pJGdABbYV19HrxXir99OYpNJFOKYgT-Ka43CVLkhRpGpxUSN7yG8lHWpeVkKnA0F21YsA-fLJnVkNWN8zw6mTLjsADdwAa32fQJLLKPthJ-OgIzTCME_EEqGAJ5OJtl12SUjRh3cI55QdiHxni0ME9kgSKa0ccYV8_bW7PYvCR2-LT3g0q1MCR4HcB"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">Midnight Echoes</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">9.2</span>
+</div>
+<span class="text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 border dark:border-white/5 px-2 py-0.5 rounded text-[10px]">4 Seasons</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3 cursor-pointer">
+<div class="relative aspect-[2/3] rounded-2xl overflow-hidden shadow-lg ring-1 ring-white/10">
+<img alt="Money Heist" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWPhe9WEFqAS-gGF5ofjbFC5AzIG3UtosoYUZaREQ-XUtTVq7NNtIzBMk37OkoAEfEzcADxDQe8ghoGgxb-Kkmy8mgqtR2zE6UFYLKSbD8SEvnaRpxuy3W66uyabz9yPE7amLKzErbhO-W0y81YtHDCVZjJ7U4UfXcBxu1LXeRT8MOWfO4Rc--EjdKN0_ym9_6n3vG1yfLFHXyPvTQocoR38ucdQPxLuRrSQue0ybptZ7CpPLeNGdfRRNyfsIp2xjRG6peAmUkzupZ"/>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+<div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white border border-white/30 hover:bg-white/30 transition-colors">
+<span class="material-symbols-outlined text-3xl">play_arrow</span>
+</div>
+</div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-purple-500/90 backdrop-blur-md rounded-lg text-[10px] font-bold text-white shadow-sm">Top 10</div>
+</div>
+<div>
+<h4 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-primary transition-colors">The Bank Robbery</h4>
+<div class="flex items-center justify-between mt-1.5 text-xs font-medium">
+<div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-yellow-500 text-sm filled">star</span>
+<span class="text-slate-700 dark:text-slate-300">9.1</span>
+</div>
+<span class="text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 border dark:border-white/5 px-2 py-0.5 rounded text-[10px]">Complete</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>
