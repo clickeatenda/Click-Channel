@@ -1,89 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
+import 'core/api/api_client.dart';
+import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
+import 'routes/app_routes.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Garante tela cheia
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  runApp(const ClickFlixApp());
+  
+  // Inicializar autenticação
+  final apiClient = ApiClient();
+  final authProvider = AuthProvider(apiClient);
+  await authProvider.initialize();
+  
+  runApp(ClickFlixApp(authProvider: authProvider, apiClient: apiClient));
 }
 
 class ClickFlixApp extends StatelessWidget {
-  const ClickFlixApp({super.key});
+  final AuthProvider authProvider;
+  final ApiClient apiClient;
+  
+  const ClickFlixApp({
+    required this.authProvider,
+    required this.apiClient,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'ClickFlix',
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: AppColors.backgroundDark,
-        canvasColor: AppColors.backgroundDarker,
-        colorScheme: const ColorScheme.dark(
-          primary: AppColors.primary,
-          secondary: AppColors.accent,
-          surface: AppColors.surface,
-          error: AppColors.error,
+    return MultiProvider(
+      providers: [
+        Provider<ApiClient>.value(value: apiClient),
+        ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'ClickFlix',
+        theme: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: AppColors.backgroundDark,
+          canvasColor: AppColors.backgroundDarker,
+          colorScheme: const ColorScheme.dark(
+            primary: AppColors.primary,
+            secondary: AppColors.accent,
+            surface: AppColors.surface,
+            error: AppColors.error,
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: AppColors.backgroundDark,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          textTheme: const TextTheme(
+            displayLarge: TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: -0.015,
+            ),
+            displayMedium: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: -0.015,
+            ),
+            headlineSmall: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            titleLarge: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+            bodyLarge: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: Colors.white,
+            ),
+            bodyMedium: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Colors.white,
+            ),
+            labelSmall: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.backgroundDark,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: -0.015,
-          ),
-          displayMedium: TextStyle(
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: -0.015,
-          ),
-          headlineSmall: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-          titleLarge: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-          bodyLarge: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: Colors.white,
-          ),
-          bodyMedium: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: Colors.white,
-          ),
-          labelSmall: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
+        initialRoute: authProvider.isAuthenticated ? AppRoutes.home : AppRoutes.login,
+        onGenerateRoute: AppRoutes.generateRoute,
       ),
-      home: const SplashScreen(),
     );
   }
 }
 
-// --- TELA DE CARREGAMENTO PERSONALIZADA ---
+// --- SPLASH SCREEN ---
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -95,7 +118,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Aguarda 2 segundos e vai para a Login
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -113,7 +135,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Animated logo
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0, end: 1),
               duration: const Duration(milliseconds: 800),
@@ -154,7 +175,6 @@ class _SplashScreenState extends State<SplashScreen> {
               },
             ),
             const SizedBox(height: 40),
-            // Loading spinner
             const SizedBox(
               width: 40,
               height: 40,
@@ -164,7 +184,6 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Loading text
             Text(
               'CARREGANDO...',
               style: TextStyle(
