@@ -20,6 +20,8 @@
             --text-secondary: rgba(255, 255, 255, 0.6);
             --glass-bg: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --error: #FF6B6B;
+            --success: #51CF66;
         }
 
         body {
@@ -51,6 +53,10 @@
             position: sticky;
             top: 0;
             z-index: 100;
+        }
+
+        .header.hidden {
+            display: none;
         }
 
         .header-left {
@@ -164,7 +170,7 @@
         }
 
         .login-container.active {
-            display: flex;
+            display: flex !important;
         }
 
         .login-box {
@@ -285,6 +291,11 @@
             border-color: var(--primary);
         }
 
+        .glass-input.error {
+            border-color: var(--error);
+            background: rgba(255, 107, 107, 0.1);
+        }
+
         .forgot-password {
             text-align: right;
             margin-top: 8px;
@@ -299,6 +310,28 @@
 
         .forgot-password a:hover {
             color: var(--primary-light);
+        }
+
+        .error-message {
+            font-size: 12px;
+            color: var(--error);
+            margin-top: 4px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            font-size: 12px;
+            color: var(--success);
+            margin-top: 4px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
         }
 
         .glass-button {
@@ -318,6 +351,11 @@
         .glass-button:hover {
             background: var(--primary-light);
             transform: translateY(-2px);
+        }
+
+        .glass-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .divider {
@@ -475,6 +513,21 @@
             font-weight: 600;
         }
 
+        /* DEMO CREDENTIALS */
+        .demo-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(81, 207, 102, 0.2);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--success);
+            max-width: 250px;
+            z-index: 1000;
+        }
+
         /* RESPONSIVE */
         @media (max-width: 768px) {
             .header {
@@ -524,7 +577,7 @@
 </head>
 <body>
     <!-- HEADER -->
-    <header class="header">
+    <header class="header" id="header">
         <div class="header-left">
             <div class="logo">
                 <div class="logo-icon">🎬</div>
@@ -539,8 +592,8 @@
         <div class="header-right">
             <button class="icon-btn" title="Notificações">🔔</button>
             <button class="icon-btn" title="Buscar">🔍</button>
-            <div class="user-avatar">SJ</div>
-            <button class="icon-btn" title="Logout" onclick="goToLogin()">🚪</button>
+            <div class="user-avatar" id="userInitials">SJ</div>
+            <button class="icon-btn" title="Logout" onclick="logout()">🚪</button>
         </div>
     </header>
 
@@ -563,16 +616,18 @@
                 <div class="auth-form" id="loginForm">
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" class="glass-input" placeholder="seu@email.com">
+                        <input type="email" id="loginEmail" class="glass-input" placeholder="seu@email.com">
+                        <div class="error-message" id="loginEmailError"></div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Password</label>
-                        <input type="password" class="glass-input" placeholder="••••••••">
+                        <input type="password" id="loginPassword" class="glass-input" placeholder="••••••••">
+                        <div class="error-message" id="loginPasswordError"></div>
                     </div>
                     <div class="forgot-password">
                         <a href="#">Forgot password?</a>
                     </div>
-                    <button class="glass-button" onclick="goToHome()">Sign In</button>
+                    <button class="glass-button" onclick="handleLogin()">Sign In</button>
 
                     <div class="divider">
                         <div class="divider-line"></div>
@@ -581,9 +636,9 @@
                     </div>
 
                     <div class="social-buttons">
-                        <button class="social-btn">🔵</button>
-                        <button class="social-btn">🍎</button>
-                        <button class="social-btn">🌐</button>
+                        <button class="social-btn" onclick="alert('Google login')">🔵</button>
+                        <button class="social-btn" onclick="alert('Apple login')">🍎</button>
+                        <button class="social-btn" onclick="alert('Web login')">🌐</button>
                     </div>
                 </div>
 
@@ -591,17 +646,20 @@
                 <div class="auth-form" id="registerForm" style="display: none;">
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" class="glass-input" placeholder="Your name">
+                        <input type="text" id="registerName" class="glass-input" placeholder="Your name">
+                        <div class="error-message" id="registerNameError"></div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" class="glass-input" placeholder="seu@email.com">
+                        <input type="email" id="registerEmail" class="glass-input" placeholder="seu@email.com">
+                        <div class="error-message" id="registerEmailError"></div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Password</label>
-                        <input type="password" class="glass-input" placeholder="••••••••">
+                        <input type="password" id="registerPassword" class="glass-input" placeholder="••••••••">
+                        <div class="error-message" id="registerPasswordError"></div>
                     </div>
-                    <button class="glass-button" onclick="goToHome()">Create Account</button>
+                    <button class="glass-button" onclick="handleRegister()">Create Account</button>
                 </div>
             </div>
         </div>
@@ -659,8 +717,126 @@
         </div>
     </div>
 
+    <!-- DEMO CREDENTIALS INFO -->
+    <div class="demo-info">
+        <strong>🔓 Demo Credentials:</strong><br>
+        Email: demo@clickflix.com<br>
+        Password: demo123
+    </div>
+
     <script>
+        // Demo credentials
+        const DEMO_USERS = [
+            { email: 'demo@clickflix.com', password: 'demo123', name: 'Demo User' },
+            { email: 'test@test.com', password: 'test123', name: 'Test User' }
+        ];
+
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
+            document.querySelectorAll('.glass-input').forEach(el => el.classList.remove('error'));
+        }
+
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            const inputId = elementId.replace('Error', '');
+            const inputEl = document.getElementById(inputId);
+            
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            inputEl.classList.add('error');
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function handleLogin() {
+            clearErrors();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            let hasError = false;
+            
+            if (!email) {
+                showError('loginEmailError', 'Email é obrigatório');
+                hasError = true;
+            } else if (!validateEmail(email)) {
+                showError('loginEmailError', 'Email inválido');
+                hasError = true;
+            }
+            
+            if (!password) {
+                showError('loginPasswordError', 'Senha é obrigatória');
+                hasError = true;
+            } else if (password.length < 4) {
+                showError('loginPasswordError', 'Senha deve ter no mínimo 4 caracteres');
+                hasError = true;
+            }
+            
+            if (hasError) return;
+            
+            // Check credentials
+            const user = DEMO_USERS.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                goToHome(user);
+            } else {
+                showError('loginPasswordError', 'Email ou senha incorretos');
+            }
+        }
+
+        function handleRegister() {
+            clearErrors();
+            
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            let hasError = false;
+            
+            if (!name) {
+                showError('registerNameError', 'Nome é obrigatório');
+                hasError = true;
+            }
+            
+            if (!email) {
+                showError('registerEmailError', 'Email é obrigatório');
+                hasError = true;
+            } else if (!validateEmail(email)) {
+                showError('registerEmailError', 'Email inválido');
+                hasError = true;
+            }
+            
+            if (!password) {
+                showError('registerPasswordError', 'Senha é obrigatória');
+                hasError = true;
+            } else if (password.length < 6) {
+                showError('registerPasswordError', 'Senha deve ter no mínimo 6 caracteres');
+                hasError = true;
+            }
+            
+            if (hasError) return;
+            
+            // Register user
+            const newUser = { email, password, name };
+            DEMO_USERS.push(newUser);
+            
+            alert('✅ Conta criada com sucesso! Faça login para continuar.');
+            
+            // Clear fields and switch to login
+            document.getElementById('registerName').value = '';
+            document.getElementById('registerEmail').value = '';
+            document.getElementById('registerPassword').value = '';
+            switchAuthTab(0);
+        }
+
         function switchAuthTab(tabIndex) {
+            clearErrors();
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
             const tabs = document.querySelectorAll('.auth-tab');
@@ -677,14 +853,35 @@
             }
         }
 
-        function goToHome() {
+        function goToHome(user = null) {
+            const displayUser = user || { name: 'User' };
+            const initials = displayUser.name
+                .split(' ')
+                .map(word => word[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
+            
+            document.getElementById('userInitials').textContent = initials;
             document.getElementById('loginScreen').classList.remove('active');
             document.getElementById('homeScreen').classList.add('active');
+            document.getElementById('header').classList.remove('hidden');
+            
+            // Clear login form
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            clearErrors();
         }
 
-        function goToLogin() {
-            document.getElementById('homeScreen').classList.remove('active');
-            document.getElementById('loginScreen').classList.add('active');
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                document.getElementById('homeScreen').classList.remove('active');
+                document.getElementById('loginScreen').classList.add('active');
+                document.getElementById('header').classList.add('hidden');
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                clearErrors();
+            }
         }
 
         // Navigation
@@ -693,6 +890,14 @@
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
             });
+        });
+
+        // Enter key to submit
+        document.getElementById('loginPassword')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+        document.getElementById('registerPassword')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleRegister();
         });
     </script>
 </body>
