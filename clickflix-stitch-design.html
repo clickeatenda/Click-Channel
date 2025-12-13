@@ -42,11 +42,11 @@
 
         /* HEADER */
         .header {
+            display: none;
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--glass-border);
             padding: 16px 32px;
-            display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 40px;
@@ -55,8 +55,8 @@
             z-index: 100;
         }
 
-        .header.hidden {
-            display: none;
+        .header.active {
+            display: flex;
         }
 
         .header-left {
@@ -150,6 +150,7 @@
             justify-content: center;
             color: white;
             font-weight: bold;
+            font-size: 14px;
         }
 
         /* MAIN CONTENT */
@@ -161,16 +162,15 @@
 
         /* LOGIN SCREEN */
         .login-container {
-            display: none;
-            min-height: 100vh;
             display: flex;
+            min-height: 100vh;
             align-items: center;
             justify-content: center;
             padding: 32px;
         }
 
-        .login-container.active {
-            display: flex !important;
+        .login-container.hidden {
+            display: none;
         }
 
         .login-box {
@@ -320,17 +320,6 @@
         }
 
         .error-message.show {
-            display: block;
-        }
-
-        .success-message {
-            font-size: 12px;
-            color: var(--success);
-            margin-top: 4px;
-            display: none;
-        }
-
-        .success-message.show {
             display: block;
         }
 
@@ -598,7 +587,7 @@
     </header>
 
     <!-- LOGIN SCREEN -->
-    <div class="login-container active" id="loginScreen">
+    <div class="login-container" id="loginScreen">
         <div class="login-box">
             <div class="login-header">
                 <div class="login-logo">🎬</div>
@@ -627,7 +616,7 @@
                     <div class="forgot-password">
                         <a href="#">Forgot password?</a>
                     </div>
-                    <button class="glass-button" onclick="handleLogin()">Sign In</button>
+                    <button type="button" class="glass-button" onclick="handleLogin()">Sign In</button>
 
                     <div class="divider">
                         <div class="divider-line"></div>
@@ -636,9 +625,9 @@
                     </div>
 
                     <div class="social-buttons">
-                        <button class="social-btn" onclick="alert('Google login')">🔵</button>
-                        <button class="social-btn" onclick="alert('Apple login')">🍎</button>
-                        <button class="social-btn" onclick="alert('Web login')">🌐</button>
+                        <button type="button" class="social-btn" onclick="alert('Google login')">🔵</button>
+                        <button type="button" class="social-btn" onclick="alert('Apple login')">🍎</button>
+                        <button type="button" class="social-btn" onclick="alert('Web login')">🌐</button>
                     </div>
                 </div>
 
@@ -659,7 +648,7 @@
                         <input type="password" id="registerPassword" class="glass-input" placeholder="••••••••">
                         <div class="error-message" id="registerPasswordError"></div>
                     </div>
-                    <button class="glass-button" onclick="handleRegister()">Create Account</button>
+                    <button type="button" class="glass-button" onclick="handleRegister()">Create Account</button>
                 </div>
             </div>
         </div>
@@ -725,6 +714,8 @@
     </div>
 
     <script>
+        console.log('ClickFlix Auth System Loaded');
+        
         // Demo credentials
         const DEMO_USERS = [
             { email: 'demo@clickflix.com', password: 'demo123', name: 'Demo User' },
@@ -744,9 +735,11 @@
             const inputId = elementId.replace('Error', '');
             const inputEl = document.getElementById(inputId);
             
-            errorEl.textContent = message;
-            errorEl.classList.add('show');
-            inputEl.classList.add('error');
+            if (errorEl && inputEl) {
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+                inputEl.classList.add('error');
+            }
         }
 
         function validateEmail(email) {
@@ -755,10 +748,13 @@
         }
 
         function handleLogin() {
+            console.log('handleLogin called');
             clearErrors();
             
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            console.log('Email:', email, 'Password:', password);
             
             let hasError = false;
             
@@ -778,24 +774,32 @@
                 hasError = true;
             }
             
-            if (hasError) return;
+            if (hasError) {
+                console.log('Validation failed');
+                return;
+            }
             
             // Check credentials
             const user = DEMO_USERS.find(u => u.email === email && u.password === password);
             
+            console.log('User found:', user);
+            
             if (user) {
+                console.log('Authentication successful');
                 goToHome(user);
             } else {
+                console.log('Authentication failed');
                 showError('loginPasswordError', 'Email ou senha incorretos');
             }
         }
 
         function handleRegister() {
+            console.log('handleRegister called');
             clearErrors();
             
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
             
             let hasError = false;
             
@@ -826,6 +830,7 @@
             const newUser = { email, password, name };
             DEMO_USERS.push(newUser);
             
+            console.log('User registered:', newUser);
             alert('✅ Conta criada com sucesso! Faça login para continuar.');
             
             // Clear fields and switch to login
@@ -854,6 +859,7 @@
         }
 
         function goToHome(user = null) {
+            console.log('goToHome called with user:', user);
             const displayUser = user || { name: 'User' };
             const initials = displayUser.name
                 .split(' ')
@@ -863,24 +869,27 @@
                 .slice(0, 2);
             
             document.getElementById('userInitials').textContent = initials;
-            document.getElementById('loginScreen').classList.remove('active');
+            document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('homeScreen').classList.add('active');
-            document.getElementById('header').classList.remove('hidden');
+            document.getElementById('header').classList.add('active');
             
             // Clear login form
             document.getElementById('loginEmail').value = '';
             document.getElementById('loginPassword').value = '';
             clearErrors();
+            
+            console.log('Home screen activated');
         }
 
         function logout() {
             if (confirm('Tem certeza que deseja sair?')) {
                 document.getElementById('homeScreen').classList.remove('active');
-                document.getElementById('loginScreen').classList.add('active');
-                document.getElementById('header').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('header').classList.remove('active');
                 document.getElementById('loginEmail').value = '';
                 document.getElementById('loginPassword').value = '';
                 clearErrors();
+                console.log('Logged out');
             }
         }
 
@@ -893,12 +902,22 @@
         });
 
         // Enter key to submit
-        document.getElementById('loginPassword')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
-        document.getElementById('registerPassword')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleRegister();
-        });
+        const loginPasswordInput = document.getElementById('loginPassword');
+        const registerPasswordInput = document.getElementById('registerPassword');
+        
+        if (loginPasswordInput) {
+            loginPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+        }
+        if (registerPasswordInput) {
+            registerPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleRegister();
+            });
+        }
+        
+        console.log('ClickFlix Auth System Ready');
+        console.log('Demo users:', DEMO_USERS);
     </script>
 </body>
 </html>
