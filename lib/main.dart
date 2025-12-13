@@ -57,25 +57,25 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: Colors.black, // Fundo Preto
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Ícone Pulsando (opcional, aqui estático)
-            const Icon(Icons.movie_filter, size: 100, color: Colors.blueAccent),
-            const SizedBox(height: 30),
+            Icon(Icons.movie_filter, size: 100, color: Colors.blueAccent),
+            SizedBox(height: 30),
             
             // Spinner Azul
-            const SizedBox(
+            SizedBox(
               width: 40, height: 40,
               child: CircularProgressIndicator(
                 color: Colors.blueAccent,
                 strokeWidth: 3,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             
             // Texto Azul
             Text(

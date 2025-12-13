@@ -76,12 +76,12 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
               // 2. Degradê Preto (Fundo para o texto)
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [Colors.transparent, AppColors.background],
-                    stops: const [0.4, 1.0],
+                    stops: [0.4, 1.0],
                   ),
                 ),
               ),

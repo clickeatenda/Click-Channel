@@ -35,10 +35,10 @@ class SettingsScreen extends StatelessWidget {
                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cache limpo!")));
             },
           ),
-          ListTile(
-            title: const Text("Sobre o StreamX", style: TextStyle(color: Colors.white)),
-            subtitle: const Text("Versão 1.0.2 - Beta", style: TextStyle(color: Colors.grey)),
-            leading: const Icon(Icons.info_outline, color: Colors.white),
+          const ListTile(
+            title: Text("Sobre o StreamX", style: TextStyle(color: Colors.white)),
+            subtitle: Text("Versão 1.0.2 - Beta", style: TextStyle(color: Colors.grey)),
+            leading: Icon(Icons.info_outline, color: Colors.white),
           ),
         ],
       ),
@@ -56,7 +56,7 @@ class SettingsScreen extends StatelessWidget {
     return SwitchListTile(
       title: Text(title, style: const TextStyle(color: Colors.white)),
       value: value,
-      activeColor: AppColors.primary,
+      activeThumbColor: AppColors.primary,
       onChanged: (val) {},
     );
   }
