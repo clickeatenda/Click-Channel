@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://192.168.3.251:4000/api';
+  // Use Config.backendUrl so the base can be set via .env (e.g. http://host:4000)
+  static String get baseUrl => '${Config.backendUrl}/api';
   late final Dio _dio;
   final _secureStorage = const FlutterSecureStorage();
   
