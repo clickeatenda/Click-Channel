@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/app_colors.dart';
 import 'core/api/api_client.dart';
 import 'providers/auth_provider.dart';
@@ -9,6 +10,12 @@ import 'routes/app_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Load environment variables from .env if present. Non-blocking if file missing.
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {
+    // ignore - will use fallback values from Config
+  }
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

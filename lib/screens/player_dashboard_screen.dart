@@ -19,7 +19,7 @@ class PlayerDashboardScreen extends StatefulWidget {
 
 class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
   bool _isPlaying = false;
-  double _progress = 0.35;
+  final double _progress = 0.35;
   int _selectedSubtitle = 0;
 
   @override
@@ -189,7 +189,7 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
                               minHeight: 4,
                               backgroundColor:
                                   Colors.white.withOpacity(0.1),
-                              valueColor: AlwaysStoppedAnimation(
+                              valueColor: const AlwaysStoppedAnimation(
                                 AppColors.primary,
                               ),
                             ),

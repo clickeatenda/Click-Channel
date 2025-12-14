@@ -140,7 +140,7 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
               ),
               child: Stack(
                 children: [
-                  Center(
+                  const Center(
                     child: Icon(
                       Icons.tv,
                       color: AppColors.primary,
@@ -195,7 +195,7 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
                     Container(
                       width: 6,
                       height: 6,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.red,
                         shape: BoxShape.circle,
                       ),

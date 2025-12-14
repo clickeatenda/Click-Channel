@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: 1,
                                         ),
                                       ),
-                                      child: Text(
+                                      child: const Text(
                                         'Featured',
                                         style: TextStyle(
                                           color: AppColors.primary,
@@ -314,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       width: 48,
                       height: 48,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),

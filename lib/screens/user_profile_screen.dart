@@ -74,7 +74,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
+                          const Text(
                             'Premium Subscriber',
                             style: TextStyle(
                               color: AppColors.primary,
@@ -190,7 +190,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   ),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   'Active',
                                   style: TextStyle(
                                     color: AppColors.success,
@@ -214,9 +214,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 crossAxisAlignment:
                                     CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  const Text(
                                     '\$14.99/month',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,

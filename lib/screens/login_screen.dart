@@ -37,8 +37,8 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color.fromARGB(255, 17, 19, 24).withOpacity(1),
-              Color.fromARGB(255, 16, 22, 34).withOpacity(1),
+              const Color.fromARGB(255, 17, 19, 24).withOpacity(1),
+              const Color.fromARGB(255, 16, 22, 34).withOpacity(1),
             ],
           ),
         ),
@@ -280,7 +280,7 @@ class _LoginScreenState extends State<LoginScreen> {
           alignment: Alignment.centerRight,
           child: GestureDetector(
             onTap: () {},
-            child: Text(
+            child: const Text(
               'Forgot password?',
               style: TextStyle(
                 color: AppColors.primary,

@@ -128,7 +128,7 @@ class _SeriesLibraryScreenState extends State<SeriesLibraryScreen> {
                   ],
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Icon(
                   Icons.tv,
                   color: AppColors.primary,

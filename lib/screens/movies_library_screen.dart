@@ -128,7 +128,7 @@ class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
                   ],
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Icon(
                   Icons.movie,
                   color: AppColors.primary,

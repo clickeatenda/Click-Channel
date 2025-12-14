@@ -63,11 +63,11 @@ class _GlassInputState extends State<GlassInput> {
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           decoration: BoxDecoration(
-            color: Color.fromARGB(153, 28, 31, 39),
+            color: const Color.fromARGB(153, 28, 31, 39),
             border: Border.all(
               color: _isFocused
                   ? AppColors.primary
-                  : Color.fromARGB(128, 59, 67, 84),
+                  : const Color.fromARGB(128, 59, 67, 84),
               width: 1,
             ),
             borderRadius: const BorderRadius.all(Radius.circular(12)),

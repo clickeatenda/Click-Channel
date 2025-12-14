@@ -106,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'Adaptive (4K when available)',
                             false,
                             null,
-                            trailing: Text(
+                            trailing: const Text(
                               'Adaptive',
                               style: TextStyle(
                                 color: AppColors.primary,
@@ -123,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'Large',
                             false,
                             null,
-                            trailing: Text(
+                            trailing: const Text(
                               'Large',
                               style: TextStyle(
                                 color: AppColors.primary,
@@ -335,7 +335,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           else if (onChanged != null)
             Switch(
               value: value,
-              activeColor: AppColors.primary,
+              activeThumbColor: AppColors.primary,
               onChanged: onChanged,
             ),
         ],

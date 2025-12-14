@@ -136,7 +136,7 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
               ),
               child: Stack(
                 children: [
-                  Center(
+                  const Center(
                     child: Icon(
                       Icons.favorite,
                       color: AppColors.primary,
@@ -148,7 +148,7 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                     right: 8,
                     child: Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.red,
                         shape: BoxShape.circle,
                       ),
