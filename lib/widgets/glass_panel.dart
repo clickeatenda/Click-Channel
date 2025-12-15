@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../core/theme/app_colors.dart';
 
 class GlassPanel extends StatelessWidget {
@@ -149,7 +150,7 @@ class _GlassCardState extends State<GlassCard> {
                   ),
                 ] : null,
               ),
-              transform: _isHovering ? Matrix4.identity()..translate(0, -5) : Matrix4.identity(),
+              transform: _isHovering ? (Matrix4.identity()..translate(0, -5)) : Matrix4.identity(),
               padding: widget.padding,
               child: widget.child,
             ),

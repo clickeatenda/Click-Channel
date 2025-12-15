@@ -13,6 +13,9 @@ dependencies:
   # Pacotes Funcionais
   http: ^1.2.0
   flutter_dotenv: ^5.0.2
+  dio: ^5.3.1
+  flutter_secure_storage: ^9.0.0
+  provider: ^6.0.0
   video_player: ^2.8.2
   chewie: ^1.7.1
   cached_network_image: ^3.3.1

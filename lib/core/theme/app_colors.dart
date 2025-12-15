@@ -12,6 +12,9 @@ class AppColors {
   static const Color primaryLight = Color(0xFF38bdf8);
   static const Color primaryForeground = Color(0xFFFFFFFF);
 
+  // Card - alternate surface color
+  static const Color card = Color(0xFF1a2332);
+
   // Surface
   static const Color surface = Color(0xFF1e293b);
   static const Color surfaceDark = Color(0xFF1a202c);

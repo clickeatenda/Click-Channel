@@ -153,6 +153,9 @@ class ApiClient {
       case DioExceptionType.cancel:
         message = 'Requisição cancelada';
         break;
+      case DioExceptionType.connectionError:
+        message = 'Erro de conexão';
+        break;
       case DioExceptionType.unknown:
         message = e.message ?? 'Erro desconhecido';
         break;
