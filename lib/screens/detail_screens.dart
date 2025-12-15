@@ -352,11 +352,11 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
               child: Column(
                 children: [
                   SliderTheme(
-                    data: SliderThemeData(
+                    data: const SliderThemeData(
                       trackHeight: 6,
-                      thumbShape: const RoundSliderThumbShape(
+                      thumbShape: RoundSliderThumbShape(
                           enabledThumbRadius: 8),
-                      activeTrackColor: const Color(0xFFE11D48),
+                      activeTrackColor: Color(0xFFE11D48),
                       inactiveTrackColor: Colors.white24,
                     ),
                     child: Slider(
@@ -384,13 +384,13 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
               ),
             ),
             // Info section
-            Expanded(
+            const Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Inception',
                       style: TextStyle(
                         color: Colors.white,
@@ -398,15 +398,15 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
+                    SizedBox(height: 12),
+                    Text(
                       'Ficção Científica • Suspense • 2010',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     Row(
                       mainAxisAlignment:
                           MainAxisAlignment.spaceEvenly,
@@ -425,8 +425,8 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
+                    SizedBox(height: 24),
+                    Text(
                       'Sinopse',
                       style: TextStyle(
                         color: Colors.white,
@@ -434,8 +434,8 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
+                    SizedBox(height: 12),
+                    Text(
                       'Um ladrão que rouba segredos corporativos através da tecnologia de compartilhamento de sonhos recebe uma tarefa inversa: implantar uma ideia',
                       style: TextStyle(
                         color: Colors.white70,

@@ -12,7 +12,6 @@ class LiveChannelsScreen extends StatefulWidget {
 
 class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
   int _selectedNavIndex = 2;
-  String _searchQuery = '';
 
   final List<HeaderNav> _navItems = [
     HeaderNav(label: 'Home'),
@@ -37,8 +36,6 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
             userName: 'Sarah J',
             onNotificationTap: () {},
             onProfileTap: () {},
-            onSearchChanged: (query) =>
-                setState(() => _searchQuery = query),
           ),
           Expanded(
             child: SingleChildScrollView(
