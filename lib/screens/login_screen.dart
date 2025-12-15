@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../core/theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/glass_button.dart';
@@ -140,8 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       onTap: () =>
                                           setState(() => _selectedTab = 0),
                                       child: AnimatedContainer(
-                                        duration: const Duration(
-                                            milliseconds: 200),
+                                        duration:
+                                            const Duration(milliseconds: 200),
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 16,
                                         ),
@@ -181,8 +182,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       onTap: () =>
                                           setState(() => _selectedTab = 1),
                                       child: AnimatedContainer(
-                                        duration: const Duration(
-                                            milliseconds: 200),
+                                        duration:
+                                            const Duration(milliseconds: 200),
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 16,
                                         ),
@@ -291,10 +292,11 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 24),
+        // Login sempre libera acesso
         SolidButton(
           label: 'Sign In',
           onPressed: () {
-            // TODO: Implement login
+            Navigator.pushReplacementNamed(context, '/home');
           },
           width: double.infinity,
         ),
@@ -383,10 +385,11 @@ class _LoginScreenState extends State<LoginScreen> {
               setState(() => _obscurePassword = !_obscurePassword),
         ),
         const SizedBox(height: 24),
+        // Registro também entra direto
         SolidButton(
           label: 'Create Account',
           onPressed: () {
-            // TODO: Implement register
+            Navigator.pushReplacementNamed(context, '/home');
           },
           width: double.infinity,
         ),

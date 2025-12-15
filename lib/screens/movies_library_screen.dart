@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
-import '../widgets/custom_app_header.dart';
+import '../widgets/glass_panel.dart' show GlassCard;
 
 class MoviesLibraryScreen extends StatefulWidget {
   const MoviesLibraryScreen({super.key});
@@ -11,83 +11,68 @@ class MoviesLibraryScreen extends StatefulWidget {
 }
 
 class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
-  int _selectedNavIndex = 1;
   String _searchQuery = '';
-
-  final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Home'),
-    HeaderNav(label: 'Movies'),
-    HeaderNav(label: 'Live TV'),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      body: Column(
-        children: [
-          CustomAppHeader(
-            title: 'ClickFlix',
-            navItems: _navItems,
-            selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) =>
-                setState(() => _selectedNavIndex = index),
-            userAvatarUrl:
-                'https://via.placeholder.com/32x32?text=User',
-            userName: 'Sarah J',
-            onNotificationTap: () {},
-            onProfileTap: () {},
-            onSearchChanged: (query) =>
-                setState(() => _searchQuery = query),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Movies Library',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _searchQuery.isEmpty
+                    ? 'Explore nossa coleção completa de filmes'
+                    : 'Resultados para "${_searchQuery}"',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Filtros
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
                   children: [
-                    const Text(
-                      'Movies Library',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Filter options
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildFilterChip('All'),
-                          _buildFilterChip('Action'),
-                          _buildFilterChip('Comedy'),
-                          _buildFilterChip('Drama'),
-                          _buildFilterChip('Horror'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    // Movies Grid
-                    GridView.count(
-                      crossAxisCount: 4,
-                      mainAxisSpacing: 24,
-                      crossAxisSpacing: 24,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: List.generate(
-                        12,
-                        (index) => _buildMovieCard('Movie ${index + 1}'),
-                      ),
-                    ),
+                    _buildFilterChip('All'),
+                    _buildFilterChip('Action'),
+                    _buildFilterChip('Comedy'),
+                    _buildFilterChip('Drama'),
+                    _buildFilterChip('Horror'),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(height: 32),
+
+              // Grid de filmes
+              GridView.count(
+                crossAxisCount: 4,
+                mainAxisSpacing: 24,
+                crossAxisSpacing: 24,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: List.generate(
+                  12,
+                  (index) => _buildMovieCard('Movie ${index + 1}'),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

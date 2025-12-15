@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/app_colors.dart';
@@ -10,11 +11,13 @@ import 'routes/app_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Load environment variables from .env if present. Non-blocking if file missing.
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (_) {
-    // ignore - will use fallback values from Config
+  // Only load .env for non-web platforms
+  if (!kIsWeb) {
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (_) {
+      // ignore - will use fallback values from Config
+    }
   }
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   SystemChrome.setPreferredOrientations([
