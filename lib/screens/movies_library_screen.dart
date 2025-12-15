@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
-import '../widgets/glass_panel.dart';
+import '../models/content_item.dart';
+import '../data/api_service.dart';
+import '../widgets/content_card.dart';
+import 'player_dashboard_screen.dart';
 
 class MoviesLibraryScreen extends StatefulWidget {
   const MoviesLibraryScreen({super.key});
@@ -10,145 +13,86 @@ class MoviesLibraryScreen extends StatefulWidget {
 }
 
 class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
-  final String _searchQuery = '';
+  List<ContentItem> movies = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMovies();
+  }
+
+  Future<void> _loadMovies() async {
+    final data = await ApiService.fetchAllMovies(limit: 100);
+    if (mounted) {
+      setState(() {
+        movies = data;
+        loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Movies Library',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _searchQuery.isEmpty
-                    ? 'Explore nossa coleção completa de filmes'
-                    : 'Resultados para "$_searchQuery"',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Filtros
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
+      body: loading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildFilterChip('All'),
-                    _buildFilterChip('Action'),
-                    _buildFilterChip('Comedy'),
-                    _buildFilterChip('Drama'),
-                    _buildFilterChip('Horror'),
+                    const Text(
+                      'Movies Library',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Explore nossa coleção de ${movies.length} filmes',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Grid de filmes do backend
+                    GridView.count(
+                      crossAxisCount: 4,
+                      mainAxisSpacing: 24,
+                      crossAxisSpacing: 24,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: movies.map((movie) {
+                        return ContentCard(
+                          item: movie,
+                          onTap: (_) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    PlayerDashboardScreen(
+                                      contentTitle: movie.title,
+                                      contentUrl: movie.url,
+                                    ),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-
-              // Grid de filmes
-              GridView.count(
-                crossAxisCount: 4,
-                mainAxisSpacing: 24,
-                crossAxisSpacing: 24,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: List.generate(
-                  12,
-                  (index) => _buildMovieCard('Movie ${index + 1}'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: GlassPanel(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        borderRadius: BorderRadius.circular(20),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMovieCard(String title) {
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primary.withOpacity(0.3),
-                    AppColors.surface,
-                  ],
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.movie,
-                  color: AppColors.primary,
-                  size: 40,
-                ),
-              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '2024 • 2h 28m',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

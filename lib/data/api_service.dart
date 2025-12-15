@@ -37,4 +37,49 @@ class ApiService {
     }
     return null;
   }
+
+  // Fetch all movies (type: 'movies')
+  static Future<List<ContentItem>> fetchAllMovies({int limit = 50}) async {
+    try {
+      final uri = Uri.parse('${Config.backendUrl}/api/items?type=movies&page=1&limit=$limit');
+      final res = await http.get(uri);
+      if (res.statusCode == 200) {
+        List list = json.decode(res.body);
+        return list.map((i) => ContentItem.fromJson(i)).toList();
+      }
+    } catch (e) {
+      print('Erro ao buscar filmes: $e');
+    }
+    return [];
+  }
+
+  // Fetch all series (type: 'series')
+  static Future<List<ContentItem>> fetchAllSeries({int limit = 50}) async {
+    try {
+      final uri = Uri.parse('${Config.backendUrl}/api/items?type=series&page=1&limit=$limit');
+      final res = await http.get(uri);
+      if (res.statusCode == 200) {
+        List list = json.decode(res.body);
+        return list.map((i) => ContentItem.fromJson(i)).toList();
+      }
+    } catch (e) {
+      print('Erro ao buscar séries: $e');
+    }
+    return [];
+  }
+
+  // Fetch all live channels (type: 'channels')
+  static Future<List<ContentItem>> fetchAllChannels({int limit = 50}) async {
+    try {
+      final uri = Uri.parse('${Config.backendUrl}/api/items?type=channels&page=1&limit=$limit');
+      final res = await http.get(uri);
+      if (res.statusCode == 200) {
+        List list = json.decode(res.body);
+        return list.map((i) => ContentItem.fromJson(i)).toList();
+      }
+    } catch (e) {
+      print('Erro ao buscar canais: $e');
+    }
+    return [];
+  }
 }
