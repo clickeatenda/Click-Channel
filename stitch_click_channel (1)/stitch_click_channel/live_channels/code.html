@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Live Channels - Click Channel</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0ea5e9", // Sky 500
+              secondary: "#6366f1", // Indigo
+              dark: "#050505",
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.75rem",
+              'xl': "1rem",
+              '2xl': "1.5rem",
+              '3xl': "2rem",
+            },
+          },
+        },
+      };
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #94a3b8;
+        }
+        .glass-panel {
+            background: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-header {
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        .glass-card {
+            background: rgba(20, 20, 23, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+        .glass-card:hover {
+            background: rgba(30, 30, 35, 0.6);
+            border-color: rgba(14, 165, 233, 0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(14, 165, 233, 0.1);
+        }
+        .glass-nav-active {
+            background: rgba(14, 165, 233, 0.15);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            color: white;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.2);
+            text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+        .glass-button {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            color: #cbd5e1;
+        }
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .mask-linear {
+            mask-image: linear-gradient(to right, black 85%, transparent 100%);
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen antialiased selection:bg-primary selection:text-white">
+<div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+<div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-sky-900/10 rounded-full blur-[150px]"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-900/10 rounded-full blur-[150px]"></div>
+</div>
+<div class="max-w-[1600px] mx-auto">
+<header class="sticky top-0 z-50 py-4 px-6 md:px-8 glass-header flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+<div class="flex items-center gap-4 group cursor-pointer">
+<div class="relative">
+<div class="absolute -inset-1 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl blur opacity-25 group-hover:opacity-60 transition duration-500"></div>
+<div class="relative w-11 h-11 rounded-xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center backdrop-blur-xl shadow-inner shadow-white/5">
+<span class="material-icons-round text-sky-500 text-3xl drop-shadow-[0_0_8px_rgba(14,165,233,0.5)]">smart_toy</span>
+</div>
+</div>
+<div class="flex flex-col">
+<h1 class="text-2xl font-bold tracking-tight text-white leading-none">Click <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500">Channel</span></h1>
+<span class="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-medium ml-0.5 mt-1">Streaming Player</span>
+</div>
+</div>
+<nav class="glass-panel rounded-full p-1.5 flex items-center bg-black/60 border border-white/10 shadow-lg shadow-black/20">
+<a class="px-5 py-2.5 rounded-full text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-300" href="#">Movies</a>
+<a class="px-5 py-2.5 rounded-full text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-300" href="#">Series</a>
+<a class="glass-nav-active px-6 py-2.5 rounded-full text-sm font-bold text-white shadow-md backdrop-blur-md" href="#">Live Channels</a>
+<div class="w-px h-5 bg-white/10 mx-1"></div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-slate-400 hover:text-sky-400 mx-1">
+<span class="material-icons-round text-xl">search</span>
+</button>
+</nav>
+<div class="flex items-center gap-4">
+<button class="relative w-10 h-10 flex items-center justify-center rounded-full glass-button text-slate-400 hover:text-white">
+<span class="material-icons-round text-xl">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full shadow-[0_0_8px_rgba(14,165,233,0.8)]"></span>
+</button>
+<div class="flex items-center gap-3 glass-button pl-1.5 pr-4 py-1.5 rounded-full cursor-pointer hover:bg-white/10 transition-colors group/user">
+<div class="relative">
+<img alt="User Avatar" class="w-9 h-9 rounded-full object-cover border border-white/10 group-hover/user:border-white/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx2iOgbWVsqLMFoiwMj3BOZ8iF48U3Y0lzRJtRn1YsaLqxB1Kmrq0d9cCV1VEUvFqFhPklvyyzWkB4YQnP_yL1p5cyXgQTUouHLCBqES3SwUsSD-YPNacV7O5hEYYrZgxsMii4rCXqdO-aexI8TfQGQiUIq7NS6BPMnMRO-ky2bSkwNfvWNkJN_2d8rarHxbpLF3kSg0HGqEHl0iHWNJ4DERtnq_iiThcHTFrpbuNDdS8g9w4UJ5JwlXjH7OlRDKnDMnGskx_GXZ5m"/>
+<div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0a0a0a] rounded-full"></div>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-white leading-none group-hover/user:text-primary transition-colors">Sarah J</span>
+<span class="text-[10px] text-slate-500 font-medium leading-none mt-1">Premium</span>
+</div>
+<span class="material-icons-round text-slate-500 text-lg ml-1 group-hover/user:text-white transition-colors">expand_more</span>
+</div>
+</div>
+</header>
+<main class="p-4 md:p-6 lg:p-8 pt-0">
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+<div class="relative h-64 md:h-[22rem] rounded-3xl overflow-hidden group shadow-2xl shadow-black/80 border border-white/5">
+<img alt="Soccer Match" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnbnHYYLYrlvA45NZQOeq_x4tJvH7RY4XZ2lnne0kZXcRu9WTSgO1jTf8AjWk3Pk6REwK-JiLXSJjvhLE40syduFC9kWotGfX7ET5IBdSLJaZiEAscdGGSSLqdyNb9BIIDg0HsD1b0v9w7cG9ad830aZIDEUhvyLj4tEexPFEdN4mdrjpXDdDCYswBiOnDmuD31CNEHZC7zjqLqNONf6s49q-YlpPqB7mU7j0k4xc8-bGELV9f0Mq91EhzZmzoTt_0uH97Fb0fezoI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-black/90 to-transparent opacity-90"></div>
+<div class="absolute top-6 left-6 flex items-center gap-3">
+<span class="bg-red-600/90 backdrop-blur text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg shadow-red-900/40 border border-red-500/20">
+<span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE
+                        </span>
+<span class="bg-black/60 backdrop-blur-md border border-white/5 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg">
+                            SPORTS • FINAL
+                        </span>
+</div>
+<div class="absolute bottom-0 left-0 p-8 w-full max-w-2xl">
+<h2 class="text-3xl md:text-5xl font-bold text-white mb-3 leading-tight drop-shadow-lg tracking-tight">Champions League Final</h2>
+<p class="text-slate-300 text-sm md:text-lg mb-6 line-clamp-2 font-medium drop-shadow-md">Real Madrid vs Manchester City - The ultimate showdown is happening right now.</p>
+<div class="flex flex-wrap gap-4">
+<button class="bg-white text-slate-950 hover:bg-slate-200 font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-white/5">
+<span class="material-icons-round text-2xl">play_circle</span>
+                                Watch Now
+                            </button>
+<button class="bg-white/5 backdrop-blur-md hover:bg-white/10 text-white border border-white/10 font-medium py-3 px-6 rounded-xl flex items-center gap-2 transition-all">
+<span class="material-icons-round text-xl">add</span>
+                                My List
+                            </button>
+</div>
+</div>
+</div>
+<div class="relative h-64 md:h-[22rem] rounded-3xl overflow-hidden group shadow-xl border border-white/5 hidden lg:block">
+<img alt="News Studio" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhboavZtIF4sGWWoJYVrvzqKSor_nh7si-HemCG7PuPA32diQSYccr7PjXv5aROmExPEc3WB7jKIk4DJiHnl6nxqAHj8nQKD0-ocWPHYZJz9FqyVRSHd60DQKEyGh9ojyG7nhDIkVl5555qxG0QLaUg7mlaw3BO8ev4KraOmi6UE7q0nWOzoCsDlCbXlo0dpYWA5zk4PElp7VwlCbUD42JPAi7M8Ogk1rpexY5xzoLg7ys_84CEtnMu2j30xY7hlWryUPoRi1XvlTp"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+<div class="absolute top-6 left-6">
+<span class="bg-primary/90 backdrop-blur text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-lg shadow-primary/20 border border-primary/20">
+                            UP NEXT
+                        </span>
+</div>
+<div class="absolute bottom-0 left-0 p-8 w-full">
+<h2 class="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight drop-shadow-md">Global Tech Summit 2024</h2>
+<p class="text-slate-300 text-sm md:text-base mb-5 font-medium">Live coverage of the keynote speech starting in 15 minutes.</p>
+<button class="bg-white/5 backdrop-blur-md hover:bg-white/10 text-white border border-white/10 font-medium py-2.5 px-6 rounded-xl flex items-center gap-2 transition-all w-fit">
+<span class="material-icons-round text-xl">notifications_active</span>
+                            Remind Me
+                        </button>
+</div>
+</div>
+</section>
+<section class="mb-10">
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-2 mask-linear">
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 min-w-max text-white font-semibold shadow-lg shadow-primary/10 hover:bg-white/10 transition-colors">
+<span class="material-icons-round text-primary">live_tv</span>
+                        All Channels
+                    </button>
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-button min-w-max text-slate-400 font-medium hover:text-white">
+<span class="material-icons-round text-orange-500">local_fire_department</span>
+                        Trending
+                    </button>
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-button min-w-max text-slate-400 font-medium hover:text-white">
+<span class="material-icons-round text-green-500">sports_soccer</span>
+                        Sports
+                    </button>
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-button min-w-max text-slate-400 font-medium hover:text-white">
+<span class="material-icons-round text-blue-500">newspaper</span>
+                        News
+                    </button>
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-button min-w-max text-slate-400 font-medium hover:text-white">
+<span class="material-icons-round text-purple-500">movie</span>
+                        Movies
+                    </button>
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-button min-w-max text-slate-400 font-medium hover:text-white">
+<span class="material-icons-round text-yellow-500">child_care</span>
+                        Kids
+                    </button>
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl glass-button min-w-max text-slate-400 font-medium hover:text-white">
+<span class="material-icons-round text-pink-500">music_note</span>
+                        Music
+                    </button>
+</div>
+</section>
+<div class="flex items-center justify-between mb-6 px-1">
+<h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                    Live Channels
+                    <span class="text-sm font-normal text-slate-400 ml-2 bg-white/5 px-2 py-0.5 rounded-md border border-white/5">124 Active</span>
+</h2>
+<div class="flex gap-2 bg-black/60 p-1 rounded-xl backdrop-blur-sm border border-white/5">
+<button class="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 text-white shadow-sm border border-white/5 transition-colors">
+<span class="material-icons-round text-xl">grid_view</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg bg-transparent text-slate-500 hover:text-white hover:bg-white/5 transition-colors">
+<span class="material-icons-round text-xl">view_list</span>
+</button>
+<div class="w-px h-5 bg-white/5 my-auto mx-1"></div>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors">
+<span class="material-icons-round text-xl">filter_list</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+<div class="group glass-card rounded-2xl overflow-hidden cursor-pointer relative">
+<div class="relative aspect-video overflow-hidden">
+<img alt="Nature Channel" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByFgWFvTvFUDwn4AAakiODFFon40RaH37KTQlZoD2phR-UhWVSQNucORYn-MVR1MpRMKeaprbN1QX0PzDSb7Rs8m9lJotmVv6CvjqWIdcbIcabX1DQb7VLSOopzN_fSnLgFqpKPu_dZWqkpuWRDmPvl-BnsPFDRci6COYvrfOzvI-7XUnKB_ETq0NP5CQPhG2iwITKBfM3NM0DSlFQWUZIFOcGJiZdrOo81Yddmaj-OSEmZzQ8lSVX6x1CP3tmL95OEAtO-0xbzI1k"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/5">
+<img alt="Logo" class="h-4 object-contain brightness-200" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZI1wCcmL0YOfdKxpi7DGW4ggIi2RYWS8TdWSbosRKOkCOLEcr3f53tBl9jkPhAKoquK7ZajswU59mQtZnS5n1JfuUDR3kNRKmj_wt4tUbG3XDh8ul0P4BwX6lGPmdea4GI7AZRFGfEBmfHCuGwoOt1I3yrkgF0awfPlYREOqQHM5851h-SD416iQKsVMwPS4TbaeqvT3DyQdfFVfjksKF9zLWDyiJ6_bVqPXGtuPSx_bF3inBiwmjfBX9SKlM8rmTm6zYYlMv7m4s"/>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white text-white hover:text-black transition-colors">
+<span class="material-icons-round text-lg">play_arrow</span>
+</button>
+</div>
+<div class="absolute bottom-3 right-3 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-lg shadow-red-900/20 backdrop-blur-sm">
+                            LIVE <span class="material-icons-round text-[10px]">visibility</span> 12k
+                        </div>
+</div>
+<div class="p-4 relative">
+<div class="absolute -top-6 left-4 w-10 h-1 bg-primary rounded-t-lg shadow-[0_0_10px_rgba(14,165,233,0.6)]"></div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-white text-lg group-hover:text-primary transition-colors">Wild Kingdom</h3>
+<span class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">1080p</span>
+</div>
+<p class="text-sm text-slate-500 mb-3 truncate">African Safari: The Great Migration</p>
+<div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 bg-gradient-to-r from-primary to-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 75%"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-medium text-slate-500">45:00</span>
+<span class="text-[10px] font-medium text-slate-600">60:00</span>
+</div>
+</div>
+</div>
+<div class="group glass-card rounded-2xl overflow-hidden cursor-pointer">
+<div class="relative aspect-video overflow-hidden">
+<img alt="Event" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8FEH4MquhEuhwfvt08PZYtah7MqbpZCbVEEeyR-yStMs5mM4BEd8SokCm6Ufl1qGHxmxq3h3fcHIjDcprxoiqNpoFLgR2DLYZyZXEwMqgCMvydL_dnF4jQMDMTADvgKIO9oENp45uzblEc-j7qmblsWzsYEyrPCz1Qf7pvTFiATuEVp744PpK_ezNb_iF32eC6Ox5U17FeONtwVl0bmCQaeor57GXxYKEe2uPF42Zyebg23eX23rae0l05nWvwEjqFch2wBb2uPOp"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/5 text-white font-bold text-[10px] tracking-wider">
+                            ESPN
+                        </div>
+<div class="absolute bottom-3 right-3 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-lg shadow-red-900/20 backdrop-blur-sm">
+                            LIVE <span class="material-icons-round text-[10px]">visibility</span> 842k
+                        </div>
+</div>
+<div class="p-4 relative">
+<div class="absolute -top-6 left-4 w-10 h-1 bg-primary rounded-t-lg shadow-[0_0_10px_rgba(14,165,233,0.6)]"></div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-white text-lg group-hover:text-primary transition-colors">Sports Center</h3>
+<span class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">4K</span>
+</div>
+<p class="text-sm text-slate-500 mb-3 truncate">Live Analysis: Super Bowl Preview</p>
+<div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 bg-gradient-to-r from-primary to-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 30%"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-medium text-slate-500">15:20</span>
+<span class="text-[10px] font-medium text-slate-600">90:00</span>
+</div>
+</div>
+</div>
+<div class="group glass-card rounded-2xl overflow-hidden cursor-pointer">
+<div class="relative aspect-video overflow-hidden">
+<img alt="Movies" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYS9GF8EJS-NVyRn-P2Xa2VkwclmfLChS_xqkFomKkHUITupi2R_t0QOuWStRwFAN19ptIW3cu10rn3U92488M3wa1sRIWnJ4c_wVtSV8k5D7OeXscXOKbvoBrQ9owG3AK-0I1CG2GqOoIcozssl91tG6klxqwkZOkJ2jRiRa9zG7z_FmkVv2moYONp8S6tt4pOAmZD4XBQJRbCKE040cJmePrtSoz31FtBLcgjx5unoLTWSufbjyKns4_5_9ePpjGct0Xf_3uta0u"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/5 text-white font-bold text-[10px] tracking-wider">
+                            HBO
+                        </div>
+<div class="absolute bottom-3 right-3 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-lg shadow-red-900/20 backdrop-blur-sm">
+                            LIVE
+                        </div>
+</div>
+<div class="p-4 relative">
+<div class="absolute -top-6 left-4 w-10 h-1 bg-primary rounded-t-lg shadow-[0_0_10px_rgba(14,165,233,0.6)]"></div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-white text-lg group-hover:text-primary transition-colors">HBO Signature</h3>
+<span class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">HD</span>
+</div>
+<p class="text-sm text-slate-500 mb-3 truncate">Inception (2010)</p>
+<div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 bg-gradient-to-r from-primary to-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 90%"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-medium text-slate-500">138:00</span>
+<span class="text-[10px] font-medium text-slate-600">148:00</span>
+</div>
+</div>
+</div>
+<div class="group glass-card rounded-2xl overflow-hidden cursor-pointer">
+<div class="relative aspect-video overflow-hidden">
+<img alt="News" class="w-full h-full object-cover grayscale-[20%] transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBe-qBPpqPlIu161D4r9HYVHrLzq0aH2QNpkAqrO1GHhXM0Yn4cwyjWmDxd_x3LQpBukPBx_2xdQk2zU95KE_vQBa3yHMIWzE7lmSGf0sk2o0j05w_eXlEdkFZEER97R-AdHlC_gV57ThquJQkpMHn0vLJUlhHZgijMzNu4p9IUJ5hJthMFzJnCk3F5IXALCro8KqMi2Nk0YPnn3ToAd90poGpWDjd1DzXOeZ0BRkD4FNcD4Q5DgdXBvdtTpo0Ye2mhTHUOFw31OBpQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/5 text-white font-bold text-[10px] tracking-wider">
+                            CNN
+                        </div>
+<div class="absolute bottom-3 right-3 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-lg shadow-red-900/20 backdrop-blur-sm">
+                            LIVE <span class="material-icons-round text-[10px]">visibility</span> 55k
+                        </div>
+</div>
+<div class="p-4 relative">
+<div class="absolute -top-6 left-4 w-10 h-1 bg-primary rounded-t-lg shadow-[0_0_10px_rgba(14,165,233,0.6)]"></div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-white text-lg group-hover:text-primary transition-colors">CNN International</h3>
+<span class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">HD</span>
+</div>
+<p class="text-sm text-slate-500 mb-3 truncate">Breaking: Market Updates</p>
+<div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 bg-gradient-to-r from-primary to-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 10%"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-medium text-slate-500">05:00</span>
+<span class="text-[10px] font-medium text-slate-600">30:00</span>
+</div>
+</div>
+</div>
+<div class="group glass-card rounded-2xl overflow-hidden cursor-pointer">
+<div class="relative aspect-video overflow-hidden">
+<img alt="Kids" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqMgQK1wxf7_KrwySOj_KRPXqna61qwCWGq25l6qctWzWaIewkD7EF41pLzRweT1q6y_-l0RuBE7Co1slg924BGtxuOwLzBPp7LnHdSkFULoZmu8zHWTciz5JSpCnXf3-4pi9Dlt-lg7dnnKiKfnbif2lEmu9wV_VYwS9KrroXSMMYExQUv4whKSror-cer8ImFru8m68WNfkHGD3Bs7zhxiv_yyHLgmCLjlNNR2MxHThTEKbn7gQl24SUGunO9RdFyyV8VNbsdfKA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/5 text-white font-bold text-[10px] tracking-wider">
+                            DISNEY
+                        </div>
+<div class="absolute bottom-3 right-3 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-lg shadow-red-900/20 backdrop-blur-sm">
+                            LIVE
+                        </div>
+</div>
+<div class="p-4 relative">
+<div class="absolute -top-6 left-4 w-10 h-1 bg-primary rounded-t-lg shadow-[0_0_10px_rgba(14,165,233,0.6)]"></div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-white text-lg group-hover:text-primary transition-colors">Disney Channel</h3>
+<span class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">HD</span>
+</div>
+<p class="text-sm text-slate-500 mb-3 truncate">Bluey Marathon</p>
+<div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 bg-gradient-to-r from-primary to-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 55%"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-medium text-slate-500">12:30</span>
+<span class="text-[10px] font-medium text-slate-600">22:00</span>
+</div>
+</div>
+</div>
+<div class="group glass-card rounded-2xl overflow-hidden cursor-pointer">
+<div class="relative aspect-video overflow-hidden">
+<img alt="Music" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiEbkAuQlye7bh4tBQt75RGk-A8dfQ4TBk3IS7Va0Y94Pvtq4OXseW5PMXqVb8cGaYOHgNE9Jca2KCUNDHmeKrWN3NlXi97hRMSdepjoeUt1okjwNohtbrQrUWPQJWpwe8aHsnfaMikylC951mzZhF1kXCuhvrTZe07OQbVV9XcoWzBZZTjV74G-poUd8z_TbfkBmjtVAn2OUWeuO64cNzx2IoB8Lc4asRt6FJPrl2F3JNq-WuwTbU5uG9Wl_kWXKNkL2Lv-Gc_B2u"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/5 text-white font-bold text-[10px] tracking-wider">
+                            MTV
+                        </div>
+<div class="absolute bottom-3 right-3 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-lg shadow-red-900/20 backdrop-blur-sm">
+                            LIVE
+                        </div>
+</div>
+<div class="p-4 relative">
+<div class="absolute -top-6 left-4 w-10 h-1 bg-primary rounded-t-lg shadow-[0_0_10px_rgba(14,165,233,0.6)]"></div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-white text-lg group-hover:text-primary transition-colors">MTV Live</h3>
+<span class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">HD</span>
+</div>
+<p class="text-sm text-slate-500 mb-3 truncate">Top 20 Hits of the Week</p>
+<div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 bg-gradient-to-r from-primary to-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 82%"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-medium text-slate-500">41:00</span>
+<span class="text-[10px] font-medium text-slate-600">50:00</span>
+</div>
+</div>
+</div>
+<div class="group glass-card rounded-2xl overflow-hidden cursor-pointer">
+<div class="relative aspect-video overflow-hidden">
+<img alt="History" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-owkRxKlB2QQvsm4PZ82ECqiGnDGnwNf6TZ43Rfen5p9_iSdHzno5C4uTSQwfQSkqPXDm1EhNHy6GJgFBB3nB9pnpehCuEcxFijneKWNcWoYzBeZ05fRIjU9kp6qzxPYVg5EFbBzdV1kqibRXgcmigAKclmzCUJ4DsOKw4wtnUDC1nfVHTwWxfon9RWDBLtuRKUebFPkWoXQwNVxQZUiqyj1UxMs76Il_yukOO1AX409A1ywYcF9r6PChxCReBSawMzsU8wcWGoKX"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/5 text-white font-bold text-[10px] tracking-wider">
+                            HISTORY
+                        </div>
+<div class="absolute bottom-3 right-3 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-lg shadow-red-900/20 backdrop-blur-sm">
+                            LIVE
+                        </div>
+</div>
+<div class="p-4 relative">
+<div class="absolute -top-6 left-4 w-10 h-1 bg-primary rounded-t-lg shadow-[0_0_10px_rgba(14,165,233,0.6)]"></div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-white text-lg group-hover:text-primary transition-colors">History Channel</h3>
+<span class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">HD</span>
+</div>
+<p class="text-sm text-slate-500 mb-3 truncate">Ancient Aliens: The Verdict</p>
+<div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 bg-gradient-to-r from-primary to-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 15%"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-medium text-slate-500">07:00</span>
+<span class="text-[10px] font-medium text-slate-600">45:00</span>
+</div>
+</div>
+</div>
+<div class="group glass-card rounded-2xl overflow-hidden cursor-pointer">
+<div class="relative aspect-video overflow-hidden">
+<img alt="Business" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpur3MbKRDXTxKqsyYWyhEaC_ANz9N2j1Ff2aLzPRbTSTAPkq812ZAUm68Z3eiyLTTl6L6mblohtd-vi9lUh8iu4jEop40LaaDY-ZkpfNfGu2QeX85BHtSgYxe0ZFV6Aases9wN4B9LDuJa57Efp9zw6nvkcoYo46fkTrpuHRiBnPhkiWYVBioTF4X9UbsDucWisbllG-Mhbj7JvTXCyX5H_noFuaPlMX1BisRuqUWr7otKku8W7B-KWisXphK1olJUv95xHfYAd1h"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/5 text-white font-bold text-[10px] tracking-wider">
+                            BLOOM
+                        </div>
+<div class="absolute bottom-3 right-3 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-lg shadow-red-900/20 backdrop-blur-sm">
+                            LIVE <span class="material-icons-round text-[10px]">visibility</span> 1.2k
+                        </div>
+</div>
+<div class="p-4 relative">
+<div class="absolute -top-6 left-4 w-10 h-1 bg-primary rounded-t-lg shadow-[0_0_10px_rgba(14,165,233,0.6)]"></div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-bold text-white text-lg group-hover:text-primary transition-colors">Bloomberg TV</h3>
+<span class="text-[10px] font-bold text-slate-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">HD</span>
+</div>
+<p class="text-sm text-slate-500 mb-3 truncate">Tech: The Next 10 Years</p>
+<div class="relative w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 bg-gradient-to-r from-primary to-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]" style="width: 95%"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-medium text-slate-500">55:00</span>
+<span class="text-[10px] font-medium text-slate-600">60:00</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

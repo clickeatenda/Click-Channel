@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Click Channel - Movies Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined|Material+Icons+Round" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0F172A", 
+              "background-light": "#E2E8F0", 
+              "background-dark": "#000000",
+              "glass-border": "rgba(255, 255, 255, 0.05)",
+              "accent-blue": "#3b82f6",
+            },
+            fontFamily: {
+              display: ['"Plus Jakarta Sans"', 'sans-serif'],
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              'xl': "1.5rem",
+              '2xl': "2rem",
+              '3xl': "2.5rem",
+            },
+          },
+        },
+      };
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020203;background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.03) 0px, transparent 50%), 
+                radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.03) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.03) 0px, transparent 50%);background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(5, 5, 8, 0.85);backdrop-filter: blur(50px);
+            -webkit-backdrop-filter: blur(50px);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.015);backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+        .active-pill {
+            background: rgba(59, 130, 246, 0.1);border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #93c5fd;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .group:hover .poster-overlay {
+            opacity: 1;
+        }
+        .poster-overlay {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-white min-h-screen flex items-center justify-center p-4 lg:p-6 transition-colors duration-300">
+<main class="w-full max-w-[1600px] h-[92vh] rounded-3xl overflow-hidden relative shadow-2xl glass-panel flex flex-col ring-1 ring-white/5">
+<div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[120px] -z-10 pointer-events-none mix-blend-screen"></div>
+<div class="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[120px] -z-10 pointer-events-none mix-blend-screen"></div>
+<header class="flex items-center justify-between px-8 py-6 z-20 border-b border-white/5 bg-black/40 backdrop-blur-xl"> 
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-700 flex items-center justify-center shadow-lg shadow-cyan-500/10 ring-1 ring-white/10">
+<span class="material-icons-round text-white text-xl">smart_toy</span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight text-white font-display">Click <span class="text-cyan-500">Channel</span></h1>
+</div>
+<nav class="hidden md:flex bg-black/40 backdrop-blur-md rounded-full p-1 gap-1 border border-white/5 shadow-inner">
+<button class="px-6 py-2 rounded-full bg-white/5 text-white font-medium text-sm transition hover:bg-white/10 shadow-sm border border-white/5">Movies</button>
+<button class="px-6 py-2 rounded-full text-gray-500 font-medium text-sm hover:text-gray-200 hover:bg-white/5 transition">Series</button>
+<button class="px-6 py-2 rounded-full text-gray-500 font-medium text-sm hover:text-gray-200 hover:bg-white/5 transition">Originals</button>
+<div class="w-px h-6 bg-white/5 my-auto mx-1"></div>
+<button class="px-4 py-2 rounded-full text-gray-500 hover:text-white transition flex items-center justify-center hover:bg-white/5">
+<span class="material-icons-outlined text-xl">search</span>
+</button>
+</nav>
+<div class="flex items-center gap-5">
+<button class="relative group p-2 rounded-full hover:bg-white/5 transition">
+<span class="material-icons-outlined text-gray-400 text-2xl group-hover:text-white transition">notifications</span>
+<span class="absolute top-1.5 right-1.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#0B1120]">3</span>
+</button>
+<div class="flex items-center gap-3 pl-5 border-l border-white/5">
+<div class="flex flex-col items-end hidden lg:block">
+<p class="text-sm font-bold leading-tight text-gray-200">Sarah J</p>
+<p class="text-xs text-cyan-500 font-medium">Premium</p>
+</div>
+<img alt="Sarah J Profile" class="w-10 h-10 rounded-full object-cover border-2 border-white/5 shadow-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV2hPfYY-pcszQz2I0nsy541ZR6y7TM2z3gOnjy741PVrd4trxcgWc8g_30S0KlVgrL9kIo_AUgHCDJTjfnGVeIGeMDZ8EFGQuO_LSmoz92hVGBpbb2GOnINn4a9pLhunY4X0bUIEYEKnd7ebyfXq4EAXRPumoglQ4vsDMOMFIEtWyUWpxVBwnOYEsXLueR7DTa9CuJwx7kW93YSX45F1JkAQbbt_2gDoiKfkYGwmeoLmXLF-HohYPJApn77j01lhns6FHjvGfG8Sk"/>
+<button class="text-gray-400 hover:text-white transition">
+<span class="material-icons-round">expand_more</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto no-scrollbar px-8 pb-8 pt-6 z-10 space-y-8">
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="relative h-80 rounded-[2rem] overflow-hidden group cursor-pointer shadow-2xl ring-1 ring-white/5 bg-[#020203]"> 
+<img alt="The Adventure of Blue Sword Poster" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuFNtWrFgqkRdHb_mpYIjow6HSAePURiXx3VOUIqRF3Azo-XGwBo_K4-yMarMXs0Nxt2epz05HJzTeH4PBvY0eNiPA9ULsj8EFzSIMo_pY0ow9zixV1QQYT72xlMSF_OR6wPJr77xAmHNH8itf6lx9sCtnbPyP2qnxtBOVcJcN1SHZj-PDsu90_bjRUXFRObwZNemAdPBDt72ev17bZLCihv4Zflr3mIkkfQR8KJqU4QRhvb8uP0uufvKqJIdsvPIRdeKiaqBSjgfg"/> 
+<div class="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
+<div class="absolute inset-0 p-10 flex flex-col justify-center items-start">
+<span class="px-3 py-1 rounded-lg bg-cyan-500/10 text-cyan-300 text-xs font-bold border border-cyan-500/20 mb-4 backdrop-blur-sm">FEATURED</span>
+<h2 class="text-4xl lg:text-5xl font-bold text-white leading-tight max-w-md drop-shadow-lg mb-6 font-display">
+                        The <br/> Adventure of <br/> <span class="text-cyan-500">Blue Sword</span>
+</h2>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition font-bold text-sm shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+<span class="material-icons-round text-lg">play_arrow</span>
+                            Watch Now
+                        </button>
+<button class="p-3 rounded-full bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition text-white">
+<span class="material-icons-round">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="relative h-80 rounded-[2rem] overflow-hidden group cursor-pointer shadow-2xl ring-1 ring-white/5 bg-[#020203]">
+<img alt="Recalling the Journey of Dol Poster" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzGun07AATMi5zCLi6Zhidon08chJYyXXU6n9kveAr8ejS6lg12vIDvUvsm05TZwxsixEk-0yFiMs-0fhi5-N0auTYFnQAb91KHr1mlwLwB--B7zj3f1a9meyqEg1ZYMm7Hqpv96RPtEYuy5NqHM0V1LaAKoH23pw5ljDkictCfK5B0lFx03qAwczMdxGacXEs37ebxELBDk99fluiSz5TJETOXoVvdWqVzi1YBYtRBNPH2O9n47zORu4NKVgSQsEZyF_cx4m35iZ5"/>
+<div class="absolute inset-0 bg-gradient-to-r from-[#0f0518] via-[#0f0518]/70 to-transparent mix-blend-multiply"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+<div class="absolute inset-0 p-10 flex flex-col justify-center items-start z-10">
+<div class="bg-yellow-500 text-black text-xs font-black px-2 py-0.5 rounded mb-4 self-start shadow-lg shadow-yellow-500/20">NEW RELEASE</div>
+<h2 class="text-3xl lg:text-4xl font-bold text-white leading-tight max-w-sm drop-shadow-md mb-6 font-display">
+                        Recalling the <br/> journey of <span class="text-purple-400">Dol's</span> <br/> exciting story
+                    </h2>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 bg-white/5 backdrop-blur-md hover:bg-white/10 text-white px-6 py-3 rounded-full transition border border-white/10 font-medium text-sm group-hover:border-white/20">
+<span class="material-icons-round text-lg">play_arrow</span>
+                            Watch Trailer
+                        </button>
+</div>
+</div>
+<img alt="Character overlay" class="absolute bottom-0 right-0 w-3/5 h-auto object-contain z-0 opacity-0 translate-y-10 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJ_YLTk8ly3z_q1SPPLrm8SbNlZIcuqxFus7vz3CXaIkoodk17bLuwNINcMkOnlZgiFDz62I3EQ94pcEgxT-z9egdYXMtgccmz7AW5KiLQ5mHLHB-LFNoA4i0atGPEuDIi_Vy3HTEoRSzL-OeM7iSwUd1ZyR0JvUS6Hz9Lc9wWraufivXQfOmSa3OgUeI8y46FO_V0d41UMXUy2KflopYU75A17Q6_ZncC6_f2xqFsEFx88ixI2LtxNs4w7liCWIl3jQgUsbqZ39nA"/>
+</div>
+</section>
+<section class="flex flex-wrap items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+<button class="flex items-center gap-2 px-5 py-3 rounded-2xl glass-card text-gray-400 hover:text-gray-200 min-w-[130px] justify-center group">
+<span class="material-icons-outlined group-hover:text-orange-400 transition text-gray-500">local_fire_department</span>
+<span class="font-medium text-sm">Trending</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-3 rounded-2xl glass-card text-gray-400 hover:text-gray-200 min-w-[130px] justify-center group">
+<span class="material-icons-outlined group-hover:text-red-400 transition text-gray-500">swords</span>
+<span class="font-medium text-sm">Action</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-3 rounded-2xl glass-card text-gray-400 hover:text-gray-200 min-w-[130px] justify-center group">
+<span class="material-icons-round group-hover:text-pink-400 transition text-gray-500">favorite</span>
+<span class="font-medium text-sm">Romance</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-3 rounded-2xl active-pill min-w-[130px] justify-center">
+<span class="material-icons-outlined text-cyan-400">smart_toy</span>
+<span class="font-medium text-sm">Animation</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-3 rounded-2xl glass-card text-gray-400 hover:text-gray-200 min-w-[130px] justify-center group">
+<span class="material-icons-outlined group-hover:text-purple-400 transition text-gray-500">sentiment_very_dissatisfied</span>
+<span class="font-medium text-sm">Horror</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-3 rounded-2xl glass-card text-gray-400 hover:text-gray-200 min-w-[130px] justify-center group">
+<span class="material-icons-round group-hover:text-yellow-400 transition text-gray-500">star</span>
+<span class="font-medium text-sm">Special</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-3 rounded-2xl glass-card text-gray-400 hover:text-gray-200 min-w-[130px] justify-center group">
+<span class="material-icons-outlined group-hover:text-indigo-400 transition text-gray-500">nightlight_round</span>
+<span class="font-medium text-sm">Drakor</span>
+</button>
+</section>
+<div class="flex items-center justify-between mt-2">
+<h3 class="text-2xl font-bold text-white tracking-wide">Trending in <span class="text-cyan-500">Animation</span></h3>
+<div class="flex bg-black/40 backdrop-blur-sm border border-white/5 text-white rounded-full p-1 gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition text-gray-400 hover:text-white">
+<span class="material-icons-round text-sm">sort</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition text-gray-400 hover:text-white">
+<span class="material-icons-outlined text-sm">filter_alt</span>
+</button>
+</div>
+</div>
+<section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 pb-4">
+<div class="group flex flex-col gap-3">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-lg cursor-pointer bg-[#020203] ring-1 ring-white/5">
+<img alt="Loetoeng Kasarung" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIjvXofJXI3418ss4a9Rx3uACrnKOPratCY0NDZVE9GkImGJ3_WD-0wO18gM0OacMTeIooMk0k1x8hjHMZTyGSPiCUfkNQpZPNH0i9DX1KDCKuU1b8ob6hAJv_zfrP_la0ARMyxTpNqBZMES2webkMSjMi_VN1hJPs4gL_k9qZnWLEKVbQotCGL7tIxdcbYYB4mfiot-AzNBr0mRxEz8wbBKRVDpGpaiHQyR4rJPJr7_HtNoGxM_EwWKBX1xd1LNjBnEL3itrzmufv"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="poster-overlay absolute inset-0 flex items-center justify-center gap-3 z-20">
+<button class="bg-white text-black rounded-full p-3 hover:scale-110 transition shadow-lg shadow-white/10">
+<span class="material-icons-round">play_arrow</span>
+</button>
+</div>
+<div class="absolute bottom-4 left-0 right-0 text-center px-2 z-10 group-hover:opacity-0 transition-opacity">
+<h4 class="text-white font-serif font-bold text-xl drop-shadow-lg tracking-wider">LOETOENG <br/> KASAARUNG</h4>
+</div>
+</div>
+<div class="px-1">
+<h4 class="font-semibold text-gray-200 truncate text-sm">Loetoeng Kasarung</h4>
+<div class="flex items-center gap-3 text-xs text-gray-500 mt-1">
+<div class="flex items-center gap-1 text-orange-400">
+<span class="material-icons-round text-[14px]">star</span>
+<span class="font-bold">7.8</span>
+</div>
+<span class="text-white/10">|</span>
+<span>2023</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-lg cursor-pointer bg-[#020203] ring-1 ring-white/5">
+<img alt="Gajah Langka" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA1-daAxE6ucf8COCIjq31EJbZtaObECjhrEFytSxoEMVNsq5EzkO6hX4KCKF4idPV9nyNHQGgzhOk7LR4Az8i0msQrEODrdaYTIBGHAtxm1boWSMTuTiWZnxyl6yoQm9CVWSYjJCOYz2vBFIOz97yVXm5to0MyxOPJel5dxWUm-qBKsMRogbBd-pIZ4mMdDJDhgOvifnMrz5GUb_Y0GC2GcQil2ReUtXlJzI1jt7r4MyUQVWKfOmMmjaaaUQURKyQKBY52XSRQlgr"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+<div class="poster-overlay absolute inset-0 flex items-center justify-center gap-3 z-20">
+<button class="bg-white text-black rounded-full p-3 hover:scale-110 transition shadow-lg shadow-white/10">
+<span class="material-icons-round">play_arrow</span>
+</button>
+</div>
+</div>
+<div class="px-1">
+<h4 class="font-semibold text-gray-200 truncate text-sm">Gajah Langka</h4>
+<div class="flex items-center gap-3 text-xs text-gray-500 mt-1">
+<div class="flex items-center gap-1 text-orange-400">
+<span class="material-icons-round text-[14px]">star</span>
+<span class="font-bold">6.0</span>
+</div>
+<span class="text-white/10">|</span>
+<span>2023</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-lg cursor-pointer bg-orange-950 ring-1 ring-white/5">
+<img alt="Si Kang Satay" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcm3HlIETUtJGV7A_ArQyX93JAkbeWdzNrKqnXsSK2xbOKcDh69jVbRDuk-FWEhWhcJ-Qq-lTcayuKNsHXLTrOexC8G3GTwNsv7qW5LeN7eAjz3V2rppWkgV96nPQKLAQYfMYRCguB0V42ntWThiFTmafAz0GM1Xq-6mptEY1G6SJBhhB9YFiN6RZyW7oputAzKvcxYuuN514vpnEnm_mlL7vQ5JKuoRlmJvHonfdJ8XfYAwCEAV0dRbFLdXxW9XzNdKVhFRjKpnfc"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+<div class="absolute top-4 left-0 right-0 text-center z-10 group-hover:opacity-0 transition-opacity">
+<h4 class="text-orange-200 font-serif font-bold text-lg drop-shadow-md">Kang Satay</h4>
+</div>
+<div class="poster-overlay absolute inset-0 flex items-center justify-center gap-3 z-20">
+<button class="bg-white text-black rounded-full p-3 hover:scale-110 transition shadow-lg shadow-white/10">
+<span class="material-icons-round">play_arrow</span>
+</button>
+</div>
+</div>
+<div class="px-1">
+<h4 class="font-semibold text-gray-200 truncate text-sm">Si Kang Satay</h4>
+<div class="flex items-center gap-3 text-xs text-gray-500 mt-1">
+<div class="flex items-center gap-1 text-orange-400">
+<span class="material-icons-round text-[14px]">star</span>
+<span class="font-bold">7.1</span>
+</div>
+<span class="text-white/10">|</span>
+<span>2023</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-lg cursor-pointer bg-[#020203] ring-1 ring-white/5">
+<img alt="Mommy Cat" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 grayscale group-hover:grayscale-0 transition-all opacity-80 group-hover:opacity-100" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiaxXggDFT4f_7E8KTtCJ4AG4DOW5lo14SpeB_NCYEQYhyd286_bPlEASPTAzZt4VRb9iGUmFrdeLj_v6eGv8cfWfuqRyQT6wvty7dUjgprTdgAinxrA_IrwYs8gWLvGA6GLwbPUFSIOJJ_YwmQ5I9hVanAQN1j24Yy3LIqLL8Hds8qDL22rwnwMm-xiiII4x8TU7Z3ssBLq3PmKZbmhfh3pc-8U0HeFi4EGmQU1Cv6P844PMmXd2QXU_Gh8bVvhL9lb1tyIxhjZNw"/>
+<div class="absolute inset-0 flex flex-col items-center justify-center p-4 group-hover:opacity-0 transition-opacity">
+<h4 class="text-white font-bold text-2xl text-center leading-none drop-shadow-md">Mommy <br/> cat</h4>
+</div>
+<div class="poster-overlay absolute inset-0 flex items-center justify-center gap-3 z-20">
+<button class="bg-white text-black rounded-full p-3 hover:scale-110 transition shadow-lg shadow-white/10">
+<span class="material-icons-round">play_arrow</span>
+</button>
+</div>
+</div>
+<div class="px-1">
+<h4 class="font-semibold text-gray-200 truncate text-sm">Mommy Cat</h4>
+<div class="flex items-center gap-3 text-xs text-gray-500 mt-1">
+<div class="flex items-center gap-1 text-orange-400">
+<span class="material-icons-round text-[14px]">star</span>
+<span class="font-bold">7.8</span>
+</div>
+<span class="text-white/10">|</span>
+<span>2023</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-lg cursor-pointer bg-[#020203] ring-1 ring-white/5">
+<img alt="Hijaber Cantiq" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgvAlthBzkM94pqwses0iy8afNzfwK3r4pdpVMe9BdYifbjjfOkCiJ39C31aHfMqMMInqCobTH_bQ2yOQzkSLzegggnEtciiE3ATGxnM61zznhgWOifdGMgkk-I9tI0B1aPbE3530UUbB-vdSpMwaTbP-BUb5z5GqeUa-3qk8V2s-bnKkAMe7YYNWmjcTOB_MRpFzTZ-rihCgS5ejb_TULa2aVmkb_lmNLF1JV77JkZJRuHZZa5Rl3mtNQ4esdJ_puQRUYT9khg_yY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+<div class="absolute bottom-1/3 left-0 right-0 text-center rotate-[-5deg] group-hover:opacity-0 transition-opacity">
+<h4 class="text-white font-bold text-2xl tracking-tight drop-shadow-md">CANTIK</h4>
+</div>
+<div class="poster-overlay absolute inset-0 flex items-center justify-center gap-3 z-20">
+<button class="bg-white text-black rounded-full p-3 hover:scale-110 transition shadow-lg shadow-white/10">
+<span class="material-icons-round">play_arrow</span>
+</button>
+</div>
+</div>
+<div class="px-1">
+<h4 class="font-semibold text-gray-200 truncate text-sm">Hijaber Cantiq</h4>
+<div class="flex items-center gap-3 text-xs text-gray-500 mt-1">
+<div class="flex items-center gap-1 text-orange-400">
+<span class="material-icons-round text-[14px]">star</span>
+<span class="font-bold">6.1</span>
+</div>
+<span class="text-white/10">|</span>
+<span>2023</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col gap-3">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-lg cursor-pointer bg-[#020203] ring-1 ring-white/5">
+<img alt="Xatra- X" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVk5fWd86Xlhb1jB-zd5BNHH8i7CbMWeJFcchuQ0GSExxFstltveq100b8aAX97rcQ0slGJWLj6KwsmGLbiWeodwU00HFKnvInBZVKgdPP1bnxwAyM9kxVJifdjahMT9HwxeBrgLbtgZs6-KsB554t-r9oF5Te4HC49VKTBffIHNBM5qLnRx0LdhBRKsXnDYs87gTZ9lMJPBpPB5fKYAP0hS_Wvokwpvq0_tvumvTFdcbUsy5X6J37qEQ885j9a25IMmcRJBTbK76u"/>
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-black"></div>
+<div class="absolute top-1/2 left-0 right-0 text-center -translate-y-1/2 group-hover:opacity-0 transition-opacity">
+<h4 class="text-white/90 font-bold text-3xl font-serif tracking-widest drop-shadow-lg">HATRX</h4>
+</div>
+<div class="poster-overlay absolute inset-0 flex items-center justify-center gap-3 z-20">
+<button class="bg-white text-black rounded-full p-3 hover:scale-110 transition shadow-lg shadow-white/10">
+<span class="material-icons-round">play_arrow</span>
+</button>
+</div>
+</div>
+<div class="px-1">
+<h4 class="font-semibold text-gray-200 truncate text-sm">Xatra- X</h4>
+<div class="flex items-center gap-3 text-xs text-gray-500 mt-1">
+<div class="flex items-center gap-1 text-orange-400">
+<span class="material-icons-round text-[14px]">star</span>
+<span class="font-bold">6.5</span>
+</div>
+<span class="text-white/10">|</span>
+<span>2022</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+
+</body></html>
