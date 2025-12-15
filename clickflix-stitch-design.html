@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClickFlix - Stitch Design (Glassmorphism)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #111318;
+            --bg-darker: #0F1620;
+            --primary: #E11D48;
+            --primary-light: #EC4C63;
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --error: #FF6B6B;
+            --success: #51CF66;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(to bottom, #111318, #0F1620);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* GLASS EFFECT BASE */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+        }
+
+        /* HEADER */
+        .header {
+            display: none;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 16px 32px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header.active {
+            display: flex;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-btn:hover,
+        .nav-btn.active {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-btn.active {
+            background: var(--primary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* MAIN CONTENT */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* LOGIN SCREEN */
+        .login-container {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+        }
+
+        .login-container.hidden {
+            display: none;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin: 0 auto 24px;
+            box-shadow: 0 20px 50px rgba(225, 29, 72, 0.3);
+        }
+
+        .login-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .auth-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .auth-tab.active {
+            color: var(--text-primary);
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .auth-form {
+            padding: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .glass-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .glass-input:focus {
+            outline: none;
+            background: rgba(225, 29, 72, 0.1);
+            border-color: var(--primary);
+        }
+
+        .glass-input.error {
+            border-color: var(--error);
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 8px;
+        }
+
+        .forgot-password a {
+            font-size: 12px;
+            color: var(--primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: var(--primary-light);
+        }
+
+        .error-message {
+            font-size: 12px;
+            color: var(--error);
+            margin-top: 4px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .glass-button {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 24px;
+        }
+
+        .glass-button:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .glass-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .divider-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .social-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .social-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        /* HOME SCREEN */
+        .home-container {
+            display: none;
+        }
+
+        .home-container.active {
+            display: block;
+        }
+
+        .hero-section {
+            margin-bottom: 48px;
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+            height: 400px;
+            background: linear-gradient(135deg, rgba(225, 29, 72, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%);
+            display: flex;
+            align-items: flex-end;
+            padding: 32px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 600px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(225, 29, 72, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .hero-title {
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .hero-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .hero-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hero-button:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        /* CATEGORIES SECTION */
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+
+        .category-card {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .category-icon {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .category-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* DEMO CREDENTIALS */
+        .demo-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(81, 207, 102, 0.2);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--success);
+            max-width: 250px;
+            z-index: 1000;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+
+            .header-left {
+                gap: 16px;
+                order: 1;
+                width: 100%;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            .header-right {
+                order: 2;
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .hero-section {
+                height: 300px;
+                padding: 20px;
+            }
+
+            .hero-title {
+                font-size: 24px;
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .login-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header" id="header">
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">🎬</div>
+                ClickFlix
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-screen="home">Home</button>
+                <button class="nav-btn" data-screen="categories">Categories</button>
+                <button class="nav-btn" data-screen="live">Live TV</button>
+            </nav>
+        </div>
+        <div class="header-right">
+            <button class="icon-btn" title="Notificações">🔔</button>
+            <button class="icon-btn" title="Buscar">🔍</button>
+            <div class="user-avatar" id="userInitials">SJ</div>
+            <button class="icon-btn" title="Logout" onclick="logout()">🚪</button>
+        </div>
+    </header>
+
+    <!-- LOGIN SCREEN -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="login-logo">🎬</div>
+                <h1 class="login-title">ClickFlix</h1>
+                <p class="login-subtitle">Seu portal de streaming premium</p>
+            </div>
+
+            <div class="auth-card">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab(0)">Login</button>
+                    <button class="auth-tab" onclick="switchAuthTab(1)">Register</button>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <div class="auth-form" id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="loginEmail" class="glass-input" placeholder="seu@email.com">
+                        <div class="error-message" id="loginEmailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="loginPassword" class="glass-input" placeholder="••••••••">
+                        <div class="error-message" id="loginPasswordError"></div>
+                    </div>
+                    <div class="forgot-password">
+                        <a href="#">Forgot password?</a>
+                    </div>
+                    <button type="button" class="glass-button" onclick="handleLogin()">Sign In</button>
+
+                    <div class="divider">
+                        <div class="divider-line"></div>
+                        <div class="divider-text">Or continue with</div>
+                        <div class="divider-line"></div>
+                    </div>
+
+                    <div class="social-buttons">
+                        <button type="button" class="social-btn" onclick="alert('Google login')">🔵</button>
+                        <button type="button" class="social-btn" onclick="alert('Apple login')">🍎</button>
+                        <button type="button" class="social-btn" onclick="alert('Web login')">🌐</button>
+                    </div>
+                </div>
+
+                <!-- REGISTER FORM -->
+                <div class="auth-form" id="registerForm" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="registerName" class="glass-input" placeholder="Your name">
+                        <div class="error-message" id="registerNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="registerEmail" class="glass-input" placeholder="seu@email.com">
+                        <div class="error-message" id="registerEmailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="registerPassword" class="glass-input" placeholder="••••••••">
+                        <div class="error-message" id="registerPasswordError"></div>
+                    </div>
+                    <button type="button" class="glass-button" onclick="handleRegister()">Create Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="home-container" id="homeScreen">
+        <div class="container">
+            <!-- HERO SECTION -->
+            <div class="hero-section glass">
+                <div class="hero-content">
+                    <div class="hero-badge">FEATURED</div>
+                    <h2 class="hero-title">Inception</h2>
+                    <p class="hero-meta">Sci-Fi • Thriller • 2h 28m</p>
+                    <button class="hero-button">▶ Watch Now</button>
+                </div>
+            </div>
+
+            <!-- POPULAR CATEGORIES -->
+            <h2 class="section-title">Popular Categories</h2>
+            <div class="categories-grid">
+                <div class="category-card glass">
+                    <div class="category-icon">🔥</div>
+                    <div class="category-name">Action</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">😂</div>
+                    <div class="category-name">Comedy</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">💔</div>
+                    <div class="category-name">Drama</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">😱</div>
+                    <div class="category-name">Horror</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">🚀</div>
+                    <div class="category-name">Sci-Fi</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">💕</div>
+                    <div class="category-name">Romance</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">🎬</div>
+                    <div class="category-name">Animation</div>
+                </div>
+                <div class="category-card glass">
+                    <div class="category-icon">📚</div>
+                    <div class="category-name">Documentary</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEMO CREDENTIALS INFO -->
+    <div class="demo-info">
+        <strong>🔓 Demo Credentials:</strong><br>
+        Email: demo@clickflix.com<br>
+        Password: demo123
+    </div>
+
+    <script>
+        console.log('ClickFlix Auth System Loaded');
+        
+        // Demo credentials
+        const DEMO_USERS = [
+            { email: 'demo@clickflix.com', password: 'demo123', name: 'Demo User' },
+            { email: 'test@test.com', password: 'test123', name: 'Test User' }
+        ];
+
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.classList.remove('show');
+                el.textContent = '';
+            });
+            document.querySelectorAll('.glass-input').forEach(el => el.classList.remove('error'));
+        }
+
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            const inputId = elementId.replace('Error', '');
+            const inputEl = document.getElementById(inputId);
+            
+            if (errorEl && inputEl) {
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+                inputEl.classList.add('error');
+            }
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function handleLogin() {
+            console.log('handleLogin called');
+            clearErrors();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            console.log('Email:', email, 'Password:', password);
+            
+            let hasError = false;
+            
+            if (!email) {
+                showError('loginEmailError', 'Email é obrigatório');
+                hasError = true;
+            } else if (!validateEmail(email)) {
+                showError('loginEmailError', 'Email inválido');
+                hasError = true;
+            }
+            
+            if (!password) {
+                showError('loginPasswordError', 'Senha é obrigatória');
+                hasError = true;
+            } else if (password.length < 4) {
+                showError('loginPasswordError', 'Senha deve ter no mínimo 4 caracteres');
+                hasError = true;
+            }
+            
+            if (hasError) {
+                console.log('Validation failed');
+                return;
+            }
+            
+            // Check credentials
+            const user = DEMO_USERS.find(u => u.email === email && u.password === password);
+            
+            console.log('User found:', user);
+            
+            if (user) {
+                console.log('Authentication successful');
+                goToHome(user);
+            } else {
+                console.log('Authentication failed');
+                showError('loginPasswordError', 'Email ou senha incorretos');
+            }
+        }
+
+        function handleRegister() {
+            console.log('handleRegister called');
+            clearErrors();
+            
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            
+            let hasError = false;
+            
+            if (!name) {
+                showError('registerNameError', 'Nome é obrigatório');
+                hasError = true;
+            }
+            
+            if (!email) {
+                showError('registerEmailError', 'Email é obrigatório');
+                hasError = true;
+            } else if (!validateEmail(email)) {
+                showError('registerEmailError', 'Email inválido');
+                hasError = true;
+            }
+            
+            if (!password) {
+                showError('registerPasswordError', 'Senha é obrigatória');
+                hasError = true;
+            } else if (password.length < 6) {
+                showError('registerPasswordError', 'Senha deve ter no mínimo 6 caracteres');
+                hasError = true;
+            }
+            
+            if (hasError) return;
+            
+            // Register user
+            const newUser = { email, password, name };
+            DEMO_USERS.push(newUser);
+            
+            console.log('User registered:', newUser);
+            alert('✅ Conta criada com sucesso! Faça login para continuar.');
+            
+            // Clear fields and switch to login
+            document.getElementById('registerName').value = '';
+            document.getElementById('registerEmail').value = '';
+            document.getElementById('registerPassword').value = '';
+            switchAuthTab(0);
+        }
+
+        function switchAuthTab(tabIndex) {
+            clearErrors();
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const tabs = document.querySelectorAll('.auth-tab');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            tabs[tabIndex].classList.add('active');
+
+            if (tabIndex === 0) {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
+        }
+
+        function goToHome(user = null) {
+            console.log('goToHome called with user:', user);
+            const displayUser = user || { name: 'User' };
+            const initials = displayUser.name
+                .split(' ')
+                .map(word => word[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
+            
+            document.getElementById('userInitials').textContent = initials;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('homeScreen').classList.add('active');
+            document.getElementById('header').classList.add('active');
+            
+            // Clear login form
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            clearErrors();
+            
+            console.log('Home screen activated');
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                document.getElementById('homeScreen').classList.remove('active');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('header').classList.remove('active');
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                clearErrors();
+                console.log('Logged out');
+            }
+        }
+
+        // Navigation
+        document.querySelectorAll('[data-screen]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Enter key to submit
+        const loginPasswordInput = document.getElementById('loginPassword');
+        const registerPasswordInput = document.getElementById('registerPassword');
+        
+        if (loginPasswordInput) {
+            loginPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+        }
+        if (registerPasswordInput) {
+            registerPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleRegister();
+            });
+        }
+        
+        console.log('ClickFlix Auth System Ready');
+        console.log('Demo users:', DEMO_USERS);
+    </script>
+</body>
+</html>
