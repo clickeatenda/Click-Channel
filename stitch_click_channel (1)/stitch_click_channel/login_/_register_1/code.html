@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StreamFlow - Login / Register</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem", // rounded-lg typically maps to this or 0.5rem
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(16, 22, 34, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+        
+        .input-glass {
+            background: rgba(28, 31, 39, 0.6);
+            border: 1px solid rgba(59, 67, 84, 0.5);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .input-glass:focus-within {
+            border-color: #135bec;
+            background: rgba(28, 31, 39, 0.8);
+            box-shadow: 0 0 0 1px #135bec;
+        }
+        
+        /* Background pattern */
+        .bg-cinema {
+            background-color: #111318;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body class="font-display bg-cinema text-white min-h-screen flex flex-col relative overflow-hidden">
+<!-- Navbar (Minimal) -->
+<header class="flex items-center justify-between px-6 py-4 md:px-10 lg:px-40 absolute w-full top-0 z-10">
+<div class="flex items-center gap-4 text-white">
+<div class="size-8 text-primary">
+<svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M39.5563 34.1455V13.8546C39.5563 15.708 36.8773 17.3437 32.7927 18.3189C30.2914 18.916 27.263 19.2655 24 19.2655C20.737 19.2655 17.7086 18.916 15.2073 18.3189C11.1227 17.3437 8.44365 15.708 8.44365 13.8546V34.1455C8.44365 35.9988 11.1227 37.6346 15.2073 38.6098C17.7086 39.2069 20.737 39.5564 24 39.5564C27.263 39.5564 30.2914 39.2069 32.7927 38.6098C36.8773 37.6346 39.5563 35.9988 39.5563 34.1455Z" fill="currentColor"></path>
+<path clip-rule="evenodd" d="M10.4485 13.8519C10.4749 13.9271 10.6203 14.246 11.379 14.7361C12.298 15.3298 13.7492 15.9145 15.6717 16.3735C18.0007 16.9296 20.8712 17.2655 24 17.2655C27.1288 17.2655 29.9993 16.9296 32.3283 16.3735C34.2508 15.9145 35.702 15.3298 36.621 14.7361C37.3796 14.246 37.5251 13.9271 37.5515 13.8519C37.5287 13.7876 37.4333 13.5973 37.0635 13.2931C36.5266 12.8516 35.6288 12.3647 34.343 11.9175C31.79 11.0295 28.1333 10.4437 24 10.4437C19.8667 10.4437 16.2099 11.0295 13.657 11.9175C12.3712 12.3647 11.4734 12.8516 10.9365 13.2931C10.5667 13.5973 10.4713 13.7876 10.4485 13.8519ZM37.5563 18.7877C36.3176 19.3925 34.8502 19.8839 33.2571 20.2642C30.5836 20.9025 27.3973 21.2655 24 21.2655C20.6027 21.2655 17.4164 20.9025 14.7429 20.2642C13.1498 19.8839 11.6824 19.3925 10.4436 18.7877V34.1275C10.4515 34.1545 10.5427 34.4867 11.379 35.027C12.298 35.6207 13.7492 36.2054 15.6717 36.6644C18.0007 37.2205 20.8712 37.5564 24 37.5564C27.1288 37.5564 29.9993 37.2205 32.3283 36.6644C34.2508 36.2054 35.702 35.6207 36.621 35.027C37.4573 34.4867 37.5485 34.1546 37.5563 34.1275V18.7877ZM41.5563 13.8546V34.1455C41.5563 36.1078 40.158 37.5042 38.7915 38.3869C37.3498 39.3182 35.4192 40.0389 33.2571 40.5551C30.5836 41.1934 27.3973 41.5564 24 41.5564C20.6027 41.5564 17.4164 41.1934 14.7429 40.5551C12.5808 40.0389 10.6502 39.3182 9.20848 38.3869C7.84205 37.5042 6.44365 36.1078 6.44365 34.1455L6.44365 13.8546C6.44365 12.2684 7.37223 11.0454 8.39581 10.2036C9.43325 9.3505 10.8137 8.67141 12.343 8.13948C15.4203 7.06909 19.5418 6.44366 24 6.44366C28.4582 6.44366 32.5797 7.06909 35.657 8.13948C37.1863 8.67141 38.5667 9.3505 39.6042 10.2036C40.6278 11.0454 41.5563 12.2684 41.5563 13.8546Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">StreamFlow</h2>
+</div>
+<a class="text-sm font-bold text-gray-400 hover:text-white transition-colors" href="#">Help</a>
+</header>
+<!-- Main Content Area -->
+<div class="layout-container flex h-full grow flex-col items-center justify-center p-4">
+<!-- Center Auth Card -->
+<div class="glass-panel w-full max-w-[480px] rounded-xl overflow-hidden shadow-2xl mt-16 md:mt-0 relative z-10">
+<!-- Tabs -->
+<div class="flex border-b border-gray-700/50">
+<button class="flex flex-col items-center justify-center border-b-2 border-primary bg-white/5 text-white py-4 flex-1 transition-colors hover:bg-white/10 group">
+<p class="text-white text-sm font-bold leading-normal tracking-[0.015em]">Login</p>
+</button>
+<button class="flex flex-col items-center justify-center border-b-2 border-transparent text-[#9da6b9] py-4 flex-1 transition-colors hover:bg-white/5 group hover:text-white">
+<p class="text-inherit text-sm font-bold leading-normal tracking-[0.015em]">Register</p>
+</button>
+</div>
+<div class="p-6 md:p-8">
+<!-- Headline -->
+<div class="text-center mb-8">
+<h1 class="text-white text-3xl font-bold leading-tight mb-2">Welcome Back</h1>
+<p class="text-[#9da6b9] text-sm">Enter your credentials to access your account</p>
+</div>
+<!-- Form Fields -->
+<form class="flex flex-col gap-5">
+<!-- Email / Username -->
+<label class="flex flex-col gap-2">
+<span class="text-white text-sm font-medium leading-normal">Email or Username</span>
+<div class="input-glass rounded-lg flex items-center overflow-hidden">
+<span class="pl-4 text-gray-400">
+<span class="material-symbols-outlined text-[20px]">person</span>
+</span>
+<input class="w-full bg-transparent border-none text-white placeholder:text-[#6b7280] focus:ring-0 h-12 px-3 text-base" placeholder="Enter your email or username" type="text"/>
+</div>
+</label>
+<!-- Password -->
+<label class="flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="text-white text-sm font-medium leading-normal">Password</span>
+<a class="text-primary text-xs font-bold hover:text-blue-400 hover:underline" href="#">Forgot Password?</a>
+</div>
+<div class="input-glass rounded-lg flex items-center overflow-hidden relative">
+<span class="pl-4 text-gray-400">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</span>
+<input class="w-full bg-transparent border-none text-white placeholder:text-[#6b7280] focus:ring-0 h-12 px-3 text-base pr-10" placeholder="Enter your password" type="password"/>
+<button class="absolute right-0 pr-4 text-gray-400 hover:text-white flex items-center justify-center" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</label>
+<!-- Login Button -->
+<button class="mt-2 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-primary hover:bg-blue-600 transition-all text-white text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-blue-900/20" type="button">
+<span class="truncate">Sign In</span>
+</button>
+</form>
+<!-- Divider -->
+<div class="relative my-8">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-gray-700"></div>
+</div>
+<div class="relative flex justify-center text-sm">
+<span class="px-2 bg-[#171b24] text-gray-500 rounded-full text-xs uppercase tracking-wider font-semibold">Or continue with</span>
+</div>
+</div>
+<!-- Social Login -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+<button class="flex items-center justify-center h-12 rounded-lg bg-[#282e39] hover:bg-[#343b49] transition-colors border border-[#3b4354]">
+<!-- Google Icon Stub -->
+<img alt="Google" class="w-5 h-5" data-alt="Google Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQ_2O23C3RoP3nAbNXSn1ZRWRvwGJe9not8fFlzapmZJdqt1dd1jE2_HG_z8nGXSEMdI0-_VxwOt0YmZC-V6jEiPyemPVn5Mn1vXBmkGV6nY9vjeAz26szay9RuUsIhYZ2x-Bgv8IInhXn8IX5OpAZW6TfNimDOylqf9ym18hC_qFKETtMCwE9Werlj3NBRe0w0Zf-WUR2e0GXfGPW0zFyFWV9SWg4hSk73qxbxL34dX7v-zFJ-OwVR4T4DYiirxCxU68m_ZLgyPLW"/>
+</button>
+<button class="flex items-center justify-center h-12 rounded-lg bg-[#282e39] hover:bg-[#343b49] transition-colors border border-[#3b4354]">
+<!-- Apple Icon Stub (Using white silhouette) -->
+<svg aria-hidden="true" class="w-5 h-5 text-white" fill="currentColor" viewbox="0 0 24 24"><path d="M12.42 2.07c.81-.03 1.77.41 2.34 1.13.63.74.96 1.84.77 2.87-.96.05-2.07-.46-2.65-1.15-.65-.77-.96-1.85-.46-2.85zM12.96 5.56c1.17 0 2.22.86 2.76.86.51 0 1.34-.84 2.87-.84 1.5 0 2.62.9 3.28 2.34-.14.08-.22.14-.3.22-1.74 1.77-1.42 5.37.28 6.08-.11.22-.22.46-.34.69-.69 1.48-1.57 3.33-3.13 3.33-.84 0-1.5-.54-2.54-.54-1.05 0-1.63.51-2.54.51-1.68 0-2.43-1.69-3.25-3.33-.48-.96-.86-1.92-1.08-2.63 1.94-.84 3.2-2.77 3.14-5.02.03-1.02.48-1.71.85-2.11z"></path></svg>
+</button>
+<button class="flex items-center justify-center h-12 rounded-lg bg-[#282e39] hover:bg-[#343b49] transition-colors border border-[#3b4354]">
+<!-- Facebook Icon Stub -->
+<svg aria-hidden="true" class="w-5 h-5 text-[#1877F2]" fill="currentColor" viewbox="0 0 24 24"><path clip-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" fill-rule="evenodd"></path></svg>
+</button>
+</div>
+<!-- Guest Login -->
+<div class="text-center pt-2">
+<button class="text-[#9da6b9] text-sm hover:text-white transition-colors">
+                        Skip and browse as <span class="text-white font-medium underline decoration-gray-600 underline-offset-4">Guest</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Decorative Elements in Background -->
+<div class="fixed top-1/4 -left-20 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] pointer-events-none"></div>
+<div class="fixed bottom-0 -right-20 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px] pointer-events-none"></div>
+</div>
+</body></html>

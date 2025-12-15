@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Detalhes do Perfil - Click Channel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #101622;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #282e39;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b4354;
+        }
+        .glass-panel {
+            background: rgba(16, 22, 34, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-input {
+            background: rgba(28, 31, 39, 0.6);
+            border: 1px solid rgba(59, 67, 84, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col overflow-x-hidden text-slate-900 dark:text-white relative">
+<div class="fixed inset-0 z-0 w-full h-full pointer-events-none">
+<div class="absolute inset-0 bg-gradient-to-b from-[#101622]/90 via-[#101622]/80 to-[#101622] z-10"></div>
+<div class="w-full h-full bg-cover bg-center opacity-40" data-alt="Abstract dark cinematic purple gradient background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAYg5-ZRnzTuAURjjl7S_Pfa5_CwSVutyskaorlJvHdP_NkACWgfLXsfOixiHcIbp8vbrlf6K5iARYR7JgQWXllcQdD3-MTxRuV9OfAlAjSIitZqupNRNnzgP66PTDQczVRIfZCg_TIF1m4YWqvI2lvgsGw3G3DKHdO0OK9fuze533sNXvMhKBLVJ-mm88seUqY-WvzaU3Z0VkFeEfU9NPtfQOSOOj14dYv6cfWz3ITWlfqSxP50JoKhws-1iK6p6ALMUEPPjxnVrC-');"></div>
+</div>
+<div class="relative z-10 flex flex-col min-h-screen">
+<header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-white/5 bg-[#111318]/80 backdrop-blur-md px-10 py-3">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white cursor-pointer">
+<div class="size-10 rounded-full overflow-hidden bg-white/10 p-1 flex items-center justify-center">
+<img alt="Click Channel Robot Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6kET5P-oVcxYE5k1kxsf8vRCnYs2KysLnTX-OV2SpupwIgnLPsjZ_iuhxqApJ5z6a6Sv5JDyMCXv9bOMBGjb4ol2drreapSj_PHAi1QXcmN3u-Uf7PBUBSNQxsrEh_Zs1kYqTJn2F5HOHJH8wnRX66M0D1wWluLSeOVdFY5sysNVsIAcM_jxc-QYHR8sGtq-dt2F4GWxLyboBBj__Q6n4tHmCcF3K7hzBz-qPITrfEKhk85c4lBK9Omp0LMZM8zWRt7MPlfP3z0pD"/>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Click Channel</h2>
+</div>
+<nav class="flex items-center gap-9">
+<a class="text-[#9da6b9] hover:text-white transition-colors text-sm font-medium leading-normal" href="#">Início</a>
+<a class="text-[#9da6b9] hover:text-white transition-colors text-sm font-medium leading-normal" href="#">TV Ao Vivo</a>
+<a class="text-[#9da6b9] hover:text-white transition-colors text-sm font-medium leading-normal" href="#">Filmes</a>
+<a class="text-[#9da6b9] hover:text-white transition-colors text-sm font-medium leading-normal" href="#">Séries</a>
+<a class="text-white text-sm font-bold leading-normal relative after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-primary after:-bottom-5 after:left-0" href="#">Perfil</a>
+</nav>
+</div>
+<div class="flex items-center justify-end gap-6">
+<div class="hidden md:flex relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9da6b9] text-[20px]">search</span>
+<input class="glass-input text-white text-sm rounded-full pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-1 focus:ring-primary placeholder-[#9da6b9]" placeholder="Buscar filmes, séries..." type="text"/>
+</div>
+<button class="bg-center bg-no-repeat bg-cover rounded-full size-10 border-2 border-white/10 hover:border-primary transition-colors cursor-pointer" data-alt="User avatar thumbnail" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC46XgPkM9EIREcnsUqqYLrWBQWhEA40Owycg7JXxz4RJ94Si1snjQ3fWBVHhVjzFj6nc4dCcEK_poyiMHh5D2N20JDArShliYDJMicKP8lJgaDs7SBYom52JuP5arlgxGdoZywHHO0B8hWJcBdHmqkkHIcznuLEHUQC3ueSJLQhov3CiwKzMxAhUoI2i9rEzeUD7l_LDiZANCqPMMIGjiq3RCai55ZXosGCw7lHSzhUH0kqoZALLSZ7t61nIATxmS33yM-Y2u0m31T");'></button>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center p-6 md:p-10 lg:p-16">
+<div class="w-full max-w-[1000px] glass-panel rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up">
+<div class="p-8 border-b border-white/5">
+<h1 class="text-white text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em]">Configurações da Conta</h1>
+<p class="text-[#9da6b9] text-base font-normal mt-2">Gerencie suas informações pessoais, assinatura e segurança.</p>
+</div>
+<div class="p-8 flex flex-col md:flex-row gap-8 items-start md:items-center justify-between border-b border-white/5 bg-white/5">
+<div class="flex items-center gap-6">
+<div class="relative group">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-24 md:size-32 border-4 border-[#282e39] shadow-lg" data-alt="Large user avatar profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDM2PfimeoR5Ym6DtmZ9TJ1DQDK15DZ794D52Nz5HdY05MgGOLbmpxT97gu9Yu9dKc4fdyr1tYABL3wyk18e6znLNDzW37bbpHulEBEEk4h_dgEKa1CRGbzFbFtKu7Z3FpXFvsRomRP70AMjlBS7bl-XDHKFOLXSpAtCZvFpGaX7Oh9v4rHhfO64lqQdPVvQ1v0gVvuJqCv58iSj1_WucHm992KEoKXydlH1Yf-ENivZ6ai7XB28TcL5m5lqZ7F6gfUA_pzGIdk711X");'></div>
+<button aria-label="Editar Avatar" class="absolute bottom-0 right-0 bg-primary hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-105 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+</div>
+<div class="flex flex-col">
+<h2 class="text-white text-2xl font-bold">Alex Streamer</h2>
+<div class="flex items-center gap-3 mt-1">
+<span class="bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Plano Premium</span>
+<span class="text-[#9da6b9] text-sm">Membro desde 2021</span>
+</div>
+<div class="mt-3 w-full max-w-[200px] bg-[#282e39] rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 75%"></div>
+</div>
+<span class="text-[#9da6b9] text-xs mt-1">Renovação do plano em 14 dias</span>
+</div>
+</div>
+<div class="flex gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none h-10 px-5 rounded-lg bg-[#282e39] hover:bg-[#3b4354] text-white text-sm font-bold transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">upload</span>
+<span>Alterar Avatar</span>
+</button>
+</div>
+</div>
+<div class="p-8">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10">
+<div class="flex flex-col gap-6">
+<h3 class="text-white text-xl font-bold border-b border-white/10 pb-2 mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">person</span>
+                                Detalhes Pessoais
+                            </h3>
+<div class="grid grid-cols-2 gap-4">
+<label class="flex flex-col gap-2">
+<span class="text-[#9da6b9] text-sm font-medium">Nome</span>
+<input class="glass-input rounded-lg h-12 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-white/20 transition-all" type="text" value="Alex"/>
+</label>
+<label class="flex flex-col gap-2">
+<span class="text-[#9da6b9] text-sm font-medium">Sobrenome</span>
+<input class="glass-input rounded-lg h-12 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-white/20 transition-all" type="text" value="Streamer"/>
+</label>
+</div>
+<label class="flex flex-col gap-2">
+<span class="text-[#9da6b9] text-sm font-medium">Endereço de E-mail</span>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9da6b9]">mail</span>
+<input class="glass-input rounded-lg h-12 pl-10 pr-4 w-full text-white focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-white/20 transition-all" type="email" value="alex.streamer@example.com"/>
+</div>
+</label>
+<label class="flex flex-col gap-2">
+<span class="text-[#9da6b9] text-sm font-medium">Número de Telefone</span>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9da6b9]">call</span>
+<input class="glass-input rounded-lg h-12 pl-10 pr-4 w-full text-white focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-white/20 transition-all" type="tel" value="+55 (11) 99999-9999"/>
+</div>
+</label>
+</div>
+<div class="flex flex-col gap-6">
+<h3 class="text-white text-xl font-bold border-b border-white/10 pb-2 mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">security</span>
+                                Segurança e Configurações
+                            </h3>
+<label class="flex flex-col gap-2">
+<span class="text-[#9da6b9] text-sm font-medium">Senha Atual</span>
+<input class="glass-input rounded-lg h-12 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-white/20 transition-all" type="password" value="********"/>
+</label>
+<div class="flex flex-col gap-2">
+<span class="text-[#9da6b9] text-sm font-medium">Nova Senha</span>
+<input class="glass-input rounded-lg h-12 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-white/20 transition-all" placeholder="Deixe em branco para manter a atual" type="password"/>
+</div>
+<div class="mt-2 space-y-4">
+<div class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+<div class="flex flex-col">
+<span class="text-white text-sm font-medium">Controle dos Pais</span>
+<span class="text-[#9da6b9] text-xs">Exigir PIN para conteúdo adulto</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+<div class="flex flex-col">
+<span class="text-white text-sm font-medium">Reprodução Automática</span>
+<span class="text-[#9da6b9] text-xs">Iniciar próximo episódio automaticamente</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-8 border-t border-white/5 bg-black/20 flex flex-col md:flex-row items-center justify-between gap-4">
+<button class="text-red-500 hover:text-red-400 font-medium text-sm flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-red-500/10 transition-colors">
+<span class="material-symbols-outlined">logout</span>
+                        Sair de Todos os Dispositivos
+                    </button>
+<div class="flex items-center gap-4 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-6 py-3 rounded-lg text-white font-medium text-sm hover:bg-white/10 transition-colors">
+                            Cancelar
+                        </button>
+<button class="flex-1 md:flex-none px-8 py-3 rounded-lg bg-primary hover:bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-900/20 transition-all hover:shadow-blue-900/40 transform active:scale-95">
+                            Salvar Alterações
+                        </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>
