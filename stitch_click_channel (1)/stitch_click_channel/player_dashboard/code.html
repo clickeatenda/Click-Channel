@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Click Channel - Player Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    primary: "#1e293b",
+                    accent: "#38bdf8",
+                    "background-dark": "#0f172a",
+                },
+                fontFamily: {
+                    sans: ["Inter", "sans-serif"],
+                },
+            },
+        },
+    };
+</script>
+<style>
+    body {
+        background-color: #0f172a;color: #f8fafc;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }.glass-panel {
+        background: rgba(30, 41, 59, 0.3);
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+    .glass-nav {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+    .glass-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+    .active-nav-pill {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .blob {
+        position: absolute;
+        filter: blur(80px);
+        opacity: 0.6;
+        z-index: -1;
+    }
+    .text-shadow {
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+</style>
+</head>
+<body class="bg-[#0f172a] font-sans text-slate-100 min-h-screen flex items-center justify-center p-4 lg:p-8">
+<main class="w-full max-w-[1500px] h-[90vh] overflow-hidden rounded-[2.5rem] glass-panel relative flex flex-col shadow-2xl">
+<div class="absolute inset-0 overflow-hidden pointer-events-none">
+<div class="blob w-[500px] h-[500px] rounded-full bg-blue-600/30 -top-20 -left-20 mix-blend-screen"></div>
+<div class="blob w-[400px] h-[400px] rounded-full bg-purple-600/30 top-1/4 right-0 mix-blend-screen"></div>
+<div class="blob w-[600px] h-[600px] rounded-full bg-pink-600/20 -bottom-32 left-1/3 mix-blend-screen"></div>
+</div>
+<header class="w-full px-8 py-6 flex justify-between items-center z-20 shrink-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 border border-white/20">
+<span class="material-symbols-outlined text-white text-2xl">smart_toy</span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight text-white drop-shadow-lg">Click Channel</h1>
+</div>
+<nav class="glass-nav rounded-full px-1.5 py-1.5 flex items-center gap-1 shadow-lg">
+<button class="px-6 py-2 rounded-full active-nav-pill text-sm font-medium transition">Movie</button>
+<button class="px-6 py-2 rounded-full text-slate-400 text-sm font-medium hover:text-white hover:bg-white/5 transition">Series</button>
+<button class="px-6 py-2 rounded-full text-slate-400 text-sm font-medium hover:text-white hover:bg-white/5 transition">Originals</button>
+<div class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer ml-1 transition">
+<span class="material-icons-round text-xl">search</span>
+</div>
+</nav>
+<div class="flex items-center gap-5">
+<div class="relative cursor-pointer group">
+<div class="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-white/20 transition">
+<span class="material-icons-round text-white">notifications</span>
+</div>
+<span class="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-[#1e293b]"></span>
+</div>
+<div class="flex items-center gap-3 pl-2 cursor-pointer group rounded-full pr-4 py-1 hover:bg-white/5 transition border border-transparent hover:border-white/5">
+<img alt="User Profile" class="w-10 h-10 rounded-full object-cover border-2 border-white/10 group-hover:border-white/30 transition" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNY8sQOM-EbHM97rEWgfXbNyJa2ia-IGyYgwdG8A8xKzxx12tCrLA_1vjtz7km7nbjNTCJO-kyMsIpcR7GNwWgYpJ4HmsmEfVSpmgjul-nJIaRakZ5NGWFCKK-s7w_SlgXjxIucxDkJxF1B37TQP31PTUCjSyt44XvHn_2WPxRWTRO8E2HEHtgzCQqBVtLQCcFflLPwA9orVqakQ47t63mhwKnwxGzwIjGlg4WrXd5v5uS9VXZjDgA9AXX3tCU42lLdY5SNoS1JSPB"/>
+<div class="hidden md:block">
+<p class="text-sm font-semibold text-white group-hover:text-accent transition leading-tight">Sarah J</p>
+<p class="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Premium</p>
+</div>
+<span class="material-icons-round text-slate-400 group-hover:text-white transition hidden md:block">expand_more</span>
+</div>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto px-8 pb-8 hide-scrollbar scroll-smooth">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+<div class="lg:col-span-5 relative h-80 rounded-[2rem] overflow-hidden group cursor-pointer shadow-2xl border border-white/5">
+<img alt="The Adventure of Blue Sword" class="absolute w-full h-full object-cover transform group-hover:scale-105 transition duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDyvjDgm7dwH7ToL-trJPVCDQkApvhbZAH0omazVqzfadwA7i9DCBc4_A8Ro7YJvJHgeMHT0kZ4mtAfpdTOebd01Rd6AqBqAAZelBdhaeXc-EQ0tyegDCLsRJeYfYoGMiaxEZ5_T0EzYWTJJdr-NSbvwCnFiuAEyeJ1oWfLkcApWgaDcyzdu-r2oRcFv5hcksqX75x52ou1wiOYq2B6awqxzw5gwV42r52vkD1C7RPhwu_YTIG5UlUbrBS9lEmOtik4odxMzP-LimF"/>
+<div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent opacity-90"></div>
+<div class="absolute inset-0 p-8 flex flex-col justify-end">
+<div class="absolute top-6 right-6 text-white/10 text-6xl font-serif writing-vertical-rl select-none pointer-events-none">
+                         剑魂
+                     </div>
+<h2 class="text-4xl font-bold text-white leading-tight mb-2 text-shadow">The Adventure of<br/><span class="text-blue-400">Blue Sword</span></h2>
+<div class="flex items-center gap-4 mt-4">
+<button class="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md px-5 py-2.5 rounded-full transition text-white text-sm font-semibold border border-white/20 group-hover:border-white/40 shadow-lg group-hover:shadow-blue-500/20">
+<span class="material-icons-round text-xl">play_arrow</span>
+                            Watch Now
+                        </button>
+<span class="text-sm font-medium text-slate-300">2h 15m</span>
+</div>
+</div>
+</div>
+<div class="lg:col-span-7 relative h-80 rounded-[2rem] overflow-hidden group cursor-pointer shadow-2xl border border-white/5">
+<img alt="Si Doel" class="absolute w-full h-full object-cover transform group-hover:scale-105 transition duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCN0HEELiJUl5QuMtz-FtEeMvJpKhjouboT2XtThxBhHdfPGc6dihLhXoT1dvA-Ra3806QLABsOqV05VHgJ9CFzrAB-JdZroUlR5NkpObsr2vNaR5EPElp8ke1xouSd6hCTSRIoSCYwGyIqroCg_-6vdmcG06G9ez-pyG5enQZgYc0M2ZWG12e7orKizd0bMdEBonR1BOAvf6CJ8Z-MDaYWGcHgdMCbbuOSlArbblveIU2J0NQBo7J4DSQpyVL1ZaaqChmCs2pKrZT-"/>
+<div class="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/60 to-transparent"></div>
+<div class="absolute inset-0 p-10 flex flex-col justify-center items-start z-10">
+<div class="max-w-md">
+<span class="inline-block px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold mb-4 backdrop-blur-sm">FEATURED STORY</span>
+<h2 class="text-4xl font-bold text-white leading-tight mb-4 text-shadow">Recalling the journey<br/>of Dol's exciting story</h2>
+<p class="text-slate-300 text-sm mb-6 line-clamp-2 max-w-sm">An emotional rollercoaster that takes you back to the roots of traditional family values and modern conflicts.</p>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 bg-white text-slate-900 hover:bg-slate-200 px-6 py-2.5 rounded-full transition text-sm font-bold shadow-lg shadow-white/10">
+<span class="material-icons-round text-xl">play_arrow</span>
+                                Play Movie
+                            </button>
+<button class="flex items-center justify-center w-10 h-10 rounded-full border border-white/20 text-white hover:bg-white/10 transition">
+<span class="material-icons-round">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="absolute bottom-0 right-0 w-1/2 h-full z-0 flex items-end justify-end pointer-events-none">
+<img alt="Character Graphic" class="h-[110%] object-contain drop-shadow-2xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCiQpPzZwCtJv_ZlPx65TAJRQFteB6KuyIyks6eO2TkQdDfW2nm9-8O8Pjs_kcZ-eAHKvV2y3S_G6HQTNpQR65FzXxfifqET7zaUSf0IwRdt4s6N8jUie6RuLkbYgVvKvuU3FjtN_Le-MaMuct0-XQXAeNOV3MmkTmQXcLAGyORlNZQ7LJXWNJWB8w_iBrpYjzYz4gKtu0fvS3JFMD3bDH_8HwVwAVJlQuHy5dMJoWKA74yF0GF07jd2_jQLRRBuDnliZD-NfXulmt"/>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 mb-8 overflow-x-auto hide-scrollbar pb-2 mask-linear-fade">
+<button class="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl glass-card text-slate-300 hover:text-white hover:bg-white/10 transition group">
+<span class="material-icons-round text-orange-400 group-hover:scale-110 transition">local_fire_department</span>
+<span class="font-medium text-sm">Trending</span>
+</button>
+<button class="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl glass-card text-slate-300 hover:text-white hover:bg-white/10 transition group">
+<span class="material-icons-round text-blue-400 group-hover:scale-110 transition">swords</span>
+<span class="font-medium text-sm">Action</span>
+</button>
+<button class="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl glass-card text-slate-300 hover:text-white hover:bg-white/10 transition group">
+<span class="material-icons-round text-pink-400 group-hover:scale-110 transition">favorite</span>
+<span class="font-medium text-sm">Romance</span>
+</button>
+<button class="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/10 text-white backdrop-blur-md border border-white/20 shadow-lg shadow-blue-500/10">
+<span class="material-icons-round text-white">smart_toy</span>
+<span class="font-medium text-sm">Animation</span>
+</button>
+<button class="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl glass-card text-slate-300 hover:text-white hover:bg-white/10 transition group">
+<span class="material-icons-round text-purple-400 group-hover:scale-110 transition">psychology</span>
+<span class="font-medium text-sm">Horror</span>
+</button>
+<button class="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl glass-card text-slate-300 hover:text-white hover:bg-white/10 transition group">
+<span class="material-icons-round text-yellow-400 group-hover:scale-110 transition">star</span>
+<span class="font-medium text-sm">Special</span>
+</button>
+<button class="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl glass-card text-slate-300 hover:text-white hover:bg-white/10 transition group">
+<span class="material-icons-round text-indigo-400 group-hover:scale-110 transition">nightlight</span>
+<span class="font-medium text-sm">Drakor</span>
+</button>
+</div>
+<div class="flex justify-between items-end mb-6">
+<div>
+<h3 class="text-2xl font-semibold text-white tracking-wide flex items-center gap-2">
+                    Trending in Animation
+                    <span class="material-icons-round text-white/30 text-lg">chevron_right</span>
+</h3>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-slate-300 hover:text-white transition">
+<span class="material-icons-round text-sm">arrow_back</span>
+</button>
+<button class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-slate-300 hover:text-white transition">
+<span class="material-icons-round text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="flex gap-6 overflow-x-auto hide-scrollbar pb-8 snap-x snap-mandatory">
+<div class="min-w-[200px] w-[200px] group cursor-pointer snap-center">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 shadow-lg shadow-black/40 border border-white/5">
+<img alt="Loetoeng Kasarung" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD13MSuGVOnq_Qez_MV7vy4S8QsR4Nxc0_8ZoUq5b4m_wUyA3y3HU4iHQn5v9RQJ61cnbJ80fERCjyQgRF08_U7gM5KxLSp1B8eJdgcp1UXLu519TTO3ntC1ktJuGuOeXC-r_27Ef6f_d4TmIcr4iQzal7qomDcLSxVLOQQ8RdUJYmEJNZw7OTNRfe8jLT0ySgGiqKyJXaRM7xmLpdGAsuZZQsayfnCHdEDVrotOUHXpDS46MGbbJhy_Rqj-PxMHJzw6ZBRaw2zV3kz"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
+<div class="absolute top-2 right-2">
+<div class="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
+<span class="material-icons-round text-white text-sm">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-4 left-0 w-full text-center px-2">
+<span class="text-[10px] text-white/70 font-serif uppercase tracking-widest block mb-1">Disney</span>
+<h4 class="text-lg font-bold text-white uppercase leading-none drop-shadow-md">Loetoeng<br/>Kasarung</h4>
+</div>
+</div>
+<h5 class="text-white text-sm font-medium truncate px-1">Loetoeng Kasarung</h5>
+<div class="flex items-center justify-between mt-1 text-xs text-slate-400 px-1">
+<span>2023</span>
+<div class="flex items-center text-amber-400 gap-1">
+<span class="material-icons-round text-[14px]">star</span>
+<span>7.8</span>
+</div>
+</div>
+</div>
+<div class="min-w-[200px] w-[200px] group cursor-pointer snap-center">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 shadow-lg shadow-black/40 border border-white/5">
+<img alt="Gajah Langka" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdq1TiTBVRcnMAz7jjbCGl-b0bOBeXg12Md2eFm6vpcju9JCWa23kNZen0Jz-rNuT3fW9tCBrV664B0iJ465dObvAdYAHsXZjmJSs8197x4lkutP4UDNTvHjnIKxmvaPpzmdNrM6nCYX0Ewa-gEC5ekbYbXbQEBicQNLZ97ZiNJDtyqVA-HELj3KFyUumTK1ZoYRz2DEngPea2VliFxR-B7cH9eDVHbhWrslRxjDE31PNRhr-WlGLuvHP7DQwniZwx9DCEaPFwqGUu"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
+<div class="absolute top-3 right-3">
+<span class="text-[9px] font-bold text-white bg-red-600 px-2 py-0.5 rounded shadow-sm">NEW</span>
+</div>
+</div>
+<h5 class="text-white text-sm font-medium truncate px-1">Gajah Langka</h5>
+<div class="flex items-center justify-between mt-1 text-xs text-slate-400 px-1">
+<span>2023</span>
+<div class="flex items-center text-amber-400 gap-1">
+<span class="material-icons-round text-[14px]">star</span>
+<span>6.0</span>
+</div>
+</div>
+</div>
+<div class="min-w-[200px] w-[200px] group cursor-pointer snap-center">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 shadow-lg shadow-black/40 border border-white/5">
+<img alt="Si Kang Satay" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyhlzHoKm7q49sLAKVrN_xVWOobzQqO7OR0w74smeAZmcPbWw4iOjn6z255bj8UY8VKZpm12Qd0U4Zy0sshePAPX3-yL7KRqX7w0rR6x_DxRpyYstphQjkqtKfHLUQffHnyzWuOd9Mphse857YsU5GK9jv2HCH424ShoVa73BG-OXiopIcXRDcC0A4afBrGamFc-UBCKcoV059MJWgG2m0iDao4u3P1MF8s7UtnZsGIu5EKThLyZa8vptnZ2bgbxa8DMMyZRfXpPQY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80"></div>
+<div class="absolute bottom-4 left-0 w-full text-center px-2">
+<h4 class="text-xl font-bold text-red-500 drop-shadow-sm font-serif">Kang Satay</h4>
+</div>
+</div>
+<h5 class="text-white text-sm font-medium truncate px-1">Si Kang Satay</h5>
+<div class="flex items-center justify-between mt-1 text-xs text-slate-400 px-1">
+<span>2023</span>
+<div class="flex items-center text-amber-400 gap-1">
+<span class="material-icons-round text-[14px]">star</span>
+<span>7.1</span>
+</div>
+</div>
+</div>
+<div class="min-w-[200px] w-[200px] group cursor-pointer snap-center">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 shadow-lg shadow-black/40 border border-white/5">
+<img alt="Mommy Cat" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7jTNYuT0KmuQrBg7jHbbg2BhioWmNuRPH1akfmvADqwix1ahpAudGG7Xnj_XDRLq_aNKaIqR4ZmFqiUR_M4J4ukf-aV0hYbj3p4qha1DBkAV_dIcDjDpFctsSBLW9U6beU52L9U8eTHyRPvLhKSkvm8uDxXAskl_PF99BEBSOeJsGQbQM_JjruUw9rqyV-EX1Eim0oVWoarGuuVkXkg2IRNqqBSCav5APy2uSU6GSLCirz9d_153j_AqxGsThYt-JOlkKpR0mv1x4"/>
+<div class="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition"></div>
+<div class="absolute inset-0 flex flex-col justify-center items-center text-center p-2">
+<span class="text-[10px] text-white/90 font-serif tracking-widest block mb-1">Disney PIXAR</span>
+<h4 class="text-2xl font-bold text-white leading-none drop-shadow-lg font-serif">Mommy<br/>cat</h4>
+</div>
+</div>
+<h5 class="text-white text-sm font-medium truncate px-1">Mommy Cat</h5>
+<div class="flex items-center justify-between mt-1 text-xs text-slate-400 px-1">
+<span>2023</span>
+<div class="flex items-center text-amber-400 gap-1">
+<span class="material-icons-round text-[14px]">star</span>
+<span>7.8</span>
+</div>
+</div>
+</div>
+<div class="min-w-[200px] w-[200px] group cursor-pointer snap-center">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 shadow-lg shadow-black/40 border border-white/5 bg-orange-900">
+<img alt="Hijaber Cantiq" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500 mix-blend-overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQyitmeChs9Kc4y7ZcNtqHRTR8KqdHNeqwKKKopaczF1PU68u2gBjLMS1ADss9wLZUXONkuzDtfcg-8aTjU4m5xnVJs-M-gQz9IiFk_0BntC1I5RRaJWUNNrKu5wSxQUgha9dku5elLFB6PV_DObzLRjaAucYjknIypJ1MwZ09dP4kFEmfkStIQdx_NT8W2QCIMhiG2QTIfib9vOaiZeWjlqlmUU187zqAZk9kTtmT2h9m8jtj77wew7Ux34s7v_7F_8L10Gh-e9KU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+<div class="absolute top-1/2 left-0 -translate-y-1/2 w-full text-center z-10 px-2">
+<h4 class="text-2xl font-bold text-white drop-shadow-md tracking-tighter">CANTIK</h4>
+</div>
+</div>
+<h5 class="text-white text-sm font-medium truncate px-1">Hijaber Cantiq</h5>
+<div class="flex items-center justify-between mt-1 text-xs text-slate-400 px-1">
+<span>2023</span>
+<div class="flex items-center text-amber-400 gap-1">
+<span class="material-icons-round text-[14px]">star</span>
+<span>6.1</span>
+</div>
+</div>
+</div>
+<div class="min-w-[200px] w-[200px] group cursor-pointer snap-center">
+<div class="relative aspect-[3/4] rounded-2xl overflow-hidden mb-3 shadow-lg shadow-black/40 border border-white/5 bg-gray-800">
+<img alt="Xatra - X" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500 opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTURKjQe3ikEORj5IEhv_n9M77SUPn7GFGeMqOiSYZg_1Wodr8xIf-dRJfZZV36N5zaLtG-yDOplofRXZpA4HI17jTennQR1XTzuUEIRiUm4S2DOXaPrIuVNscVJxtpw3R0ki0-IFsTtb_uX9D7AXAyeCBdL_DIbV8kVZo18Jvlxy5yAbf3-cbsJYLZQ2DrxfCkTlwDia1o9cCyxPqvCjz3mBqfpDgP3icsccRrYvZrIL02pXskeT9e8VACc8QtTRCCroC0aui2umw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+<div class="absolute top-1/4 w-full text-center px-2">
+<h4 class="text-3xl font-black text-white uppercase tracking-tight drop-shadow-lg font-mono">XATRA</h4>
+<span class="text-xl font-bold text-red-500 block -mt-1">PROJECT X</span>
+</div>
+</div>
+<h5 class="text-white text-sm font-medium truncate px-1">Xatra - X</h5>
+<div class="flex items-center justify-between mt-1 text-xs text-slate-400 px-1">
+<span>2022</span>
+<div class="flex items-center text-amber-400 gap-1">
+<span class="material-icons-round text-[14px]">star</span>
+<span>6.5</span>
+</div>
+</div>
+</div>
+<div class="min-w-[200px] w-[200px] group cursor-pointer snap-center flex items-center justify-center">
+<div class="w-full aspect-[3/4] rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center hover:bg-white/5 transition">
+<span class="material-icons-round text-white/30 text-3xl mb-2">add_circle_outline</span>
+<span class="text-xs text-white/30 font-medium">View All</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
