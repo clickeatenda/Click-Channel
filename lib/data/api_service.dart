@@ -2,14 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/content_item.dart';
 import '../models/series_details.dart'; // Agora este arquivo existe!
-
-const String SERVER_IP = "192.168.3.251";
-const String BACKEND_URL = "http://$SERVER_IP:4000";
+import '../core/config.dart';
 
 class ApiService {
   static Future<List<String>> fetchCategoryNames(String type) async {
     try {
-      final res = await http.get(Uri.parse('$BACKEND_URL/api/categories?type=$type'));
+      final res = await http.get(Uri.parse('${Config.backendUrl}/api/categories?type=$type'));
       if (res.statusCode == 200) return List<String>.from(json.decode(res.body));
     } catch (_) {}
     return [];
@@ -17,7 +15,7 @@ class ApiService {
 
   static Future<List<ContentItem>> fetchCategoryItems(String category, String type, {int limit = 15}) async {
     try {
-      final uri = Uri.parse('$BACKEND_URL/api/items?category=${Uri.encodeComponent(category)}&type=$type&page=1&limit=$limit');
+      final uri = Uri.parse('${Config.backendUrl}/api/items?category=${Uri.encodeComponent(category)}&type=$type&page=1&limit=$limit');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         List list = json.decode(res.body);
@@ -29,7 +27,7 @@ class ApiService {
 
   static Future<SeriesDetails?> fetchSeriesDetails(String id) async {
     try {
-      final uri = Uri.parse('$BACKEND_URL/api/series/details?id=${Uri.encodeComponent(id)}');
+      final uri = Uri.parse('${Config.backendUrl}/api/series/details?id=${Uri.encodeComponent(id)}');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         return SeriesDetails.fromJson(json.decode(res.body));
