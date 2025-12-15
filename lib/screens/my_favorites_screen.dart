@@ -12,7 +12,6 @@ class MyFavoritesScreen extends StatefulWidget {
 
 class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
   int _selectedNavIndex = 0;
-  String _searchQuery = '';
 
   final List<HeaderNav> _navItems = [
     HeaderNav(label: 'Home'),
@@ -37,8 +36,6 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
             userName: 'Sarah J',
             onNotificationTap: () {},
             onProfileTap: () {},
-            onSearchChanged: (query) =>
-                setState(() => _searchQuery = query),
           ),
           Expanded(
             child: SingleChildScrollView(
