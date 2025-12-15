@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Favorites - StreamFlow</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+            extend: {
+                colors: {
+                "primary": "#135bec",
+                "background-light": "#f6f6f8",
+                "background-dark": "#101622",
+                },
+                fontFamily: {
+                "display": ["Spline Sans", "sans-serif"],
+                "body": ["Noto Sans", "sans-serif"],
+                },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                backgroundImage: {
+                    'glass': 'linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
+                }
+            },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #101622;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #282e39;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f4756;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen flex flex-col overflow-x-hidden selection:bg-primary/30 selection:text-white">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full backdrop-blur-xl bg-background-dark/80 border-b border-white/5 transition-all duration-300">
+<div class="max-w-[1440px] mx-auto px-6 h-20 flex items-center justify-between gap-8">
+<!-- Logo & Nav Links -->
+<div class="flex items-center gap-10">
+<a class="flex items-center gap-3 text-white hover:opacity-90 transition-opacity group" href="#">
+<div class="size-9 bg-primary/20 rounded-lg flex items-center justify-center text-primary group-hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[24px]">play_circle</span>
+</div>
+<h2 class="text-white text-xl font-bold tracking-tight">StreamFlow</h2>
+</a>
+<nav class="hidden lg:flex items-center gap-8">
+<a class="text-gray-400 text-sm font-medium hover:text-white transition-colors duration-200" href="#">Movies</a>
+<a class="text-gray-400 text-sm font-medium hover:text-white transition-colors duration-200" href="#">Series</a>
+<a class="text-gray-400 text-sm font-medium hover:text-white transition-colors duration-200" href="#">Live TV</a>
+<a class="text-white text-sm font-medium relative after:content-[''] after:absolute after:-bottom-6 after:left-0 after:w-full after:h-1 after:bg-primary after:rounded-t-sm" href="#">My List</a>
+</nav>
+</div>
+<!-- Search & Profile -->
+<div class="flex items-center gap-6">
+<!-- Search Bar -->
+<div class="hidden md:flex items-center bg-white/5 border border-white/10 rounded-full px-4 h-10 w-64 focus-within:w-80 focus-within:bg-white/10 focus-within:border-primary/50 transition-all duration-300">
+<span class="material-symbols-outlined text-gray-400 text-[20px]">search</span>
+<input class="bg-transparent border-none text-sm text-white placeholder-gray-500 focus:ring-0 w-full ml-2 h-full" placeholder="Search titles, genres..." type="text"/>
+</div>
+<!-- Notifications -->
+<button class="relative text-gray-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 size-2 bg-primary rounded-full border-2 border-background-dark"></span>
+</button>
+<!-- Profile -->
+<div class="size-10 rounded-full bg-cover bg-center border-2 border-white/10 cursor-pointer hover:border-primary transition-colors duration-200" data-alt="User profile avatar showing a person's face" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBV9a_MxOsg2_rMluuYTMsF7Jm2kwJpCeGepmPYP__l5EEIypo4g9WbXsyFQA5CVY-ZlLGt4geW-ANvIfawYAkhRiKtI9Urr89x2WEB5g55TbT2e6TNdWU93J3pT-dbJBjZdHmEsAOK-AC5-Heo8HwI8OnoFy3vQ0Ki4HN4dnbId9tdYjQSPXmmOhB5V0hEXDN5fZpS1uLPdtQJyOwMQfCR0Of0XF0W1jLCkKK4e-Ckzd5SjuAnUKk_OgG4fsfsnyc-NTQXgXD7crTE");'>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-[1440px] mx-auto px-6 py-8 flex flex-col gap-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-white/5">
+<div class="flex flex-col gap-2">
+<h1 class="text-white text-4xl md:text-5xl font-black tracking-tight">My Favorites</h1>
+<div class="flex items-center gap-2 text-gray-400">
+<span class="material-symbols-outlined text-[18px]">bookmarks</span>
+<p class="text-base font-normal">42 titles saved</p>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="flex items-center gap-3 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+<button class="flex h-10 px-6 items-center justify-center rounded-full bg-primary text-white text-sm font-semibold shadow-[0_0_20px_rgba(19,91,236,0.4)] transition-transform active:scale-95">
+                    All
+                </button>
+<button class="flex h-10 px-6 items-center justify-center rounded-full bg-white/5 border border-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-sm font-medium transition-all active:scale-95">
+                    Movies
+                </button>
+<button class="flex h-10 px-6 items-center justify-center rounded-full bg-white/5 border border-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-sm font-medium transition-all active:scale-95">
+                    Series
+                </button>
+<button class="flex h-10 px-6 items-center justify-center rounded-full bg-white/5 border border-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-sm font-medium transition-all active:scale-95">
+                    Live TV
+                </button>
+</div>
+</div>
+<!-- Content Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+<!-- Movie Card 1 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Inception movie poster showing a spinning top on a table" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuANapl7IvdC1qO7lvf4uBvalJM5fMWVF3tKG8jLT1tI1-xzs-DrWtm247lgf5Ka3bLw0h7ZIc-yQZQ8PFkpxm3Z2NWTInMuz29Q1U5qhNinmI6KlwID5Q7T1FfEl-o3dNZkRYGEVPXNJvtd7OJ0foTB-i-vh07RhzLoUL65CtheN-eH89WG1ANzbm4Lmfih7NyDYK9pE3LtrDyyefQZw-JQy9y_1J5COgxhWEZYxTwqlvZ9iIra2HhbHYr9yJkdjpb-ORnlRaXpxSYk");'></div>
+<!-- Gradient Overlay -->
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<!-- Hover Overlay (Glassmorphism) -->
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<!-- Top Actions -->
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<!-- Card Content -->
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">Inception</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">PG-13</span>
+<span>2h 28m</span>
+<span class="text-primary">Sci-Fi</span>
+</div>
+</div>
+</div>
+<!-- Series Card 1 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Breaking Bad inspired poster with yellow hazmat suit details" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCVlaCQOq9U5LcozSZI3PAoyqUfaCLmRJ1wUxXSCSMxPdfvEsLq9lqmM9tc37IUtjfMxNsqDDVmzWL2pLeJvkpqiojpD5_F9KtcXY89skQzzkgoyDTzmjVEOBMq5xV8Fw7b5tT7DXLBwtFmdm-nJFVBX5qBtpE_qrmlNn5iUuR9v-g0T8ZUWCmTKtShfiLTWvBMrSyVa8Mrab7O-cC3j2Y_brXNN4hpFYIu2QBk1d8i2_WMjWbaRt2ynSpNV1Ot8XUkY3fWKirfgpKS");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">Breaking Bad</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">18+</span>
+<span>5 Seasons</span>
+<span class="text-primary">Crime</span>
+</div>
+</div>
+</div>
+<!-- Movie Card 2 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Interstellar space scene with nebula and stars" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCeLOb8Q6PjQ2_6fvoNGi1YUMRZeSk_ycMc4t1hBbXpUFRN7nNAhxSeMlJEHlcX9HYRXl8wovzgNyXq_IPrffPNSRLI5s8pTqr3c_TxDPIdqRWW62hK588gSxTNBhZTI3Y4BVjlEyiuFW_uuTxguIwXMVH99ymACKBxO0jwbb_xTLCjMeXTjH-REwf_AvGUGwj8af02SrxRyhRtNfm9F6_9yOdE-R3vypHvxExBsDo4nGdLEA7Ij5q1Cm0xRom74080GfaWNbbG1egB");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">Interstellar</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">PG-13</span>
+<span>2h 49m</span>
+<span class="text-primary">Sci-Fi</span>
+</div>
+</div>
+</div>
+<!-- Channel Card 1 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="News broadcasting studio background" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA0PXarGrL_oiRc-_-P0x4x0kIZIhMu9yDwXc3FB5nxdlbmizt_fpJmrSUva9X5dc6eWJ9Tq6hjop7ZDEYHVhdpEcvymNifazeu2jOevDuVgiN9yBqNDizHUizphyqIZbi8aYYqeEBhTM466uRoECW2P7uAtf-Ef5jb2oAiP4CACnaSwKhMU70N4q75x5ZSqbwqOeq4yU-gdXKnKqVB_aFxZnFZOCBZpfEPMDXMzzBx1Y_4n5cwIsuNLiD8szTPPsrhzho_7DQdlUGU");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<!-- Live Badge -->
+<div class="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider animate-pulse">
+                    Live
+                </div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">BBC News</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="text-primary">News</span>
+<span class="text-gray-400">•</span>
+<span>Now Playing</span>
+</div>
+</div>
+</div>
+<!-- Movie Card 3 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Matrix style digital rain code" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDO6XEEOrdJj0jB02IrVypHCk8PQrK8uLPRyONMKBbndodXdcizekMiKCLSoz4PDX-8_XL0BluWT91fqT7njq5uzqTwVnBl22EAsabNCsrBvj3Rg_H44eUNqpKbonjPqkISbEf0Vsd_wIFwz_9wQ3qUltr_0sXLOv_O6hXl4UyXWd7y_Adm5mZYK9bCbXdwmnsN0F3RJR8xhCyx9jiH9MdM7MFUF_OTtetirOfXg6QwVWY_pTvIKM_TYCGw9cR1lsddZKU_lcOZXMKv");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">The Matrix</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">R</span>
+<span>2h 16m</span>
+<span class="text-primary">Action</span>
+</div>
+</div>
+</div>
+<!-- Series Card 2 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Retro 80s arcade neon style background" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBmFKcJcs-AETj1dzNaiLQf3wAlP7MQH2eBZI8SThkV01pIGdm6RSwR4lkw-m6pLx1Yw-HspWPuX78U9m2jgrBJugtTZoOh-Izj25mLhp3q0q12Dj0hGIJ7C1L0F_J8UfhOwQGpC7N1druhCwwWDkRpIGhvWmAkPplW4Jbv40sgXZw5WQpUpDtbkhBlTxfcpx__JW01xHVU618021c2o1MUhEP1f8mlXiONfHjeBze-tJ4XEdYd1rQVaK0HngrrL8J7bTvzEbTt6XGg");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">Stranger Things</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">14+</span>
+<span>4 Seasons</span>
+<span class="text-primary">Horror</span>
+</div>
+</div>
+</div>
+<!-- Movie Card 4 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Abstract superhero color theme purple and blue" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBmiXHbvkIm0wIw9_nlWJr98ECrc2sYW0zqdnOMzLsFVZ3B17cwzZOMcMKbWePti4TexEBXmrNvjN8bYoLkUvieW5l3KVz7RK9OCljhelb2WqYEbxOs-2R0N6A5AJCC8gr-ZkqwTSM50XcUvdmdIfwZbhdY1ODt2ocfr7pMEwP67iMJnsWiMsmoQPdb6YITbqeLy2Cp5ZKkzg2b8M1xXak1elBiJvrz1LVE6MebAWqaOyHPgaYkAps_W-t-FDSAY8rF0HqGw_lc7JaL");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">Avengers: Endgame</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">PG-13</span>
+<span>3h 1m</span>
+<span class="text-primary">Action</span>
+</div>
+</div>
+</div>
+<!-- Channel Card 2 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Red abstract background representing breaking news" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDrY9IGmEAQyCYnUwX5EvnIzGOhHUlZutFMycPZsAa-VVLVtl4x46pteMeF3vblZgt4iJA5mfI8tfml4HAE9iH2POyu2XwhpkW70nOQhwFQaqCihmllHu2GBDlaee2iyodLdeMKLfeWHKoLMDm_E67sD4C1jkXQ_-BlMn7nfy327q4qbGObH2VvUY1pxbqtW7EJmeLZBxysY_A2qyw3jRlIR_7oL3czsaUDwCxqe2UBItaLl06DIoi8MdAB8_NQIdzrc0Yw2ABTO1h2");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<!-- Live Badge -->
+<div class="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider animate-pulse">
+                    Live
+                </div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">CNN</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="text-primary">News</span>
+<span class="text-gray-400">•</span>
+<span>Now Playing</span>
+</div>
+</div>
+</div>
+<!-- Movie Card 5 (Dune) -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Desert sand dunes landscape for Dune movie" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCFndXWIDDbanEug8Nf-5eTPBmg0l4YahjmH_QAzjczKoLbVIYWfLTYVOiSigG_90vrrgAUjV5a8kR2uy--nHDtxW4sK9k5EJQ474hsSJbLCo6WGOTDo15nOIemaecX7jeVmiz_gXdq0gGnoa-khJKYRl5HOqljyvYYVIWS3O9qsmAp64Q0_7ouWJeP8JfIDhSNoAcJmjxhYPT7gJyf5y7yLPRlnqUawAdT2duwCbtXsmj5N-yyP_w-eyu4Rl_KkzyI8L05NUJYNA1p");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">Dune: Part Two</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">PG-13</span>
+<span>2h 46m</span>
+<span class="text-primary">Sci-Fi</span>
+</div>
+</div>
+</div>
+<!-- Series Card 3 -->
+<div class="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-gray-900 shadow-xl transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" data-alt="Office building modern architecture for Succession series" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCLD_pGooaTOlJ7MJgrKarlgvxJkNF5TmBKb9lyFdzmPwXKyt8SmHsbOKe3iHydFRB0G-ZR9YJ8WNwPRtE_VRfiLaVbGOr3_CrqQFY1cwY3POrDyjbBC4yxBEG6dGS28Es1tGUrK6jGX2cvoa4oc_tUNwpdr-OuNPZzDojsV9ABa0bL1d3wjs5vkiAu357UjiiN250KIm6_L5j15VNiOW5C4seurgM0EZifnlKHKPJx3M1ps1rckvXWUtQThNZ9iJy97zoC1K22ecjX");'></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent opacity-90"></div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+<button class="bg-primary hover:bg-primary/90 text-white rounded-full p-4 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<button class="bg-black/50 hover:bg-red-500/20 text-white hover:text-red-500 rounded-full p-2 backdrop-blur-md transition-colors" title="Remove from favorites">
+<span class="material-symbols-outlined text-[20px] fill-1">favorite</span>
+</button>
+</div>
+<div class="absolute bottom-0 w-full p-4 flex flex-col gap-1 transform translate-y-0 group-hover:-translate-y-2 transition-transform duration-300">
+<h3 class="text-white text-lg font-bold leading-tight line-clamp-2 drop-shadow-md">Succession</h3>
+<div class="flex items-center gap-3 text-xs text-gray-300 font-medium">
+<span class="bg-white/20 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">18+</span>
+<span>4 Seasons</span>
+<span class="text-primary">Drama</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination / Load More -->
+<div class="flex justify-center mt-8 pb-10">
+<button class="flex items-center gap-2 px-8 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-all group">
+                Load more titles
+                <span class="material-symbols-outlined text-[18px] group-hover:translate-y-0.5 transition-transform">expand_more</span>
+</button>
+</div>
+</main>
+</body></html>
