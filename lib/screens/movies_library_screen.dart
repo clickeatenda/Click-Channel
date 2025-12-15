@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
-import '../widgets/glass_panel.dart' show GlassCard;
 
 class MoviesLibraryScreen extends StatefulWidget {
   const MoviesLibraryScreen({super.key});
@@ -11,7 +10,7 @@ class MoviesLibraryScreen extends StatefulWidget {
 }
 
 class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
-  String _searchQuery = '';
+  final String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +34,7 @@ class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
               Text(
                 _searchQuery.isEmpty
                     ? 'Explore nossa coleção completa de filmes'
-                    : 'Resultados para "${_searchQuery}"',
+                    : 'Resultados para "$_searchQuery"',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.6),
                   fontSize: 13,

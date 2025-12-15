@@ -12,7 +12,6 @@ class SeriesLibraryScreen extends StatefulWidget {
 
 class _SeriesLibraryScreenState extends State<SeriesLibraryScreen> {
   int _selectedNavIndex = 1;
-  String _searchQuery = '';
 
   final List<HeaderNav> _navItems = [
     HeaderNav(label: 'Home'),
@@ -37,8 +36,6 @@ class _SeriesLibraryScreenState extends State<SeriesLibraryScreen> {
             userName: 'Sarah J',
             onNotificationTap: () {},
             onProfileTap: () {},
-            onSearchChanged: (query) =>
-                setState(() => _searchQuery = query),
           ),
           Expanded(
             child: SingleChildScrollView(

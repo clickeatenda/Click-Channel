@@ -35,11 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Logo + título
                   GestureDetector(
                     onTap: () => setState(() => _selectedIndex = 0),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const _AppLogo(),
-                        const SizedBox(width: 8),
-                        const Text(
+                        _AppLogo(),
+                        SizedBox(width: 8),
+                        Text(
                           'ClickFlix',
                           style: TextStyle(
                             color: Colors.white,
@@ -208,13 +208,13 @@ class _ProfileMenu extends StatelessWidget {
       },
       itemBuilder: (context) => [
         const PopupMenuItem(value: 0, child: Text('Meu Perfil')),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 1,
           child: Row(
             children: [
-              const Icon(Icons.favorite, color: Color(0xFFE11D48)),
-              const SizedBox(width: 8),
-              const Text('Favoritos'),
+              Icon(Icons.favorite, color: Color(0xFFE11D48)),
+              SizedBox(width: 8),
+              Text('Favoritos'),
             ],
           ),
         ),
@@ -259,11 +259,11 @@ class _HomeBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        const SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               _HeroInception(),
               SizedBox(height: 32),
               _ContinueWatchingSection(),
@@ -316,7 +316,7 @@ class _HeroInception extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: primary),
             ),
-            child: Text(
+            child: const Text(
               'AO VIVO AGORA',
               style: TextStyle(
                 color: primary,
@@ -898,10 +898,10 @@ class _AppLogo extends StatelessWidget {
             ),
           ),
           // Play icon no centro
-          Center(
+          const Center(
             child: Icon(
               Icons.play_arrow,
-              color: const Color(0xFFE11D48),
+              color: Color(0xFFE11D48),
               size: 18,
             ),
           ),
@@ -1020,9 +1020,9 @@ class _HeroBanner extends StatelessWidget {
           Container(
             width: 120,
             height: 120,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
               ),
             ),
@@ -1276,7 +1276,7 @@ class MoviesLibraryBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hero Banner - Filmes
-          _HeroBanner(
+          const _HeroBanner(
             badge: 'FILME EM DESTAQUE',
             title: 'Inception',
             subtitle: 'Ficção Científica • Suspense • 2h 28m',
@@ -1294,9 +1294,9 @@ class MoviesLibraryBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Wrap(
+          const Wrap(
             spacing: 12,
-            children: const [
+            children: [
               _FilterChip(label: 'Todos'),
               _FilterChip(label: 'Ação'),
               _FilterChip(label: 'Comédia'),
@@ -1333,7 +1333,7 @@ class SeriesLibraryBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hero Banner
-          _HeroBanner(
+          const _HeroBanner(
             badge: 'DESTAQUE DA SEMANA',
             title: 'Breaking Bad',
             subtitle: 'Drama • 5 Temporadas • 2008-2013',
@@ -1352,10 +1352,10 @@ class SeriesLibraryBody extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           // Filter tabs
-          SingleChildScrollView(
+          const SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: const [
+              children: [
                 _FilterChip(label: 'Todas'),
                 _FilterChip(label: 'Drama'),
                 _FilterChip(label: 'Comédia'),
@@ -1397,7 +1397,7 @@ class LiveChannelsBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hero Banner
-          _HeroBanner(
+          const _HeroBanner(
             badge: 'AO VIVO AGORA',
             title: 'Jogo Ao Vivo',
             subtitle: 'Esportes • 20:00 • HD',
@@ -1424,10 +1424,10 @@ class LiveChannelsBody extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           // Filter tabs
-          SingleChildScrollView(
+          const SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: const [
+              children: [
                 _FilterChip(label: 'Todos'),
                 _FilterChip(label: 'Notícias'),
                 _FilterChip(label: 'Esportes'),
@@ -1486,7 +1486,7 @@ class PremiumBody extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           // Premium Hero Banner
-          _HeroBanner(
+          const _HeroBanner(
             badge: 'EXCLUSIVO',
             title: 'Desfrute de Conteúdo Premium',
             subtitle: 'Sem anúncios • Qualidade 4K • Download',
