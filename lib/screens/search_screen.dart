@@ -1,0 +1,478 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../core/theme/app_colors.dart';
+import '../models/content_item.dart';
+import '../data/m3u_service.dart';
+import '../widgets/media_player_screen.dart';
+import 'series_detail_screen.dart';
+
+class SearchScreen extends StatefulWidget {
+  final String? initialQuery;
+  const SearchScreen({super.key, this.initialQuery});
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  List<ContentItem> _results = [];
+  bool _loading = false;
+  String _lastQuery = '';
+  
+  // Filtros
+  String _typeFilter = 'all'; // all, movie, series, channel
+  String _qualityFilter = 'all'; // all, 4k, fhd, hd, sd
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      _searchController.text = widget.initialQuery!;
+      _performSearch(widget.initialQuery!);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _searchFocus.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty || query.length < 2) {
+      setState(() {
+        _results = [];
+        _lastQuery = '';
+      });
+      return;
+    }
+    
+    if (query == _lastQuery) return;
+    
+    setState(() {
+      _loading = true;
+      _lastQuery = query;
+    });
+
+    try {
+      // Buscar em todas as categorias
+      final allItems = await M3uService.searchAllContent(query, maxResults: 200);
+      
+      if (mounted) {
+        setState(() {
+          _results = _applyFilters(allItems);
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _results = [];
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  List<ContentItem> _applyFilters(List<ContentItem> items) {
+    return items.where((item) {
+      // Filtro por tipo
+      if (_typeFilter != 'all') {
+        if (_typeFilter == 'movie' && item.type != 'movie') return false;
+        if (_typeFilter == 'series' && !item.isSeries && item.type != 'series') return false;
+        if (_typeFilter == 'channel' && item.type != 'channel') return false;
+      }
+      
+      // Filtro por qualidade
+      if (_qualityFilter != 'all') {
+        final q = item.quality.toLowerCase();
+        if (_qualityFilter == '4k') {
+          // Só mostra 4K/UHD
+          if (!q.contains('4k') && !q.contains('uhd')) return false;
+        } else if (_qualityFilter == 'fhd') {
+          // Só mostra FHD/FullHD (exclui 4K)
+          if (!q.contains('fhd') && !q.contains('fullhd')) return false;
+        } else if (_qualityFilter == 'hd') {
+          // Mostra HD (inclui FHD e 4K também, pois são HD)
+          if (!q.contains('hd') && !q.contains('4k') && !q.contains('uhd')) return false;
+        }
+      }
+      
+      return true;
+    }).toList();
+  }
+
+  void _updateFilters() {
+    if (_lastQuery.isNotEmpty) {
+      _performSearch(_lastQuery);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header com busca
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFF0F1620),
+                border: Border(bottom: BorderSide(color: Color(0x334B5563))),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                        autofocus: false,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocus,
+                          autofocus: true,
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          decoration: InputDecoration(
+                            hintText: 'Buscar filmes, séries, canais...',
+                            hintStyle: const TextStyle(color: Colors.white54),
+                            filled: true,
+                            fillColor: Colors.white10,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, color: Colors.white54),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _results = [];
+                                        _lastQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                          ),
+                          onChanged: (value) {
+                            if (value.length >= 2) {
+                              _performSearch(value);
+                            } else if (value.isEmpty) {
+                              setState(() {
+                                _results = [];
+                                _lastQuery = '';
+                              });
+                            }
+                          },
+                          onSubmitted: _performSearch,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Filtros
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _FilterChip(
+                          label: 'Todos',
+                          selected: _typeFilter == 'all',
+                          onTap: () {
+                            setState(() => _typeFilter = 'all');
+                            _updateFilters();
+                          },
+                        ),
+                        _FilterChip(
+                          label: 'Filmes',
+                          selected: _typeFilter == 'movie',
+                          onTap: () {
+                            setState(() => _typeFilter = 'movie');
+                            _updateFilters();
+                          },
+                        ),
+                        _FilterChip(
+                          label: 'Séries',
+                          selected: _typeFilter == 'series',
+                          onTap: () {
+                            setState(() => _typeFilter = 'series');
+                            _updateFilters();
+                          },
+                        ),
+                        _FilterChip(
+                          label: 'Canais',
+                          selected: _typeFilter == 'channel',
+                          onTap: () {
+                            setState(() => _typeFilter = 'channel');
+                            _updateFilters();
+                          },
+                        ),
+                        const SizedBox(width: 16),
+                        Container(width: 1, height: 24, color: Colors.white24),
+                        const SizedBox(width: 16),
+                        _FilterChip(
+                          label: '4K',
+                          selected: _qualityFilter == '4k',
+                          onTap: () {
+                            setState(() => _qualityFilter = _qualityFilter == '4k' ? 'all' : '4k');
+                            _updateFilters();
+                          },
+                        ),
+                        _FilterChip(
+                          label: 'FHD',
+                          selected: _qualityFilter == 'fhd',
+                          onTap: () {
+                            setState(() => _qualityFilter = _qualityFilter == 'fhd' ? 'all' : 'fhd');
+                            _updateFilters();
+                          },
+                        ),
+                        _FilterChip(
+                          label: 'HD',
+                          selected: _qualityFilter == 'hd',
+                          onTap: () {
+                            setState(() => _qualityFilter = _qualityFilter == 'hd' ? 'all' : 'hd');
+                            _updateFilters();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Resultados
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  : _results.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _lastQuery.isEmpty ? Icons.search : Icons.search_off,
+                                color: Colors.white30,
+                                size: 64,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _lastQuery.isEmpty
+                                    ? 'Digite para buscar'
+                                    : 'Nenhum resultado para "$_lastQuery"',
+                                style: const TextStyle(color: Colors.white54, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                '${_results.length} resultados encontrados',
+                                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                              ),
+                            ),
+                            Expanded(
+                              child: GridView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 6,
+                                  childAspectRatio: 0.55,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                                itemCount: _results.length,
+                                itemBuilder: (context, index) {
+                                  final item = _results[index];
+                                  return _SearchResultCard(
+                                    item: item,
+                                    onTap: () {
+                                      if (item.isSeries) {
+                                        Navigator.push(context, MaterialPageRoute(
+                                          builder: (_) => SeriesDetailScreen(item: item),
+                                        ));
+                                      } else {
+                                        Navigator.push(context, MaterialPageRoute(
+                                          builder: (_) => MediaPlayerScreen(url: item.url, item: item),
+                                        ));
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.primary : Colors.white10,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: selected ? AppColors.primary : Colors.white24,
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.white70,
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchResultCard extends StatelessWidget {
+  final ContentItem item;
+  final VoidCallback onTap;
+
+  const _SearchResultCard({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: item.image,
+                      fit: BoxFit.cover,
+                      placeholder: (c, u) => Container(color: const Color(0xFF333333)),
+                      errorWidget: (c, u, e) => Container(
+                        color: const Color(0xFF333333),
+                        child: Icon(
+                          item.type == 'channel' ? Icons.live_tv : Icons.movie,
+                          color: Colors.white30,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Badge de tipo
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: item.type == 'movie'
+                            ? Colors.blue.withOpacity(0.9)
+                            : item.isSeries || item.type == 'series'
+                                ? Colors.purple.withOpacity(0.9)
+                                : Colors.green.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        item.type == 'movie' ? 'FILME' : (item.isSeries || item.type == 'series') ? 'SÉRIE' : 'CANAL',
+                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  // Badge de qualidade
+                  if (item.quality.isNotEmpty)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black87,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          _getQualityLabel(item.quality),
+                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              item.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+            ),
+            if (item.group.isNotEmpty)
+              Text(
+                item.group,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white54, fontSize: 9),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getQualityLabel(String quality) {
+    final q = quality.toLowerCase();
+    if (q.contains('4k') || q.contains('uhd')) return '4K';
+    if (q.contains('fhd') || q.contains('fullhd')) return 'FHD';
+    if (q.contains('hd')) return 'HD';
+    return 'SD';
+  }
+}

@@ -3,14 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:media_kit/media_kit.dart';
 import 'core/theme/app_colors.dart';
 import 'core/api/api_client.dart';
+import 'core/prefs.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'routes/app_routes.dart';
+import 'core/config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar MediaKit para player de vídeo avançado
+  MediaKit.ensureInitialized();
+  
   // Only load .env for non-web platforms
   if (!kIsWeb) {
     try {
@@ -20,55 +27,90 @@ void main() async {
     }
   }
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  // Permitir todas as orientações (portrait e landscape)
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
   ]);
   
   // Inicializar autenticação
   final apiClient = ApiClient();
   final authProvider = AuthProvider(apiClient);
+  // Init preferences and apply any saved playlist override
+  await Prefs.init();
+  final savedOverride = Prefs.getPlaylistOverride();
+  final hasPlaylist = savedOverride != null && savedOverride.isNotEmpty;
+  if (hasPlaylist) {
+    Config.setPlaylistOverride(savedOverride);
+  }
   await authProvider.initialize();
   
-  runApp(ClickFlixApp(authProvider: authProvider, apiClient: apiClient));
+  runApp(ClickChannelApp(
+    authProvider: authProvider,
+    apiClient: apiClient,
+    hasPlaylist: hasPlaylist,
+  ));
 }
 
-class ClickFlixApp extends StatelessWidget {
+class ClickChannelApp extends StatelessWidget {
   final AuthProvider authProvider;
   final ApiClient apiClient;
+  final bool hasPlaylist;
   
-  const ClickFlixApp({
+  const ClickChannelApp({
     required this.authProvider,
     required this.apiClient,
+    required this.hasPlaylist,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Determina rota inicial: Setup se não tem playlist, senão Home/Login
+    String initialRoute;
+    if (!hasPlaylist) {
+      initialRoute = AppRoutes.setup;
+    } else if (authProvider.isAuthenticated) {
+      initialRoute = AppRoutes.home;
+    } else {
+      // Como temos playlist mas FRONT_ONLY é true, vai direto para Setup verificar cache
+      initialRoute = AppRoutes.setup;
+    }
+
     return MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: apiClient),
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'ClickFlix',
-        theme: ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: AppColors.backgroundDark,
-          canvasColor: AppColors.backgroundDarker,
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.primary,
-            secondary: AppColors.accent,
-            surface: AppColors.surface,
-            error: AppColors.error,
-          ),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: AppColors.backgroundDark,
-            elevation: 0,
-            centerTitle: true,
-          ),
+      child: Shortcuts(
+        shortcuts: <LogicalKeySet, Intent>{
+          LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent(),
+          LogicalKeySet(LogicalKeyboardKey.arrowUp): const DirectionalFocusIntent(TraversalDirection.up),
+          LogicalKeySet(LogicalKeyboardKey.arrowDown): const DirectionalFocusIntent(TraversalDirection.down),
+          LogicalKeySet(LogicalKeyboardKey.arrowLeft): const DirectionalFocusIntent(TraversalDirection.left),
+          LogicalKeySet(LogicalKeyboardKey.arrowRight): const DirectionalFocusIntent(TraversalDirection.right),
+        },
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Click Channel',
+          theme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: AppColors.backgroundDark,
+            canvasColor: AppColors.backgroundDarker,
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primary,
+              secondary: AppColors.accent,
+              surface: AppColors.surface,
+              error: AppColors.error,
+            ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: AppColors.backgroundDark,
+              elevation: 0,
+              centerTitle: true,
+            ),
           textTheme: const TextTheme(
             displayLarge: TextStyle(
               fontSize: 48,
@@ -109,8 +151,9 @@ class ClickFlixApp extends StatelessWidget {
             ),
           ),
         ),
-        initialRoute: authProvider.isAuthenticated ? AppRoutes.home : AppRoutes.login,
-        onGenerateRoute: AppRoutes.generateRoute,
+          initialRoute: initialRoute,
+          onGenerateRoute: AppRoutes.generateRoute,
+        ),
       ),
     );
   }
@@ -153,36 +196,46 @@ class _SplashScreenState extends State<SplashScreen> {
                   scale: 0.8 + (value * 0.2),
                   child: Opacity(
                     opacity: value,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
-                            blurRadius: 30,
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.movie,
-                        color: Colors.white,
-                        size: 48,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primary.withOpacity(0.7),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: const Icon(Icons.live_tv, color: Colors.white, size: 64),
+                          );
+                        },
                       ),
                     ),
                   ),
                 );
               },
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Click Channel',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
             ),
             const SizedBox(height: 40),
             const SizedBox(

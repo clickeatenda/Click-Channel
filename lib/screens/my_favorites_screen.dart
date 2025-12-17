@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
+import '../models/content_item.dart';
+import '../widgets/optimized_gridview.dart';
 
 class MyFavoritesScreen extends StatefulWidget {
   const MyFavoritesScreen({super.key});
@@ -11,31 +13,52 @@ class MyFavoritesScreen extends StatefulWidget {
 }
 
 class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
-  int _selectedNavIndex = 0;
+  int _selectedNavIndex = -1; // fora da Home, nenhum selecionado
 
   final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Home'),
-    HeaderNav(label: 'Favorites'),
-    HeaderNav(label: 'Live TV'),
+    HeaderNav(label: 'Início'),
+    HeaderNav(label: 'Filmes'),
+    HeaderNav(label: 'Séries'),
+    HeaderNav(label: 'Canais'),
+    HeaderNav(label: 'SharkFlix'),
   ];
+
+  void _navigateByIndex(int index) {
+    if (index >= 0 && index <= 4) {
+      Navigator.pushNamed(context, '/home', arguments: index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final demoFavorites = List.generate(8, (i) => ContentItem(
+      title: 'Favorite ${i + 1}',
+      url: 'https://example.com/fav/${i + 1}',
+      image: '',
+      group: 'Favorites',
+      type: i.isEven ? 'movie' : 'series',
+      isSeries: !i.isEven,
+    ));
+
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       body: Column(
         children: [
           CustomAppHeader(
-            title: 'ClickFlix',
+            title: 'Click Channel',
             navItems: _navItems,
             selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) =>
-                setState(() => _selectedNavIndex = index),
+            onNavSelected: (index) => _navigateByIndex(index),
             userAvatarUrl:
                 'https://via.placeholder.com/32x32?text=User',
             userName: 'Sarah J',
             onNotificationTap: () {},
-            onProfileTap: () {},
+            onProfileTap: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+            onSettingsTap: () {
+              Navigator.pushNamed(context, '/settings');
+            },
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -73,17 +96,15 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // Favorites Grid
-                    GridView.count(
+                    // Favorites Grid com navegação por controle
+                    OptimizedGridView(
+                      items: demoFavorites,
                       crossAxisCount: 4,
                       mainAxisSpacing: 24,
                       crossAxisSpacing: 24,
-                      shrinkWrap: true,
+                      childAspectRatio: 0.7,
                       physics: const NeverScrollableScrollPhysics(),
-                      children: List.generate(
-                        8,
-                        (index) => _buildFavoriteCard('Favorite ${index + 1}'),
-                      ),
+                      onTap: (item) => _handleFavoriteTap(item),
                     ),
                   ],
                 ),
@@ -113,81 +134,8 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
     );
   }
 
-  Widget _buildFavoriteCard(String title) {
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primary.withOpacity(0.2),
-                    AppColors.surface,
-                  ],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  const Center(
-                    child: Icon(
-                      Icons.favorite,
-                      color: AppColors.primary,
-                      size: 40,
-                    ),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.favorite,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Added to favorites',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  void _handleFavoriteTap(ContentItem item) {
+    // TODO: integrar com detalhe/player conforme tipo
+    debugPrint('Abrir favorito: ${item.title} (${item.type})');
   }
 }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
+import '../core/config.dart';
+import '../core/prefs.dart';
+import '../data/m3u_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
 
@@ -11,16 +15,149 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _selectedNavIndex = 0;
+  // -1 para nenhum selecionado (fora da Home)
+  int _selectedNavIndex = -1;
   bool _darkMode = true;
   bool _autoplay = true;
   bool _notifications = true;
+  late TextEditingController _playlistController;
+  final FocusNode _urlFocusNode = FocusNode();
+  final FocusNode _buttonFocusNode = FocusNode();
+  bool _urlHasFocus = false;
+  bool _buttonHasFocus = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _playlistController = TextEditingController(text: Config.playlistRuntime ?? '');
+    _urlFocusNode.addListener(() {
+      if (mounted) setState(() => _urlHasFocus = _urlFocusNode.hasFocus);
+    });
+    _buttonFocusNode.addListener(() {
+      if (mounted) setState(() => _buttonHasFocus = _buttonFocusNode.hasFocus);
+    });
+  }
+
+  @override
+  void dispose() {
+    _playlistController.dispose();
+    _urlFocusNode.dispose();
+    _buttonFocusNode.dispose();
+    super.dispose();
+  }
+
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+  String _downloadStatus = '';
+
+  Future<void> _applyPlaylist() async {
+    final value = _playlistController.text.trim();
+    
+    if (value.isEmpty) {
+      Config.setPlaylistOverride(null);
+      await Prefs.setPlaylistOverride(null);
+      await Prefs.setPlaylistReady(false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Playlist removida'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Inicia download com progresso
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+      _downloadStatus = 'Conectando...';
+    });
+
+    try {
+      print('🔧 [Settings] Baixando playlist: $value');
+      
+      // Limpa TODOS os caches (memória E disco) antes de baixar nova lista
+      await M3uService.clearAllCache(value);
+      
+      Config.setPlaylistOverride(value);
+      await Prefs.setPlaylistOverride(value);
+      
+      await M3uService.downloadAndCachePlaylist(
+        value,
+        onProgress: (progress, status) {
+          if (mounted) {
+            setState(() {
+              _downloadProgress = progress;
+              _downloadStatus = status;
+            });
+          }
+        },
+      );
+
+      setState(() {
+        _downloadStatus = 'Processando categorias...';
+        _downloadProgress = 0.9;
+      });
+
+      await M3uService.preloadCategories(value);
+      await Prefs.setPlaylistReady(true);
+
+      setState(() {
+        _isDownloading = false;
+        _downloadProgress = 1.0;
+        _downloadStatus = '';
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Playlist baixada! Redirecionando...'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Redireciona para Home após 1.5s
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        }
+      }
+    } catch (e) {
+      print('❌ [Settings] Erro ao baixar: $e');
+      setState(() {
+        _isDownloading = false;
+        _downloadProgress = 0.0;
+        _downloadStatus = '';
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Erro ao baixar: $e'),
+            duration: const Duration(seconds: 5),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Home'),
-    HeaderNav(label: 'Settings'),
-    HeaderNav(label: 'Help'),
+    HeaderNav(label: 'Início'),
+    HeaderNav(label: 'Filmes'),
+    HeaderNav(label: 'Séries'),
+    HeaderNav(label: 'Canais'),
+    HeaderNav(label: 'SharkFlix'),
   ];
+
+  void _navigateByIndex(int index) {
+    // Mapeia para abas da Home
+    if (index >= 0 && index <= 4) {
+      Navigator.pushNamed(context, '/home', arguments: index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,14 +166,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Column(
         children: [
           CustomAppHeader(
-            title: 'ClickFlix',
+            title: 'Click Channel',
             navItems: _navItems,
             selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) =>
-                setState(() => _selectedNavIndex = index),
+            onNavSelected: (index) => _navigateByIndex(index),
             showSearch: false,
             onNotificationTap: () {},
-            onProfileTap: () {},
+            onProfileTap: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+            onSettingsTap: () {
+              // Já estamos em Settings, fechar ou fazer nada
+              print('🔧 Já em Settings');
+            },
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -51,6 +193,153 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Colors.white,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Playlist (M3U) Input
+                    const Text(
+                      'Playlist IPTV (M3U)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GlassPanel(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'URL da Playlist',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _urlHasFocus ? AppColors.primary : Colors.transparent,
+                                  width: 3,
+                                ),
+                                boxShadow: _urlHasFocus ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.4),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
+                                ] : [],
+                              ),
+                              child: RawKeyboardListener(
+                                focusNode: FocusNode(),
+                                onKey: (event) {
+                                  // Seta para cima sai do campo e volta ao menu
+                                  if (event is RawKeyDownEvent && 
+                                      event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                    FocusScope.of(context).previousFocus();
+                                  }
+                                },
+                                child: TextField(
+                                  controller: _playlistController,
+                                  focusNode: _urlFocusNode,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: 'https://exemplo.com/minha_playlist.m3u',
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                    filled: true,
+                                    fillColor: Colors.white.withOpacity(0.05),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                  onSubmitted: (_) => _buttonFocusNode.requestFocus(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            if (_isDownloading) ...[
+                              // Progress bar durante download
+                              const SizedBox(height: 8),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: _downloadProgress,
+                                  backgroundColor: Colors.white.withOpacity(0.1),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                  minHeight: 6,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _downloadStatus,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ] else ...[
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _buttonHasFocus ? Colors.white : Colors.transparent,
+                                    width: 3,
+                                  ),
+                                  boxShadow: _buttonHasFocus ? [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.6),
+                                      blurRadius: 16,
+                                      spreadRadius: 2,
+                                    ),
+                                  ] : [],
+                                ),
+                                child: ElevatedButton.icon(
+                                  focusNode: _buttonFocusNode,
+                                  onPressed: _applyPlaylist,
+                                  icon: Icon(
+                                    Icons.download,
+                                    size: _buttonHasFocus ? 28 : 24,
+                                  ),
+                                  label: Text(
+                                    _buttonHasFocus ? '▶ BAIXAR E SALVAR ◀' : 'Baixar e Salvar',
+                                    style: TextStyle(
+                                      fontSize: _buttonHasFocus ? 16 : 14,
+                                      fontWeight: _buttonHasFocus ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _buttonHasFocus 
+                                        ? AppColors.primary
+                                        : AppColors.primary.withOpacity(0.8),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'A lista será salva localmente',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),

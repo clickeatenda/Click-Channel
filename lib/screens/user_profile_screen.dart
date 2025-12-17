@@ -12,13 +12,21 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  int _selectedNavIndex = 0;
+  int _selectedNavIndex = -1; // fora da Home
 
   final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Home'),
-    HeaderNav(label: 'Profile'),
-    HeaderNav(label: 'Settings'),
+    HeaderNav(label: 'Início'),
+    HeaderNav(label: 'Filmes'),
+    HeaderNav(label: 'Séries'),
+    HeaderNav(label: 'Canais'),
+    HeaderNav(label: 'SharkFlix'),
   ];
+
+  void _navigateByIndex(int index) {
+    if (index >= 0 && index <= 4) {
+      Navigator.pushNamed(context, '/home', arguments: index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +35,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       body: Column(
         children: [
           CustomAppHeader(
-            title: 'ClickFlix',
+            title: 'Click Channel',
             navItems: _navItems,
             selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) =>
-                setState(() => _selectedNavIndex = index),
+            onNavSelected: (index) => _navigateByIndex(index),
             showSearch: false,
             onNotificationTap: () {},
-            onProfileTap: () {},
+            onProfileTap: () {
+              // Abrir Configurações ao tocar na imagem de perfil
+              print('👤 Perfil: abrindo Configurações...');
+              Navigator.pushNamed(context, '/settings').then((_) {
+                print('✅ Voltou de Settings (via perfil)');
+              });
+            },
+            onSettingsTap: () {
+              print('🔧 Navegando para Settings...');
+              Navigator.pushNamed(context, '/settings').then((_) {
+                print('✅ Voltou de Settings');
+              });
+            },
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -47,6 +66,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     GlassPanel(
                       child: Column(
                         children: [
+                          const Text(
+                            'Perfil do Usuário',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
                           Container(
                             width: 120,
                             height: 120,
@@ -95,15 +123,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             children: [
                               Expanded(
                                 child: GlassButton(
-                                  label: 'Edit Profile',
-                                  onPressed: () {},
+                                  label: 'Meus Favoritos',
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/favorites');
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: GlassButton(
-                                  label: 'Settings',
-                                  onPressed: () {},
+                                  label: 'Configurações',
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/settings');
+                                  },
                                 ),
                               ),
                             ],
