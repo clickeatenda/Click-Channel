@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui';
 
 class GlassPanel extends StatelessWidget {
@@ -112,46 +113,67 @@ class GlassCard extends StatefulWidget {
 
 class _GlassCardState extends State<GlassCard> {
   bool _isHovering = false;
+  bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(16)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(_isHovering ? 0.1 : 0.07),
-                    Colors.white.withOpacity(_isHovering ? 0.05 : 0.03),
-                  ],
-                ),
-                border: Border.all(
-                  color: Colors.white.withOpacity(_isHovering ? 0.15 : 0.05),
-                  width: 1,
-                ),
-                borderRadius: const BorderRadius.all(Radius.circular(16)),
-                boxShadow: _isHovering ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 30,
-                    spreadRadius: -5,
-                    offset: const Offset(0, 10),
+    final active = _isHovering || _isFocused;
+    return Focus(
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
+      onKey: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.space)) {
+          widget.onTap?.call();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovering = true),
+        onExit: (_) => setState(() => _isHovering = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(16)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(active ? 0.12 : 0.07),
+                      Colors.white.withOpacity(active ? 0.08 : 0.03),
+                    ],
                   ),
-                ] : null,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(active ? 0.2 : 0.05),
+                    width: 1,
+                  ),
+                  borderRadius: const BorderRadius.all(Radius.circular(16)),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 30,
+                            spreadRadius: -5,
+                            offset: const Offset(0, 10),
+                          ),
+                        ]
+                      : null,
+                ),
+                transform: active
+                    ? (Matrix4.identity()
+                      ..translate(0, -4)
+                      ..scale(1.02))
+                    : Matrix4.identity(),
+                padding: widget.padding,
+                child: widget.child,
               ),
-              transform: _isHovering ? (Matrix4.identity()..translate(0, -5)) : Matrix4.identity(),
-              padding: widget.padding,
-              child: widget.child,
             ),
           ),
         ),

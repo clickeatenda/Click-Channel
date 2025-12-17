@@ -8,6 +8,7 @@ import '../screens/series_detail_screen.dart';
 import '../screens/my_favorites_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/setup_screen.dart';
 import '../screens/player_dashboard_screen.dart';
 import '../screens/category_screen.dart';
 import '../models/content_item.dart';
@@ -17,6 +18,7 @@ class AppRoutes {
   // Route names
   static const String login = '/login';
   static const String home = '/home';
+  static const String setup = '/setup';
   static const String liveChannels = '/live-channels';
   static const String moviesLibrary = '/movies';
   static const String seriesLibrary = '/series';
@@ -34,8 +36,16 @@ class AppRoutes {
         case login:
           return MaterialPageRoute(builder: (_) => const LoginScreen());
 
+        case setup:
+          return MaterialPageRoute(builder: (_) => const SetupScreen());
+
         case home:
-          return MaterialPageRoute(builder: (_) => const HomeScreen());
+          // Permite navegar para Home em uma aba específica via argumento inteiro (0..4)
+          final args = routeSettings.arguments;
+          int initialIndex = 0;
+          if (args is int) initialIndex = args;
+          if (args is Map && args['initialIndex'] is int) initialIndex = args['initialIndex'];
+          return MaterialPageRoute(builder: (_) => HomeScreen(initialIndex: initialIndex));
 
         case liveChannels:
           return MaterialPageRoute(builder: (_) => const LiveChannelsScreen());
@@ -71,7 +81,15 @@ class AppRoutes {
           return MaterialPageRoute(builder: (_) => const SettingsScreen());
 
         case player:
-          // por enquanto usa o dashboard genérico de player
+          final args = routeSettings.arguments;
+          if (args is Map<String, dynamic>) {
+            return MaterialPageRoute(
+              builder: (_) => PlayerDashboardScreen(
+                contentTitle: args['contentTitle'] ?? '',
+                contentUrl: args['contentUrl'] ?? '',
+              ),
+            );
+          }
           return MaterialPageRoute(
             builder: (_) => const PlayerDashboardScreen(),
           );
@@ -153,6 +171,10 @@ class AppRoutes {
         'type': type,
       },
     );
+  }
+
+  static void goToSetup(BuildContext context) {
+    Navigator.of(context).pushNamedAndRemoveUntil(setup, (route) => false);
   }
 
   static void goToLiveChannels(BuildContext context) {

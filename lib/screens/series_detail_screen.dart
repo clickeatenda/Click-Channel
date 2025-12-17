@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
+import '../core/config.dart';
 import '../models/content_item.dart';
 import '../models/series_details.dart';
 import '../data/api_service.dart';
-import '../widgets/player_screen.dart';
+import '../data/m3u_service.dart';
+import '../widgets/media_player_screen.dart';
+import '../widgets/meta_chips_widget.dart';
+
 
 class SeriesDetailScreen extends StatefulWidget {
   final ContentItem item;
@@ -19,6 +23,8 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   SeriesDetails? details;
   bool loading = true;
   String? selectedSeason;
+  String? selectedAudioType;
+  List<String> availableAudioTypes = [];
 
   @override
   void initState() {
@@ -27,7 +33,16 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   }
 
   Future<void> _loadDetails() async {
-    final d = await ApiService.fetchSeriesDetails(widget.item.id);
+    // Preferir M3U quando disponível
+    SeriesDetails? d;
+    if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
+      // Carregar tipos de áudio disponíveis
+      availableAudioTypes = await M3uService.getAvailableAudioTypesForSeries(widget.item.title, widget.item.group);
+      d = await M3uService.fetchSeriesDetailsFromM3u(widget.item.title, widget.item.group);
+    } else {
+      d = await ApiService.fetchSeriesDetails(widget.item.id);
+    }
+    
     if (mounted) {
       setState(() {
         details = d;
@@ -92,14 +107,81 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: widget.item.image.isNotEmpty
-                        ? CachedNetworkImage(imageUrl: widget.item.image, fit: BoxFit.cover)
-                        : Container(color: Colors.grey[800], child: const Icon(Icons.tv, size: 50, color: Colors.white)),
+                        ? CachedNetworkImage(
+                            imageUrl: widget.item.image, 
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[800],
+                              child: const Center(child: CircularProgressIndicator()),
+                            ),
+                            errorWidget: (c, u, e) => Container(
+                              color: Colors.grey[800],
+                              child: const Icon(Icons.video_library, size: 60, color: Colors.white54),
+                            ),
+                          )
+                        : Container(
+                            color: Colors.grey[800], 
+                            child: const Icon(Icons.video_library, size: 60, color: Colors.white54),
+                          ),
                   ),
                 ),
                 
                 Text(widget.item.title, textAlign: TextAlign.center, style: AppTypography.headlineMedium.copyWith(fontSize: 20)),
+                const SizedBox(height: 8),
+                // Audio Type Selector (DUB/LEG)
+                if (availableAudioTypes.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      children: availableAudioTypes.map((audioType) {
+                        final isSelected = selectedAudioType == audioType;
+                        return FilterChip(
+                          label: Text(audioType.toUpperCase()),
+                          selected: isSelected,
+                          onSelected: (selected) async {
+                            setState(() => selectedAudioType = selected ? audioType : null);
+                            // Recarregar detalhes com novo audioType
+                            SeriesDetails? d;
+                            if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
+                              d = await M3uService.fetchSeriesDetailsFromM3u(
+                                widget.item.title,
+                                widget.item.group,
+                                audioType: selected ? audioType : null,
+                              );
+                            }
+                            if (d != null && mounted) {
+                              setState(() {
+                                details = d;
+                                if (d != null && d.seasons.isNotEmpty) {
+                                  final keys = d.seasons.keys.toList();
+                                  keys.sort((a, b) {
+                                    int na = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+                                    int nb = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+                                    return na.compareTo(nb);
+                                  });
+                                  selectedSeason = keys.first;
+                                }
+                              });
+                            }
+                          },
+                          backgroundColor: Colors.transparent,
+                          side: BorderSide(
+                            color: isSelected ? AppColors.primary : Colors.white24,
+                          ),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.white70,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                // Metadados: origem do stream, tipo de áudio, qualidade e avaliação
+                MetaChipsWidget(item: widget.item),
                 const SizedBox(height: 20),
-                
                 // Lista de Temporadas (COM EXPANDED PARA EVITAR OVERFLOW)
                 Expanded(
                   child: Container(
@@ -113,11 +195,10 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                       itemBuilder: (ctx, i) {
                         final season = sortedSeasons[i];
                         final isActive = season == selectedSeason;
-                        
                         return _SeasonButton(
-                          title: season, 
-                          isActive: isActive, 
-                          onTap: () => setState(() => selectedSeason = season)
+                          title: season,
+                          isActive: isActive,
+                          onTap: () => setState(() => selectedSeason = season),
                         );
                       },
                     ),
@@ -153,7 +234,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                         final ep = details!.seasons[selectedSeason]![i];
                         return _EpisodeCard(
                           episode: ep,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlayerScreen(url: ep.url))),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: ep.url, item: ep))),
                         );
                       },
                     ),

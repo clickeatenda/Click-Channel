@@ -81,49 +81,49 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Center(
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 120, vertical: 24),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Logo and title
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.primary,
-                                AppColors.primary.withOpacity(0.7),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                blurRadius: 20,
-                                spreadRadius: 0,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.movie,
-                            color: Colors.white,
-                            size: 32,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      AppColors.primary,
+                                      AppColors.primary.withOpacity(0.7),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.live_tv, color: Colors.white, size: 28),
+                              );
+                            },
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         const Text(
-                          'ClickFlix',
+                          'Click Channel',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 32,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.015,
                           ),
                         ),
-                        const SizedBox(height: 48),
+                        const SizedBox(height: 24),
                         // Auth Card
                         GlassPanel(
                           padding: const EdgeInsets.all(0),
@@ -224,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               // Tab content
                               Padding(
-                                padding: const EdgeInsets.all(32),
+                                padding: const EdgeInsets.all(20),
                                 child: _selectedTab == 0
                                     ? _buildLoginForm()
                                     : _buildRegisterForm(),
@@ -232,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 20),
                         // Footer
                         Text(
                           'Need help?',
@@ -263,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
           keyboardType: TextInputType.emailAddress,
           prefixIcon: Icons.mail_outline,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         GlassInput(
           hintText: 'Password',
           controller: _passwordController,

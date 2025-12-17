@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/content_item.dart';
+import '../widgets/optimized_gridview.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
@@ -11,13 +13,21 @@ class LiveChannelsScreen extends StatefulWidget {
 }
 
 class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
-  int _selectedNavIndex = 2;
+  int _selectedNavIndex = -1; // fora da Home, nenhum selecionado
 
   final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Home'),
-    HeaderNav(label: 'Categories'),
-    HeaderNav(label: 'Live TV'),
+    HeaderNav(label: 'Início'),
+    HeaderNav(label: 'Filmes'),
+    HeaderNav(label: 'Séries'),
+    HeaderNav(label: 'Canais'),
+    HeaderNav(label: 'SharkFlix'),
   ];
+
+  void _navigateByIndex(int index) {
+    if (index >= 0 && index <= 4) {
+      Navigator.pushNamed(context, '/home', arguments: index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,16 +36,20 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
       body: Column(
         children: [
           CustomAppHeader(
-            title: 'ClickFlix',
+            title: 'Click Channel',
             navItems: _navItems,
             selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) =>
-                setState(() => _selectedNavIndex = index),
+            onNavSelected: (index) => _navigateByIndex(index),
             userAvatarUrl:
                 'https://via.placeholder.com/32x32?text=User',
             userName: 'Sarah J',
             onNotificationTap: () {},
-            onProfileTap: () {},
+            onProfileTap: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+            onSettingsTap: () {
+              Navigator.pushNamed(context, '/settings');
+            },
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -75,17 +89,23 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
                     ),
                     const SizedBox(height: 32),
                     // Channels Grid
-                    GridView.count(
+                    OptimizedGridView(
+                      items: List.generate(9, (i) => ContentItem(
+                        title: 'Channel ${i + 1}',
+                        url: 'https://example.com/channel/${i + 1}',
+                        image: '',
+                        group: 'Live',
+                        type: 'channel',
+                      )),
                       crossAxisCount: 3,
                       mainAxisSpacing: 24,
                       crossAxisSpacing: 24,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
                       childAspectRatio: 1.2,
-                      children: List.generate(
-                        9,
-                        (index) => _buildChannelCard('Channel ${index + 1}'),
-                      ),
+                      physics: const NeverScrollableScrollPhysics(),
+                      onTap: (item) {
+                        // TODO: integrar player de canal ao vivo
+                        debugPrint('Selecionado canal: ${item.title}');
+                      },
                     ),
                   ],
                 ),
@@ -115,103 +135,4 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
     );
   }
 
-  Widget _buildChannelCard(String title) {
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      onTap: () {},
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primary.withOpacity(0.3),
-                    AppColors.surface,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Stack(
-                children: [
-                  const Center(
-                    child: Icon(
-                      Icons.tv,
-                      color: AppColors.primary,
-                      size: 40,
-                    ),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'LIVE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '2.4K watching',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

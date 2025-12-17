@@ -2,8 +2,9 @@ import 'content_item.dart';
 
 class SeriesDetails {
   final Map<String, List<ContentItem>> seasons;
+  final String? selectedAudioType; // 'dub', 'leg', 'multi', ou null para mostrar tudo
 
-  SeriesDetails({required this.seasons});
+  SeriesDetails({required this.seasons, this.selectedAudioType});
 
   factory SeriesDetails.fromJson(Map<String, dynamic> json) {
     Map<String, List<ContentItem>> parsedSeasons = {};

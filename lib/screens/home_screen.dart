@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'detail_screens.dart';
+import 'series_detail_screen.dart' as sdetail;
+import 'search_screen.dart';
+import '../data/api_service.dart';
+import '../data/watch_history_service.dart';
+import '../data/m3u_service.dart';
+import '../core/config.dart';
+import '../core/theme/app_colors.dart';
+import '../models/content_item.dart';
+import '../widgets/media_player_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int initialIndex;
+  const HomeScreen({super.key, this.initialIndex = 0});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -10,6 +22,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _AppLogo(),
                         SizedBox(width: 8),
                         Text(
-                          'ClickFlix',
+                          'Click Channel',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -62,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             label: 'Início',
                             selected: _selectedIndex == 0,
                             onTap: () => setState(() => _selectedIndex = 0),
+                            autofocus: true,
                           ),
                           _NavItem(
                             label: 'Filmes',
@@ -92,35 +113,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Search
                   SizedBox(
                     width: 200,
-                    child: TextField(
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        hintText: 'Buscar filmes, séries...',
-                        hintStyle: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 13,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white10,
-                        border: OutlineInputBorder(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => const SearchScreen(),
+                        ));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Color(0x334B5563),
-                          ),
+                          border: Border.all(color: const Color(0x334B5563)),
                         ),
-                        prefixIcon: const Icon(Icons.search,
-                            color: Colors.white70, size: 18),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.search, color: Colors.white70, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Buscar filmes, séries...',
+                              style: TextStyle(color: Colors.white54, fontSize: 13),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  IconButton(
-                    icon: const Icon(Icons.notifications_none,
-                        color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  const SizedBox(width: 8),
                   const _ProfileMenu(),
                 ],
               ),
@@ -146,40 +165,71 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _NavItem extends StatefulWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final bool autofocus;
 
   const _NavItem({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.autofocus = false,
   });
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> {
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFFE11D48);
+    final active = widget.selected || _focused;
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: selected ? primary : Colors.transparent,
-              width: 2,
+    return Focus(
+      autofocus: widget.autofocus,
+      onFocusChange: (f) {
+        setState(() => _focused = f);
+        if (f) print('📍 Nav focado: ${widget.label}');
+      },
+      onKey: (node, event) {
+        if (event is RawKeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          print('🎯 Nav selecionado: ${widget.label}');
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: InkWell(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          margin: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(
+            color: _focused ? Colors.white.withOpacity(0.08) : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border(
+              bottom: BorderSide(
+                color: widget.selected ? primary : Colors.transparent,
+                width: 2,
+              ),
             ),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : Colors.white70,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            fontSize: 14,
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: active ? Colors.white : Colors.white70,
+              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+              fontSize: 14,
+            ),
           ),
         ),
       ),
@@ -192,303 +242,31 @@ class _ProfileMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<int>(
-      offset: const Offset(0, 40),
-      color: const Color(0xFF111827),
-      onSelected: (value) {
-        if (value == 1) {
-          // Ir para tela de favoritos
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MyFavoritesScreen(),
-            ),
-          );
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(value: 0, child: Text('Meu Perfil')),
-        const PopupMenuItem(
-          value: 1,
-          child: Row(
-            children: [
-              Icon(Icons.favorite, color: Color(0xFFE11D48)),
-              SizedBox(width: 8),
-              Text('Favoritos'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(value: 2, child: Text('Histórico')),
-        const PopupMenuItem(value: 3, child: Text('Configurações')),
-        const PopupMenuItem(value: 4, child: Text('Sair')),
-      ],
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.white10,
-              border: Border.all(color: Colors.white24),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.person, color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'Sarah',
-            style: TextStyle(color: Colors.white, fontSize: 13),
-          ),
-          const Icon(Icons.keyboard_arrow_down,
-              color: Colors.white70, size: 18),
-        ],
-      ),
-    );
-  }
-}
-
-/// =====================
-///  ABA INÍCIO
-/// =====================
-
-class _HomeBody extends StatelessWidget {
-  const _HomeBody();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _HeroInception(),
-              SizedBox(height: 32),
-              _ContinueWatchingSection(),
-              SizedBox(height: 32),
-              _CategoriesSection(),
-              SizedBox(height: 32),
-              _TrendingSection(),
-            ],
-          ),
-        ),
-        // Painel de teste flutuante
-        Positioned(
-          bottom: 24,
-          right: 24,
-          child: _TestPanel(),
-        ),
-      ],
-    );
-  }
-}
-
-class _HeroInception extends StatelessWidget {
-  const _HeroInception();
-
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFFE11D48);
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0x33E11D48), Color(0x330F1620)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: const Border.fromBorderSide(
-          BorderSide(color: Color(0x334B5563)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0x33E11D48),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: primary),
-            ),
-            child: const Text(
-              'AO VIVO AGORA',
-              style: TextStyle(
-                color: primary,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Inception',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Ficção Científica • 2h 28m • 8.8/10',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () {},
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Reproduzir'),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white30),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () {},
-                child: const Text('Mais Info'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ContinueWatchingSection extends StatelessWidget {
-  const _ContinueWatchingSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> items = [
-      {'title': 'The Crown', 'subtitle': 'Série • 5 temp'},
-      {'title': 'Stranger Things', 'subtitle': 'Série • 4 temp'},
-      {'title': 'Inception', 'subtitle': 'Filme • 2023'},
-      {'title': 'The Last Kingdom', 'subtitle': 'Série • 5 temp'},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionTitle(title: 'Continuar Assistindo'),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 220,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _MediaCard(
-                title: item['title'] ?? '',
-                subtitle: item['subtitle'] ?? '',
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CategoriesSection extends StatelessWidget {
-  const _CategoriesSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final cats = [
-      {'name': 'Ação', 'emoji': '🔥'},
-      {'name': 'Comédia', 'emoji': '😂'},
-      {'name': 'Drama', 'emoji': '💔'},
-      {'name': 'Terror', 'emoji': '😱'},
-      {'name': 'Ficção Científica', 'emoji': '🚀'},
-      {'name': 'Romance', 'emoji': '💕'},
-      {'name': 'Suspense', 'emoji': '🎬'},
-      {'name': 'Animação', 'emoji': '📚'},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionTitle(title: 'Categorias Populares'),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: cats.length,
-          gridDelegate:
-              const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.4,
-          ),
-          itemBuilder: (context, index) {
-            return _CategoryCard(
-              label: cats[index]['name'] ?? '',
-              emoji: cats[index]['emoji'] ?? '🎬',
-            );
+        // Botão de Configurações (engrenagem)
+        IconButton(
+          icon: const Icon(Icons.settings, color: Colors.white70),
+          onPressed: () {
+            Navigator.pushNamed(context, '/settings');
           },
         ),
-      ],
-    );
-  }
-}
-
-class _TrendingSection extends StatelessWidget {
-  const _TrendingSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> items = [
-      {'title': 'Inception', 'subtitle': 'Filme • 2010'},
-      {'title': 'Interstellar', 'subtitle': 'Filme • 2014'},
-      {'title': 'Breaking Bad', 'subtitle': 'Série • 2008'},
-      {'title': 'The Crown', 'subtitle': 'Série • 2016'},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionTitle(title: 'Tendências'),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 220,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _MediaCard(
-                title: item['title'] ?? '',
-                subtitle: item['subtitle'] ?? '',
-              );
-            },
+        const SizedBox(width: 4),
+        // Botão de Perfil (pessoa)
+        GestureDetector(
+          onTap: () {
+            Navigator.pushNamed(context, '/profile');
+          },
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white.withOpacity(0.1),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: const Icon(Icons.person, color: Colors.white, size: 20),
           ),
         ),
       ],
@@ -496,316 +274,7 @@ class _TrendingSection extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-
-  const _SectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: 18,
-      ),
-    );
-  }
-}
-
-class _MediaCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _MediaCard({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 160,
-      decoration: BoxDecoration(
-        color: const Color(0x33111B2B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x334B5563)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 120,
-            decoration: const BoxDecoration(
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(12)),
-              gradient: LinearGradient(
-                colors: [Color(0xFFE11D48), Color(0xFF1E293B)],
-              ),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.play_circle_fill,
-                color: Colors.white, size: 40),
-          ),
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// =====================
-// SERIES CARD
-// =====================
-
-class _SeriesCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _SeriesCard({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0x33111B2B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x334B5563)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(12)),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFE11D48), Color(0xFF111827)],
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.tv,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Série Exemplo',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  '5 temporadas • 2024',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// =====================
-// CHANNEL CARD
-// =====================
-
-class _ChannelCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _ChannelCard({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0x33111B2B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x334B5563)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(12)),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFE11D48), Color(0xFF111827)],
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.live_tv,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Canal ao Vivo',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  '● AO VIVO',
-                  style: TextStyle(
-                    color: Color(0xFFE11D48),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// =====================
-// PREMIUM CARD
-// =====================
-
-class _PremiumCard extends StatelessWidget {
-  const _PremiumCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0x33111B2B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x334B5563)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(12)),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFE11D48), Color(0xFF111827)],
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.star,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Conteúdo Exclusivo',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Apenas para premium',
-                  style: TextStyle(
-                    color: Color(0xFFE11D48),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// (Seção "Continuar Assistindo" removida; não utilizada e estava corrompida)
 
 // =====================
 // APP LOGO WIDGET
@@ -816,96 +285,28 @@ class _AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE11D48).withOpacity(0.4),
-            blurRadius: 12,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Robô estilizado (cabeça)
-          Container(
-            width: 18,
-            height: 18,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.asset(
+        'assets/images/logo.png',
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.9),
-            ),
-          ),
-          // Olhos
-          Positioned(
-            left: 8,
-            top: 8,
-            child: Container(
-              width: 3,
-              height: 3,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF0F1620),
+              borderRadius: BorderRadius.circular(10),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
               ),
             ),
-          ),
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              width: 3,
-              height: 3,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF0F1620),
-              ),
-            ),
-          ),
-          // Antena superior direita
-          Positioned(
-            top: -2,
-            right: 6,
-            child: Container(
-              width: 2,
-              height: 6,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(1),
-              ),
-            ),
-          ),
-          // Antena superior esquerda
-          Positioned(
-            top: -2,
-            left: 6,
-            child: Container(
-              width: 2,
-              height: 6,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(1),
-              ),
-            ),
-          ),
-          // Play icon no centro
-          const Center(
-            child: Icon(
-              Icons.play_arrow,
-              color: Color(0xFFE11D48),
-              size: 18,
-            ),
-          ),
-        ],
+            child: const Icon(Icons.live_tv, color: Colors.white, size: 24),
+          );
+        },
       ),
     );
   }
@@ -1104,15 +505,7 @@ class _TestPanelState extends State<_TestPanel> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const SeriesDetailScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: null,
                     icon: const Icon(Icons.tv, size: 18),
                     label: const Text(
                       'Série Detail',
@@ -1202,120 +595,417 @@ class _TestPanelState extends State<_TestPanel> {
   }
 }
 
-class _CategoryCard extends StatefulWidget {
-  final String label;
-  final String emoji;
-
-  const _CategoryCard({required this.label, required this.emoji});
-
+// Home (Início)
+class _HomeBody extends StatefulWidget {
+  const _HomeBody();
   @override
-  State<_CategoryCard> createState() => _CategoryCardState();
+  State<_HomeBody> createState() => _HomeBodyState();
 }
 
-class _CategoryCardState extends State<_CategoryCard> {
-  bool _isHovered = false;
+class _HomeBodyState extends State<_HomeBody> {
+  List<ContentItem> featuredMovies = [];
+  List<ContentItem> featuredSeries = [];
+  List<ContentItem> featuredChannels = [];
+  List<ContentItem> watchedItems = [];
+  List<WatchingItem> watchingItems = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      // Carregar histórico
+      final watched = await WatchHistoryService.getWatchedItems(limit: 15);
+      final watching = await WatchHistoryService.getWatchingItems(limit: 15);
+      
+      if (mounted) {
+        setState(() {
+          watchedItems = watched;
+          watchingItems = watching;
+        });
+      }
+      
+      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+      if (hasM3u) {
+        // Carregar destaques de cada tipo em paralelo
+        final results = await Future.wait([
+          M3uService.getCuratedFeaturedPrefer('movie', count: 6, pool: 30, maxItems: 600),
+          M3uService.getCuratedFeaturedPrefer('series', count: 6, pool: 30, maxItems: 600),
+          M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600),
+        ]);
+        
+        if (!mounted) return;
+        setState(() {
+          featuredMovies = results[0];
+          featuredSeries = results[1];
+          featuredChannels = results[2];
+          loading = false;
+        });
+      } else {
+        final data = await ApiService.fetchAllMovies(limit: 30);
+        if (!mounted) return;
+        setState(() {
+          featuredMovies = data;
+          loading = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {},
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          decoration: BoxDecoration(
-            color: _isHovered 
-              ? const Color(0x55111B2B)
-              : const Color(0x33111B2B),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isHovered 
-                ? const Color(0xFFE11D48)
-                : const Color(0x334B5563),
-            ),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                widget.emoji,
-                style: const TextStyle(fontSize: 32),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Carrossel "Assistindo" (continuar assistindo)
+          if (watchingItems.isNotEmpty) ...[
+            _WatchingCarousel(items: watchingItems, onRefresh: _load),
+            const SizedBox(height: 16),
+          ],
+          
+          // Carrossel "Últimos assistidos"
+          if (watchedItems.isNotEmpty) ...[
+            _WatchedCarousel(items: watchedItems),
+            const SizedBox(height: 16),
+          ],
+          
+          // Destaques
+          if (loading) const Center(child: CircularProgressIndicator()),
+          
+          // Filmes em destaque
+          if (!loading && featuredMovies.isNotEmpty) ...[
+            _FeaturedCarousel(items: featuredMovies, title: 'Filmes em destaque'),
+            const SizedBox(height: 20),
+          ],
+          
+          // Séries em destaque
+          if (!loading && featuredSeries.isNotEmpty) ...[
+            _FeaturedCarousel(items: featuredSeries, title: 'Séries em destaque'),
+            const SizedBox(height: 20),
+          ],
+          
+          // Canais em destaque
+          if (!loading && featuredChannels.isNotEmpty) ...[
+            _FeaturedCarousel(items: featuredChannels, title: 'Canais em destaque'),
+            const SizedBox(height: 20),
+          ],
+        ],
       ),
     );
   }
 }
 
-/// =====================
-///  ABAS FILMES / SÉRIES / CANAIS / SHARKFLIX
-/// =====================
-
-class MoviesLibraryBody extends StatelessWidget {
+// Declaração da classe principal de Filmes (para a State abaixo)
+class MoviesLibraryBody extends StatefulWidget {
   const MoviesLibraryBody({super.key});
+  @override
+  State<MoviesLibraryBody> createState() => _MoviesLibraryBodyState();
+}
+class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
+  final ScrollController _scrollController = ScrollController();
+  List<ContentItem> movies = [];
+  List<ContentItem> featuredItems = [];
+  List<ContentItem> latestItems = [];
+  List<String> movieCategories = [];
+  List<String> filteredCategories = [];
+  Map<String, int> categoryCounts = {};
+  Map<String, String> categoryThumbs = {};
+  bool loading = true;
+  bool loadingMore = false;
+  bool hasMore = true;
+  final int _pageSize = 120;
+  int _currentPage = 1;
+  String? _lastPlaylistUrl;
+  String _qualityFilter = 'all'; // all, 4k, fhd, hd
+
+  void _applyFilters() {
+    if (_qualityFilter == 'all') {
+      filteredCategories = List.from(movieCategories);
+    } else {
+      // Filtra categorias que contêm a qualidade no nome ou têm conteúdo dessa qualidade
+      filteredCategories = movieCategories.where((cat) {
+        final catLower = cat.toLowerCase();
+        if (_qualityFilter == '4k') return catLower.contains('4k') || catLower.contains('uhd');
+        if (_qualityFilter == 'fhd') return catLower.contains('fhd') || catLower.contains('full');
+        if (_qualityFilter == 'hd') return catLower.contains('hd') && !catLower.contains('fhd') && !catLower.contains('uhd');
+        return true;
+      }).toList();
+      // Se não filtrou nada, mostra todas
+      if (filteredCategories.isEmpty) filteredCategories = List.from(movieCategories);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    print('🎬 MoviesLibraryBody: initState chamado!');
+    _lastPlaylistUrl = Config.playlistRuntime;
+    _scrollController.addListener(_onScroll);
+    _loadMovies(reset: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant MoviesLibraryBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload only if playlist URL changed
+    if (_lastPlaylistUrl != Config.playlistRuntime) {
+      print('🔄 MoviesLibraryBody: URL mudou, recarregando...');
+      _lastPlaylistUrl = Config.playlistRuntime;
+      setState(() {
+        loading = true;
+        loadingMore = false;
+        hasMore = true;
+        movies = [];
+      });
+      _loadMovies(reset: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void reloadMovies() {
+    setState(() {
+      loading = true;
+      loadingMore = false;
+      hasMore = true;
+      movies = [];
+    });
+    _loadMovies(reset: true);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients || loadingMore || !hasMore) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (loadingMore || !hasMore) return;
+    setState(() => loadingMore = true);
+    _currentPage += 1;
+    await _loadMovies();
+  }
+
+  Future<void> _loadMovies({bool reset = false}) async {
+    print('🎬 MoviesLibraryBody: Carregando categorias de filmes...');
+    try {
+      if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
+        print('🎬 MoviesLibraryBody: via M3U (paginado)');
+        
+        // Usa limite menor para primeira carga (mais rápido)
+        final maxItems = reset ? 800 : 1200;
+        
+        final result = await M3uService.fetchPagedFromEnv(
+          page: _currentPage,
+          pageSize: _pageSize,
+          maxItems: maxItems,
+          typeFilter: 'movie',
+        );
+
+        // Carrega meta apenas se reset (primeira vez) e não tem categorias ainda
+        if (reset && movieCategories.isEmpty) {
+          final meta = await M3uService.fetchCategoryMetaFromEnv(
+            typeFilter: 'movie',
+            maxItems: 400,
+          );
+          categoryThumbs = meta.thumbs;
+        }
+        
+        // Featured e latest com limites menores
+        final featured = reset ? await M3uService.getDailyFeaturedMovies(count: 5, pool: 20, maxItems: 400) : featuredItems;
+        final latest = reset ? await M3uService.getLatestMovies(count: 10, maxItems: 400) : latestItems;
+
+        if (mounted) {
+          setState(() {
+            movieCategories = result.categories;
+            categoryCounts = result.categoryCounts;
+            // categoryThumbs já foi carregado acima se reset
+            featuredItems = featured;
+            latestItems = latest;
+            if (reset || movies.isEmpty) {
+              movies = result.items;
+            } else {
+              movies = [...movies, ...result.items];
+            }
+            hasMore = movies.length < result.total;
+            loading = false;
+            loadingMore = false;
+            _applyFilters();
+          });
+        }
+      } else {
+        print('🎬 MoviesLibraryBody: via backend');
+        final cats = await ApiService.fetchCategoryNames('movie');
+        final data = await ApiService.fetchAllMovies(limit: 200);
+        if (mounted) {
+          setState(() {
+            movieCategories = cats;
+            categoryCounts = {};
+            movies = data;
+            loading = false;
+            loadingMore = false;
+            hasMore = false;
+            _applyFilters();
+          });
+        }
+      }
+    } catch (e) {
+      print('❌ MoviesLibraryBody: Erro ao carregar categorias: $e');
+      if (mounted) {
+        setState(() {
+          loading = false;
+          loadingMore = false;
+          hasMore = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final featuredList = featuredItems;
+    final latest = latestItems;
+
+    if (loading && movies.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return SingleChildScrollView(
+      controller: _scrollController,
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero Banner - Filmes
-          const _HeroBanner(
-            badge: 'FILME EM DESTAQUE',
-            title: 'Inception',
-            subtitle: 'Ficção Científica • Suspense • 2h 28m',
-            description: 'Um ladrão que rouba segredos corporativos através do compartilhamento de sonhos',
-            buttonLabel: 'Assistir Agora',
-            icon: Icons.play_arrow,
-          ),
-          const SizedBox(height: 32),
-          const Text(
-            'Movies Library',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+          // Destaques em carrossel
+          if (featuredList.isNotEmpty)
+            _FeaturedCarousel(items: featuredList, title: 'Filmes em destaque')
+          else
+            const _HeroBanner(
+              badge: 'FILME EM DESTAQUE',
+              title: 'Inception',
+              subtitle: 'Ficção Científica • Suspense • 2h 28m',
+              description: 'Um ladrão que rouba segredos corporativos através do compartilhamento de sonhos',
+              buttonLabel: 'Assistir Agora',
+              icon: Icons.play_arrow,
             ),
-          ),
           const SizedBox(height: 24),
-          const Wrap(
-            spacing: 12,
+          // Header com título e filtros
+          Row(
             children: [
-              _FilterChip(label: 'Todos'),
-              _FilterChip(label: 'Ação'),
-              _FilterChip(label: 'Comédia'),
-              _FilterChip(label: 'Drama'),
-              _FilterChip(label: 'Terror'),
+              const Expanded(
+                child: Text(
+                  'Biblioteca de Filmes',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              // Filtros de qualidade
+              _QualityFilterChip(label: 'Todos', selected: _qualityFilter == 'all', onTap: () {
+                setState(() { _qualityFilter = 'all'; _applyFilters(); });
+              }),
+              const SizedBox(width: 8),
+              _QualityFilterChip(label: '4K', selected: _qualityFilter == '4k', onTap: () {
+                setState(() { _qualityFilter = '4k'; _applyFilters(); });
+              }),
+              const SizedBox(width: 8),
+              _QualityFilterChip(label: 'FHD', selected: _qualityFilter == 'fhd', onTap: () {
+                setState(() { _qualityFilter = 'fhd'; _applyFilters(); });
+              }),
+              const SizedBox(width: 8),
+              _QualityFilterChip(label: 'HD', selected: _qualityFilter == 'hd', onTap: () {
+                setState(() { _qualityFilter = 'hd'; _applyFilters(); });
+              }),
             ],
           ),
-          const SizedBox(height: 32),
-          GridView.count(
-            crossAxisCount: 4,
-            mainAxisSpacing: 24,
-            crossAxisSpacing: 24,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: List.generate(
-              12,
-              (index) => const _MovieCard(),
+          const SizedBox(height: 24),
+          if (latest.isNotEmpty) ...[
+            const _SectionTitle(title: 'Últimos filmes adicionados'),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 200,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: latest.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) => SizedBox(
+                  width: 120,
+                  child: _MovieThumb(item: latest[index]),
+                ),
+              ),
             ),
+          ],
+
+          const SizedBox(height: 24),
+          const Text(
+            'Categorias',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
+          const SizedBox(height: 12),
+          loading
+              ? const Center(child: CircularProgressIndicator())
+              : filteredCategories.isEmpty
+                  ? const Text('Nenhuma categoria encontrada', style: TextStyle(color: Colors.white70))
+                  : GridView.count(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: 3.8,
+                      children: filteredCategories.map((cat) {
+                        final count = categoryCounts[cat];
+                        final thumb = categoryThumbs[cat] ?? '';
+                        return _CategoryImageCard(
+                          label: cat,
+                          info: count != null ? '$count títulos' : 'Categoria',
+                          image: thumb,
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/category',
+                              arguments: {
+                                'categoryName': cat,
+                                'type': 'movie',
+                              },
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
+          if (loadingMore) ...[
+            const SizedBox(height: 16),
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          ],
+          if (!loadingMore && !hasMore && movies.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Center(
+              child: Text('Fim da lista', style: TextStyle(color: Colors.white54)),
+            ),
+          ],
         ],
       ),
     );
@@ -1324,287 +1014,1101 @@ class MoviesLibraryBody extends StatelessWidget {
 
 class SeriesLibraryBody extends StatelessWidget {
   const SeriesLibraryBody({super.key});
+  @override
+  Widget build(BuildContext context) => const _SeriesBody();
+}
+
+class _SeriesBody extends StatefulWidget {
+  const _SeriesBody();
+  @override
+  State<_SeriesBody> createState() => _SeriesBodyState();
+}
+
+class _SeriesBodyState extends State<_SeriesBody> {
+  List<ContentItem> featured = [];
+  List<ContentItem> latest = [];
+  List<String> categories = [];
+  List<String> filteredCategories = [];
+  Map<String, int> counts = {};
+  Map<String, String> thumbs = {};
+  bool loading = true;
+  String _qualityFilter = 'all';
+
+  void _applyFilters() {
+    if (_qualityFilter == 'all') {
+      filteredCategories = List.from(categories);
+    } else {
+      filteredCategories = categories.where((cat) {
+        final catLower = cat.toLowerCase();
+        if (_qualityFilter == '4k') return catLower.contains('4k') || catLower.contains('uhd');
+        if (_qualityFilter == 'fhd') return catLower.contains('fhd') || catLower.contains('full');
+        if (_qualityFilter == 'hd') return catLower.contains('hd') && !catLower.contains('fhd') && !catLower.contains('uhd');
+        return true;
+      }).toList();
+      if (filteredCategories.isEmpty) filteredCategories = List.from(categories);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      // Tenta M3U primeiro, fallback para backend
+      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+      if (hasM3u) {
+        final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'series', maxItems: 400);
+        final f = await M3uService.getCuratedFeaturedPrefer('series', count: 5, pool: 20, maxItems: 400);
+        final l = await M3uService.getLatestByType('series', count: 10, maxItems: 400);
+        if (!mounted) return;
+        setState(() {
+          categories = meta.categories;
+          counts = meta.counts;
+          thumbs = meta.thumbs;
+          featured = f;
+          latest = l;
+          loading = false;
+          _applyFilters();
+        });
+      } else {
+        // Usa backend
+        final cats = await ApiService.fetchCategoryNames('series');
+        if (!mounted) return;
+        setState(() {
+          categories = cats;
+          loading = false;
+          _applyFilters();
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (loading) return const Center(child: CircularProgressIndicator());
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Hero Banner
-          const _HeroBanner(
-            badge: 'DESTAQUE DA SEMANA',
-            title: 'Breaking Bad',
-            subtitle: 'Drama • 5 Temporadas • 2008-2013',
-            description: 'Um professor de química cria uma rede de tráfico de drogas',
-            buttonLabel: 'Assistir Agora',
-            icon: Icons.play_arrow,
-          ),
-          const SizedBox(height: 32),
-          const Text(
-            'TV Series',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (featured.isNotEmpty) _FeaturedCarousel(items: featured, title: 'Séries em destaque'),
+        const SizedBox(height: 24),
+        // Header com título e filtros
+        Row(
+          children: [
+            const Expanded(
+              child: Text('Séries', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
             ),
-          ),
-          const SizedBox(height: 24),
-          // Filter tabs
-          const SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _FilterChip(label: 'Todas'),
-                _FilterChip(label: 'Drama'),
-                _FilterChip(label: 'Comédia'),
-                _FilterChip(label: 'Ficção Científica'),
-                _FilterChip(label: 'Suspense'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          // Series Grid
-          GridView.count(
-            crossAxisCount: 4,
-            mainAxisSpacing: 24,
-            crossAxisSpacing: 24,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: List.generate(
-              12,
-              (index) => const _SeriesCard(
-                title: 'Série Exemplo',
-                subtitle: '5 temporadas • 2024',
-              ),
+            _QualityFilterChip(label: 'Todos', selected: _qualityFilter == 'all', onTap: () {
+              setState(() { _qualityFilter = 'all'; _applyFilters(); });
+            }),
+            const SizedBox(width: 8),
+            _QualityFilterChip(label: '4K', selected: _qualityFilter == '4k', onTap: () {
+              setState(() { _qualityFilter = '4k'; _applyFilters(); });
+            }),
+            const SizedBox(width: 8),
+            _QualityFilterChip(label: 'FHD', selected: _qualityFilter == 'fhd', onTap: () {
+              setState(() { _qualityFilter = 'fhd'; _applyFilters(); });
+            }),
+            const SizedBox(width: 8),
+            _QualityFilterChip(label: 'HD', selected: _qualityFilter == 'hd', onTap: () {
+              setState(() { _qualityFilter = 'hd'; _applyFilters(); });
+            }),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (latest.isNotEmpty) ...[
+          const _SectionTitle(title: 'Últimas séries adicionadas'),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 200,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: latest.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, i) => SizedBox(width: 120, child: _SeriesThumb(item: latest[i])),
             ),
           ),
         ],
-      ),
+        const SizedBox(height: 24),
+        const Text('Categorias', style: TextStyle(color: Colors.white70, fontSize: 13)),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 3,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 3.8,
+          children: filteredCategories
+              .map((cat) => _CategoryImageCard(
+                    label: cat,
+                    info: '${counts[cat] ?? 0} títulos',
+                    image: thumbs[cat] ?? '',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/category', arguments: {'categoryName': cat, 'type': 'series'});
+                    },
+                  ))
+              .toList(),
+        ),
+      ]),
     );
   }
 }
 
 class LiveChannelsBody extends StatelessWidget {
   const LiveChannelsBody({super.key});
+  @override
+  Widget build(BuildContext context) => const _ChannelsBody();
+}
+
+class _ChannelsBody extends StatefulWidget {
+  const _ChannelsBody();
+  @override
+  State<_ChannelsBody> createState() => _ChannelsBodyState();
+}
+
+class _ChannelsBodyState extends State<_ChannelsBody> {
+  List<ContentItem> featured = [];
+  List<ContentItem> latest = [];
+  List<String> categories = [];
+  List<String> filteredCategories = [];
+  Map<String, int> counts = {};
+  Map<String, String> thumbs = {};
+  bool loading = true;
+  String _qualityFilter = 'all';
+
+  void _applyFilters() {
+    if (_qualityFilter == 'all') {
+      filteredCategories = List.from(categories);
+    } else {
+      filteredCategories = categories.where((cat) {
+        final catLower = cat.toLowerCase();
+        if (_qualityFilter == '4k') return catLower.contains('4k') || catLower.contains('uhd');
+        if (_qualityFilter == 'fhd') return catLower.contains('fhd') || catLower.contains('full');
+        if (_qualityFilter == 'hd') return catLower.contains('hd') && !catLower.contains('fhd') && !catLower.contains('uhd');
+        return true;
+      }).toList();
+      if (filteredCategories.isEmpty) filteredCategories = List.from(categories);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      // Tenta M3U primeiro, fallback para backend
+      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+      if (hasM3u) {
+        final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'channel', maxItems: 400);
+        final f = await M3uService.getCuratedFeaturedPrefer('channel', count: 5, pool: 20, maxItems: 400);
+        final l = await M3uService.getLatestByType('channel', count: 10, maxItems: 400);
+        if (!mounted) return;
+        setState(() {
+          categories = meta.categories;
+          counts = meta.counts;
+          thumbs = meta.thumbs;
+          featured = f;
+          latest = l;
+          loading = false;
+          _applyFilters();
+        });
+      } else {
+        // Usa backend
+        final cats = await ApiService.fetchCategoryNames('channel');
+        if (!mounted) return;
+        setState(() {
+          categories = cats;
+          loading = false;
+          _applyFilters();
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (loading) return const Center(child: CircularProgressIndicator());
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Hero Banner
-          const _HeroBanner(
-            badge: 'AO VIVO AGORA',
-            title: 'Jogo Ao Vivo',
-            subtitle: 'Esportes • 20:00 • HD',
-            description: 'Acompanhe os melhores eventos esportivos ao vivo',
-            buttonLabel: 'Assistir Transmissão',
-            icon: Icons.live_tv,
-          ),
-          const SizedBox(height: 32),
-          const Text(
-            'Canais ao Vivo',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (featured.isNotEmpty) _FeaturedCarousel(items: featured, title: 'Canais em destaque'),
+        const SizedBox(height: 24),
+        // Header com título e filtros
+        Row(
+          children: [
+            const Expanded(
+              child: Text('Canais ao Vivo', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Acompanhe seus canais favoritos agora',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 32),
-          // Filter tabs
-          const SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _FilterChip(label: 'Todos'),
-                _FilterChip(label: 'Notícias'),
-                _FilterChip(label: 'Esportes'),
-                _FilterChip(label: 'Entretenimento'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          // Channels Grid
-          GridView.count(
-            crossAxisCount: 3,
-            mainAxisSpacing: 24,
-            crossAxisSpacing: 24,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.3,
-            children: List.generate(
-              9,
-              (index) => const _ChannelCard(
-                title: 'Canal',
-                subtitle: 'Ao vivo',
-              ),
+            _QualityFilterChip(label: 'Todos', selected: _qualityFilter == 'all', onTap: () {
+              setState(() { _qualityFilter = 'all'; _applyFilters(); });
+            }),
+            const SizedBox(width: 8),
+            _QualityFilterChip(label: '4K', selected: _qualityFilter == '4k', onTap: () {
+              setState(() { _qualityFilter = '4k'; _applyFilters(); });
+            }),
+            const SizedBox(width: 8),
+            _QualityFilterChip(label: 'FHD', selected: _qualityFilter == 'fhd', onTap: () {
+              setState(() { _qualityFilter = 'fhd'; _applyFilters(); });
+            }),
+            const SizedBox(width: 8),
+            _QualityFilterChip(label: 'HD', selected: _qualityFilter == 'hd', onTap: () {
+              setState(() { _qualityFilter = 'hd'; _applyFilters(); });
+            }),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (latest.isNotEmpty) ...[
+          const _SectionTitle(title: 'Novos canais'),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 200,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: latest.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, i) => SizedBox(width: 120, child: _ChannelThumb(item: latest[i])),
             ),
           ),
         ],
-      ),
+        const SizedBox(height: 24),
+        const Text('Categorias', style: TextStyle(color: Colors.white70, fontSize: 13)),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 3,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 3.8,
+          children: filteredCategories
+              .map((cat) => _CategoryImageCard(
+                    label: cat,
+                    info: '${counts[cat] ?? 0} canais',
+                    image: thumbs[cat] ?? '',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/category', arguments: {'categoryName': cat, 'type': 'channel'});
+                    },
+                  ))
+              .toList(),
+        ),
+      ]),
     );
   }
 }
 
 class PremiumBody extends StatelessWidget {
   const PremiumBody({super.key});
+  @override
+  Widget build(BuildContext context) => const _SharkflixBody();
+}
+
+class _SharkflixBody extends StatefulWidget {
+  const _SharkflixBody();
+  @override
+  State<_SharkflixBody> createState() => _SharkflixBodyState();
+}
+
+class _SharkflixBodyState extends State<_SharkflixBody> {
+  List<ContentItem> featured = [];
+  List<ContentItem> latest = [];
+  List<String> categories = [];
+  Map<String, int> counts = {};
+  Map<String, String> thumbs = {};
+  bool loading = true;
+
+  bool _isShark(ContentItem it) {
+    final g = it.group.toLowerCase();
+    final t = it.title.toLowerCase();
+    return g.contains('shark') || g.contains('sharkflix') || t.contains('sharkflix');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      // Use movies cache as base and filter by group
+      final latestMovies = await M3uService.getLatestByType('movie', count: 100, maxItems: 600);
+      final shark = latestMovies.where(_isShark).toList();
+      final f = shark.take(6).toList();
+      final l = shark.skip(6).take(20).toList();
+      // Categories for shark subset
+      final setCats = <String>{};
+      final mapCounts = <String, int>{};
+      final mapThumbs = <String, String>{};
+      for (final it in shark) {
+        setCats.add(it.group);
+        mapCounts[it.group] = (mapCounts[it.group] ?? 0) + 1;
+        mapThumbs.putIfAbsent(it.group, () => it.image);
+      }
+      if (!mounted) return;
+      setState(() {
+        featured = f;
+        latest = l;
+        categories = setCats.toList()..sort((a,b)=>a.toLowerCase().compareTo(b.toLowerCase()));
+        counts = mapCounts;
+        thumbs = mapThumbs;
+        loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (loading) return const Center(child: CircularProgressIndicator());
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'SharkFlix Premium',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('SharkFlix', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        if (featured.isNotEmpty) _FeaturedCarousel(items: featured),
+        const SizedBox(height: 16),
+        const _SectionTitle(title: 'Últimos adicionados'),
+        const SizedBox(height: 12),
+        if (latest.isNotEmpty)
+          SizedBox(
+            height: 250,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: latest.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 14),
+              itemBuilder: (_, i) => SizedBox(width: 150, child: _MovieThumb(item: latest[i])),
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Conteúdo exclusivo para assinantes premium',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 32),
-          // Premium Hero Banner
-          const _HeroBanner(
-            badge: 'EXCLUSIVO',
-            title: 'Desfrute de Conteúdo Premium',
-            subtitle: 'Sem anúncios • Qualidade 4K • Download',
-            description: 'Acesso ilimitado a todo conteúdo exclusivo',
-            buttonLabel: 'Assinar Agora',
-            icon: Icons.star,
-          ),
-          const SizedBox(height: 32),
-          // Featured Premium Content
-          const _SectionTitle(title: 'Conteúdo em Destaque'),
-          const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 3,
-            mainAxisSpacing: 24,
-            crossAxisSpacing: 24,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.2,
-            children: List.generate(
-              6,
-              (index) => const _PremiumCard(),
-            ),
-          ),
-        ],
-      ),
+        const SizedBox(height: 24),
+        const Text('Coleções', style: TextStyle(color: Colors.white70, fontSize: 13)),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 3,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 3.8,
+          children: categories
+              .map((cat) => _CategoryImageCard(
+                    label: cat,
+                    info: '${counts[cat] ?? 0} títulos',
+                    image: thumbs[cat] ?? '',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/category', arguments: {'categoryName': cat, 'type': 'movie'});
+                    },
+                  ))
+              .toList(),
+        ),
+      ]),
     );
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-
-  const _FilterChip({required this.label});
+// Carrossel "Continuar assistindo"
+class _WatchingCarousel extends StatelessWidget {
+  final List<WatchingItem> items;
+  final VoidCallback? onRefresh;
+  
+  const _WatchingCarousel({required this.items, this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0x33111B2B),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0x334B5563)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.play_circle_outline, color: Colors.white70, size: 20),
+                SizedBox(width: 8),
+                Text('Continuar assistindo', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            TextButton(
+              onPressed: () {
+                // TODO: Ver tudo
+              },
+              child: const Text('Ver tudo', style: TextStyle(color: Colors.white54, fontSize: 12)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final watching = items[index];
+              final item = watching.item;
+              return GestureDetector(
+                onTap: () {
+                  if (item.isSeries) {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => sdetail.SeriesDetailScreen(item: item),
+                    ));
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => MediaPlayerScreen(url: item.url, item: item),
+                    )).then((_) => onRefresh?.call());
+                  }
+                },
+                child: Container(
+                  width: 200,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                imageUrl: item.image,
+                                fit: BoxFit.cover,
+                                placeholder: (c, u) => Container(color: const Color(0xFF333333)),
+                                errorWidget: (c, u, e) => Container(
+                                  color: const Color(0xFF333333),
+                                  child: const Icon(Icons.movie, color: Colors.white30, size: 40),
+                                ),
+                              ),
+                            ),
+                            // Overlay escuro
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                                ),
+                              ),
+                            ),
+                            // Botão play
+                            const Center(
+                              child: Icon(Icons.play_circle_filled, color: Colors.white, size: 40),
+                            ),
+                            // Barra de progresso
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(8),
+                                  bottomRight: Radius.circular(8),
+                                ),
+                                child: LinearProgressIndicator(
+                                  value: watching.progress,
+                                  backgroundColor: Colors.white24,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+                                  minHeight: 4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        watching.remainingTime,
+                        style: const TextStyle(color: Colors.white54, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Carrossel "Últimos assistidos"
+class _WatchedCarousel extends StatelessWidget {
+  final List<ContentItem> items;
+  
+  const _WatchedCarousel({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.history, color: Colors.white70, size: 20),
+                SizedBox(width: 8),
+                Text('Últimos assistidos', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            TextButton(
+              onPressed: () {
+                // TODO: Ver tudo
+              },
+              child: const Text('Ver tudo', style: TextStyle(color: Colors.white54, fontSize: 12)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return GestureDetector(
+                onTap: () {
+                  if (item.isSeries) {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => sdetail.SeriesDetailScreen(item: item),
+                    ));
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => MediaPlayerScreen(url: item.url, item: item),
+                    ));
+                  }
+                },
+                child: Container(
+                  width: 110,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: item.image,
+                            fit: BoxFit.cover,
+                            width: 110,
+                            placeholder: (c, u) => Container(color: const Color(0xFF333333)),
+                            errorWidget: (c, u, e) => Container(
+                              color: const Color(0xFF333333),
+                              child: const Icon(Icons.movie, color: Colors.white30, size: 32),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Carrossel de destaques
+class _FeaturedCarousel extends StatelessWidget {
+  final List<ContentItem> items;
+  final String title;
+  const _FeaturedCarousel({required this.items, this.title = 'Em destaque hoje'});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            const Icon(Icons.chevron_right, color: Colors.white70, size: 20),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return _FeaturedCard(item: item, index: index + 1);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeaturedCard extends StatelessWidget {
+  final ContentItem item;
+  final int index;
+  const _FeaturedCard({required this.item, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = item.title;
+    final subtitle = item.group.isNotEmpty ? item.group : 'Filme';
+    final image = item.image;
+
+    return InkWell(
+      onTap: () {
+        if (item.isSeries) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => sdetail.SeriesDetailScreen(item: item)));
+          return;
+        }
+        if (item.url.isEmpty) return;
+        Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+      },
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          image: image.isNotEmpty
+              ? DecorationImage(
+                  image: NetworkImage(image),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
+                )
+              : null,
+          gradient: image.isEmpty
+              ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              : null,
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              bottom: 12,
+              left: 12,
+              right: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '$index',
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _MovieCard extends StatelessWidget {
-  const _MovieCard();
+// Card compacto para grid de últimos filmes
+class _MovieThumb extends StatelessWidget {
+  final dynamic item;
+  const _MovieThumb({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0x33111B2B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x334B5563)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(12)),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFE11D48), Color(0xFF111827)],
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.movie,
-                  color: Colors.white,
-                  size: 40,
-                ),
+    final title = item.title ?? 'Filme';
+    final image = item.image ?? '';
+    final quality = (item.quality ?? '').toString().toUpperCase();
+
+    return GestureDetector(
+      onTap: () {
+        final url = item.url ?? '';
+        if (url.isEmpty) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MediaPlayerScreen(url: url, item: item is ContentItem ? item : null),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 7,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                child: image.isNotEmpty
+                    ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.movie, color: Colors.white38, size: 28))
+                    : Container(
+                        color: const Color(0xFF0F1620),
+                        child: const Center(
+                          child: Icon(Icons.movie, color: Colors.white38, size: 28),
+                        ),
+                      ),
               ),
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Movie',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  '2024 • 2h 28m',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
+                  if (quality.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          quality,
+                          style: const TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
+
+class _SeriesThumb extends StatelessWidget {
+  final ContentItem item;
+  const _SeriesThumb({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = item.title;
+    final image = item.image;
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => sdetail.SeriesDetailScreen(item: item)));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 7,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                child: image.isNotEmpty
+                  ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.tv, color: Colors.white38, size: 28))
+                  : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.tv, color: Colors.white38, size: 28))),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChannelThumb extends StatelessWidget {
+  final ContentItem item;
+  const _ChannelThumb({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = item.title;
+    final image = item.image;
+    final quality = (item.quality).toUpperCase();
+    return GestureDetector(
+      onTap: () {
+        if (item.url.isEmpty) return;
+        Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 7,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                child: image.isNotEmpty
+                  ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.live_tv, color: Colors.white38, size: 28))
+                  : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.live_tv, color: Colors.white38, size: 28))),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+                  if (quality.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                        child: Text(quality, style: const TextStyle(color: Colors.white70, fontSize: 8)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryImageCard extends StatefulWidget {
+  final String label;
+  final String info;
+  final String image;
+  final VoidCallback onTap;
+
+  const _CategoryImageCard({
+    required this.label,
+    required this.info,
+    required this.image,
+    required this.onTap,
+  });
+
+  @override
+  State<_CategoryImageCard> createState() => _CategoryImageCardState();
+}
+
+class _CategoryImageCardState extends State<_CategoryImageCard> {
+  bool _focused = false;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = _focused ? Colors.white.withOpacity(0.16) : const Color(0x33111B2B);
+    return Focus(
+      focusNode: _focusNode,
+      onFocusChange: (f) {
+        setState(() => _focused = f);
+        if (f) {
+          print('📌 Categoria focada: ${widget.label}');
+        }
+      },
+      onKey: (node, event) {
+        if (event is RawKeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.space ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          print('🎯 Abrindo categoria: ${widget.label}');
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: activeColor,
+            border: Border.all(
+              color: _focused ? Colors.amber : const Color(0x334B5563),
+              width: _focused ? 3 : 1,
+            ),
+            boxShadow: _focused ? [
+              BoxShadow(
+                color: Colors.amber.withOpacity(0.4),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
+            ] : [],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Stack(
+            children: [
+              if (widget.image.isNotEmpty)
+                Positioned.fill(
+                  child: CachedNetworkImage(
+                    imageUrl: widget.image,
+                    fit: BoxFit.cover,
+                    placeholder: (c,u)=>Container(color: const Color(0x33111B2B)),
+                    errorWidget: (c,u,e)=>Container(color: const Color(0x33111B2B)),
+                  ),
+                ),
+              Positioned.fill(child: Container(color: Colors.black.withOpacity(0.45))),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.info,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: Colors.white70, size: 20),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle({required this.title});
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+// Widget de filtro de qualidade reutilizável
+class _QualityFilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  
+  const _QualityFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? AppColors.primary : Colors.white24,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : Colors.white70,
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Movie grid card removed to prioritize category-only view on Movies screen

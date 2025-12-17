@@ -1,11 +1,11 @@
 {
-    "name": "clickflix",
-    "short_name": "clickflix",
+    "name": "Click Channel",
+    "short_name": "ClickChannel",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Click Channel - App de Streaming IPTV.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

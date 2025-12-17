@@ -49,10 +49,10 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.items.isEmpty) return const SizedBox(height: 500);
+    if (widget.items.isEmpty) return const SizedBox(height: 280);
 
     return SizedBox(
-      height: 550,
+      height: 320,
       child: PageView.builder(
         controller: _pageController,
         itemCount: widget.items.length,
@@ -67,8 +67,8 @@ class _HeroCarouselState extends State<HeroCarousel> {
                   ? CachedNetworkImage(
                       imageUrl: item.image,
                       fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      memCacheHeight: 800, // Otimização para TV
+                      alignment: Alignment.center,
+                      memCacheHeight: 400, // Otimização para TV - menor para banner reduzido
                       placeholder: (_, __) => Container(color: AppColors.background),
                       errorWidget: (_, __, ___) => Container(color: const Color(0xFF1A1A1A)),
                     )
@@ -98,34 +98,34 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
               // 3. Conteúdo (Título e Botões)
               Positioned(
-                left: 48,
-                bottom: 80,
-                width: 600,
+                left: 32,
+                bottom: 24,
+                width: 500,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
                           color: AppColors.primary,
                           borderRadius: BorderRadius.circular(999)),
-                      child: Text("DESTAQUE", style: AppTypography.labelMedium),
+                      child: Text("DESTAQUE", style: AppTypography.labelMedium.copyWith(fontSize: 10)),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     Text(item.title,
-                        style: AppTypography.displayLarge,
+                        style: AppTypography.displayLarge.copyWith(fontSize: 22),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 12),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.primaryForeground,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       ),
                       onPressed: () => widget.onPlay(item),
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text("Assistir Agora"),
+                      icon: const Icon(Icons.play_arrow, size: 18),
+                      label: const Text("Assistir", style: TextStyle(fontSize: 13)),
                     ),
                   ],
                 ),
