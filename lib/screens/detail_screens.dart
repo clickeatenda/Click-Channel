@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/content_item.dart';
+import '../widgets/optimized_gridview.dart';
 
 // =====================
 // SERIES DETAIL SCREEN
@@ -164,6 +166,23 @@ class MyFavoritesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final favMovies = List.generate(6, (i) => ContentItem(
+      title: 'Favorito ${i + 1}',
+      url: 'https://example.com/movie/${i + 1}',
+      image: '',
+      group: 'Favoritos',
+      type: 'movie',
+    ));
+
+    final favSeries = List.generate(6, (i) => ContentItem(
+      title: 'Série Favorita ${i + 1}',
+      url: 'https://example.com/series/${i + 1}',
+      image: '',
+      group: 'Favoritos',
+      type: 'series',
+      isSeries: true,
+    ));
+
     return Scaffold(
       backgroundColor: const Color(0xFF111318),
       appBar: AppBar(
@@ -185,41 +204,20 @@ class MyFavoritesScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            GridView.count(
+            OptimizedGridView(
+              items: favMovies,
               crossAxisCount: 3,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
               childAspectRatio: 0.8,
-              children: List.generate(
-                6,
-                (index) => GestureDetector(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const PlayerDashboardScreen(),
-                    ),
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              physics: const NeverScrollableScrollPhysics(),
+              onTap: (item) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const PlayerDashboardScreen(),
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFE11D48),
-                          Color(0xFF111827)
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: const Color(0x334B5563)),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.favorite,
-                          size: 32, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
+                );
+              },
             ),
             const SizedBox(height: 32),
             const Text(
@@ -231,41 +229,20 @@ class MyFavoritesScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            GridView.count(
+            OptimizedGridView(
+              items: favSeries,
               crossAxisCount: 3,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
               childAspectRatio: 0.8,
-              children: List.generate(
-                6,
-                (index) => GestureDetector(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const SeriesDetailScreen(),
-                    ),
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              physics: const NeverScrollableScrollPhysics(),
+              onTap: (serie) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const SeriesDetailScreen(),
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFE11D48),
-                          Color(0xFF111827)
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: const Color(0x334B5563)),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.tv,
-                          size: 32, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),

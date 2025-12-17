@@ -8,6 +8,8 @@ class ContentItem {
   final String id;
   final double rating;
   final String year;
+  String quality; // sd, hd, fhd, uhd4k
+  String audioType; // 'dub', 'leg', 'multi'
 
   ContentItem({
     required this.title,
@@ -19,6 +21,8 @@ class ContentItem {
     this.id = '',
     this.rating = 0.0,
     this.year = "2024",
+    this.quality = 'sd',
+    this.audioType = '',
   });
 
   factory ContentItem.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,8 @@ class ContentItem {
       id: json['id'] ?? "",
       rating: 8.5,
       year: "2024",
+      quality: json['quality'] ?? 'sd',
+      audioType: json['audioType'] ?? '',
     );
   }
 }

@@ -9,6 +9,7 @@ class CustomAppHeader extends StatelessWidget {
   final Function(int) onNavSelected;
   final VoidCallback? onNotificationTap;
   final VoidCallback? onProfileTap;
+  final VoidCallback? onSettingsTap;
   final String? userAvatarUrl;
   final String? userName;
   final bool showSearch;
@@ -22,6 +23,7 @@ class CustomAppHeader extends StatelessWidget {
     required this.onNavSelected,
     this.onNotificationTap,
     this.onProfileTap,
+    this.onSettingsTap,
     this.userAvatarUrl,
     this.userName,
     this.showSearch = true,
@@ -54,31 +56,31 @@ class CustomAppHeader extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: const BorderRadius.all(Radius.circular(10)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 12,
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.movie,
-                        color: Colors.white,
-                        size: 24,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primary.withOpacity(0.7),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.live_tv, color: Colors.white, size: 24),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -226,7 +228,28 @@ class CustomAppHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              // Profile
+              // Settings button
+              GestureDetector(
+                onTap: onSettingsTap,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.05),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.settings,
+                    color: Colors.white.withOpacity(0.7),
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Profile menu
               GestureDetector(
                 onTap: onProfileTap,
                 child: Container(
@@ -278,8 +301,8 @@ class CustomAppHeader extends StatelessWidget {
                           userName!,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
