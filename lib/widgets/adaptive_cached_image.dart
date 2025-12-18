@@ -4,37 +4,80 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../core/image_cache_manager.dart';
 
-class AdaptiveCachedImage extends StatelessWidget {
+/// Widget de imagem com lazy loading, fade-in animation e cache otimizado
+class AdaptiveCachedImage extends StatefulWidget {
   final String url;
   final double? width;
   final double? height;
   final BoxFit fit;
   final Widget? errorWidget;
+  final Duration fadeInDuration;
 
-  const AdaptiveCachedImage({super.key, required this.url, this.width, this.height, this.fit = BoxFit.cover, this.errorWidget});
+  const AdaptiveCachedImage({
+    super.key,
+    required this.url,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.errorWidget,
+    this.fadeInDuration = const Duration(milliseconds: 300),
+  });
+
+  @override
+  State<AdaptiveCachedImage> createState() => _AdaptiveCachedImageState();
+}
+
+class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(duration: widget.fadeInDuration, vsync: this);
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_fadeController);
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final devicePixelRatio = ui.window.devicePixelRatio;
-    final targetWidth = width != null ? (width! * devicePixelRatio).toInt() : null;
+    final targetWidth = widget.width != null ? (widget.width! * devicePixelRatio).toInt() : null;
 
     return CachedNetworkImage(
-      imageUrl: url,
+      imageUrl: widget.url,
       cacheManager: AppImageCacheManager.instance,
       imageBuilder: (context, imageProvider) {
         final provider = targetWidth != null ? ResizeImage(imageProvider, width: targetWidth) : imageProvider;
-        return Image(image: provider, width: width, height: height, fit: fit);
+        // Trigger fade-in animation quando imagem é carregada
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _fadeController.forward();
+        });
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: Image(image: provider, width: widget.width, height: widget.height, fit: widget.fit),
+        );
       },
       placeholder: (context, url) => Shimmer.fromColors(
         baseColor: Colors.grey[850]!,
         highlightColor: Colors.grey[800]!,
         child: Container(
-          width: width,
-          height: height,
+          width: widget.width,
+          height: widget.height,
           color: Colors.grey[850],
         ),
       ),
-      errorWidget: (context, url, error) => errorWidget ?? Container(color: Colors.white12, width: width, height: height, child: const Icon(Icons.image_not_supported, color: Colors.white24)),
+      errorWidget: (context, url, error) => widget.errorWidget ?? Container(
+        color: Colors.white12,
+        width: widget.width,
+        height: widget.height,
+        child: const Icon(Icons.image_not_supported, color: Colors.white24),
+      ),
     );
   }
 }
