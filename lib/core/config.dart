@@ -26,15 +26,9 @@ class Config {
       return false;
     }
   }
-  /// Backend base URL. Will read from .env (key: BACKEND_URL).
-  /// Falls back to the default value if not set or not initialized.
+  /// Backend base URL (não utilizado - app opera em modo front-only)
   static String get backendUrl {
-    try {
-      return dotenv_pkg.dotenv.env['BACKEND_URL'] ?? 'http://192.168.3.251:4000';
-    } catch (_) {
-      // Fallback if dotenv not initialized (e.g., in web before load() completes)
-      return 'http://192.168.3.251:4000';
-    }
+    return '';
   }
 
   /// Optional M3U playlist URL (option B: parsing on the app side)

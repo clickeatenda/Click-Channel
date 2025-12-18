@@ -14,9 +14,9 @@ import '../models/series_details.dart';
 /// Serviço para ler e normalizar playlists M3U diretamente no app (opção B).
 /// Suporta tanto URL (HTTP/HTTPS) quanto caminho de arquivo local (file:// ou caminho absoluto).
 class M3uService {
-  static List<ContentItem>? _movieCache;
-  static List<ContentItem>? _seriesCache;
-  static List<ContentItem>? _channelCache;
+  static List<ContentItem>? _movieCache = [];
+  static List<ContentItem>? _seriesCache = [];
+  static List<ContentItem>? _channelCache = [];
   static String? _movieCacheSource;
   static int _movieCacheMaxItems = 0;
   static Map<String, int> _movieCategoryCounts = {};
@@ -67,19 +67,81 @@ class M3uService {
   }
   
   /// Limpa TODOS os caches (memória E disco) para forçar download completo
-  static Future<void> clearAllCache(String source) async {
+  static Future<void> clearAllCache(String? newSource) async {
     // Limpa memória
     clearMemoryCache();
     
-    // Limpa arquivo de cache no disco
+    // Limpa TODOS os arquivos de cache M3U no disco
     try {
-      final file = await _getCacheFile(source);
-      if (await file.exists()) {
-        await file.delete();
-        print('🗑️ M3uService: Cache de disco deletado: ${file.path}');
+      final dir = await getApplicationSupportDirectory();
+      final files = dir.listSync();
+      for (final file in files) {
+        if (file is File && file.path.contains('m3u_cache_')) {
+          await file.delete();
+          print('🗑️ M3uService: Cache deletado: ${file.path}');
+        }
       }
+      print('🗑️ M3uService: Todos os caches de disco limpos');
     } catch (e) {
-      print('⚠️ M3uService: Erro ao deletar cache de disco: $e');
+      print('⚠️ M3uService: Erro ao deletar caches de disco: $e');
+    }
+  }
+
+  /// Retorna true se existe ao menos um arquivo de cache M3U no disco
+  static bool Function()? _testHasAnyCache;
+  static void setTestHasAnyCache(bool Function()? f) => _testHasAnyCache = f;
+
+  static Future<bool> hasAnyCache() async {
+    // Test override for unit tests
+    if (_testHasAnyCache != null) {
+      try {
+        return _testHasAnyCache!();
+      } catch (e) {
+        print('⚠️ M3uService: test override error: $e');
+      }
+    }
+
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final files = dir.listSync();
+      for (final file in files) {
+        if (file is File && file.path.contains('m3u_cache_')) {
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('⚠️ M3uService: Erro ao verificar caches de disco: $e');
+      return false;
+    }
+  }
+
+  /// Install marker helpers: used to detect a fresh install run so that we can
+  /// avoid auto-loading restored prefs/caches on first open after a fresh install
+  static Future<File> _getInstallMarkerFile() async {
+    final dir = await getApplicationSupportDirectory();
+    return File('${dir.path}/install_marker');
+  }
+
+  /// Returns whether the install marker file exists
+  static Future<bool> hasInstallMarker() async {
+    try {
+      final file = await _getInstallMarkerFile();
+      return await file.exists();
+    } catch (e) {
+      print('⚠️ M3uService: Erro ao verificar install marker: $e');
+      return false;
+    }
+  }
+
+  /// Write the install marker file (used after performing first-run cleanup)
+  static Future<void> writeInstallMarker() async {
+    try {
+      final file = await _getInstallMarkerFile();
+      await file.writeAsString(DateTime.now().toIso8601String(), flush: true);
+      print('✅ M3uService: Install marker gravado: ${file.path}');
+    } catch (e) {
+      print('⚠️ M3uService: Erro ao gravar install marker: $e');
     }
   }
 
@@ -404,13 +466,13 @@ class M3uService {
   static Future<List<String>> _loadLinesInternal(String source) async {
     if (source.startsWith('http')) {
       // Usa o mesmo método de cache que downloadAndCachePlaylist
-      Future<File> _cacheFile() async {
+      Future<File> cacheFile() async {
         return await _getCacheFile(source);
       }
 
       // Se cache local estiver válido, reutiliza
       try {
-        final file = await _cacheFile();
+        final file = await cacheFile();
         if (await file.exists()) {
           final stat = await file.stat();
           if (DateTime.now().difference(stat.modified) < _cacheTtl) {
@@ -440,7 +502,7 @@ class M3uService {
 
         // Salva cache local para próximas execuções
         try {
-          final file = await _cacheFile();
+          final file = await cacheFile();
           await file.writeAsString(lines.join('\n'), flush: true);
           print('💾 M3uService: Cache salvo em ${file.path} (${lines.length} linhas)');
         } catch (e) {
@@ -452,7 +514,7 @@ class M3uService {
         print('❌ M3uService: Erro ao baixar: $e');
         // Se houver cache antigo, tenta devolver para não travar UI
         try {
-          final file = await _cacheFile();
+          final file = await cacheFile();
           if (await file.exists()) {
             final cachedLines = await file.openRead().transform(utf8.decoder).transform(const LineSplitter()).toList();
             if (cachedLines.isNotEmpty) {
@@ -794,6 +856,25 @@ class M3uService {
 
   /// Garante cache de filmes em memória e usa compute para parse em isolate.
   static Future<void> _ensureMovieCache({required String source, int maxItems = 999999}) async {
+    // Se não há playlist definida, mantém todos os caches vazios
+    if (source.isEmpty) {
+      _movieCache = [];
+      _seriesCache = [];
+      _channelCache = [];
+      _movieCacheSource = null;
+      _movieCacheMaxItems = 0;
+      _movieCategories.clear();
+      _movieCategoryCounts.clear();
+      _movieCategoryThumb.clear();
+      _seriesCategories.clear();
+      _seriesCategoryCounts.clear();
+      _seriesCategoryThumb.clear();
+      _channelCategories.clear();
+      _channelCategoryCounts.clear();
+      _channelCategoryThumb.clear();
+      return;
+    }
+
     // Evita recomputar se já temos cache suficiente
     if (_movieCache != null &&
         _movieCacheSource == source &&

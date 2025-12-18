@@ -4,6 +4,7 @@ import '../core/theme/app_colors.dart';
 import '../core/config.dart';
 import '../core/prefs.dart';
 import '../data/m3u_service.dart';
+import '../data/epg_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
 
@@ -21,34 +22,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoplay = true;
   bool _notifications = true;
   late TextEditingController _playlistController;
+  late TextEditingController _epgController;
   final FocusNode _urlFocusNode = FocusNode();
   final FocusNode _buttonFocusNode = FocusNode();
+  final FocusNode _epgUrlFocusNode = FocusNode();
+  final FocusNode _epgButtonFocusNode = FocusNode();
   bool _urlHasFocus = false;
   bool _buttonHasFocus = false;
+  bool _epgUrlHasFocus = false;
+  bool _epgButtonHasFocus = false;
 
   @override
   void initState() {
     super.initState();
     _playlistController = TextEditingController(text: Config.playlistRuntime ?? '');
+    _epgController = TextEditingController(text: EpgService.epgUrl ?? '');
     _urlFocusNode.addListener(() {
       if (mounted) setState(() => _urlHasFocus = _urlFocusNode.hasFocus);
     });
     _buttonFocusNode.addListener(() {
       if (mounted) setState(() => _buttonHasFocus = _buttonFocusNode.hasFocus);
     });
+    _epgUrlFocusNode.addListener(() {
+      if (mounted) setState(() => _epgUrlHasFocus = _epgUrlFocusNode.hasFocus);
+    });
+    _epgButtonFocusNode.addListener(() {
+      if (mounted) setState(() => _epgButtonHasFocus = _epgButtonFocusNode.hasFocus);
+    });
   }
 
   @override
   void dispose() {
     _playlistController.dispose();
+    _epgController.dispose();
     _urlFocusNode.dispose();
     _buttonFocusNode.dispose();
+    _epgUrlFocusNode.dispose();
+    _epgButtonFocusNode.dispose();
     super.dispose();
   }
 
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String _downloadStatus = '';
+  
+  bool _isDownloadingEpg = false;
+  String _epgDownloadStatus = '';
 
   Future<void> _applyPlaylist() async {
     final value = _playlistController.text.trim();
@@ -144,6 +163,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _applyEpg() async {
+    final value = _epgController.text.trim();
+    
+    if (value.isEmpty) {
+      await EpgService.clearCache();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('EPG removido'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isDownloadingEpg = true;
+      _epgDownloadStatus = 'Baixando EPG...';
+    });
+
+    try {
+      print('🔧 [Settings] Baixando EPG: $value');
+      
+      await EpgService.loadEpg(value);
+      
+      setState(() {
+        _isDownloadingEpg = false;
+        _epgDownloadStatus = '';
+      });
+      
+      final channelCount = EpgService.getAllChannels().length;
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ EPG carregado! $channelCount canais'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ [Settings] Erro ao baixar EPG: $e');
+      setState(() {
+        _isDownloadingEpg = false;
+        _epgDownloadStatus = '';
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Erro ao baixar EPG: $e'),
+            duration: const Duration(seconds: 5),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
   final List<HeaderNav> _navItems = [
     HeaderNav(label: 'Início'),
     HeaderNav(label: 'Filmes'),
@@ -268,8 +346,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            if (_isDownloading) ...[
+                            const SizedBox(height: 12),                              Row(
+                                children: [
+                                  Expanded(child: Container()),
+                                  ElevatedButton.icon(
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text('Confirmar reset'),
+                                          content: const Text('Deseja remover a playlist atual e limpar todos os caches?'),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+                                            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Confirmar')),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        // Reset
+                                        await Prefs.setPlaylistOverride(null);
+                                        await Prefs.setPlaylistReady(false);
+                                        await M3uService.clearAllCache(null);
+                                        await EpgService.clearCache();
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reset realizado: playlist e cache limpos')));
+                                      }
+                                    },
+                                    icon: const Icon(Icons.restore),
+                                    label: const Text('Reset playlist & cache'),
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                  ),
+                                ],
+                              ),                            if (_isDownloading) ...[
                               // Progress bar durante download
                               const SizedBox(height: 8),
                               ClipRRect(
@@ -332,6 +439,171 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const SizedBox(height: 12),
                               Text(
                                 'A lista será salva localmente',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // EPG (Electronic Program Guide) Input
+                    const Text(
+                      'Guia de Programação (EPG)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GlassPanel(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.calendar_month, color: AppColors.primary, size: 20),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'URL do EPG (XMLTV)',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const Spacer(),
+                                TextButton.icon(
+                                  icon: const Icon(Icons.tv_outlined, size: 16),
+                                  label: const Text('Ver Guia'),
+                                  style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                                  onPressed: () => Navigator.pushNamed(context, '/epg'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _epgUrlHasFocus ? AppColors.primary : Colors.transparent,
+                                  width: 3,
+                                ),
+                                boxShadow: _epgUrlHasFocus ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.4),
+                                    blurRadius: 12,
+                                    spreadRadius: 2,
+                                  ),
+                                ] : [],
+                              ),
+                              child: TextField(
+                                controller: _epgController,
+                                focusNode: _epgUrlFocusNode,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  hintText: 'https://exemplo.com/epg.xml',
+                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                  filled: true,
+                                  fillColor: Colors.white.withOpacity(0.05),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                onSubmitted: (_) => _epgButtonFocusNode.requestFocus(),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            if (_isDownloadingEpg) ...[
+                              Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    _epgDownloadStatus,
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.7),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              Row(
+                                children: [
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _epgButtonHasFocus ? Colors.white : Colors.transparent,
+                                        width: 3,
+                                      ),
+                                      boxShadow: _epgButtonHasFocus ? [
+                                        BoxShadow(
+                                          color: AppColors.primary.withOpacity(0.6),
+                                          blurRadius: 16,
+                                          spreadRadius: 2,
+                                        ),
+                                      ] : [],
+                                    ),
+                                    child: ElevatedButton.icon(
+                                      focusNode: _epgButtonFocusNode,
+                                      onPressed: _applyEpg,
+                                      icon: const Icon(Icons.download, size: 20),
+                                      label: Text(
+                                        _epgButtonHasFocus ? '▶ BAIXAR EPG ◀' : 'Baixar EPG',
+                                        style: TextStyle(
+                                          fontSize: _epgButtonHasFocus ? 14 : 12,
+                                          fontWeight: _epgButtonHasFocus ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: _epgButtonHasFocus 
+                                            ? Colors.green
+                                            : Colors.green.withOpacity(0.8),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  if (EpgService.isLoaded)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        '${EpgService.getAllChannels().length} canais',
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'O EPG mostra a programação dos canais ao vivo',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.6),
                                   fontSize: 12,

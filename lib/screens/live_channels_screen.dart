@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/content_item.dart';
 import '../widgets/optimized_gridview.dart';
+import '../data/epg_service.dart';
+import '../models/epg_program.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
@@ -31,6 +33,11 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final epgChannelsMap = EpgService.isLoaded
+        ? {for (final c in EpgService.getAllChannels()) c.displayName.trim().toLowerCase(): c}
+        : <String, EpgChannel>{};
+    print('🔍 LiveChannels: EPG channels passed: ${epgChannelsMap.length}');
+
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       body: Column(
@@ -97,6 +104,7 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
                         group: 'Live',
                         type: 'channel',
                       )),
+                      epgChannels: epgChannelsMap,
                       crossAxisCount: 3,
                       mainAxisSpacing: 24,
                       crossAxisSpacing: 24,

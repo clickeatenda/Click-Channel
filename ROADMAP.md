@@ -1,7 +1,7 @@
 # 🚀 Click Channel - Roadmap de Melhorias
 
 > Última atualização: 17/12/2025  
-> Versão atual: 1.0.0
+> Versão atual: 1.1.0
 
 ---
 
@@ -23,10 +23,14 @@
 - [ ] Implementar certificate pinning para API calls
 
 ### EPG (Guia de Programação)
-- [ ] Parser de EPG (XMLTV format)
-- [ ] Tela de programação por canal
-- [ ] Indicador "Ao Vivo" / "Em breve"
-- [ ] Notificação de programa favorito
+- [x] Parser de EPG (XMLTV format)
+- [x] Tela de programação por canal
+- [x] Indicador "Ao Vivo" / "Em breve"
+- [x] Sistema de favoritos de programas
+- [x] Configuração de URL EPG nas Settings
+- [x] Cache de EPG em disco
+- [x] EPG mostrado somente na tela de CANAIS (tela de destaque e cards de canais)
+- [ ] Notificação de programa favorito (local notifications)
 
 ---
 
@@ -65,6 +69,8 @@
 - [ ] Legendas externas (.srt, .ass, .vtt)
 - [ ] Sincronização de favoritos na nuvem
 - [ ] Cast para Chromecast/AirPlay
+- [x] Reset playlist & cache (botão em Settings)
+- [x] Agrupamento de variantes por canal (pastas por canal com variantes de qualidade)
 
 ### Android TV / Fire TV
 - [ ] Integração com Leanback launcher
@@ -74,12 +80,13 @@
 - [ ] Watch Next integration
 
 ### Código e Arquitetura
-- [ ] Testes unitários (coverage > 70%)
+- [~] Testes unitários (coverage > 70%) — testes unitários iniciais adicionados (channel grouping, prefs)
 - [ ] Testes de widget
 - [ ] Migrar para Riverpod ou Bloc
 - [ ] Documentação de API inline
 - [ ] Tratamento de erros granular
 - [ ] Logs estruturados com níveis
+- [x] Proteção de primeira execução / install marker (evitar restauração automática de playlist)
 
 ### Estabilidade
 - [ ] Retry automático em falhas de rede
@@ -94,8 +101,8 @@
 
 | Plataforma | Status | Testado | Notas |
 |------------|--------|---------|-------|
-| Android TV | ✅ | [x] | Fire TV Stick, Mi Box |
-| Android Tablet | ✅ | [x] | Xiaomi Pad |
+| Android TV | ✅ | [x] | Fire TV Stick, Mi Box (tested) |
+| Android Tablet | ✅ | [x] | Xiaomi Pad (tested) |
 | Android Phone | ✅ | [ ] | A testar |
 | iOS/iPadOS | ⚠️ | [ ] | media_kit compatível |
 | Web | ⚠️ | [ ] | Limitações do media_kit |

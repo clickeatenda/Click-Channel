@@ -11,6 +11,7 @@ import '../screens/settings_screen.dart';
 import '../screens/setup_screen.dart';
 import '../screens/player_dashboard_screen.dart';
 import '../screens/category_screen.dart';
+import '../screens/epg_screen.dart';
 import '../models/content_item.dart';
 
 
@@ -28,6 +29,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String player = '/player';
   static const String category = '/category';
+  static const String epg = '/epg';
 
   // Route generator
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
@@ -116,6 +118,18 @@ class AppRoutes {
             ),
           );
 
+        case epg:
+          final args = routeSettings.arguments;
+          ContentItem? channel;
+          if (args is ContentItem) {
+            channel = args;
+          } else if (args is Map && args['channel'] is ContentItem) {
+            channel = args['channel'] as ContentItem;
+          }
+          return MaterialPageRoute(
+            builder: (_) => EpgScreen(channel: channel),
+          );
+
         default:
           return MaterialPageRoute(
             builder: (_) => Scaffold(
@@ -199,6 +213,10 @@ class AppRoutes {
 
   static void goToSettings(BuildContext context) {
     Navigator.of(context).pushNamed(settings);
+  }
+
+  static void goToEpg(BuildContext context, {ContentItem? channel}) {
+    Navigator.of(context).pushNamed(epg, arguments: channel);
   }
 
   static void goBack(BuildContext context) {

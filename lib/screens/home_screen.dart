@@ -7,10 +7,15 @@ import 'search_screen.dart';
 import '../data/api_service.dart';
 import '../data/watch_history_service.dart';
 import '../data/m3u_service.dart';
+import '../data/epg_service.dart';
 import '../core/config.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
+import '../models/epg_program.dart';
+
 import '../widgets/media_player_screen.dart';
+import '../widgets/adaptive_cached_image.dart';
+import '../routes/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -110,34 +115,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(width: 16),
-                  // Search
-                  SizedBox(
-                    width: 200,
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => const SearchScreen(),
-                        ));
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0x334B5563)),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.white70, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              'Buscar filmes, séries...',
-                              style: TextStyle(color: Colors.white54, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  // Search - com Focus para Fire TV
+                  _SearchButton(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => const SearchScreen(),
+                      ));
+                    },
                   ),
                   const SizedBox(width: 12),
                   const _ProfileMenu(),
@@ -230,6 +214,65 @@ class _NavItemState extends State<_NavItem> {
               fontWeight: active ? FontWeight.w600 : FontWeight.w400,
               fontSize: 14,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botão de busca com suporte a Focus para Fire TV
+class _SearchButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _SearchButton({required this.onTap});
+
+  @override
+  State<_SearchButton> createState() => _SearchButtonState();
+}
+
+class _SearchButtonState extends State<_SearchButton> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 200,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: _focused ? Colors.white.withOpacity(0.15) : Colors.white10,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _focused ? AppColors.primary : const Color(0x334B5563),
+              width: _focused ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.search, color: _focused ? Colors.white : Colors.white70, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Buscar filmes, séries...',
+                style: TextStyle(
+                  color: _focused ? Colors.white : Colors.white54, 
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -695,7 +738,10 @@ class _HomeBodyState extends State<_HomeBody> {
           
           // Canais em destaque
           if (!loading && featuredChannels.isNotEmpty) ...[
-            _FeaturedCarousel(items: featuredChannels, title: 'Canais em destaque'),
+            _FeaturedCarousel(
+              items: (featuredChannels.toList()..shuffle()).take(10).toList(),
+              title: 'Canais em destaque',
+            ),
             const SizedBox(height: 20),
           ],
         ],
@@ -1181,6 +1227,10 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
   Map<String, String> thumbs = {};
   bool loading = true;
   String _qualityFilter = 'all';
+  
+  // EPG data
+  bool _epgLoaded = false;
+  Map<String, EpgChannel> _epgChannels = {};
 
   void _applyFilters() {
     if (_qualityFilter == 'all') {
@@ -1201,6 +1251,48 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
   void initState() {
     super.initState();
     _load();
+    _loadEpg();
+  }
+
+  Future<void> _loadEpg() async {
+    // Carrega EPG em background
+    try {
+      if (!EpgService.isLoaded) {
+        await EpgService.loadFromCache();
+      }
+      if (mounted && EpgService.isLoaded) {
+        // Mapear canais do EPG por nome para lookup rápido
+        final channels = EpgService.getAllChannels();
+        final map = <String, EpgChannel>{};
+        for (final ch in channels) {
+          map[ch.displayName.toLowerCase()] = ch;
+        }
+        setState(() {
+          _epgChannels = map;
+          _epgLoaded = true;
+        });
+      }
+    } catch (_) {}
+  }
+
+  EpgChannel? _findEpgForChannel(ContentItem channel) {
+    if (!_epgLoaded || _epgChannels.isEmpty) return null;
+    
+    final name = channel.title.toLowerCase().trim();
+    
+    // Match exato primeiro
+    if (_epgChannels.containsKey(name)) {
+      return _epgChannels[name];
+    }
+    
+    // Match parcial
+    for (final entry in _epgChannels.entries) {
+      if (entry.key.contains(name) || name.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+    
+    return null;
   }
 
   Future<void> _load() async {
@@ -1243,7 +1335,7 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (featured.isNotEmpty) _FeaturedCarousel(items: featured, title: 'Canais em destaque'),
+        if (featured.isNotEmpty) _FeaturedCarousel(items: featured, title: 'Canais em destaque', showEpg: true),
         const SizedBox(height: 24),
         // Header com título e filtros
         Row(
@@ -1251,6 +1343,9 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
             const Expanded(
               child: Text('Canais ao Vivo', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
             ),
+            // Botão de EPG
+            const _EpgButton(),
+            const SizedBox(width: 16),
             _QualityFilterChip(label: 'Todos', selected: _qualityFilter == 'all', onTap: () {
               setState(() { _qualityFilter = 'all'; _applyFilters(); });
             }),
@@ -1269,20 +1364,9 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
           ],
         ),
         const SizedBox(height: 16),
-        if (latest.isNotEmpty) ...[
-          const _SectionTitle(title: 'Novos canais'),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 200,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: latest.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (_, i) => SizedBox(width: 120, child: _ChannelThumb(item: latest[i])),
-            ),
-          ),
-        ],
-        const SizedBox(height: 24),
+        
+
+        
         const Text('Categorias', style: TextStyle(color: Colors.white70, fontSize: 13)),
         const SizedBox(height: 12),
         GridView.count(
@@ -1305,6 +1389,261 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
         ),
       ]),
     );
+  }
+}
+
+/// Card de canal com EPG integrado - mostra programa atual e próximo
+class _ChannelWithEpgCard extends StatefulWidget {
+  final ContentItem channel;
+
+  const _ChannelWithEpgCard({
+    required this.channel,
+  });
+
+  @override
+  State<_ChannelWithEpgCard> createState() => _ChannelWithEpgCardState();
+}
+
+class _ChannelWithEpgCardState extends State<_ChannelWithEpgCard> {
+  bool _focused = false;
+
+  bool _loading = false;
+  String? _error;
+
+  void _handleTap() async {
+    if (widget.channel.url.isEmpty) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      // Simula delay mínimo para mostrar loading
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (!mounted) return;
+      setState(() { _loading = false; });
+      Navigator.push(
+        context, 
+        MaterialPageRoute(
+          builder: (_) => MediaPlayerScreen(url: widget.channel.url, item: widget.channel),
+        ),
+      );
+    } catch (e) {
+      setState(() { _loading = false; _error = 'Erro ao abrir canal'; });
+    }
+  }
+
+  EpgChannel? _resolveEpgForWidget() {
+    final name = widget.channel.title.trim().toLowerCase();
+    for (final ch in EpgService.getAllChannels()) {
+      final k = ch.displayName.trim().toLowerCase();
+      if (k == name || name.contains(k) || k.contains(name)) {
+        return ch;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final epgChannel = _resolveEpgForWidget();
+    final currentProgram = epgChannel?.currentProgram;
+    final nextProgram = epgChannel?.nextProgram;
+    final progress = currentProgram?.progress ?? 0.0;
+    
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _handleTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: Stack(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: 320,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1F2E),
+                borderRadius: BorderRadius.circular(12),
+                border: _focused 
+                    ? Border.all(color: AppColors.primary, width: 2) 
+                    : Border.all(color: Colors.white.withOpacity(0.1)),
+                boxShadow: _focused 
+                    ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12)] 
+                    : null,
+              ),
+              transform: _focused ? (Matrix4.identity()..scale(1.02)) : Matrix4.identity(),
+              transformAlignment: Alignment.center,
+              child: Row(
+                children: [
+                  // Logo/Imagem do canal
+                  Container(
+                    width: 80,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+                    ),
+                    child: Stack(
+                      children: [
+                        // Imagem
+                        if (widget.channel.image.isNotEmpty)
+                          ClipRRect(
+                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+                            child: CachedNetworkImage(
+                              imageUrl: widget.channel.image,
+                              width: 80,
+                              height: 130,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => const Center(
+                                child: Icon(Icons.live_tv, color: Colors.white38, size: 32),
+                              ),
+                            ),
+                          )
+                        else
+                          const Center(child: Icon(Icons.live_tv, color: Colors.white38, size: 32)),
+                        
+                        // Badge AO VIVO
+                        if (currentProgram != null)
+                          Positioned(
+                            top: 6,
+                            left: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.fiber_manual_record, color: Colors.white, size: 8),
+                                  SizedBox(width: 3),
+                                  Text('AO VIVO', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Info do canal e programa
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Nome do canal
+                          Text(
+                            widget.channel.title,
+                            style: TextStyle(
+                              color: _focused ? Colors.white : Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          
+                          // Programa atual
+                          if (currentProgram != null) ...[
+                            Row(
+                              children: [
+                                const Icon(Icons.play_circle, color: Colors.green, size: 14),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    currentProgram.title,
+                                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            // Barra de progresso
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: LinearProgressIndicator(
+                                value: progress,
+                                backgroundColor: Colors.white.withOpacity(0.1),
+                                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                minHeight: 3,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            // Horário
+                            Text(
+                              '${_formatTime(currentProgram.start)} - ${_formatTime(currentProgram.end)}',
+                              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9),
+                            ),
+                          ] else ...[
+                            Text(
+                              EpgService.epgUrl == null || EpgService.epgUrl!.isEmpty
+                                ? 'EPG não configurado'
+                                : 'Programação não disponível',
+                              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
+                            ),
+                          ],
+                          
+                          const Spacer(),
+                          
+                          // Próximo programa
+                          if (nextProgram != null) ...[
+                            Row(
+                              children: [
+                                Icon(Icons.schedule, color: Colors.white.withOpacity(0.4), size: 12),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    'A seguir: ${nextProgram.title}',
+                                    style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_loading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withOpacity(0.4),
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              ),
+            if (_error != null)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: Text(_error!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatTime(DateTime dt) {
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
 
@@ -1644,7 +1983,8 @@ class _WatchedCarousel extends StatelessWidget {
 class _FeaturedCarousel extends StatelessWidget {
   final List<ContentItem> items;
   final String title;
-  const _FeaturedCarousel({required this.items, this.title = 'Em destaque hoje'});
+  final bool showEpg;
+  const _FeaturedCarousel({required this.items, this.title = 'Em destaque hoje', this.showEpg = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1666,7 +2006,7 @@ class _FeaturedCarousel extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return _FeaturedCard(item: item, index: index + 1);
+              return _FeaturedCard(item: item, index: index + 1, showEpg: showEpg);
             },
           ),
         ),
@@ -1675,16 +2015,39 @@ class _FeaturedCarousel extends StatelessWidget {
   }
 }
 
+// Card de destaque para filmes, séries e canais (com EPG opcional)
 class _FeaturedCard extends StatelessWidget {
   final ContentItem item;
   final int index;
-  const _FeaturedCard({required this.item, required this.index});
+  final bool showEpg;
+  const _FeaturedCard({Key? key, required this.item, required this.index, this.showEpg = false}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final title = item.title;
     final subtitle = item.group.isNotEmpty ? item.group : 'Filme';
     final image = item.image;
+
+    EpgChannel? epg;
+    EpgProgram? current;
+    EpgProgram? next;
+    if (showEpg && item.type == 'channel') {
+      final epgMap = EpgService.getAllChannels().asMap().map((_, c) => MapEntry(c.displayName.trim().toLowerCase(), c));
+      final name = item.title.trim().toLowerCase();
+      epg = epgMap[name];
+      if (epg == null) {
+        final matches = epgMap.values.where(
+          (c) => name.contains(c.displayName.trim().toLowerCase()) || c.displayName.trim().toLowerCase().contains(name),
+        );
+        if (matches.isNotEmpty) {
+          epg = matches.first;
+        }
+      }
+      if (epg != null) {
+        current = epg.currentProgram;
+        next = epg.nextProgram;
+      }
+    }
 
     return InkWell(
       onTap: () {
@@ -1721,118 +2084,93 @@ class _FeaturedCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '$index',
-                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    title,
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Card compacto para grid de últimos filmes
-class _MovieThumb extends StatelessWidget {
-  final dynamic item;
-  const _MovieThumb({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final title = item.title ?? 'Filme';
-    final image = item.image ?? '';
-    final quality = (item.quality ?? '').toString().toUpperCase();
-
-    return GestureDetector(
-      onTap: () {
-        final url = item.url ?? '';
-        if (url.isEmpty) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => MediaPlayerScreen(url: url, item: item is ContentItem ? item : null),
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              flex: 7,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                child: image.isNotEmpty
-                    ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.movie, color: Colors.white38, size: 28))
-                    : Container(
-                        color: const Color(0xFF0F1620),
-                        child: const Center(
-                          child: Icon(Icons.movie, color: Colors.white38, size: 28),
-                        ),
+                  if (showEpg && epg != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white12),
                       ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2),
-                  ),
-                  if (quality.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          quality,
-                          style: const TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w600),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (current != null) ...[
+                            Row(
+                              children: [
+                                const Icon(Icons.play_circle_filled, color: Colors.greenAccent, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        current.title,
+                                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${current.startTimeFormatted} - ${current.endTimeFormatted}',
+                                        style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (next != null) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.schedule, color: Colors.orangeAccent, size: 14),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Próximo: ${next.title} (${next.startTimeFormatted})',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ] else ...[
+                            Text(
+                              'EPG disponível na tela Canais',
+                              style: TextStyle(color: Colors.white54, fontSize: 11),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
+                  ],
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      '',
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1843,97 +2181,243 @@ class _MovieThumb extends StatelessWidget {
   }
 }
 
-class _SeriesThumb extends StatelessWidget {
+class _SeriesThumb extends StatefulWidget {
   final ContentItem item;
   const _SeriesThumb({required this.item});
 
   @override
+  State<_SeriesThumb> createState() => _SeriesThumbState();
+}
+
+class _SeriesThumbState extends State<_SeriesThumb> {
+  bool _focused = false;
+
+  void _handleTap() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => sdetail.SeriesDetailScreen(item: widget.item)));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final title = item.title;
-    final image = item.image;
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => sdetail.SeriesDetailScreen(item: item)));
+    final title = widget.item.title;
+    final image = widget.item.image;
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _handleTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              flex: 7,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                child: image.isNotEmpty
-                  ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.tv, color: Colors.white38, size: 28))
-                  : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.tv, color: Colors.white38, size: 28))),
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(8),
+            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+          ),
+          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 7,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  child: image.isNotEmpty
+                    ? AdaptiveCachedImage(url: image, fit: BoxFit.cover, errorWidget: const Icon(Icons.tv, color: Colors.white38, size: 28))
+                    : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.tv, color: Colors.white38, size: 28))),
+                ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-              child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
-            ),
-          ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ChannelThumb extends StatelessWidget {
+class _ChannelThumb extends StatefulWidget {
   final ContentItem item;
   const _ChannelThumb({required this.item});
 
   @override
+  State<_ChannelThumb> createState() => _ChannelThumbState();
+}
+
+class _ChannelThumbState extends State<_ChannelThumb> {
+  bool _focused = false;
+
+  void _handleTap() {
+    if (widget.item.url.isEmpty) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: widget.item.url, item: widget.item)));
+  }
+
+  void _handleLongPress() {
+    // Abre o guia de programação do canal
+    AppRoutes.goToEpg(context, channel: widget.item);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final title = item.title;
-    final image = item.image;
-    final quality = (item.quality).toUpperCase();
-    return GestureDetector(
-      onTap: () {
-        if (item.url.isEmpty) return;
-        Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+    final title = widget.item.title;
+    final image = widget.item.image;
+    final quality = (widget.item.quality).toUpperCase();
+    
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _handleTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              flex: 7,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                child: image.isNotEmpty
-                  ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.live_tv, color: Colors.white38, size: 28))
-                  : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.live_tv, color: Colors.white38, size: 28))),
+      child: GestureDetector(
+        onTap: _handleTap,
+        onLongPress: _handleLongPress,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(8),
+            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+          ),
+          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 7,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  child: image.isNotEmpty
+                    ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.live_tv, color: Colors.white38, size: 28))
+                    : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.live_tv, color: Colors.white38, size: 28))),
+                ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
-                  if (quality.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                        child: Text(quality, style: const TextStyle(color: Colors.white70, fontSize: 8)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+                    if (quality.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                          child: Text(quality, style: const TextStyle(color: Colors.white70, fontSize: 8)),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MovieThumb extends StatefulWidget {
+  final ContentItem item;
+  const _MovieThumb({required this.item});
+
+  @override
+  State<_MovieThumb> createState() => _MovieThumbState();
+}
+
+class _MovieThumbState extends State<_MovieThumb> {
+  bool _focused = false;
+
+  void _handleTap() {
+    if (widget.item.url.isEmpty) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: widget.item.url, item: widget.item)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = widget.item.title;
+    final image = widget.item.image;
+    final quality = (widget.item.quality).toUpperCase();
+    
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _handleTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(8),
+            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+          ),
+          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 7,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  child: image.isNotEmpty
+                    ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.movie, color: Colors.white38, size: 28))
+                    : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.movie, color: Colors.white38, size: 28))),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+                    if (quality.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                          child: Text(quality, style: const TextStyle(color: Colors.white70, fontSize: 8)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2073,6 +2557,34 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+// Widget de botão EPG
+class _EpgButton extends StatelessWidget {
+  const _EpgButton();
+  
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => AppRoutes.goToEpg(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_month, color: Colors.white70, size: 14),
+            SizedBox(width: 6),
+            Text('Guia TV', style: TextStyle(color: Colors.white70, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // Widget de filtro de qualidade reutilizável
 class _QualityFilterChip extends StatelessWidget {
   final String label;
@@ -2111,4 +2623,5 @@ class _QualityFilterChip extends StatelessWidget {
   }
 }
 
-// Movie grid card removed to prioritize category-only view on Movies screen
+
+// Card de destaque para filmes, séries e canais (com EPG opcional)

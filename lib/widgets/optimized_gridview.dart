@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'adaptive_cached_image.dart';
 import '../models/content_item.dart';
+import '../models/epg_program.dart';
 import 'meta_chips_widget.dart';
 
 /// GridView otimizado com lazy loading e suporte a TV remoto
@@ -16,6 +18,7 @@ class OptimizedGridView extends StatefulWidget {
   final bool showMetaChips;
   final double metaFontSize;
   final double metaIconSize;
+  final Map<String, EpgChannel>? epgChannels;
 
   const OptimizedGridView({
     super.key,
@@ -29,6 +32,7 @@ class OptimizedGridView extends StatefulWidget {
     this.showMetaChips = false,
     this.metaFontSize = 10,
     this.metaIconSize = 12,
+    this.epgChannels,
   });
 
   @override
@@ -68,6 +72,7 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
           showMetaChips: widget.showMetaChips,
           metaFontSize: widget.metaFontSize,
           metaIconSize: widget.metaIconSize,
+          epgChannels: widget.epgChannels,
           onTap: () => widget.onTap(widget.items[index]),
         );
       },
@@ -81,6 +86,7 @@ class _OptimizedGridCard extends StatefulWidget {
   final bool showMetaChips;
   final double metaFontSize;
   final double metaIconSize;
+  final Map<String, EpgChannel>? epgChannels;
 
   const _OptimizedGridCard({
     required this.item,
@@ -88,6 +94,7 @@ class _OptimizedGridCard extends StatefulWidget {
     required this.showMetaChips,
     required this.metaFontSize,
     required this.metaIconSize,
+    this.epgChannels,
   });
 
   @override
@@ -96,6 +103,22 @@ class _OptimizedGridCard extends StatefulWidget {
 
 class _OptimizedGridCardState extends State<_OptimizedGridCard> {
   bool _isFocused = false;
+
+  EpgChannel? _findEpgForChannel(ContentItem channel) {
+    if (widget.epgChannels == null || widget.epgChannels!.isEmpty) return null;
+    final name = channel.title.trim().toLowerCase();
+    if (widget.epgChannels!.containsKey(name)) {
+      return widget.epgChannels![name];
+    }
+    // Fuzzy match
+    for (final entry in widget.epgChannels!.entries) {
+      if (name.contains(entry.key.trim().toLowerCase()) || 
+          entry.key.trim().toLowerCase().contains(name)) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,21 +172,11 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      CachedNetworkImage(
-                        imageUrl: widget.item.image,
+                      AdaptiveCachedImage(
+                        url: widget.item.image,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[850],
-                          child: const Center(
-                            child: Icon(Icons.movie, color: Colors.white24, size: 32),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[850],
-                          child: const Center(
-                            child: Icon(Icons.image_not_supported, color: Colors.white24, size: 32),
-                          ),
-                        ),
+                        width: double.infinity,
+                        height: double.infinity,
                       ),
                     ],
                   ),
@@ -196,6 +209,49 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                             iconSize: widget.metaIconSize,
                           ),
                         ),
+                      // EPG display
+                      if (widget.epgChannels != null) ...[
+                        const SizedBox(height: 2),
+                        Builder(
+                          builder: (context) {
+                            final epg = _findEpgForChannel(widget.item);
+                            final current = epg?.currentProgram;
+                            final next = epg?.nextProgram;
+                            if (current != null) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Agora: ${current.title}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.w600),
+                                  ),
+                                  if (next != null)
+                                    Text(
+                                      'Próx: ${next.title}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white54, fontSize: 7),
+                                    ),
+                                ],
+                              );
+                            } else if (epg != null && next != null) {
+                              return Text(
+                                'Em breve: ${next.title}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.white70, fontSize: 8),
+                              );
+                            } else {
+                              return const Text(
+                                'Sem programação',
+                                style: TextStyle(color: Colors.white38, fontSize: 8),
+                              );
+                            }
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),
