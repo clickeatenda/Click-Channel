@@ -9,7 +9,10 @@ import '../widgets/optimized_gridview.dart';
 import '../widgets/media_player_screen.dart';
 import '../data/api_service.dart';
 import '../data/m3u_service.dart';
+import '../data/epg_service.dart';
+import '../models/epg_program.dart';
 import '../core/config.dart';
+import '../utils/channel_grouping.dart';
 import 'series_detail_screen.dart'; // Importação correta
 
 class CategoryScreen extends StatefulWidget {
@@ -29,6 +32,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
   final int pageSize = 240;
   bool loading = true;
   ContentItem? bannerItem;
+  bool _epgLoaded = false;
+  Map<String, EpgChannel> _epgChannels = {};
   
   // Filtros
   String _qualityFilter = 'all'; // all, 4k, fhd, hd
@@ -38,6 +43,24 @@ class _CategoryScreenState extends State<CategoryScreen> {
   void initState() {
     super.initState();
     _loadItems();
+    _loadEpg();
+  }
+
+  Future<void> _loadEpg() async {
+    if (!EpgService.isLoaded) {
+      await EpgService.loadFromCache();
+    }
+    if (mounted && EpgService.isLoaded) {
+      final channels = EpgService.getAllChannels();
+      final map = <String, EpgChannel>{};
+      for (final c in channels) {
+        map[c.displayName.trim().toLowerCase()] = c;
+      }
+      setState(() {
+        _epgChannels = map;
+        _epgLoaded = true;
+      });
+    }
   }
 
   Future<void> _loadItems() async {
@@ -117,6 +140,129 @@ class _CategoryScreenState extends State<CategoryScreen> {
     });
   }
 
+  // --- Channel grouping UI helpers ---
+  List<Widget> _buildChannelGroups(List<ContentItem> source) {
+    final map = groupChannelVariants(source);
+    final widgets = <Widget>[];
+    for (final entry in map.entries) {
+      final groupName = entry.key;
+      final variants = entry.value;
+      final epg = _findEpgForChannel(variants.first);
+
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+          child: ExpansionTile(
+            collapsedBackgroundColor: Colors.transparent,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            title: Text(groupName, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+            subtitle: epg != null && epg.currentProgram != null
+                ? Text('Agora: ${epg.currentProgram!.title}', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12))
+                : null,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: variants.map((v) => _buildVariantCard(v)).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (widgets.isEmpty) {
+      widgets.add(const Padding(
+        padding: EdgeInsets.all(24.0),
+        child: Center(child: Text('Nenhum canal encontrado nesta categoria.', style: TextStyle(color: Colors.white54))),
+      ));
+    }
+
+    return widgets;
+  }
+
+  Widget _buildVariantCard(ContentItem item) {
+    final epg = _findEpgForChannel(item);
+    final current = epg?.currentProgram;
+    return GestureDetector(
+      onTap: () {
+        if (item.url.isEmpty) return;
+        Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+      },
+      child: Container(
+        width: 150,
+        decoration: BoxDecoration(
+          color: const Color(0xFF111318),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white12),
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: item.image.isNotEmpty
+                      ? CachedNetworkImage(imageUrl: item.image, width: double.infinity, height: 80, fit: BoxFit.cover, errorWidget: (_, __, ___) => Container(color: Colors.white12, height: 80))
+                      : Container(width: double.infinity, height: 80, color: Colors.white12),
+                ),
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
+                    child: Text(item.quality.toUpperCase(), style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+                Positioned(
+                  bottom: 6,
+                  left: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(6)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.play_arrow, color: Colors.white, size: 14),
+                        const SizedBox(width: 6),
+                        Text(item.quality.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (current != null)
+              Text('Agora: ${current.title}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.amber, fontSize: 11))
+            else
+              Text('Sem programação', style: TextStyle(color: Colors.white54, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  EpgChannel? _findEpgForChannel(ContentItem channel) {
+    if (!_epgLoaded || _epgChannels.isEmpty) return null;
+    final name = channel.title.trim().toLowerCase();
+    if (_epgChannels.containsKey(name)) {
+      return _epgChannels[name];
+    }
+    // Fallback: fuzzy match
+    for (final entry in _epgChannels.entries) {
+      if (name.contains(entry.key) || entry.key.contains(name)) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
   Widget _buildFilterChip(String label, bool selected, VoidCallback onTap) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -151,6 +297,51 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Column(
               children: [
+                // Header with breadcrumbs (shows category and type)
+                Container(
+                  padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8, left: 16, right: 16, bottom: 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white70),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.categoryName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                            Text(widget.type.toUpperCase(), style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      _buildFilterChip('Todos', _qualityFilter == 'all', () { setState(() => _qualityFilter = 'all'); _updateFilters(); }),
+                      _buildFilterChip('4K', _qualityFilter == '4k', () { setState(() => _qualityFilter = '4k'); _updateFilters(); }),
+                      _buildFilterChip('FHD', _qualityFilter == 'fhd', () { setState(() => _qualityFilter = 'fhd'); _updateFilters(); }),
+                      _buildFilterChip('HD', _qualityFilter == 'hd', () { setState(() => _qualityFilter = 'hd'); _updateFilters(); }),
+                      const Spacer(),
+                      DropdownButton<String>(
+                        value: _sortBy,
+                        dropdownColor: AppColors.background,
+                        items: const [
+                          DropdownMenuItem(value: 'default', child: Text('Padrão')),
+                          DropdownMenuItem(value: 'name', child: Text('Nome')),
+                          DropdownMenuItem(value: 'quality', child: Text('Qualidade')),
+                        ],
+                        onChanged: (v) { if (v != null) setState(() { _sortBy = v; _updateFilters(); }); },
+                      ),
+                    ],
+                  ),
+                ),
                 // Header compacto - apenas título e botão voltar
                 Container(
                   padding: EdgeInsets.only(
@@ -252,6 +443,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             itemCount: items.length > 15 ? 15 : items.length,
                             itemBuilder: (context, index) {
                               final item = items[index];
+                              final epg = _findEpgForChannel(item);
+                              final current = epg?.currentProgram;
+                              final next = epg?.nextProgram;
+                              final epgConfigured = EpgService.epgUrl != null && EpgService.epgUrl!.isNotEmpty;
                               return GestureDetector(
                                 onTap: () {
                                   if (item.isSeries) {
@@ -288,6 +483,38 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(color: Colors.white70, fontSize: 10),
                                       ),
+                                      if (!epgConfigured)
+                                        const Padding(
+                                          padding: EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            'EPG não configurado',
+                                            style: TextStyle(color: Colors.redAccent, fontSize: 9, fontWeight: FontWeight.w600),
+                                          ),
+                                        )
+                                      else if (epg == null)
+                                        const Padding(
+                                          padding: EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            'Sem programação',
+                                            style: TextStyle(color: Colors.white38, fontSize: 9),
+                                          ),
+                                        )
+                                      else if (current != null) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Agora: ${current.title}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(color: Colors.amber, fontSize: 9, fontWeight: FontWeight.w600),
+                                        ),
+                                        if (next != null)
+                                          Text(
+                                            'Próx: ${next.title}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(color: Colors.white54, fontSize: 8),
+                                          ),
+                                      ]
                                     ],
                                   ),
                                 ),
@@ -322,23 +549,28 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               ],
                             ),
                           )
-                        : OptimizedGridView(
-                            items: filteredItems.take(visibleCount).toList(),
-                            onTap: (item) {
-                              if (item.isSeries) {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
-                              } else {
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
-                              }
-                            },
-                            crossAxisCount: 6,
-                            childAspectRatio: 0.55,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            showMetaChips: true,
-                            metaFontSize: 9,
-                            metaIconSize: 11,
-                          ),
+                        : (widget.type.toLowerCase() == 'channel'
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: _buildChannelGroups(filteredItems.take(visibleCount).toList()),
+                              )
+                            : OptimizedGridView(
+                                items: filteredItems.take(visibleCount).toList(),
+                                onTap: (item) {
+                                  if (item.isSeries) {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
+                                  } else {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+                                  }
+                                },
+                                crossAxisCount: 6,
+                                childAspectRatio: 0.55,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                showMetaChips: true,
+                                metaFontSize: 9,
+                                metaIconSize: 11,
+                              ) ),
                   ),
                 ),
                 if (filteredItems.length > visibleCount)

@@ -11,6 +11,8 @@ import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'routes/app_routes.dart';
 import 'core/config.dart';
+import 'data/epg_service.dart';
+import 'data/m3u_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,13 +40,49 @@ void main() async {
   // Inicializar autenticação
   final apiClient = ApiClient();
   final authProvider = AuthProvider(apiClient);
-  // Init preferences and apply any saved playlist override
+  // Init preferences and handle saved playlist override
   await Prefs.init();
-  final savedOverride = Prefs.getPlaylistOverride();
-  final hasPlaylist = savedOverride != null && savedOverride.isNotEmpty;
-  if (hasPlaylist) {
-    Config.setPlaylistOverride(savedOverride);
+
+  // Use an install-marker to robustly detect a fresh install run. If the marker
+  // does not exist, treat this as the first run for this install and clear any
+  // persisted playlist override + M3U caches so that the user starts with no
+  // pre-configured playlist.
+  final hasInstallMarker = await M3uService.hasInstallMarker();
+  if (!hasInstallMarker) {
+    print('♻️ main: No install marker found — treating as fresh install and clearing playlist override + caches');
+    await Prefs.setPlaylistOverride(null);
+    Config.setPlaylistOverride(null);
+    try {
+      await M3uService.clearAllCache(null);
+    } catch (_) {}
+    await M3uService.writeInstallMarker();
+    await Prefs.setFirstRunDone();
   }
+
+  // Special-case: If prefs contain a playlist override but there are NO cache files (likely
+  // prefs were restored from backup), then clear the persisted override so the app
+  // does not auto-load it.
+  final savedOverride = Prefs.getPlaylistOverride();
+  final hasAnyCache = await M3uService.hasAnyCache();
+  if (savedOverride != null && savedOverride.isNotEmpty && !hasAnyCache) {
+    print('♻️ main: Detected playlist override with no cache files; clearing override to avoid auto-loading restored prefs');
+    await Prefs.setPlaylistOverride(null);
+    Config.setPlaylistOverride(null);
+    await Prefs.setPlaylistReady(false);
+  }
+
+  final hasPlaylist = Prefs.getPlaylistOverride() != null && Prefs.getPlaylistOverride()!.isNotEmpty;
+  if (hasPlaylist) {
+    Config.setPlaylistOverride(Prefs.getPlaylistOverride());
+  }
+  
+  // Carregar EPG do cache em background
+  EpgService.loadFromCache().then((_) {
+    if (EpgService.isLoaded) {
+      print('📺 EPG carregado do cache: ${EpgService.getAllChannels().length} canais');
+    }
+  });
+  
   await authProvider.initialize();
   
   runApp(ClickChannelApp(

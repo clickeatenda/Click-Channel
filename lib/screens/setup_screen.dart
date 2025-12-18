@@ -63,39 +63,49 @@ class _SetupScreenState extends State<SetupScreen> {
     final savedUrl = Prefs.getPlaylistOverride();
     final isReady = Prefs.isPlaylistReady();
     
-    if (savedUrl != null && savedUrl.isNotEmpty) {
-      _urlController.text = savedUrl;
+    // Se não tem URL salva, limpa qualquer cache antigo
+    if (savedUrl == null || savedUrl.isEmpty) {
+      print('🧹 Setup: Sem URL configurada, limpando caches antigos...');
+      await M3uService.clearAllCache(null);
+      await Prefs.setPlaylistReady(false);
+      setState(() {
+        _isLoading = false;
+        _statusMessage = '';
+      });
+      return;
+    }
+    
+    _urlController.text = savedUrl;
+    
+    // Se já foi baixada anteriormente, tenta usar cache
+    if (isReady) {
+      setState(() {
+        _statusMessage = 'Verificando lista salva...';
+        _isLoading = true;
+      });
       
-      // Se já foi baixada anteriormente, tenta usar cache
-      if (isReady) {
+      // Verifica se o cache local ainda existe
+      final hasCache = await M3uService.hasCachedPlaylist(savedUrl);
+      if (hasCache) {
         setState(() {
-          _statusMessage = 'Verificando lista salva...';
-          _isLoading = true;
+          _statusMessage = 'Lista encontrada! Carregando...';
+          _progress = 1.0;
         });
         
-        // Verifica se o cache local ainda existe
-        final hasCache = await M3uService.hasCachedPlaylist(savedUrl);
-        if (hasCache) {
-          setState(() {
-            _statusMessage = 'Lista encontrada! Carregando...';
-            _progress = 1.0;
-          });
-          
-          // Pequeno delay para mostrar a mensagem
-          await Future.delayed(const Duration(milliseconds: 500));
-          if (mounted) {
-            Navigator.pushReplacementNamed(context, '/home');
-          }
-          return;
+        // Pequeno delay para mostrar a mensagem
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
         }
-        
-        // Se não tem cache, precisa baixar novamente
-        setState(() {
-          _statusMessage = 'Cache expirado, baixando novamente...';
-        });
-        await _downloadPlaylist(savedUrl);
         return;
       }
+      
+      // Se não tem cache, precisa baixar novamente
+      setState(() {
+        _statusMessage = 'Cache expirado, baixando novamente...';
+      });
+      await _downloadPlaylist(savedUrl);
+      return;
     }
     
     // Foco automático é tratado pelo autofocus: true no botão
@@ -322,7 +332,7 @@ class _SetupScreenState extends State<SetupScreen> {
         // Porcentagem
         Text(
           '${(_progress * 100).toInt()}%',
-          style: TextStyle(
+          style: const TextStyle(
             color: AppColors.primary,
             fontSize: 18,
             fontWeight: FontWeight.bold,

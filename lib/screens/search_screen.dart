@@ -328,7 +328,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-class _FilterChip extends StatelessWidget {
+class _FilterChip extends StatefulWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -340,29 +340,47 @@ class _FilterChip extends StatelessWidget {
   });
 
   @override
+  State<_FilterChip> createState() => _FilterChipState();
+}
+
+class _FilterChipState extends State<_FilterChip> {
+  bool _focused = false;
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
+      child: Focus(
+        onFocusChange: (f) => setState(() => _focused = f),
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
+              (event.logicalKey == LogicalKeyboardKey.enter ||
+               event.logicalKey == LogicalKeyboardKey.select ||
+               event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+            widget.onTap();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: selected ? AppColors.primary : Colors.white10,
+              color: widget.selected ? AppColors.primary : Colors.white10,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: selected ? AppColors.primary : Colors.white24,
+                color: _focused ? Colors.white : (widget.selected ? AppColors.primary : Colors.white24),
+                width: _focused ? 2 : 1,
               ),
             ),
             child: Text(
-              label,
+              widget.label,
               style: TextStyle(
-                color: selected ? Colors.white : Colors.white70,
+                color: widget.selected ? Colors.white : Colors.white70,
                 fontSize: 13,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: widget.selected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ),
@@ -372,97 +390,123 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _SearchResultCard extends StatelessWidget {
+class _SearchResultCard extends StatefulWidget {
   final ContentItem item;
   final VoidCallback onTap;
 
   const _SearchResultCard({required this.item, required this.onTap});
 
   @override
+  State<_SearchResultCard> createState() => _SearchResultCardState();
+}
+
+class _SearchResultCardState extends State<_SearchResultCard> {
+  bool _focused = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: item.image,
-                      fit: BoxFit.cover,
-                      placeholder: (c, u) => Container(color: const Color(0xFF333333)),
-                      errorWidget: (c, u, e) => Container(
-                        color: const Color(0xFF333333),
-                        child: Icon(
-                          item.type == 'channel' ? Icons.live_tv : Icons.movie,
-                          color: Colors.white30,
-                          size: 40,
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+          ),
+          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: widget.item.image,
+                        fit: BoxFit.cover,
+                        placeholder: (c, u) => Container(color: const Color(0xFF333333)),
+                        errorWidget: (c, u, e) => Container(
+                          color: const Color(0xFF333333),
+                          child: Icon(
+                            widget.item.type == 'channel' ? Icons.live_tv : Icons.movie,
+                            color: Colors.white30,
+                            size: 40,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  // Badge de tipo
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: item.type == 'movie'
-                            ? Colors.blue.withOpacity(0.9)
-                            : item.isSeries || item.type == 'series'
-                                ? Colors.purple.withOpacity(0.9)
-                                : Colors.green.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        item.type == 'movie' ? 'FILME' : (item.isSeries || item.type == 'series') ? 'SÉRIE' : 'CANAL',
-                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  // Badge de qualidade
-                  if (item.quality.isNotEmpty)
+                    // Badge de tipo
                     Positioned(
                       top: 6,
-                      left: 6,
+                      right: 6,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.black87,
+                          color: widget.item.type == 'movie'
+                              ? Colors.blue.withOpacity(0.9)
+                              : widget.item.isSeries || widget.item.type == 'series'
+                                  ? Colors.purple.withOpacity(0.9)
+                                  : Colors.green.withOpacity(0.9),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          _getQualityLabel(item.quality),
+                          widget.item.type == 'movie' ? 'FILME' : (widget.item.isSeries || widget.item.type == 'series') ? 'SÉRIE' : 'CANAL',
                           style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
-                ],
+                    // Badge de qualidade
+                    if (widget.item.quality.isNotEmpty)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.black87,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _getQualityLabel(widget.item.quality),
+                            style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              item.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
-            ),
-            if (item.group.isNotEmpty)
+              const SizedBox(height: 6),
               Text(
-                item.group,
-                maxLines: 1,
+                widget.item.title,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white54, fontSize: 9),
+                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
               ),
-          ],
+              if (widget.item.group.isNotEmpty)
+                Text(
+                  widget.item.group,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white54, fontSize: 9),
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/content_item.dart';
+import 'adaptive_cached_image.dart';
 
 /// Widget otimizado para carousel com lazy loading
 class OptimizedCarousel extends StatefulWidget {
@@ -89,20 +90,15 @@ class _CarouselCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CachedNetworkImage(
-                imageUrl: item.image,
+              AdaptiveCachedImage(
+                url: item.image,
                 fit: BoxFit.cover,
-                cacheManager: _getCacheManager(),
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[800],
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[800],
-                  child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                ),
+                width: double.infinity,
+                height: double.infinity,
+                errorWidget: const Icon(Icons.image_not_supported, color: Colors.grey),
               ),
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
