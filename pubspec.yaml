@@ -31,6 +31,8 @@ dependencies:
   # Pacotes Visuais
   google_fonts: ^6.2.1
   cupertino_icons: ^1.0.2
+  shimmer: ^2.0.0
+  flutter_cache_manager: 3.4.1
 
 dev_dependencies:
   flutter_test:

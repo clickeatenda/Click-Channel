@@ -11,6 +11,13 @@ class Prefs {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
+  /// Test helper to reset internal prefs instance across tests
+  /// Only intended for use in unit tests to ensure clean state.
+  static Future<void> resetForTests() async {
+    _prefs = null;
+    await init();
+  }
+
   static String? getPlaylistOverride() {
     return _prefs?.getString(keyPlaylistOverride);
   }
@@ -32,6 +39,22 @@ class Prefs {
   /// Verifica se a playlist foi baixada e está pronta para uso
   static bool isPlaylistReady() {
     return _prefs?.getBool(keyPlaylistReady) ?? false;
+  }
+
+  // --- FIRST-RUN HELPERS ---
+  static const String keyFirstRunDone = 'first_run_done';
+
+  /// Returns true if this is the very first run of the app (no flag set yet)
+  static Future<bool> isFirstRun() async {
+    if (_prefs == null) await init();
+    final v = _prefs?.getBool(keyFirstRunDone);
+    return v == null || v == false;
+  }
+
+  /// Marks that the first-run initialization has been completed
+  static Future<void> setFirstRunDone() async {
+    if (_prefs == null) await init();
+    await _prefs!.setBool(keyFirstRunDone, true);
   }
 
   /// Marca a playlist como pronta (baixada com sucesso)

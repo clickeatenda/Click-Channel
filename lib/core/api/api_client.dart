@@ -4,15 +4,19 @@ import '../config.dart';
 
 class ApiClient {
   // Use Config.backendUrl so the base can be set via .env (e.g. http://host:4000)
-  static String get baseUrl => '${Config.backendUrl}/api';
+  static String get baseUrl {
+    final url = Config.backendUrl;
+    if (url.isEmpty) return 'http://localhost'; // Fallback para evitar erro
+    return '$url/api';
+  }
   late final Dio _dio;
   final _secureStorage = const FlutterSecureStorage();
   
   ApiClient() {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 5),
       contentType: 'application/json',
       responseType: ResponseType.json,
     ));
