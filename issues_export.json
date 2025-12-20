@@ -1,7 +1,7 @@
 [
   {
-    "nome": "Remover .env do histórico do git",
-    "descricao": "Remover arquivo .env do histórico do git",
+    "nome": "Remover .env do historico do git",
+    "descricao": "Remover arquivo .env do historico do git",
     "prioridade": "Alta",
     "status": "done",
     "milestone": "Infrastructure",
@@ -27,8 +27,8 @@
     "tipo": "Feature"
   },
   {
-    "nome": "Tela de programação por canal",
-    "descricao": "Criar interface para visualizar programação",
+    "nome": "Tela de programacao por canal",
+    "descricao": "Criar interface para visualizar programacao",
     "prioridade": "Alta",
     "status": "done",
     "milestone": "Feature",
@@ -47,14 +47,14 @@
   {
     "nome": "Sistema de favoritos de programas",
     "descricao": "Permitir favoritar programas",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Feature",
     "tipo_do_projeto": "Feature",
     "tipo": "Feature"
   },
   {
-    "nome": "Configuração de URL EPG",
+    "nome": "Configuracao de URL EPG",
     "descricao": "Permitir configurar URL do EPG em Settings",
     "prioridade": "Alta",
     "status": "done",
@@ -65,7 +65,7 @@
   {
     "nome": "Cache de EPG em disco",
     "descricao": "Armazenar EPG em cache persistente",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Performance",
     "tipo_do_projeto": "Performance",
@@ -73,17 +73,17 @@
   },
   {
     "nome": "EPG mostrado somente em CANAIS",
-    "descricao": "Restringir exibição de EPG apenas na tela de canais",
-    "prioridade": "Média",
+    "descricao": "Restringir exibicao de EPG apenas na tela de canais",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Feature",
     "tipo_do_projeto": "Feature",
     "tipo": "Feature"
   },
   {
-    "nome": "Notificação de programa favorito",
-    "descricao": "Notificar quando programa favorito começa",
-    "prioridade": "Média",
+    "nome": "Notificacao de programa favorito",
+    "descricao": "Notificar quando programa favorito comeca",
+    "prioridade": "Media",
     "status": "todo",
     "milestone": "Feature",
     "tipo_do_projeto": "Feature",
@@ -92,16 +92,16 @@
   {
     "nome": "Lazy loading de imagens nos cards",
     "descricao": "Implementar lazy loading para imagens",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Performance",
     "tipo_do_projeto": "Performance",
     "tipo": "Performance"
   },
   {
-    "nome": "Shimmer/skeleton loading nos carrosséis",
-    "descricao": "Adicionar skeleton loading nos carrosséis",
-    "prioridade": "Média",
+    "nome": "Shimmer skeleton loading nos carrosseis",
+    "descricao": "Adicionar skeleton loading nos carrosseis",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Performance",
     "tipo_do_projeto": "Performance",
@@ -110,25 +110,25 @@
   {
     "nome": "Cache de imagens com tamanho limitado",
     "descricao": "Limitar cache de imagens a 100MB",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Performance",
     "tipo_do_projeto": "Performance",
     "tipo": "Performance"
   },
   {
-    "nome": "Compressão de thumbnails em memória",
-    "descricao": "Comprimir thumbnails para economizar memória",
-    "prioridade": "Média",
+    "nome": "Compressao de thumbnails em memoria",
+    "descricao": "Comprimir thumbnails para economizar memoria",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Performance",
     "tipo_do_projeto": "Performance",
     "tipo": "Performance"
   },
   {
-    "nome": "Paginação virtual em listas grandes",
+    "nome": "Paginacao virtual em listas grandes",
     "descricao": "Implementar virtual pagination para 1000+ itens",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Performance",
     "tipo_do_projeto": "Performance",
@@ -153,18 +153,18 @@
     "tipo": "Security"
   },
   {
-    "nome": "Filtro por ano de lançamento",
+    "nome": "Filtro por ano de lancamento",
     "descricao": "Permitir filtrar por ano",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "todo",
     "milestone": "Feature",
     "tipo_do_projeto": "Feature",
     "tipo": "Feature"
   },
   {
-    "nome": "Filtro por gênero",
-    "descricao": "Permitir filtrar por gênero",
-    "prioridade": "Média",
+    "nome": "Filtro por genero",
+    "descricao": "Permitir filtrar por genero",
+    "prioridade": "Media",
     "status": "todo",
     "milestone": "Feature",
     "tipo_do_projeto": "Feature",
@@ -173,15 +173,15 @@
   {
     "nome": "Filtro por qualidade",
     "descricao": "Permitir filtrar por qualidade (4K, FHD, HD, SD)",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "todo",
     "milestone": "Feature",
     "tipo_do_projeto": "Feature",
     "tipo": "Feature"
   },
   {
-    "nome": "Histórico de buscas recentes",
-    "descricao": "Manter histórico de buscas",
+    "nome": "Historico de buscas recentes",
+    "descricao": "Manter historico de buscas",
     "prioridade": "Baixa",
     "status": "todo",
     "milestone": "Feature",
@@ -189,7 +189,7 @@
     "tipo": "Feature"
   },
   {
-    "nome": "Sugestões de busca (autocomplete)",
+    "nome": "Sugestoes de busca (autocomplete)",
     "descricao": "Adicionar autocomplete na busca",
     "prioridade": "Baixa",
     "status": "todo",
@@ -199,8 +199,8 @@
   },
   {
     "nome": "Splash screen animada com logo",
-    "descricao": "Criar splash screen com animações",
-    "prioridade": "Média",
+    "descricao": "Criar splash screen com animacoes",
+    "prioridade": "Media",
     "status": "todo",
     "milestone": "UI",
     "tipo_do_projeto": "UI",
@@ -209,14 +209,14 @@
   {
     "nome": "Indicador de carregamento elegante",
     "descricao": "Melhorar indicador de loading",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "todo",
     "milestone": "UI",
     "tipo_do_projeto": "UI",
     "tipo": "UI"
   },
   {
-    "nome": "Feedback sonoro na navegação TV",
+    "nome": "Feedback sonoro na navegacao TV",
     "descricao": "Adicionar feedback sonoro para TV",
     "prioridade": "Baixa",
     "status": "todo",
@@ -226,16 +226,16 @@
   },
   {
     "nome": "Barra de progresso no card Continuar Assistindo",
-    "descricao": "Mostrar progresso de assistência",
-    "prioridade": "Média",
+    "descricao": "Mostrar progresso de assistencia",
+    "prioridade": "Media",
     "status": "todo",
     "milestone": "UI",
     "tipo_do_projeto": "UI",
     "tipo": "UI"
   },
   {
-    "nome": "Animações de transição entre telas",
-    "descricao": "Adicionar animações de transição",
+    "nome": "Animacoes de transicao entre telas",
+    "descricao": "Adicionar animacoes de transicao",
     "prioridade": "Baixa",
     "status": "todo",
     "milestone": "UI",
@@ -243,7 +243,7 @@
     "tipo": "UI"
   },
   {
-    "nome": "Modo picture-in-picture (PiP)",
+    "nome": "Modo picture in picture (PiP)",
     "descricao": "Permitir modo PiP para canais",
     "prioridade": "Baixa",
     "status": "todo",
@@ -253,7 +253,7 @@
   },
   {
     "nome": "Download para assistir offline",
-    "descricao": "Permitir download de conteúdo",
+    "descricao": "Permitir download de conteudo",
     "prioridade": "Baixa",
     "status": "todo",
     "milestone": "Feature",
@@ -261,8 +261,8 @@
     "tipo": "Feature"
   },
   {
-    "nome": "Múltiplos perfis de usuário",
-    "descricao": "Suportar múltiplos perfis",
+    "nome": "Multiplos perfis de usuario",
+    "descricao": "Suportar multiplos perfis",
     "prioridade": "Baixa",
     "status": "todo",
     "milestone": "Feature",
@@ -279,7 +279,7 @@
     "tipo": "Feature"
   },
   {
-    "nome": "Legendas externas (.srt, .ass, .vtt)",
+    "nome": "Legendas externas (.srt .ass .vtt)",
     "descricao": "Suportar legendas externas",
     "prioridade": "Baixa",
     "status": "todo",
@@ -288,7 +288,7 @@
     "tipo": "Feature"
   },
   {
-    "nome": "Sincronização de favoritos na nuvem",
+    "nome": "Sincronizacao de favoritos na nuvem",
     "descricao": "Sincronizar favoritos com cloud",
     "prioridade": "Baixa",
     "status": "todo",
@@ -297,7 +297,7 @@
     "tipo": "Feature"
   },
   {
-    "nome": "Cast para Chromecast/AirPlay",
+    "nome": "Cast para Chromecast AirPlay",
     "descricao": "Permitir cast para Chromecast/AirPlay",
     "prioridade": "Baixa",
     "status": "todo",
@@ -307,8 +307,8 @@
   },
   {
     "nome": "Reset playlist & cache",
-    "descricao": "Botão para resetar playlist e cache em Settings",
-    "prioridade": "Média",
+    "descricao": "Botao para resetar playlist e cache em Settings",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Feature",
     "tipo_do_projeto": "Feature",
@@ -317,14 +317,14 @@
   {
     "nome": "Agrupamento de variantes por canal",
     "descricao": "Agrupar qualidades diferentes por canal",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Feature",
     "tipo_do_projeto": "Feature",
     "tipo": "Feature"
   },
   {
-    "nome": "Integração com Leanback launcher",
+    "nome": "Integracao com Leanback launcher",
     "descricao": "Integrar com Android TV Leanback",
     "prioridade": "Baixa",
     "status": "todo",
@@ -334,7 +334,7 @@
   },
   {
     "nome": "Suporte a comandos de voz",
-    "descricao": "Adicionar suporte a Alexa/Google Voice",
+    "descricao": "Adicionar suporte a Alexa Google Voice",
     "prioridade": "Baixa",
     "status": "todo",
     "milestone": "AndroidTV",
@@ -342,8 +342,8 @@
     "tipo": "AndroidTV"
   },
   {
-    "nome": "Recomendações na home do Android TV",
-    "descricao": "Mostrar recomendações na home",
+    "nome": "Recomendacoes na home do Android TV",
+    "descricao": "Mostrar recomendacoes na home",
     "prioridade": "Baixa",
     "status": "todo",
     "milestone": "AndroidTV",
@@ -369,9 +369,9 @@
     "tipo": "AndroidTV"
   },
   {
-    "nome": "Testes unitários (coverage > 70%)",
-    "descricao": "Implementar testes unitários com 70%+ coverage",
-    "prioridade": "Média",
+    "nome": "Testes unitarios (coverage > 70%)",
+    "descricao": "Implementar testes unitarios com 70%+ coverage",
+    "prioridade": "Media",
     "status": "in-progress",
     "milestone": "Testing",
     "tipo_do_projeto": "Testing",
@@ -380,15 +380,15 @@
   {
     "nome": "Testes de widget",
     "descricao": "Criar testes de widget",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "todo",
     "milestone": "Testing",
     "tipo_do_projeto": "Testing",
     "tipo": "Testing"
   },
   {
-    "nome": "Retry automático em falhas de rede",
-    "descricao": "Implementar retry automático",
+    "nome": "Retry automatico em falhas de rede",
+    "descricao": "Implementar retry automatico",
     "prioridade": "Baixa",
     "status": "todo",
     "milestone": "Stability",
@@ -396,7 +396,7 @@
     "tipo": "Stability"
   },
   {
-    "nome": "Reconexão automática do player",
+    "nome": "Reconexao automatica do player",
     "descricao": "Reconectar player automaticamente",
     "prioridade": "Baixa",
     "status": "todo",
@@ -414,7 +414,7 @@
     "tipo": "Monitoring"
   },
   {
-    "nome": "Analytics (Firebase/Mixpanel)",
+    "nome": "Analytics (Firebase Mixpanel)",
     "descricao": "Implementar analytics",
     "prioridade": "Baixa",
     "status": "todo",
@@ -441,7 +441,7 @@
     "tipo": "Testing"
   },
   {
-    "nome": "Player com media_kit (4K/HDR)",
+    "nome": "Player com media_kit (4K HDR)",
     "descricao": "Implementar player com suporte 4K/HDR",
     "prioridade": "Alta",
     "status": "done",
@@ -450,8 +450,8 @@
     "tipo": "Core"
   },
   {
-    "nome": "Seleção de faixa de áudio",
-    "descricao": "Permitir selecionar faixa de áudio",
+    "nome": "Selecao de faixa de audio",
+    "descricao": "Permitir selecionar faixa de audio",
     "prioridade": "Alta",
     "status": "done",
     "milestone": "Core",
@@ -459,7 +459,7 @@
     "tipo": "Core"
   },
   {
-    "nome": "Seleção de legendas",
+    "nome": "Selecao de legendas",
     "descricao": "Permitir selecionar legendas",
     "prioridade": "Alta",
     "status": "done",
@@ -477,9 +477,9 @@
     "tipo": "Core"
   },
   {
-    "nome": "Histórico de assistidos",
-    "descricao": "Manter histórico de conteúdo assistido",
-    "prioridade": "Média",
+    "nome": "Historico de assistidos",
+    "descricao": "Manter historico de conteudo assistido",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Core",
     "tipo_do_projeto": "Core",
@@ -488,7 +488,7 @@
   {
     "nome": "Continuar assistindo",
     "descricao": "Permitir continuar de onde parou",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Core",
     "tipo_do_projeto": "Core",
@@ -497,7 +497,7 @@
   {
     "nome": "Filtros de qualidade",
     "descricao": "Permitir filtrar por qualidade",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Core",
     "tipo_do_projeto": "Core",
@@ -506,15 +506,15 @@
   {
     "nome": "Cache persistente de playlist",
     "descricao": "Manter playlist em cache",
-    "prioridade": "Média",
+    "prioridade": "Media",
     "status": "done",
     "milestone": "Core",
     "tipo_do_projeto": "Core",
     "tipo": "Core"
   },
   {
-    "nome": "Nova logo e ícone",
-    "descricao": "Criar logo e ícone atualizados",
+    "nome": "Nova logo e icone",
+    "descricao": "Criar logo e icone atualizados",
     "prioridade": "Baixa",
     "status": "done",
     "milestone": "Branding",
@@ -532,7 +532,7 @@
   },
   {
     "nome": "Firestick - Detectar device e otimizar",
-    "descricao": "Detectar Firestick e aplicar otimizações",
+    "descricao": "Detectar Firestick e aplicar otimizacoes",
     "prioridade": "Alta",
     "status": "in-progress",
     "milestone": "Optimization",
