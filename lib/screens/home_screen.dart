@@ -2150,7 +2150,7 @@ class _FeaturedCard extends StatelessWidget {
                               ),
                             ],
                           ] else ...[
-                            Text(
+                            const Text(
                               'EPG disponível na tela Canais',
                               style: TextStyle(color: Colors.white54, fontSize: 11),
                             ),
