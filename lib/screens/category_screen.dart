@@ -241,7 +241,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             if (current != null)
               Text('Agora: ${current.title}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.amber, fontSize: 11))
             else
-              Text('Sem programação', style: TextStyle(color: Colors.white54, fontSize: 11)),
+              const Text('Sem programação', style: TextStyle(color: Colors.white54, fontSize: 11)),
           ],
         ),
       ),

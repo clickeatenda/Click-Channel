@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'adaptive_cached_image.dart';
 import '../models/content_item.dart';
 import '../models/epg_program.dart';
