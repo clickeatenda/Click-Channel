@@ -1,177 +1,154 @@
-// ---------- PARSE GITHUB ISSUE WEBHOOK ----------
-// ✅ VERSÃO FINAL - Corrigido para Notion
-// - Detecta repositório real (múltiplas fontes)
-// - Trunca descricao para max 2000 chars
-// - Evita campo undefined no Notion
+// ========================================
+// PARSER 2 - WEBHOOK AUTOMATION (FINAL)
+// ========================================
+// Para: Webhook GitHub
+// Nomes unificados com PARSER_GET_ISSUES_API
 
-// Entrada bruta do Webhook
-let raw = $input.item.json;
+return $input.all().map(item => {
+  const issue = item.json;
+  if (!issue.title) return { json: {} };
 
-// Pode vir em body (string JSON) ou em payload
-if (raw.body) {
-  try {
-    raw = typeof raw.body === 'string' ? JSON.parse(raw.body) : raw.body;
-  } catch (e) {}
-}
+  const rawLabels = issue.labels || [];
+  const labels = rawLabels.map(l => (l.name || '').toLowerCase());
 
-if (raw.payload) {
-  try {
-    raw = typeof raw.payload === 'string' ? JSON.parse(raw.payload) : raw.payload;
-  } catch (e) {}
-}
-
-// Agora raw deve ser o JSON do GitHub
-const issue = raw.issue || {};
-const repo  = raw.repository || {};
-
-// ✅ CORRIGIDO: Detectar repositório de múltiplas fontes
-let repoFullName = repo.full_name || '';
-let repoName = repo.name || '';
-
-// Se não tiver repositório, tenta extrair da URL
-if (!repoName && issue.repository_url) {
-  const urlMatch = issue.repository_url.match(/repos\/([^/]+)\/([^/]+)$/);
-  if (urlMatch) {
-    repoFullName = `${urlMatch[1]}/${urlMatch[2]}`;
-    repoName = urlMatch[2];
+  // ✅ CORRIGIDO: Detectar repositório de múltiplas fontes
+  let owner = issue.repository?.owner?.login || 'unknown';
+  let repoName = issue.repository?.name;
+  
+  // Se não tiver no objeto repository, tenta extrair da URL
+  if (!repoName && issue.repository_url) {
+    const urlMatch = issue.repository_url.match(/repos\/([^\/]+)\/([^\/]+)/);
+    if (urlMatch) {
+      owner = urlMatch[1];
+      repoName = urlMatch[2];
+    }
   }
-}
-
-// Se ainda não tiver, tenta da URL da issue
-if (!repoName && issue.url) {
-  const urlMatch = issue.url.match(/repos\/([^/]+)\/([^/]+)\/issues/);
-  if (urlMatch) {
-    repoFullName = `${urlMatch[1]}/${urlMatch[2]}`;
-    repoName = urlMatch[2];
+  
+  // Se ainda não tiver, tenta da URL da issue
+  if (!repoName && issue.url) {
+    const urlMatch = issue.url.match(/repos\/([^\/]+)\/([^\/]+)/);
+    if (urlMatch) {
+      owner = urlMatch[1];
+      repoName = urlMatch[2];
+    }
   }
-}
 
-// Fallback final
-if (!repoName) {
-  repoFullName = 'unknown/REPOSITORIO_NAO_DETECTADO';
-  repoName = 'REPOSITORIO_NAO_DETECTADO';
-}
-
-// Labels normalizadas para minúsculo
-const labels = (issue.labels || []).map(l => (l.name || '').toLowerCase());
-
-// Valores base com proteção
-const issueNumber    = issue.number || 0;
-const issueTitle     = issue.title || 'Sem título';
-const issueUrl       = issue.html_url || '';
-const issueState     = issue.state || 'open';
-const issueCreatedAt = issue.created_at || new Date().toISOString();
-const issueUpdatedAt = issue.updated_at || new Date().toISOString();
-const uniqueId       = `${repoFullName}#${issueNumber}`;
-
-// ✅ CORRIGIDO: Truncar descrição para max 2000 chars (limite Notion)
-let issueBody = issue.body || '';
-if (issueBody && issueBody.length > 2000) {
-  issueBody = issueBody.substring(0, 1997) + '...';
-}
-
-// Descrição para Notion (truncada)
-const descricao = issueBody || issueTitle;
-
-// ---------- ANTI-LOOP (opcional, pode remover se não quiser) ----------
-const cacheKey   = `issue_${uniqueId}`;
-const now        = Date.now();
-const staticData = $getWorkflowStaticData('global');
-const lastRun    = staticData[cacheKey];
-
-if (lastRun && (now - lastRun) < 2 * 60 * 1000) {
-  // Se essa mesma issue passou pelo fluxo há menos de 2 minutos,
-  // não envia nada pra frente (evita duplicação/loop).
-  return [];
-}
-
-// Atualiza o cache com o horário atual
-staticData[cacheKey] = now;
-
-// ---------- DERIVAÇÕES EM PT-BR ----------
-
-// Prioridade em PT-BR (Alta, Média, Baixa)
-let prioridade = 'Média';
-if (labels.includes('alta'))  prioridade = 'Alta';
-if (labels.includes('baixa')) prioridade = 'Baixa';
-
-// Tipo de projeto (Aplicação WEB, Mobile, etc.)
-let tipoProjeto = 'Desconhecido';
-
-// ✅ CORRIGIDO: Auto-detectar baseado no nome do repositório
-const repoLower = repoName.toLowerCase();
-if (repoLower.includes('channel') || repoLower.includes('clickflix')) {
-  tipoProjeto = 'Aplicação Mobile';
-} else if (repoLower.includes('studio') || repoLower.includes('dashboard') || repoLower.includes('web') || repoLower.includes('finance')) {
-  tipoProjeto = 'Aplicação WEB';
-} else if (repoLower.includes('land-page') || repoLower.includes('landing')) {
-  tipoProjeto = 'Landing Page';
-} else {
-  // Fallback: tenta detectar por labels
-  const tiposConhecidos = [
-    'aplicação web',
-    'aplicao web',
-    'mobile',
-    'api',
-    'backend',
-    'frontend',
-    'infraestrutura',
-  ];
-  const foundTipo = labels.find(l => tiposConhecidos.includes(l));
-  if (foundTipo === 'aplicação web' || foundTipo === 'aplicao web') {
-    tipoProjeto = 'Aplicação WEB';
-  } else if (foundTipo) {
-    // Capitaliza primeira letra
-    tipoProjeto = foundTipo.charAt(0).toUpperCase() + foundTipo.slice(1);
+  // Se ainda não tiver, tenta da html_url
+  if (!repoName && issue.html_url) {
+    const urlMatch = issue.html_url.match(/github\.com\/([^\/]+)\/([^\/]+)\/issues/);
+    if (urlMatch) {
+      owner = urlMatch[1];
+      repoName = urlMatch[2];
+    }
   }
-}
 
-// Tipo (Bug / Tarefa / Melhoria / Documentação)
-let tipo = 'Tarefa';
-if (labels.includes('bug'))            tipo = 'Bug';
-if (labels.includes('documentação'))   tipo = 'Documentação';
-if (labels.includes('melhoria') || labels.includes('feature') || labels.includes('enhancement')) {
-  tipo = 'Melhoria';
-}
-
-// Status em PT-BR
-let status = 'Aberto';
-if (issueState === 'closed') status = 'Concluído';
-if (labels.includes('em andamento') || labels.includes('in progress')) status = 'Em Andamento';
-if (labels.includes('não iniciado') || labels.includes('nao iniciado')) status = 'Não iniciado';
-
-// ✅ CORRIGIDO: Milestone SEMPRE com valor (nunca undefined)
-let milestone = 'Sem milestone';
-if (issue.milestone?.title) {
-  milestone = issue.milestone.title;
-}
-
-// ---------- RETORNO ÚNICO PARA OS PRÓXIMOS NODES ----------
-// ✅ MANTÉM NOMES ORIGINAIS + CORRIGIDO PARA NOTION
-return {
-  json: {
-    unique_id:        uniqueId,
-
-    issue_number:     issueNumber,
-    issue_title:      issueTitle,
-    issue_body:       issueBody,        // ✅ TRUNCADO
-    descricao:        descricao,        // ✅ TRUNCADO
-
-    issue_html_url:   issueUrl,
-    issue_state:      issueState,
-    issue_created_at: issueCreatedAt,
-    issue_updated_at: issueUpdatedAt,
-
-    repo_full_name:   repoFullName,     // ✅ DETECTADO CORRETAMENTE
-    repo_name:        repoName,         // ✅ DETECTADO CORRETAMENTE
-
-    all_labels:       labels,           // array em minúsculo
-
-    prioridade:       prioridade,       // Alta / Média / Baixa
-    projeto:          repoName,         // ✅ Nome real do repositório
-    status:           status,           // Aberto / Em Andamento / Não iniciado / Concluído
-    tipo:             tipo,             // Tarefa / Bug / Melhoria / Documentação
-    tipo_projeto:     tipoProjeto,      // ✅ AUTO-DETECTADO POR REPOSITÓRIO
-    milestone:        milestone,        // ✅ SEMPRE COM VALOR
+  // Fallback final
+  if (!repoName) {
+    owner = 'unknown';
+    repoName = 'REPOSITORIO_NAO_DETECTADO';
   }
-};
+
+  const issueNum = issue.number || 0;
+  const uniqueId = `${owner}/${repoName}#${issueNum}`;
+
+  // ✅ CORRIGIDO: Truncar descrição para max 2000 chars
+  let descricaoBody = issue.body || '';
+  if (descricaoBody && descricaoBody.length > 2000) {
+    descricaoBody = descricaoBody.substring(0, 1997) + '...';
+  }
+  const descricao = descricaoBody || issue.title || "Sem descrição";
+
+  // Detectar tipo de projeto conforme nome do repositório
+  let tipo_projeto = "Documentação";
+  const repoLower = repoName.toLowerCase();
+  
+  if (repoLower.includes('backend') || repoLower.includes('api')) {
+    tipo_projeto = "Backend / API";
+  } else if (repoLower.includes('channel') || repoLower.includes('clickflix')) {
+    tipo_projeto = "Aplicação Mobile";
+  } else if (repoLower.includes('infra') || repoLower.includes('devops')) {
+    tipo_projeto = "Infraestrutura";
+  } else if (repoLower.includes('analytics') || repoLower.includes('data')) {
+    tipo_projeto = "Dados / Analytics";
+  } else if (repoLower.includes('web') || repoLower.includes('frontend') || repoLower.includes('studio') || repoLower.includes('dashboard')) {
+    tipo_projeto = "Aplicação WEB";
+  } else if (repoLower.includes('land-page') || repoLower.includes('landing')) {
+    tipo_projeto = "Landing Page";
+  }
+
+  // Prioridade
+  let prioridade = "🟡 Média";
+  if (labels.includes("urgente")) prioridade = "🔴 Urgente";
+  else if (labels.includes("alta")) prioridade = "🟠 Alta";
+  else if (labels.includes("baixa")) prioridade = "🔵 Baixa";
+
+  // Status
+  let status = "Aberto";
+  if (issue.state === "closed") status = "Concluído";
+  else if (labels.includes("em-andamento") || labels.includes("em andamento")) status = "Em Andamento";
+  else if (labels.includes("não iniciado") || labels.includes("nao iniciado")) status = "Não iniciado";
+
+  // Tipo
+  let tipo = "Tarefa";
+  if (labels.includes("bug")) tipo = "Bug";
+  else if (labels.includes("feature") || labels.includes("funcionalidade")) tipo = "Funcionalidade";
+  else if (labels.includes("melhoria")) tipo = "Melhoria";
+  else if (labels.includes("refactor") || labels.includes("refatoração")) tipo = "Refatoração";
+  else if (labels.includes("documentação")) tipo = "Documentação";
+
+  // ✅ CORRIGIDO: Milestone SEMPRE com valor
+  let milestone = "Sem milestone";
+  if (issue.milestone?.title) {
+    milestone = issue.milestone.title;
+  }
+  
+  let statusMilestone = "📋 Backlog e Planejamento";
+  
+  if (milestone && milestone !== "Sem milestone") {
+    const m = milestone.toLowerCase();
+    if (m.includes('sprint')) statusMilestone = "🚀 Sprint Atual";
+    else if (m.includes('desenvolvimento') || m.includes('dev')) statusMilestone = "🔧 Em Desenvolvimento";
+    else if (m.includes('teste') || m.includes('qa')) statusMilestone = "🧪 Testes e Garantia de Qualidade";
+    else if (m.includes('pronto')) statusMilestone = "✅ Pronto para Implantação";
+    else if (m.includes('produção')) statusMilestone = "🚢 Produção";
+    else if (m.includes('monitoramento')) statusMilestone = "📊 Monitoramento e Feedback";
+    else if (m.includes('arquivado')) statusMilestone = "⏸️ Arquivado";
+  }
+
+  // ✅ ANTI-LOOP (IMPORTANTE para webhook)
+  const cacheKey   = `webhook_${uniqueId}`;
+  const now        = Date.now();
+  const staticData = $getWorkflowStaticData('global');
+  const lastRun    = staticData[cacheKey];
+
+  if (lastRun && (now - lastRun) < 5 * 1000) {
+    return [];
+  }
+
+  staticData[cacheKey] = now;
+
+  // ✅ NOMES UNIFICADOS COM GET ISSUES
+  return {
+    json: {
+      unique_id:        uniqueId,
+      issue_number:     issueNum,
+      issue_title:      issue.title,
+      issue_body:       descricaoBody,  // ✅ TRUNCADO
+      descricao:        descricao,      // ✅ TRUNCADO
+      issue_html_url:   issue.html_url || '',
+      issue_state:      issue.state || 'open',
+      issue_created_at: issue.created_at || new Date().toISOString(),
+      issue_updated_at: issue.updated_at || new Date().toISOString(),
+      repo_full_name:   `${owner}/${repoName}`,
+      repo_name:        repoName,
+      all_labels:       labels,
+      prioridade:       prioridade,
+      projeto:          repoName,
+      status:           status,
+      tipo:             tipo,
+      tipo_projeto:     tipo_projeto,
+      milestone:        milestone,
+      statusMilestone:  statusMilestone
+    }
+  };
+});
