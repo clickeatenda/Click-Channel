@@ -59,13 +59,35 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   /// Verifica se já existe playlist salva e válida
+  /// CRÍTICO: Na primeira execução, NUNCA usa cache - sempre limpa tudo
   Future<void> _checkExistingPlaylist() async {
+    // CRÍTICO: Verifica se é primeira execução (sem install marker)
+    final isFirstRun = !await M3uService.hasInstallMarker();
+    
+    if (isFirstRun) {
+      print('🚨 Setup: PRIMEIRA EXECUÇÃO detectada - Limpando TODOS os caches...');
+      // Limpa TUDO na primeira execução
+      M3uService.clearMemoryCache();
+      await M3uService.clearAllCache(null);
+      await Prefs.setPlaylistOverride(null);
+      await Prefs.setPlaylistReady(false);
+      Config.setPlaylistOverride(null);
+      // Cria o install marker para marcar que não é mais primeira execução
+      await M3uService.writeInstallMarker();
+      setState(() {
+        _isLoading = false;
+        _statusMessage = '';
+      });
+      return; // Primeira execução - não carrega nada
+    }
+    
     final savedUrl = Prefs.getPlaylistOverride();
     final isReady = Prefs.isPlaylistReady();
     
     // Se não tem URL salva, limpa qualquer cache antigo
     if (savedUrl == null || savedUrl.isEmpty) {
       print('🧹 Setup: Sem URL configurada, limpando caches antigos...');
+      M3uService.clearMemoryCache();
       await M3uService.clearAllCache(null);
       await Prefs.setPlaylistReady(false);
       setState(() {
@@ -77,19 +99,19 @@ class _SetupScreenState extends State<SetupScreen> {
     
     _urlController.text = savedUrl;
     
-    // Se já foi baixada anteriormente, tenta usar cache
-    if (isReady) {
-      setState(() {
-        _statusMessage = 'Verificando lista salva...';
-        _isLoading = true;
-      });
-      
-      // Verifica se o cache local ainda existe
-      final hasCache = await M3uService.hasCachedPlaylist(savedUrl);
-      if (hasCache) {
+    // CRÍTICO: Valida que o cache corresponde à URL salva ANTES de usar
+    // Se não corresponder, limpa e força novo download
+    final hasCache = await M3uService.hasCachedPlaylist(savedUrl);
+    if (hasCache && isReady) {
+      // Cache existe e playlist está marcada como pronta
+      // Verifica se a URL salva corresponde à URL atual (validação extra)
+      final currentUrl = Config.playlistRuntime;
+      if (currentUrl != null && currentUrl.trim() == savedUrl.trim()) {
+        print('✅ Setup: Cache válido encontrado para URL salva');
         setState(() {
           _statusMessage = 'Lista encontrada! Carregando...';
           _progress = 1.0;
+          _isLoading = true;
         });
         
         // Pequeno delay para mostrar a mensagem
@@ -98,17 +120,21 @@ class _SetupScreenState extends State<SetupScreen> {
           Navigator.pushReplacementNamed(context, '/home');
         }
         return;
+      } else {
+        print('⚠️ Setup: Cache existe mas URL não corresponde! Limpando...');
+        M3uService.clearMemoryCache();
+        await M3uService.clearAllCache(null);
+        await Prefs.setPlaylistReady(false);
       }
-      
-      // Se não tem cache, precisa baixar novamente
-      setState(() {
-        _statusMessage = 'Cache expirado, baixando novamente...';
-      });
-      await _downloadPlaylist(savedUrl);
-      return;
     }
     
-    // Foco automático é tratado pelo autofocus: true no botão
+    // Se não tem cache válido ou não está pronto, precisa baixar
+    if (isReady) {
+      setState(() {
+        _statusMessage = 'Cache não encontrado, baixando novamente...';
+      });
+    }
+    // Se não está pronto, o usuário precisa configurar
   }
 
   /// Inicia download da playlist com feedback visual
@@ -252,6 +278,13 @@ class _SetupScreenState extends State<SetupScreen> {
 
       // Marca como pronta
       await Prefs.setPlaylistReady(true);
+      
+      // CRÍTICO: Cria install marker se não existir (marca que não é mais primeira execução)
+      final hasMarker = await M3uService.hasInstallMarker();
+      if (!hasMarker) {
+        print('✅ Setup: Criando install marker (primeira configuração concluída)');
+        await M3uService.writeInstallMarker();
+      }
 
       // Pequeno delay para mostrar conclusão
       await Future.delayed(const Duration(milliseconds: 800));

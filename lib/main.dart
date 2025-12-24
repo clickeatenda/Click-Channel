@@ -44,14 +44,12 @@ void main() async {
   // Init preferences and handle saved playlist override
   await Prefs.init();
 
-  // VERIFICAÇÃO CRÍTICA: Verifica se há playlist salva PRIMEIRO
-  // Se não houver playlist, SEMPRE limpa tudo (independente do install marker)
-  final savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
-  final hasPlaylist = savedPlaylistUrl != null && savedPlaylistUrl.isNotEmpty;
+  // CRÍTICO: Verifica PRIMEIRO se é primeira execução (sem install marker)
+  // Na primeira execução, NUNCA usa cache - sempre limpa tudo
+  final isFirstRun = !await M3uService.hasInstallMarker();
   
-  if (!hasPlaylist) {
-    // SEM PLAYLIST CONFIGURADA - LIMPA TUDO SEMPRE
-    print('🚨 main: SEM PLAYLIST CONFIGURADA - Limpando TODOS os dados e caches...');
+  if (isFirstRun) {
+    print('🚨 main: PRIMEIRA EXECUÇÃO detectada - Limpando TODOS os dados e caches...');
     
     // CRÍTICO: Limpa TODOS os dados persistentes (múltiplas vezes para garantir)
     for (int i = 0; i < 3; i++) {
@@ -60,13 +58,13 @@ void main() async {
       Config.setPlaylistOverride(null);
     }
     
-    // Limpa TODOS os caches (memória e disco) - SEMPRE
+    // Limpa TODOS os caches (memória e disco) - SEMPRE na primeira execução
     M3uService.clearMemoryCache();
     await M3uService.clearAllCache(null);
     await EpgService.clearCache();
     
-    // Deleta install marker se existir (força limpeza completa)
-    await M3uService.deleteInstallMarker();
+    // Cria install marker para marcar que não é mais primeira execução
+    await M3uService.writeInstallMarker();
     
     // CRÍTICO: Verifica e limpa qualquer dado restaurado do backup do Android (múltiplas vezes)
     for (int i = 0; i < 3; i++) {
@@ -89,8 +87,25 @@ void main() async {
       print('❌ main: ERRO CRÍTICO: Não foi possível limpar playlist restaurada!');
       print('   URL restaurada: ${finalCheck.substring(0, finalCheck.length > 50 ? 50 : finalCheck.length)}');
     } else {
-      print('✅ main: App limpo - SEM playlist configurada');
+      print('✅ main: Primeira execução - App limpo e pronto para configuração');
     }
+  }
+  
+  // VERIFICAÇÃO: Verifica se há playlist salva
+  // Se não houver playlist, SEMPRE limpa tudo (mesmo que não seja primeira execução)
+  final savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
+  final hasPlaylist = savedPlaylistUrl != null && savedPlaylistUrl.isNotEmpty;
+  
+  if (!hasPlaylist) {
+    // SEM PLAYLIST CONFIGURADA - LIMPA TUDO SEMPRE
+    print('🚨 main: SEM PLAYLIST CONFIGURADA - Limpando TODOS os dados e caches...');
+    
+    // Limpa TODOS os caches (memória e disco) - SEMPRE
+    M3uService.clearMemoryCache();
+    await M3uService.clearAllCache(null);
+    await EpgService.clearCache();
+    
+    print('✅ main: App limpo - SEM playlist configurada');
   }
   
   if (hasPlaylist) {
