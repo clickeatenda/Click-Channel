@@ -131,12 +131,21 @@ class _SetupScreenState extends State<SetupScreen> {
       // CRÍTICO: Salva URL nas preferências ANTES de baixar (garante persistência)
       final trimmedUrl = url.trim();
       
-      // CRÍTICO: Limpa cache antigo ANTES de salvar nova URL
+      // CRÍTICO: Limpa TODOS os caches antigos ANTES de salvar nova URL
       // Isso garante que não haverá conflito com cache de lista anterior
-      print('🧹 Setup: Limpando cache antigo antes de configurar nova playlist...');
-      await M3uService.clearAllCache(null);
+      print('🧹 Setup: Limpando TODOS os caches antigos antes de configurar nova playlist...');
+      print('   Nova URL: ${trimmedUrl.substring(0, trimmedUrl.length > 50 ? 50 : trimmedUrl.length)}...');
+      
+      // Limpa memória primeiro
       M3uService.clearMemoryCache();
       
+      // Limpa TODOS os caches de disco (não mantém nenhum)
+      await M3uService.clearAllCache(null);
+      
+      // Aguarda um pouco para garantir que os arquivos foram deletados
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      // Agora salva a nova URL
       Config.setPlaylistOverride(trimmedUrl);
       await Prefs.setPlaylistOverride(trimmedUrl);
       

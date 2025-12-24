@@ -72,20 +72,42 @@ class M3uService {
   
   /// Limpa TODOS os caches (memória E disco) para forçar download completo
   /// IMPORTANTE: Sempre limpa TODOS os caches para evitar conflitos com listas antigas
+  /// Se newSource for fornecido, mantém apenas o cache dessa URL (se existir)
   static Future<void> clearAllCache(String? newSource) async {
     print('🧹 M3uService: Limpando TODOS os caches (memória e disco)...');
+    if (newSource != null && newSource.isNotEmpty) {
+      print('   Mantendo apenas cache para: ${newSource.substring(0, newSource.length > 50 ? 50 : newSource.length)}...');
+    }
     
     // Limpa memória
     clearMemoryCache();
     
     // Limpa TODOS os arquivos de cache M3U no disco
-    // Isso garante que não haverá cache de lista antiga sendo carregado
+    // EXCETO se newSource for fornecido e o cache corresponder a essa URL
     try {
       final dir = await getApplicationSupportDirectory();
       final files = dir.listSync();
       int deletedCount = 0;
+      File? keepFile;
+      
+      // Se newSource foi fornecido, identifica qual arquivo manter
+      if (newSource != null && newSource.isNotEmpty) {
+        try {
+          keepFile = await _getCacheFile(newSource);
+        } catch (e) {
+          print('⚠️ M3uService: Erro ao identificar cache para manter: $e');
+        }
+      }
+      
       for (final file in files) {
         if (file is File && file.path.contains('m3u_cache_')) {
+          // Se este é o arquivo que queremos manter, pula
+          if (keepFile != null && file.path == keepFile.path) {
+            print('💾 M3uService: Mantendo cache válido: ${file.path}');
+            continue;
+          }
+          
+          // Deleta todos os outros caches
           try {
             await file.delete();
             deletedCount++;
@@ -512,33 +534,49 @@ class M3uService {
         return await _getCacheFile(source);
       }
 
-      // Só usa cache se:
+      // CRÍTICO: Só usa cache se:
       // 1. Cache existe
-      // 2. URL do cache corresponde à URL salva em Prefs (ou não há URL salva)
+      // 2. URL salva em Prefs existe E corresponde exatamente à URL atual
+      // NUNCA usa cache se não há URL salva (pode ser cache de lista antiga)
       try {
         final file = await cacheFile();
         if (await file.exists()) {
-          // Verifica se a URL corresponde
-          if (normalizedSaved.isEmpty || normalizedSource == normalizedSaved) {
-            final stat = await file.stat();
-            print('💾 M3uService: Cache local encontrado (${stat.modified}) para $source');
-            final cachedLines = await file.openRead().transform(utf8.decoder).transform(const LineSplitter()).toList();
-            if (cachedLines.isNotEmpty) {
-              print('✅ M3uService: Usando cache local (${cachedLines.length} linhas)');
-              return cachedLines;
-            }
-          } else {
-            print('⚠️ M3uService: Cache existe mas URL não corresponde! Limpando cache antigo...');
-            print('   URL atual: ${normalizedSource.substring(0, normalizedSource.length > 50 ? 50 : normalizedSource.length)}');
-            print('   URL salva: ${normalizedSaved.substring(0, normalizedSaved.length > 50 ? 50 : normalizedSaved.length)}');
-            // Deleta cache antigo que não corresponde
+          // CRÍTICO: Se não há URL salva, NÃO usa cache (pode ser de lista antiga)
+          if (normalizedSaved.isEmpty) {
+            print('⚠️ M3uService: Cache existe mas não há URL salva em Prefs! Deletando cache antigo...');
             try {
               await file.delete();
-              print('🗑️ M3uService: Cache antigo deletado');
+              print('🗑️ M3uService: Cache antigo deletado (sem URL salva)');
+            } catch (e) {
+              print('⚠️ M3uService: Erro ao deletar cache antigo: $e');
+            }
+            // Continua para baixar nova playlist
+          } else if (normalizedSource == normalizedSaved) {
+            // URL corresponde exatamente - pode usar cache
+            final stat = await file.stat();
+            print('💾 M3uService: Cache local encontrado (${stat.modified}) para URL correspondente');
+            print('   URL: ${normalizedSource.substring(0, normalizedSource.length > 50 ? 50 : normalizedSource.length)}...');
+            final cachedLines = await file.openRead().transform(utf8.decoder).transform(const LineSplitter()).toList();
+            if (cachedLines.isNotEmpty) {
+              print('✅ M3uService: Usando cache local válido (${cachedLines.length} linhas)');
+              return cachedLines;
+            } else {
+              print('⚠️ M3uService: Cache existe mas está vazio. Baixando novamente...');
+            }
+          } else {
+            // URL não corresponde - deleta cache antigo
+            print('⚠️ M3uService: Cache existe mas URL NÃO corresponde! Deletando cache antigo...');
+            print('   URL solicitada: ${normalizedSource.substring(0, normalizedSource.length > 50 ? 50 : normalizedSource.length)}...');
+            print('   URL salva: ${normalizedSaved.substring(0, normalizedSaved.length > 50 ? 50 : normalizedSaved.length)}...');
+            try {
+              await file.delete();
+              print('🗑️ M3uService: Cache antigo deletado (URL não corresponde)');
             } catch (e) {
               print('⚠️ M3uService: Erro ao deletar cache antigo: $e');
             }
           }
+        } else {
+          print('ℹ️ M3uService: Cache não existe para esta URL. Baixando...');
         }
       } catch (e) {
         print('⚠️ M3uService: Erro ao verificar cache local: $e');
@@ -572,18 +610,23 @@ class M3uService {
         return lines;
       } catch (e) {
         print('❌ M3uService: Erro ao baixar: $e');
-        // SEMPRE tenta usar cache se download falhar (cache permanente)
-        try {
-          final file = await cacheFile();
-          if (await file.exists()) {
-            final cachedLines = await file.openRead().transform(utf8.decoder).transform(const LineSplitter()).toList();
-            if (cachedLines.isNotEmpty) {
-              print('💾 M3uService: Usando cache após erro de download (${cachedLines.length} linhas)');
-              return cachedLines;
+        // CRÍTICO: Só tenta usar cache se download falhar E a URL corresponder
+        // NUNCA usa cache de URL diferente
+        if (normalizedSaved.isNotEmpty && normalizedSource == normalizedSaved) {
+          try {
+            final file = await cacheFile();
+            if (await file.exists()) {
+              final cachedLines = await file.openRead().transform(utf8.decoder).transform(const LineSplitter()).toList();
+              if (cachedLines.isNotEmpty) {
+                print('💾 M3uService: Usando cache após erro de download (${cachedLines.length} linhas) - URL corresponde');
+                return cachedLines;
+              }
             }
+          } catch (cacheError) {
+            print('⚠️ M3uService: Erro ao ler cache após falha de download: $cacheError');
           }
-        } catch (cacheError) {
-          print('⚠️ M3uService: Erro ao ler cache após falha de download: $cacheError');
+        } else {
+          print('⚠️ M3uService: Não usando cache após erro (URL não corresponde ou não há URL salva)');
         }
         rethrow;
       } finally {
