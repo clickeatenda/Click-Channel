@@ -1,0 +1,10 @@
+# Não commitar certificados privados
+*.key
+*.p12
+*.pfx
+
+# Certificados públicos PODEM ser committados
+# *.pem
+# *.cer
+# *.crt
+

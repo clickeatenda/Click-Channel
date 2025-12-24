@@ -46,9 +46,42 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    // Validação: se URL está vazia, mostra placeholder
+    // Aceita qualquer URL não vazia (deixa CachedNetworkImage lidar com erros)
+    if (widget.url.isEmpty || widget.url.trim().isEmpty) {
+      return widget.errorWidget ?? Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white10),
+        ),
+        width: widget.width,
+        height: widget.height,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.broken_image, color: Colors.white24, size: 28),
+            const SizedBox(height: 4),
+            Text(
+              'Sem imagem',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.3),
+                fontSize: 9,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final devicePixelRatio = ui.window.devicePixelRatio;
     final targetWidth = widget.width != null ? (widget.width! * devicePixelRatio).toInt() : null;
 
+    // Debug: log URL para verificar se está sendo passada corretamente
+    if (widget.url.isNotEmpty && widget.url.length < 100) {
+      print('🖼️ AdaptiveCachedImage: Tentando carregar: ${widget.url.substring(0, widget.url.length > 50 ? 50 : widget.url.length)}...');
+    }
+    
     return CachedNetworkImage(
       imageUrl: widget.url,
       cacheManager: AppImageCacheManager.instance,
@@ -64,19 +97,42 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> with SingleTi
         );
       },
       placeholder: (context, url) => Shimmer.fromColors(
-        baseColor: Colors.grey[850]!,
-        highlightColor: Colors.grey[800]!,
+        baseColor: const Color(0xFF2A2A2A),
+        highlightColor: const Color(0xFF3A3A3A),
         child: Container(
           width: widget.width,
           height: widget.height,
-          color: Colors.grey[850],
+          decoration: BoxDecoration(
+            color: const Color(0xFF2A2A2A),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Center(
+            child: Icon(Icons.image, color: Colors.white10, size: 32),
+          ),
         ),
       ),
       errorWidget: (context, url, error) => widget.errorWidget ?? Container(
-        color: Colors.white12,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white10),
+        ),
         width: widget.width,
         height: widget.height,
-        child: const Icon(Icons.image_not_supported, color: Colors.white24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.broken_image, color: Colors.white24, size: 28),
+            const SizedBox(height: 4),
+            Text(
+              'Sem imagem',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.3),
+                fontSize: 9,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

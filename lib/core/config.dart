@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv_pkg;
+import 'prefs.dart';
 
 class Config {
   /// When true, the app operates entirely in front-end mode with no backend calls.
@@ -42,18 +43,51 @@ class Config {
     }
   }
 
-  // Runtime override set via settings screen (not persisted between app restarts).
+  // Runtime override set via settings screen (persisted via Prefs).
   static String? _playlistOverride;
 
-  /// Returns the runtime override if set, otherwise the .env value.
-  static String? get playlistRuntime => _playlistOverride ?? playlistUrl;
+  /// Returns the runtime override if set, otherwise carrega de Prefs (NUNCA usa .env como fallback).
+  /// A playlist DEVE ser configurada pelo usuário via Settings.
+  /// IMPORTANTE: Sempre verifica Prefs para garantir persistência
+  static String? get playlistRuntime {
+    // SEMPRE verifica Prefs primeiro (garante persistência após reiniciar app)
+    try {
+      final saved = Prefs.getPlaylistOverride();
+      if (saved != null && saved.isNotEmpty) {
+        // Se override em memória é diferente do salvo, atualiza
+        if (_playlistOverride != saved) {
+          print('🔄 Config.playlistRuntime: Sincronizando override com Prefs...');
+          _playlistOverride = saved;
+        }
+        return saved;
+      }
+    } catch (e) {
+      print('❌ Config.playlistRuntime: Erro ao carregar de Prefs: $e');
+    }
+    
+    // Se não tem em Prefs, usa override em memória (se existir)
+    if (_playlistOverride != null && _playlistOverride!.isNotEmpty) {
+      return _playlistOverride;
+    }
+    
+    return null;
+  }
 
   /// Set or clear the runtime override for playlist URL.
   static void setPlaylistOverride(String? value) {
     _playlistOverride = (value != null && value.trim().isEmpty) ? null : value?.trim();
   }
 
-  // Persistence handled via Prefs directly in settings screen.
+  /// Carrega playlist de Prefs (chamado no main.dart)
+  static Future<String?> loadPlaylistFromPrefs() async {
+    await Prefs.init();
+    final saved = Prefs.getPlaylistOverride();
+    if (saved != null && saved.isNotEmpty) {
+      _playlistOverride = saved;
+      return saved;
+    }
+    return null;
+  }
 
   /// Optional curated featured JSON URL (key: FEATURED_JSON_URL)
   static String? get curatedFeaturedUrl {
@@ -61,6 +95,17 @@ class Config {
       final v = dotenv_pkg.dotenv.env['FEATURED_JSON_URL'];
       if (v == null || v.isEmpty) return null;
       return v;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// TMDB API Key (key: TMDB_API_KEY)
+  static String? get tmdbApiKey {
+    try {
+      final v = dotenv_pkg.dotenv.env['TMDB_API_KEY'];
+      if (v == null || v.isEmpty) return null;
+      return v.trim();
     } catch (_) {
       return null;
     }

@@ -3,11 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'detail_screens.dart';
 import 'series_detail_screen.dart' as sdetail;
+import 'movie_detail_screen.dart';
 import 'search_screen.dart';
-import '../data/api_service.dart';
 import '../data/watch_history_service.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
+import '../utils/content_enricher.dart';
 import '../core/config.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
@@ -356,132 +357,6 @@ class _AppLogo extends StatelessWidget {
 }
 
 // =====================
-// HERO BANNER (Reutilizável)
-// =====================
-
-class _HeroBanner extends StatelessWidget {
-  final String badge;
-  final String title;
-  final String subtitle;
-  final String description;
-  final String buttonLabel;
-  final IconData icon;
-
-  const _HeroBanner({
-    required this.badge,
-    required this.title,
-    required this.subtitle,
-    required this.description,
-    required this.buttonLabel,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0x33E11D48), Color(0x330F1620)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x334B5563)),
-      ),
-      child: Row(
-        children: [
-          // Conteúdo
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0x33E11D48),
-                    borderRadius: BorderRadius.circular(8),
-                    border:
-                        Border.all(color: const Color(0xFFE11D48)),
-                  ),
-                  child: Text(
-                    badge,
-                    style: const TextStyle(
-                      color: Color(0xFFE11D48),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE11D48),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () {},
-                  icon: Icon(icon),
-                  label: Text(buttonLabel),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 32),
-          // Ícone
-          Container(
-            width: 120,
-            height: 120,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
-              ),
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 60,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-// =====================
 // TEST PANEL
 // =====================
 
@@ -672,6 +547,8 @@ class _HomeBodyState extends State<_HomeBody> {
         });
       }
       
+      // CRÍTICO: Só carrega dados se houver playlist configurada
+      // SEM fallback para backend - app deve estar limpo sem playlist
       final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
       if (hasM3u) {
         // Carregar destaques de cada tipo em paralelo
@@ -689,10 +566,13 @@ class _HomeBodyState extends State<_HomeBody> {
           loading = false;
         });
       } else {
-        final data = await ApiService.fetchAllMovies(limit: 30);
+        // Sem playlist configurada - retorna listas vazias
+        print('⚠️ HomeScreen: Sem playlist configurada - retornando listas vazias');
         if (!mounted) return;
         setState(() {
-          featuredMovies = data;
+          featuredMovies = [];
+          featuredSeries = [];
+          featuredChannels = [];
           loading = false;
         });
       }
@@ -761,11 +641,14 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
   List<ContentItem> movies = [];
   List<ContentItem> featuredItems = [];
   List<ContentItem> latestItems = [];
+  List<ContentItem> popularItems = []; // Mais vistos
+  List<ContentItem> topRatedItems = []; // Mais avaliados
   List<String> movieCategories = [];
   List<String> filteredCategories = [];
   Map<String, int> categoryCounts = {};
   Map<String, String> categoryThumbs = {};
   bool loading = true;
+  bool enriching = false;
   bool loadingMore = false;
   bool hasMore = true;
   final int _pageSize = 120;
@@ -877,33 +760,72 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
         final featured = reset ? await M3uService.getDailyFeaturedMovies(count: 5, pool: 20, maxItems: 400) : featuredItems;
         final latest = reset ? await M3uService.getLatestMovies(count: 10, maxItems: 400) : latestItems;
 
+        // Preparar lista para enriquecimento e ordenação
+        List<ContentItem> allItems = [];
+        if (reset || movies.isEmpty) {
+          allItems = result.items;
+        } else {
+          allItems = [...movies, ...result.items];
+        }
+
+        // Enriquecer com dados do TMDB (em background, não bloqueia UI)
+        if (reset && allItems.isNotEmpty) {
+          setState(() => enriching = true);
+          // Enriquece mais itens (primeiros 200 para melhor cobertura)
+          final sample = allItems.take(200).toList();
+          print('🔍 TMDB: Enriquecendo ${sample.length} itens...');
+          final enriched = await ContentEnricher.enrichItems(sample);
+          // Atualiza os itens enriquecidos na lista completa
+          int enrichedCount = 0;
+          for (var i = 0; i < enriched.length && i < allItems.length; i++) {
+            if (enriched[i].rating > 0 || enriched[i].description.isNotEmpty) {
+              allItems[i] = enriched[i];
+              enrichedCount++;
+            }
+          }
+          print('✅ TMDB: ${enrichedCount} itens enriquecidos com sucesso');
+        }
+
+        // Criar listas ordenadas
+        final popular = ContentSorter.sortByPopularity(allItems.take(20).toList());
+        final topRated = ContentSorter.sortByRating(allItems.take(20).toList());
+        final latestSorted = ContentSorter.sortByLatest(latest);
+
         if (mounted) {
           setState(() {
             movieCategories = result.categories;
             categoryCounts = result.categoryCounts;
             // categoryThumbs já foi carregado acima se reset
             featuredItems = featured;
-            latestItems = latest;
+            latestItems = latestSorted;
+            popularItems = popular;
+            topRatedItems = topRated;
             if (reset || movies.isEmpty) {
-              movies = result.items;
+              movies = allItems;
             } else {
-              movies = [...movies, ...result.items];
+              movies = allItems;
             }
             hasMore = movies.length < result.total;
             loading = false;
             loadingMore = false;
+            enriching = false;
             _applyFilters();
           });
         }
       } else {
-        print('🎬 MoviesLibraryBody: via backend');
-        final cats = await ApiService.fetchCategoryNames('movie');
-        final data = await ApiService.fetchAllMovies(limit: 200);
+        // CRÍTICO: Sem playlist configurada - retorna listas vazias
+        // SEM fallback para backend - app deve estar limpo sem playlist
+        print('⚠️ MoviesLibraryBody: Sem playlist configurada - retornando listas vazias');
         if (mounted) {
           setState(() {
-            movieCategories = cats;
+            movieCategories = [];
             categoryCounts = {};
-            movies = data;
+            categoryThumbs = {};
+            movies = [];
+            featuredItems = [];
+            latestItems = [];
+            popularItems = [];
+            topRatedItems = [];
             loading = false;
             loadingMore = false;
             hasMore = false;
@@ -940,16 +862,7 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
         children: [
           // Destaques em carrossel
           if (featuredList.isNotEmpty)
-            _FeaturedCarousel(items: featuredList, title: 'Filmes em destaque')
-          else
-            const _HeroBanner(
-              badge: 'FILME EM DESTAQUE',
-              title: 'Inception',
-              subtitle: 'Ficção Científica • Suspense • 2h 28m',
-              description: 'Um ladrão que rouba segredos corporativos através do compartilhamento de sonhos',
-              buttonLabel: 'Assistir Agora',
-              icon: Icons.play_arrow,
-            ),
+            _FeaturedCarousel(items: featuredList, title: 'Filmes em destaque'),
           const SizedBox(height: 24),
           // Header com título e filtros
           Row(
@@ -983,8 +896,45 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
             ],
           ),
           const SizedBox(height: 24),
+          // Mais Vistos (Popularidade)
+          if (popularItems.isNotEmpty) ...[
+            const _SectionTitle(title: 'Mais Vistos'),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 200,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: popularItems.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) => SizedBox(
+                  width: 120,
+                  child: _MovieThumb(item: popularItems[index]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+          // Mais Avaliados (Rating)
+          if (topRatedItems.isNotEmpty) ...[
+            const _SectionTitle(title: 'Mais Avaliados'),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 200,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: topRatedItems.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) => SizedBox(
+                  width: 120,
+                  child: _MovieThumb(item: topRatedItems[index]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+          // Últimos Adicionados
           if (latest.isNotEmpty) ...[
-            const _SectionTitle(title: 'Últimos filmes adicionados'),
+            const _SectionTitle(title: 'Últimos Adicionados'),
             const SizedBox(height: 8),
             SizedBox(
               height: 200,
@@ -998,6 +948,7 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
                 ),
               ),
             ),
+            const SizedBox(height: 24),
           ],
 
           const SizedBox(height: 24),
@@ -1103,35 +1054,49 @@ class _SeriesBodyState extends State<_SeriesBody> {
 
   Future<void> _load() async {
     try {
-      // Tenta M3U primeiro, fallback para backend
+      // CRÍTICO: Só carrega dados se houver playlist configurada
+      // SEM fallback para backend - app deve estar limpo sem playlist
       final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
-      if (hasM3u) {
-        final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'series', maxItems: 400);
-        final f = await M3uService.getCuratedFeaturedPrefer('series', count: 5, pool: 20, maxItems: 400);
-        final l = await M3uService.getLatestByType('series', count: 10, maxItems: 400);
+      if (!hasM3u) {
+        print('⚠️ SeriesLibraryBody: Sem playlist configurada - retornando listas vazias');
         if (!mounted) return;
         setState(() {
-          categories = meta.categories;
-          counts = meta.counts;
-          thumbs = meta.thumbs;
-          featured = f;
-          latest = l;
+          categories = [];
+          counts = {};
+          thumbs = {};
+          featured = [];
+          latest = [];
           loading = false;
           _applyFilters();
         });
-      } else {
-        // Usa backend
-        final cats = await ApiService.fetchCategoryNames('series');
-        if (!mounted) return;
-        setState(() {
-          categories = cats;
-          loading = false;
-          _applyFilters();
-        });
+        return;
       }
-    } catch (e) {
+
+      final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'series', maxItems: 400);
+      final f = await M3uService.getCuratedFeaturedPrefer('series', count: 5, pool: 20, maxItems: 400);
+      final l = await M3uService.getLatestByType('series', count: 10, maxItems: 400);
       if (!mounted) return;
-      setState(() => loading = false);
+      setState(() {
+        categories = meta.categories;
+        counts = meta.counts;
+        thumbs = meta.thumbs;
+        featured = f;
+        latest = l;
+        loading = false;
+        _applyFilters();
+      });
+    } catch (e) {
+      print('❌ SeriesLibraryBody: Erro ao carregar: $e');
+      if (!mounted) return;
+      setState(() {
+        categories = [];
+        counts = {};
+        thumbs = {};
+        featured = [];
+        latest = [];
+        loading = false;
+        _applyFilters();
+      });
     }
   }
 
@@ -1275,57 +1240,52 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
     } catch (_) {}
   }
 
-  EpgChannel? _findEpgForChannel(ContentItem channel) {
-    if (!_epgLoaded || _epgChannels.isEmpty) return null;
-    
-    final name = channel.title.toLowerCase().trim();
-    
-    // Match exato primeiro
-    if (_epgChannels.containsKey(name)) {
-      return _epgChannels[name];
-    }
-    
-    // Match parcial
-    for (final entry in _epgChannels.entries) {
-      if (entry.key.contains(name) || name.contains(entry.key)) {
-        return entry.value;
-      }
-    }
-    
-    return null;
-  }
 
   Future<void> _load() async {
     try {
-      // Tenta M3U primeiro, fallback para backend
+      // CRÍTICO: Só carrega dados se houver playlist configurada
+      // SEM fallback para backend - app deve estar limpo sem playlist
       final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
-      if (hasM3u) {
-        final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'channel', maxItems: 400);
-        final f = await M3uService.getCuratedFeaturedPrefer('channel', count: 5, pool: 20, maxItems: 400);
-        final l = await M3uService.getLatestByType('channel', count: 10, maxItems: 400);
+      if (!hasM3u) {
+        print('⚠️ LiveChannelsBody: Sem playlist configurada - retornando listas vazias');
         if (!mounted) return;
         setState(() {
-          categories = meta.categories;
-          counts = meta.counts;
-          thumbs = meta.thumbs;
-          featured = f;
-          latest = l;
+          categories = [];
+          counts = {};
+          thumbs = {};
+          featured = [];
+          latest = [];
           loading = false;
           _applyFilters();
         });
-      } else {
-        // Usa backend
-        final cats = await ApiService.fetchCategoryNames('channel');
-        if (!mounted) return;
-        setState(() {
-          categories = cats;
-          loading = false;
-          _applyFilters();
-        });
+        return;
       }
-    } catch (_) {
+
+      final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'channel', maxItems: 400);
+      final f = await M3uService.getCuratedFeaturedPrefer('channel', count: 5, pool: 20, maxItems: 400);
+      final l = await M3uService.getLatestByType('channel', count: 10, maxItems: 400);
       if (!mounted) return;
-      setState(() => loading = false);
+      setState(() {
+        categories = meta.categories;
+        counts = meta.counts;
+        thumbs = meta.thumbs;
+        featured = f;
+        latest = l;
+        loading = false;
+        _applyFilters();
+      });
+    } catch (e) {
+      print('❌ LiveChannelsBody: Erro ao carregar: $e');
+      if (!mounted) return;
+      setState(() {
+        categories = [];
+        counts = {};
+        thumbs = {};
+        featured = [];
+        latest = [];
+        loading = false;
+        _applyFilters();
+      });
     }
   }
 
@@ -1803,9 +1763,14 @@ class _WatchingCarousel extends StatelessWidget {
                     Navigator.push(context, MaterialPageRoute(
                       builder: (_) => sdetail.SeriesDetailScreen(item: item),
                     ));
-                  } else {
+                  } else if (item.type == 'channel') {
                     Navigator.push(context, MaterialPageRoute(
                       builder: (_) => MediaPlayerScreen(url: item.url, item: item),
+                    )).then((_) => onRefresh?.call());
+                  } else {
+                    // Filmes: abre tela de detalhes
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => MovieDetailScreen(item: item),
                     )).then((_) => onRefresh?.call());
                   }
                 },
@@ -2051,12 +2016,17 @@ class _FeaturedCard extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        if (item.isSeries) {
+        if (item.isSeries || item.type == 'series') {
           Navigator.push(context, MaterialPageRoute(builder: (_) => sdetail.SeriesDetailScreen(item: item)));
           return;
         }
-        if (item.url.isEmpty) return;
-        Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+        if (item.type == 'channel') {
+          if (item.url.isEmpty) return;
+          Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+          return;
+        }
+        // Filmes: abre tela de detalhes
+        Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
       },
       child: Container(
         width: 280,
@@ -2351,6 +2321,11 @@ class _MovieThumbState extends State<_MovieThumb> {
   bool _focused = false;
 
   void _handleTap() {
+    // Filmes: abre tela de detalhes, não player direto
+    if (widget.item.type == 'movie' && !widget.item.isSeries) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: widget.item)));
+      return;
+    }
     if (widget.item.url.isEmpty) return;
     Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: widget.item.url, item: widget.item)));
   }

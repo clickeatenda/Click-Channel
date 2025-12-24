@@ -10,6 +10,10 @@ class ContentItem {
   final String year;
   String quality; // sd, hd, fhd, uhd4k
   String audioType; // 'dub', 'leg', 'multi'
+  final String description; // Resumo/sinopse
+  final String genre; // Gênero
+  final double popularity; // Popularidade (para ordenação)
+  final String? releaseDate; // Data de lançamento (para ordenação)
 
   ContentItem({
     required this.title,
@@ -23,6 +27,10 @@ class ContentItem {
     this.year = "2024",
     this.quality = 'sd',
     this.audioType = '',
+    this.description = '',
+    this.genre = '',
+    this.popularity = 0.0,
+    this.releaseDate,
   });
 
   factory ContentItem.fromJson(Map<String, dynamic> json) {
@@ -34,10 +42,41 @@ class ContentItem {
       type: json['type'] ?? "movie",
       isSeries: json['isSeries'] ?? false,
       id: json['id'] ?? "",
-      rating: 8.5,
-      year: "2024",
+      rating: (json['rating'] ?? 0.0).toDouble(),
+      year: json['year']?.toString() ?? "2024",
       quality: json['quality'] ?? 'sd',
       audioType: json['audioType'] ?? '',
+      description: json['description'] ?? json['plot'] ?? '',
+      genre: json['genre'] ?? '',
+      popularity: (json['popularity'] ?? 0.0).toDouble(),
+      releaseDate: json['releaseDate'] ?? json['release_date'],
+    );
+  }
+
+  /// Enriquece o item com dados do TMDB
+  ContentItem enrichWithTmdb({
+    double? rating,
+    String? description,
+    String? genre,
+    double? popularity,
+    String? releaseDate,
+  }) {
+    return ContentItem(
+      title: title,
+      url: url,
+      image: image,
+      group: group,
+      type: type,
+      isSeries: isSeries,
+      id: id,
+      rating: rating ?? this.rating,
+      year: year,
+      quality: quality,
+      audioType: audioType,
+      description: description ?? this.description,
+      genre: genre ?? this.genre,
+      popularity: popularity ?? this.popularity,
+      releaseDate: releaseDate ?? this.releaseDate,
     );
   }
 }

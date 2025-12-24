@@ -126,9 +126,4 @@ class _CarouselCard extends StatelessWidget {
       ),
     );
   }
-
-  dynamic _getCacheManager() {
-    // Retorna null para usar o cache padrão
-    return null;
-  }
 }

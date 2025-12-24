@@ -7,7 +7,29 @@
 
 ---
 
-## 🔴 Issues Críticos Resolvidos
+## � ANÁLISE DE APK - VERIFICAÇÃO (24/12/2025)
+
+### ✅ VEREDICTO FINAL: APK SEGURO PARA DEPLOY
+
+**Relatório Completo:** [RELATORIO_ANALISE_APK.md](RELATORIO_ANALISE_APK.md)
+
+**Resumo de Achados:**
+- ✅ Nenhuma URL M3U hardcoded (ISSUE #004 CONFIRMADO RESOLVIDO)
+- ✅ Nenhuma lista pré-definida em código (ISSUE #003 CONFIRMADO RESOLVIDO)
+- ✅ Nenhum dado sensível buildado no APK de produção
+- ⚠️ GitHub token em .env (crítico - deve ser revogado)
+
+**Scores de Segurança:**
+| Categoria | Score | Status |
+|-----------|-------|--------|
+| URLs Hardcoded | ✅ PASS | Apenas URLs de exemplo/placeholder |
+| Dados Sensíveis | ✅ PASS | Apenas referências a variáveis |
+| Cache | ✅ PASS | Limpeza correta na primeira execução |
+| Configuração | ⚠️ AÇÃO | Revogar GitHub token, remover .env do git |
+
+---
+
+## �🔴 Issues Críticos Resolvidos
 
 ### ISSUE #001: Canais Aparecendo na Primeira Execução
 **Status:** ✅ RESOLVIDO  
@@ -86,9 +108,10 @@ if (hasPlaylist) {
 ---
 
 ### ISSUE #003: Carregamento de Lista Pré-definida
-**Status:** ✅ RESOLVIDO  
+**Status:** ✅ RESOLVIDO E VERIFICADO EM APK  
 **Prioridade:** CRÍTICA  
 **Data de Resolução:** 24/12/2025
+**Data de Verificação:** 24/12/2025
 
 **Descrição:**
 App carregava conteúdo mesmo sem playlist configurada pelo usuário, sugerindo lista hardcoded.
@@ -121,13 +144,15 @@ if (_movieCache == null && _seriesCache == null && _channelCache == null) {
 - ✅ App limpo sem playlist não carrega conteúdo
 - ✅ Listas vazias quando não há playlist
 - ✅ Nenhum fallback para backend
+- ✅ Verificado em análise de APK - CONFIRMADO ✅
 
 ---
 
 ### ISSUE #004: URLs M3U Hardcoded
-**Status:** ✅ RESOLVIDO  
+**Status:** ✅ RESOLVIDO E VERIFICADO EM APK  
 **Prioridade:** ALTA  
 **Data de Resolução:** 24/12/2025
+**Data de Verificação:** 24/12/2025
 
 **Descrição:**
 Suspeita de URLs M3U hardcoded no código causando carregamento automático.
@@ -136,6 +161,7 @@ Suspeita de URLs M3U hardcoded no código causando carregamento automático.
 - Busca completa em todo o código por URLs M3U
 - Verificação de arquivos de configuração
 - Verificação de variáveis de ambiente
+- ✅ Análise de APK estática (24/12/2025)
 
 **Resultado:**
 ✅ Nenhuma URL M3U hardcoded encontrada. Todas as URLs são configuráveis pelo usuário.
@@ -144,6 +170,11 @@ Suspeita de URLs M3U hardcoded no código causando carregamento automático.
 - Todos os arquivos `.dart`
 - Arquivos de configuração (`.env`, `config.dart`)
 - Arquivos de serviço
+
+**Verificação em APK (24/12/2025):**
+- ✅ Nenhuma URL de M3U hardcoded detectada
+- ✅ Todas as playlists carregam de Prefs (SharedPreferences)
+- ✅ URLs de exemplo foram removidas (apenas URLs públicas encontradas)
 
 ---
 
@@ -551,7 +582,53 @@ Implementar limite de 100MB para cache de imagens.
 
 ---
 
-## 📝 Notas de Desenvolvimento
+## � ISSUE #128-UPDATE: Verificação de Credenciais em Análise de APK (24/12/2025)
+
+### GitHub Token Exposto em .env
+**Status:** 🔴 CRÍTICO - AÇÃO IMEDIATA NECESSÁRIA  
+**Data de Descoberta:** 24/12/2025  
+**Severidade:** CRITICAL
+
+**Problema Detectado:**
+```
+Token encontrado em .env:
+[REDACTED-GITHUB-TOKEN]
+```
+
+**Recomendações Imediatas:**
+1. ⚠️ **REVOGAR TOKEN IMEDIATAMENTE**
+   ```bash
+   # Ir em: https://github.com/settings/tokens
+   # Procurar pelo token: [REDACTED-GITHUB-TOKEN]
+   # Clicar em: Delete
+   ```
+
+2. **Remover .env do histórico do Git**
+   ```bash
+   java -jar bfg.jar --delete-files .env repo.git
+   git push --force
+   ```
+
+3. **Adicionar .env ao .gitignore**
+   ```bash
+   echo ".env" >> .gitignore
+   git commit -m "Add .env to gitignore"
+   ```
+
+4. **Criar novo token com permissões limitadas**
+   ```bash
+   # GitHub Settings > Developer settings > Personal access tokens
+   # Selecionar apenas permissões necessárias
+   ```
+
+**Status de Segurança:**
+- ✅ APK de produção: SEGURO (não contém credenciais)
+- ⚠️ Repositório: COMPROMETIDO (token exposto no histórico)
+- 🔴 Ação necessária: SIM (revogar token)
+
+---
+
+## �📝 Notas de Desenvolvimento
 
 ### Convenções de Código
 - Nomes de variáveis em camelCase
@@ -583,4 +660,6 @@ Fixes #número
 ---
 
 **Documentação técnica atualizada em:** 24/12/2025
+
+
 
