@@ -20,13 +20,16 @@ class EpgService {
   static Set<String> _favoritePrograms = {};
   static const String _favoritesKey = 'epg_favorite_programs';
 
+  /// URL do EPG hardcoded (fallback se não configurada)
+  static const String _hardcodedEpgUrl = 'https://epg.pw/xmltv/epg_BR.xml';
+
   /// Define a URL do EPG
   static void setEpgUrl(String url) {
     _epgUrl = url;
   }
 
-  /// Obtém a URL do EPG salva
-  static String? get epgUrl => _epgUrl;
+  /// Obtém a URL do EPG salva (usa hardcoded se disponível)
+  static String? get epgUrl => _epgUrl ?? _hardcodedEpgUrl;
 
   /// Carrega e parseia o EPG de uma URL XMLTV
   static Future<void> loadEpg(String url, {void Function(double, String)? onProgress}) async {

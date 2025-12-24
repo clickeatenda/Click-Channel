@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
-import '../data/api_service.dart';
+import '../core/config.dart';
 import '../data/m3u_service.dart';
 import '../widgets/optimized_gridview.dart';
 import 'content_detail_screen.dart';
@@ -28,20 +28,27 @@ class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
   Future<void> _loadMovies() async {
     print('🎬 MoviesLibraryScreen: Iniciando carregamento de filmes...');
     try {
-      // Try M3U first if available
-      List<ContentItem> data = [];
-      try {
-        data = await M3uService.fetchFromEnv(limit: 100);
-        print('🎬 MoviesLibraryScreen: ✅ Carregados ${data.length} itens da M3U');
-        // Filter only movies (non-series)
-        data = data.where((item) => !item.isSeries).toList();
-        print('🎬 MoviesLibraryScreen: ${data.length} filmes após filtro');
-      } catch (e) {
-        print('⚠️ MoviesLibraryScreen: M3U falhou: $e');
-        print('⚠️ MoviesLibraryScreen: Tentando backend...');
-        data = await ApiService.fetchAllMovies(limit: 100);
-        print('🎬 MoviesLibraryScreen: ${data.length} filmes do backend');
+      // CRÍTICO: Só carrega dados se houver playlist configurada
+      // SEM fallback para backend - app deve estar limpo sem playlist
+      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+      if (!hasM3u) {
+        print('⚠️ MoviesLibraryScreen: Sem playlist configurada - retornando lista vazia');
+        if (mounted) {
+          setState(() {
+            movies = [];
+            loading = false;
+            error = null;
+          });
+        }
+        return;
       }
+
+      List<ContentItem> data = [];
+      data = await M3uService.fetchFromEnv(limit: 100);
+      print('🎬 MoviesLibraryScreen: ✅ Carregados ${data.length} itens da M3U');
+      // Filter only movies (non-series)
+      data = data.where((item) => !item.isSeries).toList();
+      print('🎬 MoviesLibraryScreen: ${data.length} filmes após filtro');
       
       print('🎬 MoviesLibraryScreen: Recebidos ${data.length} filmes');
       if (mounted) {

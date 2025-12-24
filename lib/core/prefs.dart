@@ -27,8 +27,14 @@ class Prefs {
       await init();
     }
     if (value == null || value.trim().isEmpty) {
+      // CRÍTICO: Remove múltiplas vezes para garantir que foi deletado
       await _prefs!.remove(keyPlaylistOverride);
-      // Limpa status também quando URL é removida
+      await _prefs!.remove(keyPlaylistReady);
+      await _prefs!.remove(keyPlaylistLastDownload);
+      // Força commit imediato
+      await _prefs!.reload();
+      // Remove novamente após reload para garantir
+      await _prefs!.remove(keyPlaylistOverride);
       await _prefs!.remove(keyPlaylistReady);
       await _prefs!.remove(keyPlaylistLastDownload);
     } else {

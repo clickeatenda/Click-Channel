@@ -208,45 +208,50 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                             iconSize: widget.metaIconSize,
                           ),
                         ),
-                      // EPG display
-                      if (widget.epgChannels != null) ...[
+                      // Rating com estrelas (para filmes e séries)
+                      if (widget.item.rating > 0 && widget.item.type != 'channel') ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            ...List.generate(5, (index) {
+                              final starValue = index + 1;
+                              final rating = (widget.item.rating / 2).clamp(0.0, 5.0); // Converte 0-10 para 0-5
+                              if (rating >= starValue) {
+                                return const Icon(Icons.star, color: Colors.amber, size: 10);
+                              } else if (rating >= starValue - 0.5) {
+                                return const Icon(Icons.star_half, color: Colors.amber, size: 10);
+                              } else {
+                                return Icon(Icons.star_border, color: Colors.amber.withOpacity(0.3), size: 10);
+                              }
+                            }),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.item.rating.toStringAsFixed(1),
+                              style: const TextStyle(
+                                color: Colors.amber,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      // EPG display (SOMENTE para canais)
+                      if (widget.epgChannels != null && widget.item.type == 'channel') ...[
                         const SizedBox(height: 2),
                         Builder(
                           builder: (context) {
                             final epg = _findEpgForChannel(widget.item);
                             final current = epg?.currentProgram;
-                            final next = epg?.nextProgram;
                             if (current != null) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Agora: ${current.title}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.w600),
-                                  ),
-                                  if (next != null)
-                                    Text(
-                                      'Próx: ${next.title}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: Colors.white54, fontSize: 7),
-                                    ),
-                                ],
-                              );
-                            } else if (epg != null && next != null) {
                               return Text(
-                                'Em breve: ${next.title}',
+                                '▶ ${current.title}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.white70, fontSize: 8),
+                                style: const TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.w600),
                               );
                             } else {
-                              return const Text(
-                                'Sem programação',
-                                style: TextStyle(color: Colors.white38, fontSize: 8),
-                              );
+                              return const SizedBox.shrink();
                             }
                           },
                         ),

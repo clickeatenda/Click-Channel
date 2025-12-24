@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../core/config.dart';
 import '../core/prefs.dart';
+import '../core/utils/validators.dart';
+import '../core/utils/logger.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
 import '../widgets/glass_panel.dart';
@@ -87,6 +89,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
+    // ✅ VALIDAÇÃO DE URL ADICIONADA (Issue #133)
+    final sanitizedUrl = Validators.sanitizeUrl(value);
+    
+    if (!Validators.isValidUrl(sanitizedUrl)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(Validators.getUrlErrorMessage(sanitizedUrl)),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      AppLogger.warning('URL de playlist inválida', data: sanitizedUrl);
+      return;
+    }
+    
+    // Validação específica para M3U
+    if (!Validators.isValidM3UUrl(sanitizedUrl)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ URL não parece ser uma playlist M3U válida. Deseja continuar?'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+      AppLogger.warning('URL não parece ser M3U', data: sanitizedUrl);
+    }
+
     // Inicia download com progresso
     setState(() {
       _isDownloading = true;
@@ -95,13 +128,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     try {
-      print('🔧 [Settings] Baixando playlist: $value');
+      AppLogger.info('Baixando playlist', data: sanitizedUrl);
       
-      // Limpa TODOS os caches (memória E disco) antes de baixar nova lista
-      await M3uService.clearAllCache(value);
+      // IMPORTANTE: Limpa TODOS os caches antigos ANTES de salvar nova URL
+      // Isso garante que não haverá cache de lista antiga sendo carregado
+      print('🧹 Settings: Limpando TODOS os caches antigos antes de salvar nova URL...');
+      await M3uService.clearAllCache(null);
       
-      Config.setPlaylistOverride(value);
+      // Salva URL permanentemente ANTES de baixar (persistência garantida)
       await Prefs.setPlaylistOverride(value);
+      Config.setPlaylistOverride(value);
+      
+      // Garante que a URL foi salva corretamente
+      final verifyUrl = Prefs.getPlaylistOverride();
+      if (verifyUrl != value) {
+        print('⚠️ Settings: Erro ao salvar URL! Tentando novamente...');
+        await Prefs.setPlaylistOverride(value);
+      }
+      print('✅ Settings: URL salva em Prefs: ${value.substring(0, value.length > 50 ? 50 : value.length)}...');
       
       await M3uService.downloadAndCachePlaylist(
         value,
@@ -121,6 +165,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
 
       await M3uService.preloadCategories(value);
+      
+      // Carrega EPG automaticamente após configurar playlist M3U
+      setState(() {
+        _downloadStatus = 'Carregando EPG...';
+        _downloadProgress = 0.95;
+      });
+      
+      try {
+        final epgUrl = EpgService.epgUrl;
+        if (epgUrl != null && epgUrl.isNotEmpty) {
+          print('📺 Settings: Carregando EPG automaticamente: $epgUrl');
+          await EpgService.loadEpg(epgUrl);
+          print('✅ Settings: EPG carregado: ${EpgService.getAllChannels().length} canais');
+        } else {
+          print('ℹ️ Settings: Nenhuma URL de EPG configurada');
+        }
+      } catch (e) {
+        print('⚠️ Settings: Erro ao carregar EPG automaticamente: $e');
+        // Não bloqueia o fluxo se EPG falhar
+      }
+      
       await Prefs.setPlaylistReady(true);
 
       setState(() {
@@ -351,6 +416,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Expanded(child: Container()),
                                   ElevatedButton.icon(
                                     onPressed: () async {
+                                      if (!mounted) return;
+                                      final messenger = ScaffoldMessenger.of(context);
                                       final confirm = await showDialog<bool>(
                                         context: context,
                                         builder: (ctx) => AlertDialog(
@@ -362,13 +429,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           ],
                                         ),
                                       );
-                                      if (confirm == true) {
+                                      if (confirm == true && mounted) {
                                         // Reset
                                         await Prefs.setPlaylistOverride(null);
                                         await Prefs.setPlaylistReady(false);
                                         await M3uService.clearAllCache(null);
                                         await EpgService.clearCache();
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reset realizado: playlist e cache limpos')));
+                                        if (mounted) {
+                                          messenger.showSnackBar(const SnackBar(content: Text('Reset realizado: playlist e cache limpos')));
+                                        }
                                       }
                                     },
                                     icon: const Icon(Icons.restore),

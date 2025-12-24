@@ -1,5 +1,4 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 /// Detecta características do device e retorna configurações otimizadas
 class DeviceOptimizationConfig {
@@ -25,12 +24,17 @@ class DeviceOptimizationConfig {
   static Future<DeviceOptimizationConfig> detect() async {
     try {
       // Detectar informações do device
-      final info = DeviceInfoPlugin().androidInfo;
+      final deviceInfoPlugin = DeviceInfoPlugin();
+      final info = await deviceInfoPlugin.androidInfo;
       
       // Verificar se é Firestick/FireTV (model contém "AFTT")
-      final isFireTV = (await info).model?.contains('AFTT') ?? false ||
-                       (await info).device?.contains('montoya') ?? false ||
-                       (await info).manufacturer?.contains('Amazon') ?? false;
+      final model = info.model;
+      final device = info.device;
+      final manufacturer = info.manufacturer;
+      
+      final isFireTV = model.contains('AFTT') ||
+                       device.contains('montoya') ||
+                       manufacturer.contains('Amazon');
       
       // Determinar se é low-end pela RAM disponível
       final isLowEnd = isFireTV || (await _getAvailableMemory() < 500); // < 500MB
@@ -95,6 +99,3 @@ class DeviceOptimizationConfig {
     }
   }
 }
-
-// Import necessário
-import 'package:device_info_plus/device_info_plus.dart';

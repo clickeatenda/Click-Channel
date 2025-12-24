@@ -3,6 +3,7 @@ import '../core/theme/app_colors.dart';
 import '../core/config.dart';
 import '../core/prefs.dart';
 import '../data/m3u_service.dart';
+import '../data/epg_service.dart';
 
 /// Tela de configuração inicial.
 /// Se não houver playlist configurada, exibe campo para inserir URL.
@@ -127,9 +128,36 @@ class _SetupScreenState extends State<SetupScreen> {
     });
 
     try {
-      // Salva URL nas preferências
-      Config.setPlaylistOverride(url.trim());
-      await Prefs.setPlaylistOverride(url.trim());
+      // CRÍTICO: Salva URL nas preferências ANTES de baixar (garante persistência)
+      final trimmedUrl = url.trim();
+      
+      // CRÍTICO: Limpa cache antigo ANTES de salvar nova URL
+      // Isso garante que não haverá conflito com cache de lista anterior
+      print('🧹 Setup: Limpando cache antigo antes de configurar nova playlist...');
+      await M3uService.clearAllCache(null);
+      M3uService.clearMemoryCache();
+      
+      Config.setPlaylistOverride(trimmedUrl);
+      await Prefs.setPlaylistOverride(trimmedUrl);
+      
+      // Verifica se foi salva corretamente (tripla verificação)
+      final verifyUrl = Prefs.getPlaylistOverride();
+      if (verifyUrl != trimmedUrl) {
+        print('⚠️ Setup: Erro ao salvar URL! Tentando novamente...');
+        await Prefs.setPlaylistOverride(trimmedUrl);
+        Config.setPlaylistOverride(trimmedUrl);
+        // Verifica novamente
+        final verifyUrl2 = Prefs.getPlaylistOverride();
+        if (verifyUrl2 != trimmedUrl) {
+          print('❌ Setup: ERRO CRÍTICO: Não foi possível salvar URL em Prefs!');
+          setState(() {
+            _errorMessage = 'Erro ao salvar configuração. Tente novamente.';
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+      print('✅ Setup: URL salva com sucesso em Prefs: ${trimmedUrl.substring(0, trimmedUrl.length > 50 ? 50 : trimmedUrl.length)}...');
 
       setState(() {
         _progress = 0.1;
@@ -154,8 +182,48 @@ class _SetupScreenState extends State<SetupScreen> {
         _statusMessage = 'Processando categorias...';
       });
 
-      // Pré-carrega categorias para otimizar primeira abertura
-      await M3uService.preloadCategories(url.trim());
+      // Pré-carrega categorias para otimizar primeira abertura (não bloqueia)
+      setState(() {
+        _progress = 0.85;
+        _statusMessage = 'Processando categorias...';
+      });
+      
+      // Carrega categorias em background (não bloqueia UI)
+      M3uService.preloadCategories(url.trim()).then((_) {
+        print('✅ Setup: Categorias pré-carregadas');
+      }).catchError((e) {
+        print('⚠️ Setup: Erro ao pré-carregar categorias: $e');
+      });
+
+      // Carrega EPG automaticamente após configurar playlist M3U
+      setState(() {
+        _progress = 0.9;
+        _statusMessage = 'Carregando EPG...';
+      });
+      
+      try {
+        final epgUrl = EpgService.epgUrl;
+        if (epgUrl != null && epgUrl.isNotEmpty) {
+          print('📺 Setup: Carregando EPG automaticamente: $epgUrl');
+          await EpgService.loadEpg(epgUrl, onProgress: (progress, status) {
+            if (mounted) {
+              setState(() {
+                _statusMessage = status;
+              });
+            }
+          });
+          if (EpgService.isLoaded) {
+            print('✅ Setup: EPG carregado: ${EpgService.getAllChannels().length} canais');
+          } else {
+            print('⚠️ Setup: EPG não foi carregado completamente');
+          }
+        } else {
+          print('ℹ️ Setup: Nenhuma URL de EPG configurada');
+        }
+      } catch (e) {
+        print('⚠️ Setup: Erro ao carregar EPG automaticamente: $e');
+        // Não bloqueia o fluxo se EPG falhar
+      }
 
       setState(() {
         _progress = 1.0;
