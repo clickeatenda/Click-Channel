@@ -136,6 +136,10 @@ class _SetupScreenState extends State<SetupScreen> {
       print('🧹 Setup: Limpando TODOS os caches antigos antes de configurar nova playlist...');
       print('   Nova URL: ${trimmedUrl.substring(0, trimmedUrl.length > 50 ? 50 : trimmedUrl.length)}...');
       
+      // CRÍTICO: Remove a URL antiga PRIMEIRO para evitar que cache seja usado
+      await Prefs.setPlaylistOverride(null);
+      Config.setPlaylistOverride(null);
+      
       // Limpa memória primeiro
       M3uService.clearMemoryCache();
       
@@ -143,11 +147,14 @@ class _SetupScreenState extends State<SetupScreen> {
       await M3uService.clearAllCache(null);
       
       // Aguarda um pouco para garantir que os arquivos foram deletados
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 300));
       
       // Agora salva a nova URL
       Config.setPlaylistOverride(trimmedUrl);
       await Prefs.setPlaylistOverride(trimmedUrl);
+      
+      // Aguarda um pouco mais para garantir que a URL foi salva
+      await Future.delayed(const Duration(milliseconds: 100));
       
       // Verifica se foi salva corretamente (tripla verificação)
       final verifyUrl = Prefs.getPlaylistOverride();
@@ -191,18 +198,22 @@ class _SetupScreenState extends State<SetupScreen> {
         _statusMessage = 'Processando categorias...';
       });
 
-      // Pré-carrega categorias para otimizar primeira abertura (não bloqueia)
+      // Pré-carrega categorias para otimizar primeira abertura
+      // CRÍTICO: Aguarda o download completar e valida URL antes de preload
       setState(() {
         _progress = 0.85;
         _statusMessage = 'Processando categorias...';
       });
       
-      // Carrega categorias em background (não bloqueia UI)
-      M3uService.preloadCategories(url.trim()).then((_) {
-        print('✅ Setup: Categorias pré-carregadas');
-      }).catchError((e) {
+      // CRÍTICO: Aguarda o preload completar para garantir que cache está correto
+      // Não faz em background - precisa garantir que está usando a URL correta
+      try {
+        await M3uService.preloadCategories(url.trim());
+        print('✅ Setup: Categorias pré-carregadas com sucesso');
+      } catch (e) {
         print('⚠️ Setup: Erro ao pré-carregar categorias: $e');
-      });
+        // Não bloqueia o fluxo, mas loga o erro
+      }
 
       // Carrega EPG automaticamente após configurar playlist M3U
       setState(() {
