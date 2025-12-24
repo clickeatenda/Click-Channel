@@ -78,7 +78,7 @@ Config.setPlaylistOverride(null);
 
 ### Remover URL Hardcoded
 
-Não foi encontrada nenhuma URL hardcoded no código. A URL `http://playfacil.net:80/get.php?username=3785397394&password=7697475446&output=ts&type=m3u_plus` não está em nenhum arquivo do projeto.
+Não foi encontrada nenhuma URL hardcoded no código. Uma URL com credenciais foi mencionada em análises anteriores, mas não está presente no código-fonte do projeto.
 
 **Possíveis causas:**
 1. Cache antigo no dispositivo

@@ -9,6 +9,10 @@ class Prefs {
 
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
+    // Sanitize playlist override in case a previous APK or a restore left
+    // a placeholder/test URL in prefs (e.g. exemplo.com, via.placeholder.com).
+    // This prevents the app from auto-loading example playlists on startup.
+    await _sanitizePlaylistOverrideIfNeeded();
   }
 
   /// Test helper to reset internal prefs instance across tests
@@ -39,6 +43,27 @@ class Prefs {
       await _prefs!.remove(keyPlaylistLastDownload);
     } else {
       await _prefs!.setString(keyPlaylistOverride, value.trim());
+    }
+  }
+
+  /// Detects placeholder/example playlist URLs and clears them to avoid
+  /// accidental startup with sample data. This is intentionally conservative:
+  /// only clears values that match well-known placeholder domains or clearly
+  /// invalid example strings.
+  static Future<void> _sanitizePlaylistOverrideIfNeeded() async {
+    if (_prefs == null) return;
+    final v = _prefs!.getString(keyPlaylistOverride);
+    if (v == null || v.trim().isEmpty) return;
+    final s = v.trim().toLowerCase();
+    // Known placeholder patterns to clear automatically
+    final placeholders = ['exemplo.com', 'example.com', 'via.placeholder.com', 'playfacil', 'playfacil.net'];
+    for (final p in placeholders) {
+      if (s.contains(p)) {
+        // Clear persisted playlist override and readiness flags
+        await setPlaylistOverride(null);
+        print('🧹 Prefs: Detected placeholder playlist "${v}" - cleared automatically.');
+        return;
+      }
     }
   }
 
