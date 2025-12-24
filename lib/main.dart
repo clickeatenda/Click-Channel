@@ -13,6 +13,7 @@ import 'routes/app_routes.dart';
 import 'core/config.dart';
 import 'data/epg_service.dart';
 import 'data/m3u_service.dart';
+import 'data/tmdb_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,45 +44,127 @@ void main() async {
   // Init preferences and handle saved playlist override
   await Prefs.init();
 
-  // Use an install-marker to robustly detect a fresh install run. If the marker
-  // does not exist, treat this as the first run for this install and clear any
-  // persisted playlist override + M3U caches so that the user starts with no
-  // pre-configured playlist.
-  final hasInstallMarker = await M3uService.hasInstallMarker();
-  if (!hasInstallMarker) {
-    print('♻️ main: No install marker found — treating as fresh install and clearing playlist override + caches');
-    await Prefs.setPlaylistOverride(null);
-    Config.setPlaylistOverride(null);
-    try {
-      await M3uService.clearAllCache(null);
-    } catch (_) {}
-    await M3uService.writeInstallMarker();
-    await Prefs.setFirstRunDone();
-  }
-
-  // Special-case: If prefs contain a playlist override but there are NO cache files (likely
-  // prefs were restored from backup), then clear the persisted override so the app
-  // does not auto-load it.
-  final savedOverride = Prefs.getPlaylistOverride();
-  final hasAnyCache = await M3uService.hasAnyCache();
-  if (savedOverride != null && savedOverride.isNotEmpty && !hasAnyCache) {
-    print('♻️ main: Detected playlist override with no cache files; clearing override to avoid auto-loading restored prefs');
-    await Prefs.setPlaylistOverride(null);
-    Config.setPlaylistOverride(null);
-    await Prefs.setPlaylistReady(false);
-  }
-
-  final hasPlaylist = Prefs.getPlaylistOverride() != null && Prefs.getPlaylistOverride()!.isNotEmpty;
-  if (hasPlaylist) {
-    Config.setPlaylistOverride(Prefs.getPlaylistOverride());
+  // VERIFICAÇÃO CRÍTICA: Verifica se há playlist salva PRIMEIRO
+  // Se não houver playlist, SEMPRE limpa tudo (independente do install marker)
+  final savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
+  final hasPlaylist = savedPlaylistUrl != null && savedPlaylistUrl.isNotEmpty;
+  
+  if (!hasPlaylist) {
+    // SEM PLAYLIST CONFIGURADA - LIMPA TUDO SEMPRE
+    print('🚨 main: SEM PLAYLIST CONFIGURADA - Limpando TODOS os dados e caches...');
+    
+    // CRÍTICO: Limpa TODOS os dados persistentes (múltiplas vezes para garantir)
+    for (int i = 0; i < 3; i++) {
+      await Prefs.setPlaylistOverride(null);
+      await Prefs.setPlaylistReady(false);
+      Config.setPlaylistOverride(null);
+    }
+    
+    // Limpa TODOS os caches (memória e disco) - SEMPRE
+    M3uService.clearMemoryCache();
+    await M3uService.clearAllCache(null);
+    await EpgService.clearCache();
+    
+    // Deleta install marker se existir (força limpeza completa)
+    await M3uService.deleteInstallMarker();
+    
+    // CRÍTICO: Verifica e limpa qualquer dado restaurado do backup do Android (múltiplas vezes)
+    for (int i = 0; i < 3; i++) {
+      final verifyNoUrl = Prefs.getPlaylistOverride();
+      if (verifyNoUrl != null && verifyNoUrl.isNotEmpty) {
+        print('⚠️ main: Dados restaurados detectados (tentativa ${i + 1})! Limpando...');
+        await Prefs.setPlaylistOverride(null);
+        await Prefs.setPlaylistReady(false);
+        Config.setPlaylistOverride(null);
+        // Pequeno delay para garantir que a escrita foi persistida
+        await Future.delayed(const Duration(milliseconds: 100));
+      } else {
+        break; // Se já está limpo, para o loop
+      }
+    }
+    
+    // Verificação final
+    final finalCheck = Prefs.getPlaylistOverride();
+    if (finalCheck != null && finalCheck.isNotEmpty) {
+      print('❌ main: ERRO CRÍTICO: Não foi possível limpar playlist restaurada!');
+      print('   URL restaurada: ${finalCheck.substring(0, finalCheck.length > 50 ? 50 : finalCheck.length)}');
+    } else {
+      print('✅ main: App limpo - SEM playlist configurada');
+    }
   }
   
-  // Carregar EPG do cache em background
-  EpgService.loadFromCache().then((_) {
-    if (EpgService.isLoaded) {
-      print('📺 EPG carregado do cache: ${EpgService.getAllChannels().length} canais');
+  if (hasPlaylist) {
+    print('✅ main: Playlist encontrada em Prefs: ${savedPlaylistUrl.substring(0, savedPlaylistUrl.length > 50 ? 50 : savedPlaylistUrl.length)}...');
+    
+    // SEMPRE define o override para garantir que seja usado
+    Config.setPlaylistOverride(savedPlaylistUrl);
+    
+    // CRÍTICO: Verifica se cache existe E corresponde à URL salva
+    final hasCache = await M3uService.hasCachedPlaylist(savedPlaylistUrl);
+    if (hasCache) {
+      print('✅ main: Cache encontrado para playlist salva. Usando cache permanente.');
+    } else {
+      print('⚠️ main: Cache não encontrado para playlist salva. Cache será recriado quando necessário.');
+      // Limpa qualquer cache antigo que possa estar causando confusão
+      print('🧹 main: Limpando caches antigos para evitar conflitos...');
+      await M3uService.clearAllCache(savedPlaylistUrl);
     }
-  });
+    
+    // GARANTE que a URL está salva corretamente (tripla verificação)
+    final verifyUrl1 = Prefs.getPlaylistOverride();
+    if (verifyUrl1 != savedPlaylistUrl) {
+      print('⚠️ main: Inconsistência detectada! Re-salvando URL...');
+      await Prefs.setPlaylistOverride(savedPlaylistUrl);
+      Config.setPlaylistOverride(savedPlaylistUrl);
+      // Verifica novamente
+      final verifyUrl2 = Prefs.getPlaylistOverride();
+      if (verifyUrl2 != savedPlaylistUrl) {
+        print('❌ main: ERRO CRÍTICO: Não foi possível salvar URL em Prefs!');
+      } else {
+        print('✅ main: URL re-salva com sucesso!');
+      }
+    }
+  } else {
+    print('ℹ️ main: Nenhuma playlist salva encontrada. Usuário precisa configurar via Setup.');
+    // Se não tem playlist mas tem cache, limpa cache antigo
+    final hasAnyCache = await M3uService.hasAnyCache();
+    if (hasAnyCache) {
+      print('🧹 main: Cache antigo detectado sem playlist salva. Limpando...');
+      await M3uService.clearAllCache(null);
+    }
+  }
+  
+  // Carregar EPG do cache em background (APENAS se houver playlist configurada)
+  // SEM playlist, EPG não deve ser carregado
+  if (hasPlaylist) {
+    EpgService.loadFromCache().then((loaded) {
+      if (loaded && EpgService.isLoaded) {
+        print('📺 EPG carregado do cache: ${EpgService.getAllChannels().length} canais');
+      } else {
+        // Se não tem cache, verifica se há URL salva para carregar
+        final epgUrl = EpgService.epgUrl;
+        if (epgUrl != null && epgUrl.isNotEmpty) {
+          print('📺 EPG: URL encontrada, carregando automaticamente...');
+          EpgService.loadEpg(epgUrl).then((_) {
+            if (EpgService.isLoaded) {
+              print('✅ EPG carregado automaticamente: ${EpgService.getAllChannels().length} canais');
+            }
+          }).catchError((e) {
+            print('⚠️ EPG: Erro ao carregar automaticamente: $e');
+          });
+        } else {
+          print('ℹ️ EPG: Nenhuma URL configurada. Configure via Settings.');
+        }
+      }
+    });
+  } else {
+    print('ℹ️ EPG: Sem playlist configurada - EPG não será carregado');
+    // Limpa cache de EPG também
+    await EpgService.clearCache();
+  }
+
+  // Inicializar TMDB Service
+  TmdbService.init();
   
   await authProvider.initialize();
   

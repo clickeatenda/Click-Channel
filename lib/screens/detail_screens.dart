@@ -367,8 +367,9 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Informações do conteúdo serão exibidas aqui quando implementado
                     Text(
-                      'Inception',
+                      'Player',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -377,7 +378,7 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'Ficção Científica • Suspense • 2010',
+                      'Conteúdo em reprodução',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
@@ -401,24 +402,6 @@ class _PlayerDashboardScreenState extends State<PlayerDashboardScreen> {
                           label: 'Compartilhar',
                         ),
                       ],
-                    ),
-                    SizedBox(height: 24),
-                    Text(
-                      'Sinopse',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Um ladrão que rouba segredos corporativos através da tecnologia de compartilhamento de sonhos recebe uma tarefa inversa: implantar uma ideia',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        height: 1.6,
-                      ),
                     ),
                   ],
                 ),

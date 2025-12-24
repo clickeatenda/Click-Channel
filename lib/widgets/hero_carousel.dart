@@ -62,13 +62,13 @@ class _HeroCarouselState extends State<HeroCarousel> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Imagem de Fundo
+              // 1. Imagem de Fundo - melhor enquadramento
               item.image.isNotEmpty
                   ? CachedNetworkImage(
                       imageUrl: item.image,
                       fit: BoxFit.cover,
-                      alignment: Alignment.center,
-                      memCacheHeight: 400, // Otimização para TV - menor para banner reduzido
+                      alignment: Alignment.topCenter, // Alinha no topo para melhor enquadramento
+                      memCacheHeight: 400,
                       placeholder: (_, __) => Container(color: AppColors.background),
                       errorWidget: (_, __, ___) => Container(color: const Color(0xFF1A1A1A)),
                     )

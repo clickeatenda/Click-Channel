@@ -14,9 +14,11 @@ import '../models/series_details.dart';
 /// Serviço para ler e normalizar playlists M3U diretamente no app (opção B).
 /// Suporta tanto URL (HTTP/HTTPS) quanto caminho de arquivo local (file:// ou caminho absoluto).
 class M3uService {
-  static List<ContentItem>? _movieCache = [];
-  static List<ContentItem>? _seriesCache = [];
-  static List<ContentItem>? _channelCache = [];
+  // CRÍTICO: Inicializa como null, não como lista vazia
+  // Isso garante que sem playlist configurada, o cache não será usado
+  static List<ContentItem>? _movieCache;
+  static List<ContentItem>? _seriesCache;
+  static List<ContentItem>? _channelCache;
   static String? _movieCacheSource;
   static int _movieCacheMaxItems = 0;
   static Map<String, int> _movieCategoryCounts = {};
@@ -31,7 +33,9 @@ class M3uService {
   static Map<String, List<String>>? _curatedFeaturedCache;
   static DateTime? _curatedFeaturedFetchedAt;
   static final Map<String, Future<void>> _pendingCacheEnsures = {};
-  static const Duration _cacheTtl = Duration(hours: 12);
+  // Cache permanente - não expira automaticamente
+  // O cache só é atualizado quando o usuário solicita explicitamente
+  static const Duration _cacheTtl = Duration(days: 365); // 1 ano (efetivamente permanente)
   
   // Flag para indicar que preload foi feito
   static bool _preloadDone = false;
@@ -67,23 +71,33 @@ class M3uService {
   }
   
   /// Limpa TODOS os caches (memória E disco) para forçar download completo
+  /// IMPORTANTE: Sempre limpa TODOS os caches para evitar conflitos com listas antigas
   static Future<void> clearAllCache(String? newSource) async {
+    print('🧹 M3uService: Limpando TODOS os caches (memória e disco)...');
+    
     // Limpa memória
     clearMemoryCache();
     
     // Limpa TODOS os arquivos de cache M3U no disco
+    // Isso garante que não haverá cache de lista antiga sendo carregado
     try {
       final dir = await getApplicationSupportDirectory();
       final files = dir.listSync();
+      int deletedCount = 0;
       for (final file in files) {
         if (file is File && file.path.contains('m3u_cache_')) {
-          await file.delete();
-          print('🗑️ M3uService: Cache deletado: ${file.path}');
+          try {
+            await file.delete();
+            deletedCount++;
+            print('🗑️ M3uService: Cache deletado: ${file.path}');
+          } catch (e) {
+            print('⚠️ M3uService: Erro ao deletar ${file.path}: $e');
+          }
         }
       }
-      print('🗑️ M3uService: Todos os caches de disco limpos');
+      print('✅ M3uService: ${deletedCount} arquivo(s) de cache deletado(s)');
     } catch (e) {
-      print('⚠️ M3uService: Erro ao deletar caches de disco: $e');
+      print('❌ M3uService: Erro ao limpar caches de disco: $e');
     }
   }
 
@@ -145,9 +159,23 @@ class M3uService {
     }
   }
 
+  /// Deleta o install marker (usado para forçar limpeza completa)
+  static Future<void> deleteInstallMarker() async {
+    try {
+      final file = await _getInstallMarkerFile();
+      if (await file.exists()) {
+        await file.delete();
+        print('🗑️ M3uService: Install marker deletado');
+      }
+    } catch (e) {
+      print('⚠️ M3uService: Erro ao deletar install marker: $e');
+    }
+  }
+
   // ============= MÉTODOS PARA SETUP SCREEN =============
   
   /// Verifica se existe cache local válido para a URL
+  /// IMPORTANTE: Cache é permanente - sempre válido se existir
   static Future<bool> hasCachedPlaylist(String source) async {
     try {
       final file = await _getCacheFile(source);
@@ -155,15 +183,10 @@ class M3uService {
       if (await file.exists()) {
         final stat = await file.stat();
         final age = DateTime.now().difference(stat.modified);
-        print('🔍 M3uService: Cache existe, idade: ${age.inMinutes} minutos (TTL: ${_cacheTtl.inMinutes} minutos)');
-        // Cache válido se menor que TTL
-        if (age < _cacheTtl) {
-          print('✅ M3uService: Cache válido!');
-          return true;
-        } else {
-          print('⚠️ M3uService: Cache expirado');
-          return false;
-        }
+        print('🔍 M3uService: Cache existe, idade: ${age.inDays} dias');
+        // Cache é permanente - sempre válido se existir
+        print('✅ M3uService: Cache válido (permanente)!');
+        return true;
       }
       print('❌ M3uService: Arquivo de cache não existe');
       return false;
@@ -174,10 +197,15 @@ class M3uService {
   }
 
   /// Retorna o arquivo de cache para uma URL
+  /// IMPORTANTE: Usa hashCode da URL para identificar cache único por URL
   static Future<File> _getCacheFile(String source) async {
     final dir = await getApplicationSupportDirectory();
-    final safe = source.hashCode;
-    return File('${dir.path}/m3u_cache_$safe.m3u');
+    // Normaliza a URL (remove trailing slash, etc) para garantir mesmo hashCode
+    final normalizedSource = source.trim().replaceAll(RegExp(r'/+$'), '');
+    final safe = normalizedSource.hashCode;
+    final filePath = '${dir.path}/m3u_cache_$safe.m3u';
+    print('💾 M3uService: Cache file para "${normalizedSource.substring(0, normalizedSource.length > 50 ? 50 : normalizedSource.length)}...": $filePath');
+    return File(filePath);
   }
 
   /// Baixa e salva a playlist com callback de progresso
@@ -392,7 +420,8 @@ class M3uService {
   static Future<List<ContentItem>> fetchFromEnv({int limit = 500}) async {
     final source = Config.playlistRuntime;
     if (source == null || source.isEmpty) {
-      throw Exception('M3U_PLAYLIST_URL não definido no .env');
+      print('⚠️ M3uService: fetchFromEnv - Sem URL configurada, retornando lista vazia');
+      return [];
     }
     return parse(source: source, limit: limit);
   }
@@ -415,7 +444,8 @@ class M3uService {
   }) async {
     final source = Config.playlistRuntime;
     if (source == null || source.isEmpty) {
-      throw Exception('M3U_PLAYLIST_URL não definido no .env');
+      print('⚠️ M3uService: fetchPagedFromEnv - Sem URL configurada, retornando vazio');
+      return const M3uPagedResult(items: [], total: 0, categories: [], categoryCounts: {});
     }
 
     if (typeFilter != 'movie') {
@@ -424,8 +454,14 @@ class M3uService {
     }
 
     await _ensureMovieCache(source: source, maxItems: maxItems);
+    
+    // CRÍTICO: Se cache é null, retorna vazio (não há dados)
+    if (_movieCache == null) {
+      print('⚠️ M3uService: fetchPagedFromEnv - Cache é null, retornando vazio');
+      return const M3uPagedResult(items: [], total: 0, categories: [], categoryCounts: {});
+    }
 
-    final total = _movieCache?.length ?? 0;
+    final total = _movieCache!.length;
     final start = (page - 1) * pageSize;
     if (start >= total) {
       return M3uPagedResult(items: const [], total: total, categories: _movieCategories, categoryCounts: _movieCategoryCounts);
@@ -465,23 +501,47 @@ class M3uService {
 
   static Future<List<String>> _loadLinesInternal(String source) async {
     if (source.startsWith('http')) {
+      // CRÍTICO: Verifica se a URL atual corresponde à URL salva em Prefs
+      // Se não corresponder, NÃO usa cache antigo (pode ser de lista diferente)
+      final savedUrl = Config.playlistRuntime;
+      final normalizedSource = source.trim().replaceAll(RegExp(r'/+$'), '');
+      final normalizedSaved = savedUrl?.trim().replaceAll(RegExp(r'/+$'), '') ?? '';
+      
       // Usa o mesmo método de cache que downloadAndCachePlaylist
       Future<File> cacheFile() async {
         return await _getCacheFile(source);
       }
 
-      // Se cache local estiver válido, reutiliza
+      // Só usa cache se:
+      // 1. Cache existe
+      // 2. URL do cache corresponde à URL salva em Prefs (ou não há URL salva)
       try {
         final file = await cacheFile();
         if (await file.exists()) {
-          final stat = await file.stat();
-          if (DateTime.now().difference(stat.modified) < _cacheTtl) {
-            print('💾 M3uService: Usando cache local (${stat.modified}) para $source');
+          // Verifica se a URL corresponde
+          if (normalizedSaved.isEmpty || normalizedSource == normalizedSaved) {
+            final stat = await file.stat();
+            print('💾 M3uService: Cache local encontrado (${stat.modified}) para $source');
             final cachedLines = await file.openRead().transform(utf8.decoder).transform(const LineSplitter()).toList();
-            if (cachedLines.isNotEmpty) return cachedLines;
+            if (cachedLines.isNotEmpty) {
+              print('✅ M3uService: Usando cache local (${cachedLines.length} linhas)');
+              return cachedLines;
+            }
+          } else {
+            print('⚠️ M3uService: Cache existe mas URL não corresponde! Limpando cache antigo...');
+            print('   URL atual: ${normalizedSource.substring(0, normalizedSource.length > 50 ? 50 : normalizedSource.length)}');
+            print('   URL salva: ${normalizedSaved.substring(0, normalizedSaved.length > 50 ? 50 : normalizedSaved.length)}');
+            // Deleta cache antigo que não corresponde
+            try {
+              await file.delete();
+              print('🗑️ M3uService: Cache antigo deletado');
+            } catch (e) {
+              print('⚠️ M3uService: Erro ao deletar cache antigo: $e');
+            }
           }
         }
-      } catch (_) {
+      } catch (e) {
+        print('⚠️ M3uService: Erro ao verificar cache local: $e');
         // se cache falhar, continua para download
       }
 
@@ -512,17 +572,19 @@ class M3uService {
         return lines;
       } catch (e) {
         print('❌ M3uService: Erro ao baixar: $e');
-        // Se houver cache antigo, tenta devolver para não travar UI
+        // SEMPRE tenta usar cache se download falhar (cache permanente)
         try {
           final file = await cacheFile();
           if (await file.exists()) {
             final cachedLines = await file.openRead().transform(utf8.decoder).transform(const LineSplitter()).toList();
             if (cachedLines.isNotEmpty) {
-              print('💾 M3uService: Usando cache antigo após erro de download');
+              print('💾 M3uService: Usando cache após erro de download (${cachedLines.length} linhas)');
               return cachedLines;
             }
           }
-        } catch (_) {}
+        } catch (cacheError) {
+          print('⚠️ M3uService: Erro ao ler cache após falha de download: $cacheError');
+        }
         rethrow;
       } finally {
         client.close();
@@ -595,10 +657,19 @@ class M3uService {
     // Exemplo: #EXTINF:-1 tvg-id="AMC" tvg-name="A&E FHD" tvg-logo="..." group-title="FILMES | SÉRIES",A&E FHD
     final attrs = <String, String>{};
 
-    // Captura chave="valor"
-    final regex = RegExp(r'(\w[\w\-]*)="([^"]*)"');
+    // Captura chave="valor" - regex melhorado para capturar hífens e underscores
+    // Aceita: tvg-logo, tvg_logo, logo, cover, etc.
+    final regex = RegExp(r'([\w\-_]+)="([^"]*)"');
     for (final m in regex.allMatches(extInf)) {
-      attrs[m.group(1)!] = m.group(2) ?? '';
+      final key = m.group(1) ?? '';
+      final value = m.group(2) ?? '';
+      if (key.isNotEmpty && value.isNotEmpty) {
+        attrs[key] = value;
+        // Debug para primeiros itens
+        if (key.contains('logo') || key.contains('cover') || key.contains('image')) {
+          print('🖼️ ParseExtInf: Capturou $key="${value.substring(0, value.length > 40 ? 40 : value.length)}"');
+        }
+      }
     }
 
     // O título é o texto após a última vírgula
@@ -613,7 +684,31 @@ class M3uService {
   static ContentItem _buildContentItem(Map<String, String> meta, String url) {
     final group = meta['group-title'] ?? 'Geral';
     final title = meta['title'] ?? meta['tvg-name'] ?? 'Sem título';
-    final logo = meta['tvg-logo'] ?? '';
+    
+    // Tenta múltiplos campos para imagem (ordem de prioridade)
+    // Verifica todas as variações possíveis do M3U
+    var logo = meta['tvg-logo'] ?? 
+               meta['tvg_logo'] ??
+               meta['logo'] ?? 
+               meta['Logo'] ?? 
+               meta['cover'] ?? 
+               meta['Cover'] ?? 
+               meta['image'] ?? 
+               meta['Image'] ?? 
+               meta['poster'] ??
+               meta['Poster'] ??
+               meta['thumbnail'] ??
+               meta['Thumbnail'] ??
+               '';
+    
+    // Limpa espaços e valida URL básica
+    logo = logo.trim();
+    // Se não começa com http/https, pode ser caminho relativo - mantém como está
+    // Remove apenas se estiver completamente vazio ou só espaços
+    if (logo.isEmpty) {
+      logo = '';
+    }
+    
     final type = _inferType(group, title);
     final quality = _inferQuality(title, group);
     final audioType = _inferAudioType(title);
@@ -856,22 +951,47 @@ class M3uService {
 
   /// Garante cache de filmes em memória e usa compute para parse em isolate.
   static Future<void> _ensureMovieCache({required String source, int maxItems = 999999}) async {
-    // Se não há playlist definida, mantém todos os caches vazios
-    if (source.isEmpty) {
-      _movieCache = [];
-      _seriesCache = [];
-      _channelCache = [];
+    // CRÍTICO: Verifica se há playlist válida ANTES de carregar cache
+    final savedUrl = Config.playlistRuntime;
+    if (savedUrl == null || savedUrl.isEmpty) {
+      print('⚠️ M3uService: _ensureMovieCache - Sem playlist configurada, limpando TODOS os caches');
+      clearMemoryCache(); // Limpa completamente
+      _movieCache = null;
+      _seriesCache = null;
+      _channelCache = null;
       _movieCacheSource = null;
       _movieCacheMaxItems = 0;
-      _movieCategories.clear();
-      _movieCategoryCounts.clear();
-      _movieCategoryThumb.clear();
-      _seriesCategories.clear();
-      _seriesCategoryCounts.clear();
-      _seriesCategoryThumb.clear();
-      _channelCategories.clear();
-      _channelCategoryCounts.clear();
-      _channelCategoryThumb.clear();
+      _preloadDone = false;
+      _preloadSource = null;
+      return;
+    }
+    
+    // Se não há playlist definida na source, LIMPA todos os caches e retorna vazio
+    if (source.isEmpty || source.trim().isEmpty) {
+      print('⚠️ M3uService: Source vazia - limpando TODOS os caches');
+      clearMemoryCache(); // Limpa completamente
+      _movieCache = null;
+      _seriesCache = null;
+      _channelCache = null;
+      _movieCacheSource = null;
+      _movieCacheMaxItems = 0;
+      _preloadDone = false;
+      _preloadSource = null;
+      return;
+    }
+    
+    // CRÍTICO: Verifica se a source corresponde à playlist salva
+    final normalizedSource = source.trim().replaceAll(RegExp(r'/+$'), '');
+    final normalizedSaved = savedUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    if (normalizedSource != normalizedSaved) {
+      print('⚠️ M3uService: _ensureMovieCache - Source não corresponde à playlist salva!');
+      print('   Source: ${normalizedSource.substring(0, normalizedSource.length > 50 ? 50 : normalizedSource.length)}');
+      print('   Salva: ${normalizedSaved.substring(0, normalizedSaved.length > 50 ? 50 : normalizedSaved.length)}');
+      clearMemoryCache();
+      _movieCache = null;
+      _seriesCache = null;
+      _channelCache = null;
+      _movieCacheSource = null;
       return;
     }
 
@@ -1000,10 +1120,19 @@ class M3uService {
   }) async {
     final source = Config.playlistRuntime;
     if (source == null || source.isEmpty) {
-      throw Exception('M3U_PLAYLIST_URL não definido no .env');
+      print('⚠️ M3uService: fetchCategoryItemsFromEnv - Sem URL configurada, retornando lista vazia');
+      // CRÍTICO: Limpa cache se não há playlist
+      clearMemoryCache();
+      return [];
     }
 
     await _ensureMovieCache(source: source, maxItems: maxItems);
+    
+    // CRÍTICO: Se cache é null, retorna lista vazia (não há dados)
+    if (_movieCache == null && _seriesCache == null && _channelCache == null) {
+      print('⚠️ M3uService: fetchCategoryItemsFromEnv - Cache é null, retornando lista vazia');
+      return [];
+    }
 
     final normalized = category.trim().toLowerCase();
     final base = (typeFilter == 'series')
@@ -1023,7 +1152,9 @@ class M3uService {
   }) async {
     final source = Config.playlistRuntime;
     if (source == null || source.isEmpty) {
-      throw Exception('M3U_PLAYLIST_URL não definido no .env');
+      print('⚠️ M3uService: fetchCategoryMetaFromEnv - Sem URL configurada, retornando vazio');
+      // Retorna meta vazio ao invés de lançar exceção
+      return const M3uCategoryMeta(categories: [], counts: {}, thumbs: {});
     }
     await _ensureMovieCache(source: source, maxItems: maxItems);
     if (typeFilter == 'series') {
@@ -1043,11 +1174,19 @@ class M3uService {
   }) async {
     final source = Config.playlistRuntime;
     if (source == null || source.isEmpty) {
-      throw Exception('M3U_PLAYLIST_URL não definido no .env');
+      print('⚠️ M3uService: fetchSeriesAggregatedForCategory - Sem URL configurada, retornando lista vazia');
+      return [];
     }
     await _ensureMovieCache(source: source, maxItems: maxItems);
+    
+    // CRÍTICO: Se cache é null, retorna lista vazia
+    if (_seriesCache == null) {
+      print('⚠️ M3uService: fetchSeriesAggregatedForCategory - Cache é null, retornando lista vazia');
+      return [];
+    }
+    
     final normalized = category.trim().toLowerCase();
-    final list = (_seriesCache ?? const <ContentItem>[])
+    final list = _seriesCache!
         .where((e) => e.group.trim().toLowerCase() == normalized)
         .toList();
     final map = <String, ContentItem>{};
@@ -1082,7 +1221,10 @@ class M3uService {
   /// fonte lista adições recentes no topo). Limita por [count].
   static Future<List<ContentItem>> getLatestMovies({int count = 20, int maxItems = 999999}) async {
     final source = Config.playlistRuntime;
-    if (source == null || source.isEmpty) throw Exception('M3U_PLAYLIST_URL não definido no .env');
+    if (source == null || source.isEmpty) {
+      print('⚠️ M3uService: getLatestMovies - Sem URL configurada, retornando lista vazia');
+      return [];
+    }
     await _ensureMovieCache(source: source, maxItems: maxItems);
     final list = _movieCache ?? const <ContentItem>[];
     return list.take(count).toList();
@@ -1092,7 +1234,10 @@ class M3uService {
   /// Usa um pool inicial dos itens mais recentes e faz uma seleção baseada em seed.
   static Future<List<ContentItem>> getDailyFeaturedMovies({int count = 6, int pool = 80, int maxItems = 999999}) async {
     final source = Config.playlistRuntime;
-    if (source == null || source.isEmpty) throw Exception('M3U_PLAYLIST_URL não definido no .env');
+    if (source == null || source.isEmpty) {
+      print('⚠️ M3uService: getDailyFeaturedMovies - Sem URL configurada, retornando lista vazia');
+      return [];
+    }
     await _ensureMovieCache(source: source, maxItems: maxItems);
     final total = _movieCache?.length ?? 0;
     if (total == 0) return const [];
@@ -1134,8 +1279,19 @@ class M3uService {
   // Generic helpers by type
   static Future<List<ContentItem>> getLatestByType(String type, {int count = 20, int maxItems = 999999}) async {
     final source = Config.playlistRuntime;
-    if (source == null || source.isEmpty) throw Exception('M3U_PLAYLIST_URL não definido no .env');
+    if (source == null || source.isEmpty) {
+      print('⚠️ M3uService: getLatestByType - Sem URL configurada, retornando lista vazia');
+      clearMemoryCache();
+      return [];
+    }
     await _ensureMovieCache(source: source, maxItems: maxItems);
+    
+    // CRÍTICO: Se cache é null, retorna lista vazia
+    if (_movieCache == null && _seriesCache == null && _channelCache == null) {
+      print('⚠️ M3uService: getLatestByType - Cache é null, retornando lista vazia');
+      return [];
+    }
+    
     final list = type == 'series'
         ? (_seriesCache ?? const <ContentItem>[])
         : type == 'channel'
@@ -1146,8 +1302,18 @@ class M3uService {
 
   static Future<List<ContentItem>> getDailyFeaturedByType(String type, {int count = 6, int pool = 80, int maxItems = 999999}) async {
     final source = Config.playlistRuntime;
-    if (source == null || source.isEmpty) throw Exception('M3U_PLAYLIST_URL não definido no .env');
+    if (source == null || source.isEmpty) {
+      print('⚠️ M3uService: getDailyFeaturedByType - Sem URL configurada, retornando lista vazia');
+      return [];
+    }
     await _ensureMovieCache(source: source, maxItems: maxItems);
+    
+    // CRÍTICO: Se cache é null, retorna lista vazia
+    if (_movieCache == null && _seriesCache == null && _channelCache == null) {
+      print('⚠️ M3uService: getDailyFeaturedByType - Cache é null, retornando lista vazia');
+      return [];
+    }
+    
     final base = type == 'series'
         ? (_seriesCache ?? const <ContentItem>[])
         : type == 'channel'
@@ -1188,8 +1354,17 @@ class M3uService {
   /// Curated featured: optional external JSON controlled via FEATURED_JSON_URL.
   static Future<List<ContentItem>> getCuratedFeaturedPrefer(String type, {int count = 6, int pool = 120, int maxItems = 999999}) async {
     final source = Config.playlistRuntime;
-    if (source == null || source.isEmpty) throw Exception('M3U_PLAYLIST_URL não definido no .env');
+    if (source == null || source.isEmpty) {
+      print('⚠️ M3uService: getCuratedFeaturedPrefer - Sem URL configurada, retornando lista vazia');
+      return [];
+    }
     await _ensureMovieCache(source: source, maxItems: maxItems);
+    
+    // CRÍTICO: Se cache é null, retorna lista vazia
+    if (_movieCache == null && _seriesCache == null && _channelCache == null) {
+      print('⚠️ M3uService: getCuratedFeaturedPrefer - Cache é null, retornando lista vazia');
+      return [];
+    }
 
     final curatedUrl = Config.curatedFeaturedUrl;
     if (curatedUrl != null && curatedUrl.isNotEmpty) {
@@ -1419,10 +1594,43 @@ List<Map<String, String>> _parseLinesIsolate(Map<String, dynamic> args) {
       else if (type == 'series') seriesCount++;
       else channelCount++;
       
+      // Tenta múltiplos campos para imagem (ordem de prioridade)
+      // Verifica todas as variações possíveis do M3U
+      var image = meta['tvg-logo'] ?? 
+                  meta['tvg_logo'] ??
+                  meta['logo'] ?? 
+                  meta['Logo'] ?? 
+                  meta['cover'] ?? 
+                  meta['Cover'] ?? 
+                  meta['image'] ?? 
+                  meta['Image'] ?? 
+                  meta['poster'] ??
+                  meta['Poster'] ??
+                  meta['thumbnail'] ??
+                  meta['Thumbnail'] ??
+                  '';
+      
+      // Limpa espaços e valida URL básica
+      image = image.trim();
+      
+      // Debug: log primeiros itens para verificar se imagem está sendo capturada
+      if (results.length < 10) {
+        if (image.isNotEmpty) {
+          print('🖼️ Parse[${results.length}] Imagem encontrada: ${image.substring(0, image.length > 60 ? 60 : image.length)}');
+          print('   Título: ${title.substring(0, title.length > 40 ? 40 : title.length)}');
+          print('   Grupo: ${groupTitle.substring(0, groupTitle.length > 30 ? 30 : groupTitle.length)}');
+        } else {
+          print('⚠️ Parse[${results.length}] SEM IMAGEM');
+          print('   Título: ${title.substring(0, title.length > 40 ? 40 : title.length)}');
+          print('   Grupo: ${groupTitle.substring(0, groupTitle.length > 30 ? 30 : groupTitle.length)}');
+          print('   Meta keys disponíveis: ${meta.keys.join(", ")}');
+        }
+      }
+      
       results.add({
         'title': meta['title'] ?? meta['tvg-name'] ?? 'Sem título',
         'url': trimmed,
-        'image': meta['tvg-logo'] ?? '',
+        'image': image,
         'group': meta['group-title'] ?? 'Geral',
         'type': type,
         'quality': quality,

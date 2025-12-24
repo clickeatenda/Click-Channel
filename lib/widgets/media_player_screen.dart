@@ -258,13 +258,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     _player.seek(newPosition.isNegative ? Duration.zero : newPosition);
   }
   
-  void _cycleFit() {
-    setState(() {
-      _fitIndex = (_fitIndex + 1) % _fitOptions.length;
-      _videoFit = _fitOptions[_fitIndex]['fit'] as BoxFit;
-    });
-  }
-  
   void _setFit(int index) {
     setState(() {
       _fitIndex = index;
