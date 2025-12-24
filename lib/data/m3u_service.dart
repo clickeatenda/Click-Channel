@@ -309,11 +309,35 @@ class M3uService {
 
   /// Pré-carrega categorias para primeira abertura rápida
   static Future<void> preloadCategories(String source) async {
-    // Se já fez preload para essa source, não refaz
+    // CRÍTICO: Valida que a source corresponde à URL salva em Prefs
+    final savedUrl = Config.playlistRuntime;
+    final normalizedSource = source.trim().replaceAll(RegExp(r'/+$'), '');
+    final normalizedSaved = savedUrl?.trim().replaceAll(RegExp(r'/+$'), '') ?? '';
+    
+    if (normalizedSaved.isEmpty) {
+      print('⚠️ M3uService: preloadCategories - Sem URL salva em Prefs! Limpando cache e abortando.');
+      clearMemoryCache();
+      return;
+    }
+    
+    if (normalizedSource != normalizedSaved) {
+      print('⚠️ M3uService: preloadCategories - Source não corresponde à URL salva!');
+      print('   Source: ${normalizedSource.substring(0, normalizedSource.length > 50 ? 50 : normalizedSource.length)}...');
+      print('   Salva: ${normalizedSaved.substring(0, normalizedSaved.length > 50 ? 50 : normalizedSaved.length)}...');
+      clearMemoryCache();
+      return;
+    }
+    
+    // Se já fez preload para essa source E a source corresponde, não refaz
     if (_preloadDone && _preloadSource == source) {
       print('♻️ M3uService: Preload já feito para essa source');
       return;
     }
+    
+    // CRÍTICO: Limpa cache em memória ANTES de fazer preload
+    // Isso garante que não haverá dados antigos misturados
+    print('🧹 M3uService: Limpando cache em memória antes de preload...');
+    clearMemoryCache();
     
     try {
       // Carrega linhas do cache local

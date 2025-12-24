@@ -130,14 +130,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       AppLogger.info('Baixando playlist', data: sanitizedUrl);
       
-      // IMPORTANTE: Limpa TODOS os caches antigos ANTES de salvar nova URL
+      // CRÍTICO: Limpa TODOS os caches antigos ANTES de salvar nova URL
       // Isso garante que não haverá cache de lista antiga sendo carregado
       print('🧹 Settings: Limpando TODOS os caches antigos antes de salvar nova URL...');
+      print('   Nova URL: ${value.substring(0, value.length > 50 ? 50 : value.length)}...');
+      
+      // CRÍTICO: Remove a URL antiga PRIMEIRO para evitar que cache seja usado
+      await Prefs.setPlaylistOverride(null);
+      Config.setPlaylistOverride(null);
+      
+      // Limpa memória primeiro
+      M3uService.clearMemoryCache();
+      
+      // Limpa TODOS os caches de disco (não mantém nenhum)
       await M3uService.clearAllCache(null);
       
-      // Salva URL permanentemente ANTES de baixar (persistência garantida)
+      // Aguarda um pouco para garantir que os arquivos foram deletados
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Agora salva a nova URL
       await Prefs.setPlaylistOverride(value);
       Config.setPlaylistOverride(value);
+      
+      // Aguarda um pouco mais para garantir que a URL foi salva
+      await Future.delayed(const Duration(milliseconds: 100));
       
       // Garante que a URL foi salva corretamente
       final verifyUrl = Prefs.getPlaylistOverride();
