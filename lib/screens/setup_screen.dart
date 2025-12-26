@@ -61,11 +61,15 @@ class _SetupScreenState extends State<SetupScreen> {
   /// Verifica se já existe playlist salva e válida
   /// CRÍTICO: Na primeira execução, NUNCA usa cache - sempre limpa tudo
   Future<void> _checkExistingPlaylist() async {
-    // CRÍTICO: Verifica se é primeira execução (sem install marker)
-    final isFirstRun = !await M3uService.hasInstallMarker();
+    // Verifica se há playlist salva PRIMEIRO
+    final savedUrl = Prefs.getPlaylistOverride();
+    
+    // CRÍTICO: Só considera primeira execução se NÃO houver playlist salva
+    // Se tem playlist salva, significa que já foi configurado antes
+    final isFirstRun = !await M3uService.hasInstallMarker() && (savedUrl == null || savedUrl.isEmpty);
     
     if (isFirstRun) {
-      print('🚨 Setup: PRIMEIRA EXECUÇÃO detectada - Limpando TODOS os caches...');
+      print('🚨 Setup: PRIMEIRA EXECUÇÃO detectada (sem marker e sem playlist) - Limpando TODOS os caches...');
       // Limpa TUDO na primeira execução
       M3uService.clearMemoryCache();
       await M3uService.clearAllCache(null);
@@ -81,7 +85,15 @@ class _SetupScreenState extends State<SetupScreen> {
       return; // Primeira execução - não carrega nada
     }
     
-    final savedUrl = Prefs.getPlaylistOverride();
+    // Se tem playlist salva mas não tem marker, cria marker para manter consistência
+    if (savedUrl != null && savedUrl.isNotEmpty) {
+      final hasMarker = await M3uService.hasInstallMarker();
+      if (!hasMarker) {
+        print('ℹ️ Setup: Playlist encontrada mas sem marker - criando marker...');
+        await M3uService.writeInstallMarker();
+      }
+    }
+    
     final isReady = Prefs.isPlaylistReady();
     
     // Se não tem URL salva, limpa qualquer cache antigo
