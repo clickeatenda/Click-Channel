@@ -44,12 +44,17 @@ void main() async {
   // Init preferences and handle saved playlist override
   await Prefs.init();
 
-  // CRÍTICO: Verifica PRIMEIRO se é primeira execução (sem install marker)
-  // Na primeira execução, NUNCA usa cache - sempre limpa tudo
-  final isFirstRun = !await M3uService.hasInstallMarker();
+  // VERIFICAÇÃO: Verifica se há playlist salva PRIMEIRO
+  // Se houver playlist salva, NÃO é primeira execução (mesmo sem marker)
+  final savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
+  final hasPlaylist = savedPlaylistUrl != null && savedPlaylistUrl.isNotEmpty;
+  
+  // CRÍTICO: Só considera primeira execução se NÃO houver playlist salva
+  // Se tem playlist salva, significa que já foi configurado antes
+  final isFirstRun = !await M3uService.hasInstallMarker() && !hasPlaylist;
   
   if (isFirstRun) {
-    print('🚨 main: PRIMEIRA EXECUÇÃO detectada - Limpando TODOS os dados e caches...');
+    print('🚨 main: PRIMEIRA EXECUÇÃO detectada (sem marker e sem playlist) - Limpando TODOS os dados e caches...');
     
     // CRÍTICO: Limpa TODOS os dados persistentes (múltiplas vezes para garantir)
     for (int i = 0; i < 3; i++) {
@@ -89,12 +94,14 @@ void main() async {
     } else {
       print('✅ main: Primeira execução - App limpo e pronto para configuração');
     }
+  } else if (hasPlaylist) {
+    // Tem playlist salva mas não tem marker - cria marker para manter consistência
+    final hasMarker = await M3uService.hasInstallMarker();
+    if (!hasMarker) {
+      print('ℹ️ main: Playlist encontrada mas sem marker - criando marker...');
+      await M3uService.writeInstallMarker();
+    }
   }
-  
-  // VERIFICAÇÃO: Verifica se há playlist salva
-  // Se não houver playlist, SEMPRE limpa tudo (mesmo que não seja primeira execução)
-  final savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
-  final hasPlaylist = savedPlaylistUrl != null && savedPlaylistUrl.isNotEmpty;
   
   if (!hasPlaylist) {
     // SEM PLAYLIST CONFIGURADA - LIMPA TUDO SEMPRE
