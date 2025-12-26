@@ -4,6 +4,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/content_item.dart';
 import '../data/watch_history_service.dart';
+import '../data/epg_service.dart';
+import '../models/epg_program.dart';
 
 /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
 class MediaPlayerScreen extends StatefulWidget {
@@ -45,6 +47,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   List<SubtitleTrack> _subtitleTracks = [];
   int _selectedAudioIndex = 0;
   int _selectedSubtitleIndex = -1;
+  
+  // EPG (para canais)
+  EpgChannel? _epgChannel;
+  EpgProgram? _currentEpgProgram;
+  EpgProgram? _nextEpgProgram;
   
   // Opções de ajuste de tela
   BoxFit _videoFit = BoxFit.contain;
@@ -167,6 +174,41 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       
       // Verificar posição salva
       final savedPosition = await WatchHistoryService.getSavedPosition(widget.url);
+      
+      // Carregar EPG se for canal
+      if (widget.item != null && widget.item!.type == 'channel') {
+        // CRÍTICO: Garante que EPG está carregado antes de buscar
+        final epgUrl = EpgService.epgUrl;
+        if (epgUrl != null && !EpgService.isLoaded) {
+          try {
+            await EpgService.loadEpg(epgUrl);
+          } catch (e) {
+            print('⚠️ Erro ao carregar EPG no player: $e');
+          }
+        }
+        
+        _epgChannel = EpgService.findChannelByName(widget.item!.title);
+        if (_epgChannel != null) {
+          _currentEpgProgram = _epgChannel!.currentProgram;
+          _nextEpgProgram = _epgChannel!.nextProgram;
+          print('✅ EPG carregado para canal "${widget.item!.title}": ${_currentEpgProgram?.title ?? "Sem programa"}');
+          // CRÍTICO: Mostra painel de informações automaticamente para canais
+          if (mounted) {
+            setState(() {
+              _showInfo = true; // Mostra painel automaticamente para canais
+            });
+          }
+        } else {
+          print('⚠️ EPG não encontrado para canal "${widget.item!.title}"');
+          // Mesmo sem EPG, mostra painel para canais
+          if (mounted) {
+            setState(() {
+              _showInfo = true;
+            });
+          }
+        }
+        if (mounted) setState(() {});
+      }
       
       // Abrir mídia
       await _player.open(
@@ -646,11 +688,12 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
   
   Widget _buildInfoPanel() {
+    final isChannel = widget.item != null && widget.item!.type == 'channel';
     return Positioned(
       right: 16,
       top: 100,
       child: Container(
-        width: 280,
+        width: 320,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.85),
@@ -660,15 +703,119 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Informações de Mídia',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isChannel ? 'EPG e Informações' : 'Informações de Mídia',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (isChannel)
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.white70, size: 18),
+                    onPressed: () async {
+                      // Recarregar EPG
+                      if (widget.item != null) {
+                        final epgUrl = EpgService.epgUrl;
+                        if (epgUrl != null) {
+                          try {
+                            await EpgService.loadEpg(epgUrl);
+                            _epgChannel = EpgService.findChannelByName(widget.item!.title);
+                            if (_epgChannel != null) {
+                              setState(() {
+                                _currentEpgProgram = _epgChannel!.currentProgram;
+                                _nextEpgProgram = _epgChannel!.nextProgram;
+                              });
+                            }
+                          } catch (e) {
+                            print('⚠️ Erro ao atualizar EPG: $e');
+                          }
+                        }
+                      }
+                    },
+                    tooltip: 'Atualizar EPG',
+                  ),
+              ],
             ),
             const Divider(color: Colors.white24),
+            // EPG (apenas para canais) - CRÍTICO: Mostra sempre para canais
+            if (isChannel) ...[
+              if (_currentEpgProgram != null) ...[
+                const Text(
+                'Agora',
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _currentEpgProgram?.title ?? 'Sem informação',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (_currentEpgProgram?.description != null && _currentEpgProgram!.description!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _currentEpgProgram!.description!,
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 4),
+              Text(
+                '${_formatTime(_currentEpgProgram!.start)} - ${_formatTime(_currentEpgProgram!.end)}',
+                style: const TextStyle(color: Colors.white54, fontSize: 10),
+              ),
+              if (_nextEpgProgram != null) ...[
+                const SizedBox(height: 12),
+                const Divider(color: Colors.white12),
+                const Text(
+                  'Próximo',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _nextEpgProgram!.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatTime(_nextEpgProgram!.start),
+                  style: const TextStyle(color: Colors.white54, fontSize: 10),
+                ),
+              ],
+              ] else ...[
+                // Se não tem programa atual, mostra mensagem
+                const Text(
+                  'EPG não disponível',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              const Divider(color: Colors.white24),
+            ],
+            // Informações técnicas
             _buildInfoRow('Qualidade', _videoQuality),
             _buildInfoRow('Áudio', _currentAudio),
             _buildInfoRow('Legenda', _currentSubtitle),
@@ -680,6 +827,12 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         ),
       ),
     );
+  }
+  
+  String _formatTime(DateTime time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
   
   Widget _buildInfoRow(String label, String value) {

@@ -4,6 +4,7 @@ import '../models/content_item.dart';
 import '../core/config.dart';
 import '../data/m3u_service.dart';
 import '../widgets/optimized_gridview.dart';
+import '../utils/content_enricher.dart';
 import 'content_detail_screen.dart';
 
 class MoviesLibraryScreen extends StatefulWidget {
@@ -43,20 +44,47 @@ class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
         return;
       }
 
-      List<ContentItem> data = [];
-      data = await M3uService.fetchFromEnv(limit: 100);
-      print('🎬 MoviesLibraryScreen: ✅ Carregados ${data.length} itens da M3U');
-      // Filter only movies (non-series)
-      data = data.where((item) => !item.isSeries).toList();
-      print('🎬 MoviesLibraryScreen: ${data.length} filmes após filtro');
+      // CRÍTICO: Usa paginação para não travar o app com listas grandes
+      // Carrega apenas primeira página inicialmente (80 itens)
+      // IMPORTANTE: Usa cache já pré-carregado (não força reload completo)
+      print('🎬 MoviesLibraryScreen: Carregando filmes paginados (usando cache pré-carregado)...');
       
-      print('🎬 MoviesLibraryScreen: Recebidos ${data.length} filmes');
+      // Mostra UI imediatamente enquanto carrega em background
+      if (mounted) {
+        setState(() {
+          loading = true;
+        });
+      }
+      
+      final pagedResult = await M3uService.fetchPagedFromEnv(
+        page: 1,
+        pageSize: 80,
+        typeFilter: 'movie',
+        maxItems: 999999, // Permite carregar todos do cache (já processado)
+      );
+      
+      List<ContentItem> data = pagedResult.items;
+      print('🎬 MoviesLibraryScreen: ✅ Carregados ${data.length} filmes (página 1 de ${(pagedResult.total / 80).ceil()})');
+      
+      // CRÍTICO: Mostra UI imediatamente, enriquece TMDB em background
       if (mounted) {
         setState(() {
           movies = data;
           loading = false;
           error = null;
         });
+      }
+      
+      // Enriquece com TMDB em background (não bloqueia UI)
+      if (data.isNotEmpty) {
+        print('🔍 TMDB: Enriquecendo ${data.length} filmes em background...');
+        final enriched = await ContentEnricher.enrichItems(data);
+        if (mounted) {
+          setState(() {
+            movies = enriched;
+          });
+        }
+        print('✅ TMDB: ${enriched.where((e) => e.rating > 0).length} filmes enriquecidos');
       }
     } catch (e) {
       print('❌ MoviesLibraryScreen: Erro ao carregar: $e');

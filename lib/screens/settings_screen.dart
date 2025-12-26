@@ -670,6 +670,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   if (EpgService.isLoaded)
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: _epgButtonHasFocus ? Colors.amber : Colors.transparent,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: ElevatedButton.icon(
+                                        onPressed: () async {
+                                          final epgUrl = EpgService.epgUrl;
+                                          if (epgUrl != null && epgUrl.isNotEmpty) {
+                                            setState(() {
+                                              _isDownloadingEpg = true;
+                                              _epgDownloadStatus = 'Atualizando EPG...';
+                                            });
+                                            try {
+                                              await EpgService.loadEpg(epgUrl);
+                                              final channelCount = EpgService.getAllChannels().length;
+                                              setState(() {
+                                                _isDownloadingEpg = false;
+                                                _epgDownloadStatus = '';
+                                              });
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('✅ EPG atualizado! $channelCount canais'),
+                                                    duration: const Duration(seconds: 3),
+                                                    backgroundColor: Colors.green,
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              setState(() {
+                                                _isDownloadingEpg = false;
+                                                _epgDownloadStatus = '';
+                                              });
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('❌ Erro ao atualizar EPG: $e'),
+                                                    duration: const Duration(seconds: 3),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          }
+                                        },
+                                        icon: const Icon(Icons.refresh, size: 18),
+                                        label: const Text('Atualizar EPG'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue.withOpacity(0.8),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                        ),
+                                      ),
+                                    ),
+                                  if (EpgService.isLoaded)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
