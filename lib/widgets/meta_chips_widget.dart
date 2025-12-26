@@ -30,13 +30,23 @@ class MetaChipsWidget extends StatelessWidget {
       qualityLabel = 'SD';
     }
     
+    // CRÍTICO: Usa rating real do item (do TMDB) em vez de hardcoded
+    // Se não tem rating, não mostra o chip de estrelas
+    final List<Widget> chips = [
+      _buildChip(Icons.high_quality, qualityLabel),
+    ];
+    
+    // Só mostra rating se for filme/série E tiver rating válido
+    if (item.type != 'channel' && item.rating > 0) {
+      // Formata rating: se for 0-10, divide por 2 para mostrar 0-5 estrelas
+      final displayRating = item.rating > 5 ? (item.rating / 2).toStringAsFixed(1) : item.rating.toStringAsFixed(1);
+      chips.add(_buildChip(Icons.star, '$displayRating ★'));
+    }
+    
     return Wrap(
       spacing: 8,
       runSpacing: 6,
-      children: [
-        _buildChip(Icons.high_quality, qualityLabel),
-        _buildChip(Icons.star, '4.8 ★'),
-      ],
+      children: chips,
     );
   }
 

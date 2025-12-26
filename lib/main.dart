@@ -8,12 +8,12 @@ import 'core/theme/app_colors.dart';
 import 'core/api/api_client.dart';
 import 'core/prefs.dart';
 import 'providers/auth_provider.dart';
-import 'screens/login_screen.dart';
 import 'routes/app_routes.dart';
 import 'core/config.dart';
 import 'data/epg_service.dart';
 import 'data/m3u_service.dart';
 import 'data/tmdb_service.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +48,16 @@ void main() async {
   // Se houver playlist salva, NÃO é primeira execução (mesmo sem marker)
   final savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
   final hasPlaylist = savedPlaylistUrl != null && savedPlaylistUrl.isNotEmpty;
+  
+  // CRÍTICO: Se tem playlist salva, GARANTE que está marcada como pronta
+  // Isso evita que o app solicite novamente a lista
+  if (hasPlaylist) {
+    final isReady = Prefs.isPlaylistReady();
+    if (!isReady) {
+      print('⚠️ main: Playlist salva mas não marcada como pronta. Marcando como pronta...');
+      await Prefs.setPlaylistReady(true);
+    }
+  }
   
   // CRÍTICO: Só considera primeira execução se NÃO houver playlist salva
   // Se tem playlist salva, significa que já foi configurado antes
@@ -125,8 +135,19 @@ void main() async {
     final hasCache = await M3uService.hasCachedPlaylist(savedPlaylistUrl);
     if (hasCache) {
       print('✅ main: Cache encontrado para playlist salva. Usando cache permanente.');
+      
+      // CRÍTICO: Pré-carrega categorias ANTES de continuar (não em background)
+      // Isso garante que a lista M3U esteja disponível imediatamente quando o app abrir
+      print('📦 main: Pré-carregando categorias do cache (aguardando conclusão)...');
+      try {
+        await M3uService.preloadCategories(savedPlaylistUrl);
+        print('✅ main: Categorias pré-carregadas com sucesso do cache');
+      } catch (e) {
+        print('⚠️ main: Erro ao pré-carregar categorias: $e');
+        // Continua mesmo se preload falhar (não bloqueia app)
+      }
     } else {
-      print('⚠️ main: Cache não encontrado para playlist salva. Cache será recriado quando necessário.');
+      print('⚠️ main: Cache não encontrado ou inválido para playlist salva. Cache será recriado quando necessário.');
       // Limpa qualquer cache antigo que possa estar causando confusão
       print('🧹 main: Limpando caches antigos para evitar conflitos...');
       await M3uService.clearAllCache(savedPlaylistUrl);
@@ -187,6 +208,12 @@ void main() async {
 
   // Inicializar TMDB Service
   TmdbService.init();
+  // Verifica se TMDB está configurado e loga status
+  if (TmdbService.isConfigured) {
+    print('✅ main: TMDB Service inicializado e configurado');
+  } else {
+    print('⚠️ main: TMDB Service NÃO está configurado - ratings não serão carregados');
+  }
   
   await authProvider.initialize();
   
@@ -212,13 +239,18 @@ class ClickChannelApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Determina rota inicial: Setup se não tem playlist, senão Home/Login
+    // CRÍTICO: Se tem playlist E está marcada como pronta, vai direto para Home
     String initialRoute;
+    final isReady = Prefs.isPlaylistReady();
     if (!hasPlaylist) {
       initialRoute = AppRoutes.setup;
+    } else if (hasPlaylist && isReady) {
+      // CRÍTICO: Se tem playlist e está pronta, vai direto para Home (não passa pelo Setup)
+      initialRoute = AppRoutes.home;
     } else if (authProvider.isAuthenticated) {
       initialRoute = AppRoutes.home;
     } else {
-      // Como temos playlist mas FRONT_ONLY é true, vai direto para Setup verificar cache
+      // Como temos playlist mas não está marcada como pronta, vai para Setup verificar cache
       initialRoute = AppRoutes.setup;
     }
 
@@ -294,112 +326,15 @@ class ClickChannelApp extends StatelessWidget {
             ),
           ),
         ),
-          initialRoute: initialRoute,
+          // CRÍTICO: Usa SplashScreen como tela inicial, que depois navega para a rota correta
+          home: SplashScreen(
+            nextRoute: initialRoute,
+            onInit: () async {
+              // Aqui pode adicionar qualquer inicialização adicional se necessário
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+          ),
           onGenerateRoute: AppRoutes.generateRoute,
-        ),
-      ),
-    );
-  }
-}
-
-// --- SPLASH SCREEN ---
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0, end: 1),
-              duration: const Duration(milliseconds: 800),
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: 0.8 + (value * 0.2),
-                  child: Opacity(
-                    opacity: value,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 120,
-                        height: 120,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  AppColors.primary,
-                                  AppColors.primary.withOpacity(0.7),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: const Icon(Icons.live_tv, color: Colors.white, size: 64),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Click Channel',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-            ),
-            const SizedBox(height: 40),
-            const SizedBox(
-              width: 40,
-              height: 40,
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-                strokeWidth: 3,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'CARREGANDO...',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
         ),
       ),
     );

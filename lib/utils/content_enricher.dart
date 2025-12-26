@@ -24,38 +24,91 @@ class ContentEnricher {
 
       try {
         // Limpa título para busca (remove informações extras como ano, qualidade, etc.)
-        final cleanTitle = item.title
-            .replaceAll(RegExp(r'\s*\(.*?\)'), '') // Remove (2024), (HD), etc.
-            .replaceAll(RegExp(r'\s*\[.*?\]'), '') // Remove [1080p], etc.
-            .replaceAll(RegExp(r'\s*-\s*\d{4}'), '') // Remove - 2024
+        // CRÍTICO: Limpeza mais conservadora para melhor matching
+        var cleanTitle = item.title;
+        
+        // Remove apenas padrões específicos, mantendo o título o mais próximo possível do original
+        cleanTitle = cleanTitle
+            .replaceAll(RegExp(r'\s*\[.*?\]'), '') // Remove [1080p], [LEG], etc.
+            .replaceAll(RegExp(r'\s*\((\d{4})\)'), '') // Remove apenas (2024), mantém outros parênteses
+            .replaceAll(RegExp(r'\s*-\s*(\d{4})\s*$'), '') // Remove - 2024 no final
+            .replaceAll(RegExp(r'\s*FHD\s*', caseSensitive: false), '')
+            .replaceAll(RegExp(r'\s*HD\s*', caseSensitive: false), '')
+            .replaceAll(RegExp(r'\s*4K\s*', caseSensitive: false), '')
+            .replaceAll(RegExp(r'\s*UHD\s*', caseSensitive: false), '')
+            .replaceAll(RegExp(r'\s*SD\s*', caseSensitive: false), '')
             .trim();
         
-        final metadata = await TmdbService.searchContent(
-          cleanTitle,
-          year: item.year != "2024" && item.year.isNotEmpty ? item.year : null,
-          type: item.isSeries || item.type == 'series' ? 'tv' : 'movie',
-        );
+        // Se título ficou muito curto após limpeza, usa original
+        if (cleanTitle.length < 3) {
+          cleanTitle = item.title;
+        }
+        
+        AppLogger.debug('🔍 TMDB: Buscando "${cleanTitle}" (original: "${item.title}")');
+        
+        // CRÍTICO: Tenta múltiplas variações do título para melhor matching
+        TmdbMetadata? metadata;
+        List<String> searchVariations = [cleanTitle];
+        
+        // Adiciona variações: sem artigos, sem pontuação, etc.
+        if (cleanTitle.length > 5) {
+          // Remove artigos comuns no início
+          final withoutArticles = cleanTitle.replaceAll(RegExp(r'^(O|A|Os|As|The|El|La|Les|Der|Die|Das)\s+', caseSensitive: false), '').trim();
+          if (withoutArticles != cleanTitle && withoutArticles.length >= 3) {
+            searchVariations.add(withoutArticles);
+          }
+          
+          // Remove pontuação especial
+          final withoutPunctuation = cleanTitle.replaceAll(RegExp(r'[^\w\s]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+          if (withoutPunctuation != cleanTitle && withoutPunctuation.length >= 3) {
+            searchVariations.add(withoutPunctuation);
+          }
+        }
+        
+        // Tenta cada variação até encontrar
+        for (final variation in searchVariations) {
+          if (variation.length < 3) continue;
+          
+          metadata = await TmdbService.searchContent(
+            variation,
+            year: item.year != "2024" && item.year.isNotEmpty && item.year.length == 4 ? item.year : null,
+            type: item.isSeries || item.type == 'series' ? 'tv' : 'movie',
+          );
+          
+          if (metadata != null) {
+            AppLogger.debug('✅ TMDB: Encontrado com variação "$variation"');
+            break; // Encontrou, para de tentar
+          }
+          
+          // Pequeno delay entre tentativas para evitar rate limit
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
 
-        if (metadata != null && metadata.rating > 0) {
-          // Enriquecer com dados do TMDB
+        if (metadata != null) {
+          // CRÍTICO: Enriquece mesmo se rating for 0 (pode ter descrição, gênero, etc.)
           final enrichedItem = item.enrichWithTmdb(
-            rating: metadata.rating,
-            description: metadata.overview?.isNotEmpty == true ? metadata.overview : item.description,
+            rating: metadata.rating > 0 ? metadata.rating : item.rating, // Mantém rating original se TMDB não tem
+            description: metadata.overview?.isNotEmpty == true ? metadata.overview! : item.description,
             genre: metadata.genres.isNotEmpty ? metadata.genres.join(', ') : item.genre,
             popularity: metadata.popularity,
             releaseDate: metadata.releaseDate,
           );
-          AppLogger.info('✅ TMDB: Enriquecido "${item.title}" - Rating: ${metadata.rating}');
-          enriched.add(enrichedItem);
-          successCount++;
-        } else {
-          if (metadata == null) {
-            AppLogger.debug('⚠️ TMDB: Não encontrado "${item.title}"');
+          
+          if (metadata.rating > 0) {
+            AppLogger.info('✅ TMDB: Enriquecido "${item.title}" - Rating: ${metadata.rating}');
+            successCount++;
+          } else {
+            AppLogger.debug('ℹ️ TMDB: Encontrado "${item.title}" mas sem rating (tem descrição: ${metadata.overview?.isNotEmpty ?? false})');
+            successCount++; // Conta como sucesso mesmo sem rating
           }
+          enriched.add(enrichedItem);
+        } else {
+          AppLogger.debug('⚠️ TMDB: Não encontrado "${item.title}" (tentou: ${searchVariations.join(", ")})');
           enriched.add(item);
         }
-      } catch (e) {
-        AppLogger.error('❌ TMDB: Erro ao enriquecer "${item.title}"', error: e);
+      } catch (e, stackTrace) {
+        AppLogger.error('❌ TMDB: Erro ao enriquecer "${item.title}": $e');
+        AppLogger.debug('Stack trace: $stackTrace');
         enriched.add(item);
       }
     }

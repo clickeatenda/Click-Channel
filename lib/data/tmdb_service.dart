@@ -23,9 +23,38 @@ class TmdbService {
       _apiKey = Config.tmdbApiKey;
       if (_apiKey == null || _apiKey!.isEmpty) {
         AppLogger.warning('⚠️ TMDB_API_KEY não configurada');
+      } else {
+        AppLogger.info('✅ TMDB API key do .env carregada');
       }
     } else {
-      AppLogger.info('✅ TMDB API key hardcoded carregada');
+      AppLogger.info('✅ TMDB API key hardcoded carregada: ${_apiKey!.substring(0, 8)}...');
+    }
+    
+    // CRÍTICO: Testa a API key imediatamente após inicialização
+    _testApiKey();
+  }
+  
+  /// Testa se a API key está funcionando
+  static Future<void> _testApiKey() async {
+    if (_apiKey == null || _apiKey!.isEmpty) return;
+    
+    try {
+      // Testa com um filme conhecido (ID 550 = Fight Club)
+      final testUrl = '$_baseUrl/movie/550?api_key=$_apiKey';
+      final res = await http.get(Uri.parse(testUrl)).timeout(const Duration(seconds: 5));
+      
+      if (res.statusCode == 200) {
+        AppLogger.info('✅ TMDB: API key válida e funcionando');
+      } else if (res.statusCode == 401) {
+        AppLogger.error('❌ TMDB: API key INVÁLIDA ou EXPIRADA! Status 401');
+        AppLogger.error('❌ TMDB: Verifique se a API key está correta e ativa');
+      } else if (res.statusCode == 429) {
+        AppLogger.warning('⚠️ TMDB: Rate limit atingido no teste inicial');
+      } else {
+        AppLogger.warning('⚠️ TMDB: Status ${res.statusCode} no teste da API key');
+      }
+    } catch (e) {
+      AppLogger.warning('⚠️ TMDB: Erro ao testar API key: $e');
     }
   }
 
@@ -41,41 +70,78 @@ class TmdbService {
 
     try {
       AppLogger.info('🔍 TMDB: Buscando "$title" (tipo: $type${year != null ? ", ano: $year" : ""})');
+      
+      // CRÍTICO: Verifica se API key está configurada
+      if (_apiKey == null || _apiKey!.isEmpty) {
+        AppLogger.error('❌ TMDB: API key não configurada!');
+        return null;
+      }
+      
       // TMDB API v3 usa api_key como query parameter
       final searchUrl = '$_baseUrl/search/$type?api_key=$_apiKey&query=${Uri.encodeComponent(title)}&language=pt-BR';
-      if (year != null && year.isNotEmpty) {
-        final searchUrlWithYear = '$searchUrl&year=$year';
-        final searchRes = await http.get(Uri.parse(searchUrlWithYear)).timeout(const Duration(seconds: 10));
-        AppLogger.info('📡 TMDB: Status ${searchRes.statusCode} (com ano)');
-        if (searchRes.statusCode == 200) {
-          final searchData = json.decode(searchRes.body);
-          if (searchData['results'] != null && (searchData['results'] as List).isNotEmpty) {
-            final result = searchData['results'][0];
-            AppLogger.info('✅ TMDB: Encontrado "${result['title'] ?? result['name']}"');
-            return await _fetchDetails(result['id'], type);
+      
+      // Tenta com ano primeiro (mais preciso)
+      if (year != null && year.isNotEmpty && year.length == 4) {
+        try {
+          final searchUrlWithYear = '$searchUrl&year=$year';
+          final searchRes = await http.get(Uri.parse(searchUrlWithYear)).timeout(const Duration(seconds: 15));
+          AppLogger.info('📡 TMDB: Status ${searchRes.statusCode} (com ano $year)');
+          
+          if (searchRes.statusCode == 200) {
+            final searchData = json.decode(searchRes.body);
+            if (searchData['results'] != null && (searchData['results'] as List).isNotEmpty) {
+              final result = searchData['results'][0];
+              final foundTitle = result['title'] ?? result['name'] ?? 'Sem título';
+              AppLogger.info('✅ TMDB: Encontrado "$foundTitle" (com ano)');
+              return await _fetchDetails(result['id'], type);
+            }
+          } else if (searchRes.statusCode == 401) {
+            AppLogger.error('❌ TMDB: API key inválida ou expirada! Status 401');
+            return null;
+          } else if (searchRes.statusCode == 429) {
+            AppLogger.warning('⚠️ TMDB: Rate limit atingido. Aguardando...');
+            await Future.delayed(const Duration(seconds: 2));
+            // Continua para tentar sem ano
+          } else {
+            final errorBody = searchRes.body.length > 200 ? searchRes.body.substring(0, 200) : searchRes.body;
+            AppLogger.warning('⚠️ TMDB: Erro ${searchRes.statusCode} (com ano): $errorBody');
           }
-        } else {
-          AppLogger.warning('⚠️ TMDB: Erro ${searchRes.statusCode}: ${searchRes.body.substring(0, searchRes.body.length > 100 ? 100 : searchRes.body.length)}');
+        } catch (e) {
+          AppLogger.error('❌ TMDB: Erro na busca com ano: $e');
         }
       }
 
       // Se não encontrou com ano, tenta sem
-      final searchRes = await http.get(Uri.parse(searchUrl)).timeout(const Duration(seconds: 10));
-      AppLogger.info('📡 TMDB: Status ${searchRes.statusCode} (sem ano)');
-      if (searchRes.statusCode == 200) {
-        final searchData = json.decode(searchRes.body);
-        if (searchData['results'] != null && (searchData['results'] as List).isNotEmpty) {
-          final result = searchData['results'][0];
-          AppLogger.info('✅ TMDB: Encontrado "${result['title'] ?? result['name']}"');
-          return await _fetchDetails(result['id'], type);
+      try {
+        final searchRes = await http.get(Uri.parse(searchUrl)).timeout(const Duration(seconds: 15));
+        AppLogger.info('📡 TMDB: Status ${searchRes.statusCode} (sem ano)');
+        
+        if (searchRes.statusCode == 200) {
+          final searchData = json.decode(searchRes.body);
+          if (searchData['results'] != null && (searchData['results'] as List).isNotEmpty) {
+            final result = searchData['results'][0];
+            final foundTitle = result['title'] ?? result['name'] ?? 'Sem título';
+            AppLogger.info('✅ TMDB: Encontrado "$foundTitle" (sem ano)');
+            return await _fetchDetails(result['id'], type);
+          } else {
+            AppLogger.warning('⚠️ TMDB: Nenhum resultado encontrado para "$title"');
+          }
+        } else if (searchRes.statusCode == 401) {
+          AppLogger.error('❌ TMDB: API key inválida ou expirada! Status 401');
+          return null;
+        } else if (searchRes.statusCode == 429) {
+          AppLogger.warning('⚠️ TMDB: Rate limit atingido');
+          return null;
         } else {
-          AppLogger.warning('⚠️ TMDB: Nenhum resultado encontrado');
+          final errorBody = searchRes.body.length > 200 ? searchRes.body.substring(0, 200) : searchRes.body;
+          AppLogger.error('❌ TMDB: Erro ${searchRes.statusCode}: $errorBody');
         }
-      } else {
-        AppLogger.error('❌ TMDB: Erro ${searchRes.statusCode}: ${searchRes.body.substring(0, searchRes.body.length > 100 ? 100 : searchRes.body.length)}');
+      } catch (e) {
+        AppLogger.error('❌ TMDB: Erro na busca sem ano: $e');
       }
-    } catch (e) {
-      AppLogger.error('❌ TMDB: Erro ao buscar "$title"', error: e);
+    } catch (e, stackTrace) {
+      AppLogger.error('❌ TMDB: Erro ao buscar "$title": $e');
+      AppLogger.debug('Stack trace: $stackTrace');
     }
     return null;
   }
@@ -84,14 +150,19 @@ class TmdbService {
   static Future<TmdbMetadata?> _fetchDetails(int id, String type) async {
     try {
       final url = '$_baseUrl/$type/$id?api_key=$_apiKey&language=pt-BR&append_to_response=credits';
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
       
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        return TmdbMetadata.fromJson(data, type);
+        final metadata = TmdbMetadata.fromJson(data, type);
+        AppLogger.debug('✅ TMDB: Detalhes carregados - Rating: ${metadata.rating}, Descrição: ${metadata.overview?.isNotEmpty ?? false}');
+        return metadata;
+      } else {
+        AppLogger.warning('⚠️ TMDB: Erro ${res.statusCode} ao buscar detalhes do ID $id');
       }
-    } catch (e) {
-      AppLogger.error('Erro ao buscar detalhes TMDB', error: e);
+    } catch (e, stackTrace) {
+      AppLogger.error('❌ TMDB: Erro ao buscar detalhes do ID $id: $e');
+      AppLogger.debug('Stack trace: $stackTrace');
     }
     return null;
   }
