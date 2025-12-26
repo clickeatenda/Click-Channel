@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'adaptive_cached_image.dart';
 import '../models/content_item.dart';
 import '../models/epg_program.dart';
+import '../data/epg_service.dart';
 import 'meta_chips_widget.dart';
 
 /// GridView otimizado com lazy loading e suporte a TV remoto
@@ -104,19 +105,42 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
   bool _isFocused = false;
 
   EpgChannel? _findEpgForChannel(ContentItem channel) {
-    if (widget.epgChannels == null || widget.epgChannels!.isEmpty) return null;
-    final name = channel.title.trim().toLowerCase();
-    if (widget.epgChannels!.containsKey(name)) {
-      return widget.epgChannels![name];
+    if (widget.epgChannels == null || widget.epgChannels!.isEmpty) {
+      // Tenta usar EpgService.findChannelByName se não tem mapa
+      return EpgService.findChannelByName(channel.title);
     }
-    // Fuzzy match
+    
+    final name = channel.title.trim().toLowerCase();
+    // Remove sufixos comuns que podem atrapalhar o match
+    final cleanName = name
+        .replaceAll(RegExp(r'\s*(fhd|hd|sd|4k|uhd)\s*$'), '')
+        .replaceAll(RegExp(r'\s*\[.*?\]'), '')
+        .replaceAll(RegExp(r'\s*\(.*?\)'), '')
+        .trim();
+    
+    // Tenta match exato primeiro
+    if (widget.epgChannels!.containsKey(name) || widget.epgChannels!.containsKey(cleanName)) {
+      return widget.epgChannels![name] ?? widget.epgChannels![cleanName];
+    }
+    
+    // Fuzzy match melhorado
     for (final entry in widget.epgChannels!.entries) {
-      if (name.contains(entry.key.trim().toLowerCase()) || 
-          entry.key.trim().toLowerCase().contains(name)) {
+      final epgKey = entry.key.trim().toLowerCase();
+      final cleanEpgKey = epgKey
+          .replaceAll(RegExp(r'\s*(fhd|hd|sd|4k|uhd)\s*$'), '')
+          .replaceAll(RegExp(r'\s*\[.*?\]'), '')
+          .replaceAll(RegExp(r'\s*\(.*?\)'), '')
+          .trim();
+      
+      // Match se um contém o outro (após limpeza)
+      if (cleanName.contains(cleanEpgKey) || cleanEpgKey.contains(cleanName) ||
+          name.contains(epgKey) || epgKey.contains(name)) {
         return entry.value;
       }
     }
-    return null;
+    
+    // Fallback: usa EpgService
+    return EpgService.findChannelByName(channel.title);
   }
 
   @override
@@ -199,7 +223,9 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                           height: 1.2,
                         ),
                       ),
-                      if (widget.showMetaChips)
+                      // CRÍTICO: Sempre mostra MetaChipsWidget para filmes e séries (qualidade + rating)
+                      // Para canais, não mostra (mostra EPG em vez disso)
+                      if (widget.item.type != 'channel')
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: MetaChipsWidget(
@@ -208,34 +234,6 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                             iconSize: widget.metaIconSize,
                           ),
                         ),
-                      // Rating com estrelas (para filmes e séries)
-                      if (widget.item.rating > 0 && widget.item.type != 'channel') ...[
-                        const SizedBox(height: 3),
-                        Row(
-                          children: [
-                            ...List.generate(5, (index) {
-                              final starValue = index + 1;
-                              final rating = (widget.item.rating / 2).clamp(0.0, 5.0); // Converte 0-10 para 0-5
-                              if (rating >= starValue) {
-                                return const Icon(Icons.star, color: Colors.amber, size: 10);
-                              } else if (rating >= starValue - 0.5) {
-                                return const Icon(Icons.star_half, color: Colors.amber, size: 10);
-                              } else {
-                                return Icon(Icons.star_border, color: Colors.amber.withOpacity(0.3), size: 10);
-                              }
-                            }),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.item.rating.toStringAsFixed(1),
-                              style: const TextStyle(
-                                color: Colors.amber,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
                       // EPG display (SOMENTE para canais)
                       if (widget.epgChannels != null && widget.item.type == 'channel') ...[
                         const SizedBox(height: 2),

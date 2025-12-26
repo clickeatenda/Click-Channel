@@ -5,6 +5,7 @@ import '../screens/live_channels_screen.dart';
 import '../screens/movies_library_screen.dart';
 import '../screens/series_library_screen.dart';
 import '../screens/series_detail_screen.dart';
+import '../screens/splash_screen.dart';
 import '../screens/my_favorites_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../screens/settings_screen.dart';
@@ -30,6 +31,7 @@ class AppRoutes {
   static const String player = '/player';
   static const String category = '/category';
   static const String epg = '/epg';
+  static const String splash = '/splash';
 
   // Route generator
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
@@ -128,6 +130,16 @@ class AppRoutes {
           }
           return MaterialPageRoute(
             builder: (_) => EpgScreen(channel: channel),
+          );
+
+        case splash:
+          final args = routeSettings.arguments;
+          String? nextRoute;
+          if (args is Map && args['nextRoute'] is String) {
+            nextRoute = args['nextRoute'] as String;
+          }
+          return MaterialPageRoute(
+            builder: (_) => SplashScreen(nextRoute: nextRoute),
           );
 
         default:

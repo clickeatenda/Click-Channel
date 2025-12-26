@@ -16,6 +16,7 @@ import '../models/epg_program.dart';
 
 import '../widgets/media_player_screen.dart';
 import '../widgets/adaptive_cached_image.dart';
+import '../widgets/meta_chips_widget.dart';
 import '../routes/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -737,28 +738,32 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
       if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
         print('🎬 MoviesLibraryBody: via M3U (paginado)');
         
-        // Usa limite menor para primeira carga (mais rápido)
-        final maxItems = reset ? 800 : 1200;
+        // CRÍTICO: Usa cache já pré-carregado (não força reload)
+        // Se cache já existe, usa diretamente sem reprocessar tudo
+        // Isso torna o carregamento muito mais rápido
+        final maxItems = 999999; // Usa cache completo já pré-carregado
         
         final result = await M3uService.fetchPagedFromEnv(
           page: _currentPage,
           pageSize: _pageSize,
-          maxItems: maxItems,
+          maxItems: maxItems, // Usa cache completo (já processado)
           typeFilter: 'movie',
         );
 
         // Carrega meta apenas se reset (primeira vez) e não tem categorias ainda
+        // CRÍTICO: Usa cache completo já pré-carregado (não força reprocessamento)
+        Map<String, String> metaThumbs = categoryThumbs;
         if (reset && movieCategories.isEmpty) {
           final meta = await M3uService.fetchCategoryMetaFromEnv(
             typeFilter: 'movie',
-            maxItems: 400,
+            maxItems: 999999, // Usa cache completo
           );
-          categoryThumbs = meta.thumbs;
+          metaThumbs = meta.thumbs;
         }
         
-        // Featured e latest com limites menores
-        final featured = reset ? await M3uService.getDailyFeaturedMovies(count: 5, pool: 20, maxItems: 400) : featuredItems;
-        final latest = reset ? await M3uService.getLatestMovies(count: 10, maxItems: 400) : latestItems;
+        // Featured e latest com limites menores (usa cache já processado)
+        final featured = reset ? await M3uService.getDailyFeaturedMovies(count: 5, pool: 20, maxItems: 999999) : featuredItems;
+        final latest = reset ? await M3uService.getLatestMovies(count: 10, maxItems: 999999) : latestItems;
 
         // Preparar lista para enriquecimento e ordenação
         List<ContentItem> allItems = [];
@@ -768,12 +773,35 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
           allItems = [...movies, ...result.items];
         }
 
+        // CRÍTICO: Mostra UI primeiro, depois enriquece em background
+        // Isso torna o carregamento muito mais rápido
+        if (mounted) {
+          setState(() {
+            movieCategories = result.categories;
+            categoryCounts = result.categoryCounts;
+            categoryThumbs = metaThumbs;
+            featuredItems = featured;
+            latestItems = latest;
+            popularItems = ContentSorter.sortByPopularity(allItems.take(20).toList());
+            topRatedItems = ContentSorter.sortByRating(allItems.take(20).toList());
+            if (reset || movies.isEmpty) {
+              movies = allItems;
+            } else {
+              movies = allItems;
+            }
+            hasMore = movies.length < result.total;
+            loading = false;
+            loadingMore = false;
+            _applyFilters();
+          });
+        }
+        
         // Enriquecer com dados do TMDB (em background, não bloqueia UI)
         if (reset && allItems.isNotEmpty) {
           setState(() => enriching = true);
           // Enriquece mais itens (primeiros 200 para melhor cobertura)
           final sample = allItems.take(200).toList();
-          print('🔍 TMDB: Enriquecendo ${sample.length} itens...');
+          print('🔍 TMDB: Enriquecendo ${sample.length} itens em background...');
           final enriched = await ContentEnricher.enrichItems(sample);
           // Atualiza os itens enriquecidos na lista completa
           int enrichedCount = 0;
@@ -784,6 +812,18 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
             }
           }
           print('✅ TMDB: ${enrichedCount} itens enriquecidos com sucesso');
+          
+          // Atualiza UI com dados enriquecidos
+          if (mounted) {
+            setState(() {
+              movies = allItems;
+              featuredItems = featured;
+              latestItems = ContentSorter.sortByLatest(latest);
+              popularItems = ContentSorter.sortByPopularity(allItems.take(20).toList());
+              topRatedItems = ContentSorter.sortByRating(allItems.take(20).toList());
+              enriching = false;
+            });
+          }
         }
 
         // Criar listas ordenadas
@@ -1075,13 +1115,27 @@ class _SeriesBodyState extends State<_SeriesBody> {
       final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'series', maxItems: 400);
       final f = await M3uService.getCuratedFeaturedPrefer('series', count: 5, pool: 20, maxItems: 400);
       final l = await M3uService.getLatestByType('series', count: 10, maxItems: 400);
+      
+      // CRÍTICO: Enriquece séries com TMDB (em background, não bloqueia UI)
+      List<ContentItem> enrichedFeatured = f;
+      List<ContentItem> enrichedLatest = l;
+      if (f.isNotEmpty || l.isNotEmpty) {
+        print('🔍 TMDB: Enriquecendo séries (${f.length + l.length} itens)...');
+        final allSeries = [...f, ...l];
+        final enriched = await ContentEnricher.enrichItems(allSeries);
+        // Separa novamente
+        enrichedFeatured = enriched.take(f.length).toList();
+        enrichedLatest = enriched.skip(f.length).take(l.length).toList();
+        print('✅ TMDB: Séries enriquecidas com sucesso');
+      }
+      
       if (!mounted) return;
       setState(() {
         categories = meta.categories;
         counts = meta.counts;
         thumbs = meta.thumbs;
-        featured = f;
-        latest = l;
+        featured = enrichedFeatured;
+        latest = enrichedLatest;
         loading = false;
         _applyFilters();
       });
@@ -2065,6 +2119,16 @@ class _FeaturedCard extends StatelessWidget {
                     subtitle,
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
+                  // CRÍTICO: Mostra qualidade e rating para filmes e séries
+                  if (item.type != 'channel')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: MetaChipsWidget(
+                        item: item,
+                        fontSize: 10,
+                        iconSize: 12,
+                      ),
+                    ),
                   if (showEpg && epg != null) ...[
                     const SizedBox(height: 8),
                     Container(
@@ -2208,7 +2272,22 @@ class _SeriesThumbState extends State<_SeriesThumb> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
+                    // CRÍTICO: Mostra qualidade e rating usando MetaChipsWidget
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: MetaChipsWidget(
+                        item: widget.item,
+                        fontSize: 8,
+                        iconSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -2289,13 +2368,14 @@ class _ChannelThumbState extends State<_ChannelThumb> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
-                    if (quality.isNotEmpty)
+                    // CRÍTICO: Mostra qualidade e rating usando MetaChipsWidget
+                    if (widget.item.type != 'channel')
                       Padding(
-                        padding: const EdgeInsets.only(top: 3),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                          child: Text(quality, style: const TextStyle(color: Colors.white70, fontSize: 8)),
+                        padding: const EdgeInsets.only(top: 4),
+                        child: MetaChipsWidget(
+                          item: widget.item,
+                          fontSize: 8,
+                          iconSize: 10,
                         ),
                       ),
                   ],
@@ -2379,13 +2459,14 @@ class _MovieThumbState extends State<_MovieThumb> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.2)),
-                    if (quality.isNotEmpty)
+                    // CRÍTICO: Mostra qualidade e rating usando MetaChipsWidget
+                    if (widget.item.type != 'channel')
                       Padding(
-                        padding: const EdgeInsets.only(top: 3),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                          child: Text(quality, style: const TextStyle(color: Colors.white70, fontSize: 8)),
+                        padding: const EdgeInsets.only(top: 4),
+                        child: MetaChipsWidget(
+                          item: widget.item,
+                          fontSize: 8,
+                          iconSize: 10,
                         ),
                       ),
                   ],

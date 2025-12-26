@@ -114,34 +114,53 @@ class _SetupScreenState extends State<SetupScreen> {
     // CRÍTICO: Valida que o cache corresponde à URL salva ANTES de usar
     // Se não corresponder, limpa e força novo download
     final hasCache = await M3uService.hasCachedPlaylist(savedUrl);
-    if (hasCache && isReady) {
-      // Cache existe e playlist está marcada como pronta
+    
+    // CRÍTICO: Se tem cache válido, SEMPRE marca como pronto e vai direto para Home
+    // Não solicita novamente a lista se já tem cache válido
+    if (hasCache) {
+      // Garante que está marcado como pronto
+      if (!isReady) {
+        print('⚠️ Setup: Cache válido mas não marcado como pronto. Marcando...');
+        await Prefs.setPlaylistReady(true);
+      }
+      
       // Verifica se a URL salva corresponde à URL atual (validação extra)
       final currentUrl = Config.playlistRuntime;
-      if (currentUrl != null && currentUrl.trim() == savedUrl.trim()) {
-        print('✅ Setup: Cache válido encontrado para URL salva');
-        setState(() {
-          _statusMessage = 'Lista encontrada! Carregando...';
-          _progress = 1.0;
-          _isLoading = true;
-        });
-        
-        // Pequeno delay para mostrar a mensagem
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-        return;
-      } else {
-        print('⚠️ Setup: Cache existe mas URL não corresponde! Limpando...');
-        M3uService.clearMemoryCache();
-        await M3uService.clearAllCache(null);
-        await Prefs.setPlaylistReady(false);
+      if (currentUrl == null || currentUrl.trim() != savedUrl.trim()) {
+        print('⚠️ Setup: URL não sincronizada. Sincronizando...');
+        Config.setPlaylistOverride(savedUrl);
       }
+      
+      print('✅ Setup: Cache válido encontrado para URL salva - Navegando para Home');
+      setState(() {
+        _statusMessage = 'Lista encontrada! Carregando...';
+        _progress = 1.0;
+        _isLoading = true;
+      });
+      
+      // CRÍTICO: Pré-carrega categorias ANTES de navegar para Home
+      // Isso garante que a lista M3U esteja disponível imediatamente
+      print('📦 Setup: Pré-carregando categorias do cache...');
+      try {
+        await M3uService.preloadCategories(savedUrl);
+        print('✅ Setup: Categorias pré-carregadas com sucesso');
+      } catch (e) {
+        print('⚠️ Setup: Erro ao pré-carregar categorias: $e');
+        // Continua mesmo se preload falhar
+      }
+      
+      // Pequeno delay para mostrar a mensagem
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+      return;
     }
     
-    // Se não tem cache válido ou não está pronto, precisa baixar
+    // Se não tem cache válido, precisa baixar
     if (isReady) {
+      print('⚠️ Setup: Cache não encontrado mas marcado como pronto. Re-baixando...');
+      await Prefs.setPlaylistReady(false);
       setState(() {
         _statusMessage = 'Cache não encontrado, baixando novamente...';
       });

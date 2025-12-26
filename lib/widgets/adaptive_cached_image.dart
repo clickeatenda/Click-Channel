@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
@@ -74,8 +73,28 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> with SingleTi
       );
     }
 
-    final devicePixelRatio = ui.window.devicePixelRatio;
-    final targetWidth = widget.width != null ? (widget.width! * devicePixelRatio).toInt() : null;
+    // CRÍTICO: Valida width/height para evitar Infinity ou NaN
+    // Usa MediaQuery para obter devicePixelRatio de forma segura
+    int? targetWidth;
+    if (widget.width != null) {
+      final width = widget.width!;
+      // Valida se não é Infinity ou NaN
+      if (width.isFinite && !width.isNaN && width > 0 && width < 10000) {
+        try {
+          final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+          if (devicePixelRatio.isFinite && !devicePixelRatio.isNaN && devicePixelRatio > 0) {
+            final calculated = (width * devicePixelRatio).toInt();
+            // Valida se o resultado é válido
+            if (calculated > 0 && calculated.isFinite && calculated < 100000) {
+              targetWidth = calculated;
+            }
+          }
+        } catch (e) {
+          // Se MediaQuery falhar, não usa resize (usa imagem original)
+          print('⚠️ AdaptiveCachedImage: Erro ao calcular targetWidth: $e');
+        }
+      }
+    }
 
     // Debug: log URL para verificar se está sendo passada corretamente
     if (widget.url.isNotEmpty && widget.url.length < 100) {

@@ -197,7 +197,7 @@ class M3uService {
   // ============= MÉTODOS PARA SETUP SCREEN =============
   
   /// Verifica se existe cache local válido para a URL
-  /// IMPORTANTE: Cache é permanente - sempre válido se existir
+  /// IMPORTANTE: Cache é permanente - sempre válido se existir e não estiver corrompido
   static Future<bool> hasCachedPlaylist(String source) async {
     try {
       final file = await _getCacheFile(source);
@@ -205,10 +205,39 @@ class M3uService {
       if (await file.exists()) {
         final stat = await file.stat();
         final age = DateTime.now().difference(stat.modified);
-        print('🔍 M3uService: Cache existe, idade: ${age.inDays} dias');
-        // Cache é permanente - sempre válido se existir
-        print('✅ M3uService: Cache válido (permanente)!');
-        return true;
+        print('🔍 M3uService: Cache existe, idade: ${age.inDays} dias, tamanho: ${(stat.size / 1024).toStringAsFixed(1)} KB');
+        
+        // Verifica se arquivo não está vazio
+        if (stat.size == 0) {
+          print('⚠️ M3uService: Cache existe mas está vazio - inválido');
+          return false;
+        }
+        
+        // Valida integridade básica: verifica se tem pelo menos uma linha M3U válida
+        try {
+          final lines = await file.openRead()
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())
+              .take(20) // Lê apenas primeiras 20 linhas para validação rápida
+              .toList();
+          
+          // Deve ter pelo menos #EXTM3U ou #EXTINF para ser válido
+          final hasValidM3uHeader = lines.any((line) => 
+              line.trim().startsWith('#EXTM3U') || 
+              line.trim().startsWith('#EXTINF'));
+          
+          if (!hasValidM3uHeader) {
+            print('⚠️ M3uService: Cache existe mas não contém formato M3U válido');
+            return false;
+          }
+          
+          print('✅ M3uService: Cache válido (permanente) - formato M3U confirmado!');
+          return true;
+        } catch (e) {
+          print('⚠️ M3uService: Erro ao validar formato do cache: $e');
+          // Se não conseguir validar, assume válido (melhor que perder dados)
+          return true;
+        }
       }
       print('❌ M3uService: Arquivo de cache não existe');
       return false;
@@ -499,7 +528,19 @@ class M3uService {
       throw Exception('fetchPagedFromEnv suporta apenas filmes no momento');
     }
 
-    await _ensureMovieCache(source: source, maxItems: maxItems);
+    // CRÍTICO: Verifica se cache já está carregado antes de forçar reload
+    // Se cache já existe e corresponde à source, usa diretamente (muito mais rápido)
+    final cacheExists = _movieCache != null && 
+                       _movieCacheSource == source && 
+                       _movieCache!.isNotEmpty &&
+                       _movieCacheMaxItems >= maxItems;
+    
+    if (!cacheExists) {
+      print('📦 M3uService: Cache não existe ou não corresponde - carregando...');
+      await _ensureMovieCache(source: source, maxItems: maxItems);
+    } else {
+      print('⚡ M3uService: Usando cache existente (${_movieCache!.length} itens) - carregamento instantâneo!');
+    }
     
     // CRÍTICO: Se cache é null, retorna vazio (não há dados)
     if (_movieCache == null) {
@@ -1062,12 +1103,23 @@ class M3uService {
       return;
     }
 
-    // Evita recomputar se já temos cache suficiente
+    // CRÍTICO: Evita recomputar se já temos cache suficiente
+    // Se cache já existe e tem itens, usa diretamente (muito mais rápido)
     if (_movieCache != null &&
         _movieCacheSource == source &&
-        _movieCache!.isNotEmpty &&
-        _movieCacheMaxItems >= maxItems) {
-      return;
+        _movieCache!.isNotEmpty) {
+      // Se maxItems é menor ou igual ao que já temos, não precisa reprocessar
+      if (maxItems <= _movieCacheMaxItems) {
+        print('♻️ M3uService: Cache já existe e é suficiente - usando cache existente (${_movieCache!.length} itens)');
+        return;
+      }
+      // Se maxItems é maior mas cache já tem muitos itens, também não reprocessa
+      // (evita reprocessar 374k itens toda vez)
+      if (_movieCache!.length >= 1000 && maxItems > _movieCacheMaxItems) {
+        print('♻️ M3uService: Cache já tem ${_movieCache!.length} itens - usando cache existente (não reprocessa)');
+        _movieCacheMaxItems = maxItems; // Atualiza maxItems sem reprocessar
+        return;
+      }
     }
 
     final key = '$source::$maxItems';
@@ -1207,9 +1259,20 @@ class M3uService {
       : (typeFilter == 'channel')
         ? (_channelCache ?? const <ContentItem>[])
         : (_movieCache ?? const <ContentItem>[]);
-    return base
+    
+    final filtered = base
       .where((e) => e.group.trim().toLowerCase() == normalized)
       .toList();
+    
+    // Debug: verifica quantos itens têm imagem
+    final withImage = filtered.where((e) => e.image.isNotEmpty).length;
+    print('📂 fetchCategoryItemsFromEnv($category, $typeFilter): ${filtered.length} itens, ${withImage} com imagem');
+    
+    if (withImage == 0 && filtered.isNotEmpty) {
+      print('⚠️ fetchCategoryItemsFromEnv: Nenhum item tem imagem! Primeiro item: ${filtered.first.title}, image: "${filtered.first.image}"');
+    }
+    
+    return filtered;
   }
 
   /// Retorna um mapa categoria -> thumb (primeira imagem encontrada) e contagens.
@@ -1260,13 +1323,24 @@ class M3uService {
     for (final it in list) {
       final baseTitle = extractSeriesBaseTitle(it.title);
       if (!map.containsKey(baseTitle)) {
-        // Usa a primeira imagem disponível para a capa da série
-        final cover = it.image.isNotEmpty
-            ? it.image
-            : list.firstWhere(
-                (x) => extractSeriesBaseTitle(x.title) == baseTitle && x.image.isNotEmpty,
-                orElse: () => it,
-              ).image;
+        // CRÍTICO: Busca a melhor imagem disponível para a capa da série
+        // Tenta primeiro o item atual, depois busca em todos os episódios da série
+        String cover = '';
+        if (it.image.isNotEmpty) {
+          cover = it.image;
+        } else {
+          // Busca em todos os episódios da mesma série
+          final seriesEpisodes = list.where(
+            (x) => extractSeriesBaseTitle(x.title) == baseTitle && x.image.isNotEmpty
+          ).toList();
+          if (seriesEpisodes.isNotEmpty) {
+            cover = seriesEpisodes.first.image;
+            print('📺 fetchSeriesAggregatedForCategory: Imagem encontrada para "$baseTitle" em outro episódio');
+          } else {
+            print('⚠️ fetchSeriesAggregatedForCategory: Nenhuma imagem encontrada para "$baseTitle"');
+          }
+        }
+        
         map[baseTitle] = ContentItem(
           title: baseTitle,
           url: it.url, // um URL de exemplo (episódio) será substituído na tela de detalhes
@@ -1277,6 +1351,21 @@ class M3uService {
           quality: it.quality,
           audioType: it.audioType,
         );
+      } else {
+        // Se já existe, atualiza a imagem se a atual for melhor (não vazia)
+        final existing = map[baseTitle]!;
+        if (existing.image.isEmpty && it.image.isNotEmpty) {
+          map[baseTitle] = ContentItem(
+            title: existing.title,
+            url: existing.url,
+            image: it.image,
+            group: existing.group,
+            type: existing.type,
+            isSeries: existing.isSeries,
+            quality: existing.quality,
+            audioType: existing.audioType,
+          );
+        }
       }
     }
     final aggregated = map.values.toList()
