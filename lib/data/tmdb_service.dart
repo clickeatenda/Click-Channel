@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/config.dart';
+import '../core/prefs.dart';
 import '../core/utils/logger.dart';
 
 /// Serviço para buscar metadados de filmes e séries do TMDB
@@ -10,44 +11,62 @@ class TmdbService {
 
   /// Inicializa a API key do TMDB (lê de .env via Config)
   static void init() {
-    // Lê a chave do arquivo .env através de Config
-    _apiKey = Config.tmdbApiKey;
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      AppLogger.warning('⚠️ TMDB_API_KEY não configurada (ver .env)');
-    } else {
-      AppLogger.info('✅ TMDB API key carregada (via .env)');
-    }
-
-    // Testa a API key imediatamente após inicialização
-    _testApiKey();
-  }
-  
-  /// Testa se a API key está funcionando
-  static Future<void> _testApiKey() async {
-    if (_apiKey == null || _apiKey!.isEmpty) return;
-    
+    // Prioriza chave configurada em runtime via Prefs (Settings)
     try {
-      // Testa com um filme conhecido (ID 550 = Fight Club)
-      final testUrl = '$_baseUrl/movie/550?api_key=$_apiKey';
-      final res = await http.get(Uri.parse(testUrl)).timeout(const Duration(seconds: 5));
-      
-      if (res.statusCode == 200) {
-        AppLogger.info('✅ TMDB: API key válida e funcionando');
-      } else if (res.statusCode == 401) {
-        AppLogger.error('❌ TMDB: API key INVÁLIDA ou EXPIRADA! Status 401');
-        AppLogger.error('❌ TMDB: Verifique se a API key está correta e ativa');
-      } else if (res.statusCode == 429) {
-        AppLogger.warning('⚠️ TMDB: Rate limit atingido no teste inicial');
+      final prefKey = Prefs.getTmdbApiKey();
+      if (prefKey != null && prefKey.isNotEmpty) {
+        _apiKey = prefKey.trim();
+        AppLogger.info('✅ TMDB API key carregada (via Prefs/Settings)');
       } else {
-        AppLogger.warning('⚠️ TMDB: Status ${res.statusCode} no teste da API key');
+        // Lê a chave do arquivo .env através de Config como fallback
+        _apiKey = Config.tmdbApiKey;
+        if (_apiKey == null || _apiKey!.isEmpty) {
+          AppLogger.warning('⚠️ TMDB_API_KEY não configurada (ver .env ou Settings)');
+        } else {
+          AppLogger.info('✅ TMDB API key carregada (via .env)');
+        }
       }
     } catch (e) {
-      AppLogger.warning('⚠️ TMDB: Erro ao testar API key: $e');
+      _apiKey = Config.tmdbApiKey;
+      if (_apiKey == null || _apiKey!.isEmpty) {
+        AppLogger.warning('⚠️ TMDB_API_KEY não configurada (erro ao ler Prefs)');
+      }
     }
+
+    // Dispara teste assíncrono da chave (não bloqueia init)
+    testApiKeyNow();
   }
+  
+  
 
   /// Verifica se a API key está configurada
   static bool get isConfigured => _apiKey != null && _apiKey!.isNotEmpty;
+
+  /// Testa a API key atual de forma síncrona (awaitable) e retorna true se válida
+  static Future<bool> testApiKeyNow() async {
+    if (_apiKey == null || _apiKey!.isEmpty) return false;
+
+    try {
+      final testUrl = '$_baseUrl/movie/550?api_key=$_apiKey';
+      final res = await http.get(Uri.parse(testUrl)).timeout(const Duration(seconds: 5));
+      if (res.statusCode == 200) {
+        AppLogger.info('✅ TMDB: API key válida e funcionando (teste)');
+        return true;
+      } else if (res.statusCode == 401) {
+        AppLogger.error('❌ TMDB: API key INVÁLIDA ou EXPIRADA! Status 401 (teste)');
+        return false;
+      } else if (res.statusCode == 429) {
+        AppLogger.warning('⚠️ TMDB: Rate limit atingido no teste inicial');
+        return false;
+      } else {
+        AppLogger.warning('⚠️ TMDB: Status ${res.statusCode} no teste da API key');
+        return false;
+      }
+    } catch (e) {
+      AppLogger.warning('⚠️ TMDB: Erro ao testar API key: $e');
+      return false;
+    }
+  }
 
   /// Busca informações completas de um filme/série pelo título
   static Future<TmdbMetadata?> searchContent(String title, {String? year, String type = 'movie'}) async {
@@ -304,7 +323,46 @@ class TmdbMetadata {
     this.cast = const [],
     this.director,
     required this.type,
-  });
+    });
+
+    /// Serializa metadados para cache local
+    Map<String, dynamic> toCacheJson() {
+      return {
+        'id': id,
+        'title': title,
+        'overview': overview,
+        'rating': rating,
+        'popularity': popularity,
+        'releaseDate': releaseDate,
+        'posterPath': posterPath,
+        'backdropPath': backdropPath,
+        'genres': genres,
+        'runtime': runtime,
+        'type': type,
+      };
+    }
+
+    /// Reconstrói metadados a partir do formato de cache
+    factory TmdbMetadata.fromCacheJson(Map<String, dynamic> json) {
+      return TmdbMetadata(
+        id: json['id'] ?? 0,
+        title: json['title'] ?? '',
+        overview: json['overview'],
+        rating: (json['rating'] ?? 0.0).toDouble(),
+        popularity: (json['popularity'] ?? 0.0).toDouble(),
+        releaseDate: json['releaseDate'],
+        posterPath: json['posterPath'],
+        backdropPath: json['backdropPath'],
+        genres: (json['genres'] as List?)?.map((e) => e.toString()).toList() ?? [],
+        runtime: json['runtime'],
+        budget: null,
+        revenue: null,
+        languages: const [],
+        cast: const [],
+        director: null,
+        type: json['type'] ?? 'movie',
+      );
+    }
 
   factory TmdbMetadata.fromJson(Map<String, dynamic> json, String type) {
     // Extrair gêneros

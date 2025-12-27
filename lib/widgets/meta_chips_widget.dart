@@ -38,17 +38,21 @@ class MetaChipsWidget extends StatelessWidget {
       chips.add(_buildChip(Icons.high_quality, qualityLabel));
     }
     
-    // CRÍTICO: Mostra rating se for filme/série E tiver rating válido (> 0)
-    // Rating do TMDB vem em escala 0-10, então sempre divide por 2 para mostrar 0-5
-    if (item.type != 'channel' && item.rating > 0) {
-      // Rating do TMDB é sempre 0-10, então divide por 2 para mostrar 0-5 estrelas
-      final displayRating = (item.rating / 2).toStringAsFixed(1);
-      chips.add(_buildChip(Icons.star, '$displayRating ★'));
-      // Debug: verificar se rating está sendo exibido
-      debugPrint('⭐ MetaChipsWidget: Exibindo rating ${item.rating} (${displayRating} ★) para "${item.title}"');
-    } else if (item.type != 'channel') {
-      // Debug: verificar por que rating não está sendo exibido
-      debugPrint('⚠️ MetaChipsWidget: Rating não exibido para "${item.title}" - rating: ${item.rating}, type: ${item.type}');
+    // CRÍTICO: Mostra rating para filmes e séries (baseado no TMDB).
+    // Mesmo que o rating ainda seja 0 (ainda não enriquecido), exibimos um placeholder
+    // para garantir consistência visual. TMDB fornece rating 0-10; aqui mostramos 0-5 com 1 casa.
+    if (item.type != 'channel') {
+      String ratingLabel;
+      if (item.rating > 0) {
+        // Mostra a avaliação no formato 0-10 (ex: 6.8/10) para coincidir com a tela de detalhe
+        ratingLabel = '${item.rating.toStringAsFixed(1)}/10';
+        debugPrint('⭐ MetaChipsWidget: Exibindo rating ${item.rating} (${ratingLabel}) para "${item.title}"');
+      } else {
+        // Placeholder enquanto o enriquecimento não ocorrer
+        ratingLabel = '— ★';
+        debugPrint('ℹ️ MetaChipsWidget: Placeholder de rating para "${item.title}" (rating ainda não disponível)');
+      }
+      chips.add(_buildChip(Icons.star, ratingLabel));
     }
     
     // Se não tem chips, retorna container vazio

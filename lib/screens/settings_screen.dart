@@ -7,6 +7,7 @@ import '../core/utils/validators.dart';
 import '../core/utils/logger.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
+import '../data/tmdb_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
 
@@ -51,6 +52,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _epgButtonFocusNode.addListener(() {
       if (mounted) setState(() => _epgButtonHasFocus = _epgButtonFocusNode.hasFocus);
     });
+    // TMDB key controller (load from Prefs if set)
+    _tmdbController = TextEditingController(text: Prefs.getTmdbApiKey() ?? '');
+    _tmdbFocusNode.addListener(() {
+      if (mounted) setState(() => _tmdbHasFocus = _tmdbFocusNode.hasFocus);
+    });
+  }
+
+  Future<void> _saveTmdbKey() async {
+    final key = _tmdbController.text.trim();
+    try {
+      await Prefs.setTmdbApiKey(key.isEmpty ? null : key);
+      // Re-init service so it picks up runtime key
+      TmdbService.init();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chave TMDB salva')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar chave TMDB: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _testTmdbKey() async {
+    final key = _tmdbController.text.trim();
+    if (key.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insira a chave TMDB antes de testar')));
+      return;
+    }
+    try {
+      // Persiste temporariamente to ensure TmdbService reads the updated key
+      await Prefs.setTmdbApiKey(key);
+      // Force reload
+      TmdbService.init();
+      final ok = await TmdbService.testApiKeyNow();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ok ? '✅ Chave TMDB válida' : '❌ Chave inválida ou erro (veja logs)')),
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao testar chave: $e')));
+    }
   }
 
   @override
@@ -61,6 +109,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _buttonFocusNode.dispose();
     _epgUrlFocusNode.dispose();
     _epgButtonFocusNode.dispose();
+    _tmdbController.dispose();
+    _tmdbFocusNode.dispose();
     super.dispose();
   }
 
@@ -70,6 +120,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   
   bool _isDownloadingEpg = false;
   String _epgDownloadStatus = '';
+  late TextEditingController _tmdbController;
+  final FocusNode _tmdbFocusNode = FocusNode();
+  bool _tmdbHasFocus = false;
 
   Future<void> _applyPlaylist() async {
     final value = _playlistController.text.trim();
@@ -355,6 +408,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
+                    // TMDB API Key (runtime) - moved to top for visibility
+                    const Text(
+                      'TMDB (enriquecimento de metadados)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GlassPanel(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'TMDB API Key',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _tmdbHasFocus ? AppColors.primary : Colors.transparent,
+                                  width: 3,
+                                ),
+                              ),
+                              child: TextField(
+                                controller: _tmdbController,
+                                focusNode: _tmdbFocusNode,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  hintText: 'Insira a TMDB API key (opcional)',
+                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                  filled: true,
+                                  fillColor: Colors.white.withOpacity(0.03),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: _saveTmdbKey,
+                                  child: const Text('Salvar chave'),
+                                ),
+                                const SizedBox(width: 12),
+                                ElevatedButton(
+                                  onPressed: _testTmdbKey,
+                                  child: const Text('Testar chave'),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                                ),
+                                const SizedBox(width: 12),
+                                TextButton(
+                                  onPressed: () async {
+                                    _tmdbController.text = '';
+                                    await Prefs.setTmdbApiKey(null);
+                                    TmdbService.init();
+                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chave TMDB removida')));
+                                  },
+                                  child: const Text('Limpar'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'A chave permite enriquecer capas e descrições. Se não configurada, o app não mostrará metadados TMDB.',
+                              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
                     // Playlist (M3U) Input
                     const Text(
                       'Playlist IPTV (M3U)',
@@ -449,10 +587,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         // Reset
                                         await Prefs.setPlaylistOverride(null);
                                         await Prefs.setPlaylistReady(false);
+                                        // Clear both memory and disk caches to ensure no stale data
+                                        M3uService.clearMemoryCache();
                                         await M3uService.clearAllCache(null);
                                         await EpgService.clearCache();
+                                        Config.setPlaylistOverride(null);
+                                        // Recreate install marker to leave the app in a clean configured state
+                                        await M3uService.writeInstallMarker();
                                         if (mounted) {
                                           messenger.showSnackBar(const SnackBar(content: Text('Reset realizado: playlist e cache limpos')));
+                                          // Restart initialization to ensure UI reflects cleared state
+                                          Navigator.pushReplacementNamed(context, '/splash', arguments: {'nextRoute': '/settings'});
                                         }
                                       }
                                     },
