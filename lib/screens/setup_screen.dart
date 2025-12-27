@@ -132,11 +132,11 @@ class _SetupScreenState extends State<SetupScreen> {
       }
       
       print('✅ Setup: Cache válido encontrado para URL salva - Navegando para Home');
-      setState(() {
-        _statusMessage = 'Lista encontrada! Carregando...';
-        _progress = 1.0;
-        _isLoading = true;
-      });
+        setState(() {
+          _statusMessage = 'Lista encontrada! Carregando...';
+          _progress = 1.0;
+          _isLoading = true;
+        });
       
       // CRÍTICO: Pré-carrega categorias ANTES de navegar para Home
       // Isso garante que a lista M3U esteja disponível imediatamente
@@ -148,13 +148,13 @@ class _SetupScreenState extends State<SetupScreen> {
         print('⚠️ Setup: Erro ao pré-carregar categorias: $e');
         // Continua mesmo se preload falhar
       }
-      
-      // Pequeno delay para mostrar a mensagem
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-      return;
+        
+        // Pequeno delay para mostrar a mensagem
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+        return;
     }
     
     // Se não tem cache válido, precisa baixar

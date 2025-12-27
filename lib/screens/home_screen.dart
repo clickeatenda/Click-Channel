@@ -559,10 +559,26 @@ class _HomeBodyState extends State<_HomeBody> {
           M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600),
         ]);
         
+        // CRÍTICO: Enriquece filmes e séries com TMDB (em background, não bloqueia UI)
+        List<ContentItem> enrichedMovies = results[0];
+        List<ContentItem> enrichedSeries = results[1];
+        
+        if (results[0].isNotEmpty) {
+          print('🔍 TMDB: Enriquecendo filmes em destaque (${results[0].length} itens)...');
+          enrichedMovies = await ContentEnricher.enrichItems(results[0]);
+          print('✅ TMDB: Filmes em destaque enriquecidos com sucesso');
+        }
+        
+        if (results[1].isNotEmpty) {
+          print('🔍 TMDB: Enriquecendo séries em destaque (${results[1].length} itens)...');
+          enrichedSeries = await ContentEnricher.enrichItems(results[1]);
+          print('✅ TMDB: Séries em destaque enriquecidas com sucesso');
+        }
+        
         if (!mounted) return;
         setState(() {
-          featuredMovies = results[0];
-          featuredSeries = results[1];
+          featuredMovies = enrichedMovies;
+          featuredSeries = enrichedSeries;
           featuredChannels = results[2];
           loading = false;
         });
@@ -622,6 +638,7 @@ class _HomeBodyState extends State<_HomeBody> {
             _FeaturedCarousel(
               items: (featuredChannels.toList()..shuffle()).take(10).toList(),
               title: 'Canais em destaque',
+              showEpg: true, // CRÍTICO: Mostra EPG nos cards de canais
             ),
             const SizedBox(height: 20),
           ],
@@ -764,6 +781,27 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
         // Featured e latest com limites menores (usa cache já processado)
         final featured = reset ? await M3uService.getDailyFeaturedMovies(count: 5, pool: 20, maxItems: 999999) : featuredItems;
         final latest = reset ? await M3uService.getLatestMovies(count: 10, maxItems: 999999) : latestItems;
+        
+        // CRÍTICO: Enriquece featuredItems e latestItems com TMDB (banners e últimos adicionados)
+        List<ContentItem> enrichedFeatured = featured;
+        List<ContentItem> enrichedLatest = latest;
+        if (reset && (featured.isNotEmpty || latest.isNotEmpty)) {
+          print('🔍 TMDB: Enriquecendo ${featured.length} filmes em destaque + ${latest.length} últimos adicionados...');
+          final allToEnrich = <ContentItem>[];
+          if (featured.isNotEmpty) allToEnrich.addAll(featured);
+          if (latest.isNotEmpty) allToEnrich.addAll(latest);
+          
+          final enriched = await ContentEnricher.enrichItems(allToEnrich);
+          
+          // Separa novamente
+          if (featured.isNotEmpty) {
+            enrichedFeatured = enriched.take(featured.length).toList();
+          }
+          if (latest.isNotEmpty) {
+            enrichedLatest = enriched.skip(featured.length).take(latest.length).toList();
+          }
+          print('✅ TMDB: Filmes enriquecidos com sucesso (${enrichedFeatured.length} featured, ${enrichedLatest.length} latest)');
+        }
 
         // Preparar lista para enriquecimento e ordenação
         List<ContentItem> allItems = [];
@@ -780,10 +818,11 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
             movieCategories = result.categories;
             categoryCounts = result.categoryCounts;
             categoryThumbs = metaThumbs;
-            featuredItems = featured;
-            latestItems = latest;
-            popularItems = ContentSorter.sortByPopularity(allItems.take(20).toList());
-            topRatedItems = ContentSorter.sortByRating(allItems.take(20).toList());
+            featuredItems = enrichedFeatured;
+            latestItems = enrichedLatest;
+            // Removido: popularItems e topRatedItems não são mais exibidos
+            popularItems = [];
+            topRatedItems = [];
             if (reset || movies.isEmpty) {
               movies = allItems;
             } else {
@@ -817,8 +856,8 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
           if (mounted) {
             setState(() {
               movies = allItems;
-              featuredItems = featured;
-              latestItems = ContentSorter.sortByLatest(latest);
+              featuredItems = enrichedFeatured;
+              latestItems = ContentSorter.sortByLatest(enrichedLatest);
               popularItems = ContentSorter.sortByPopularity(allItems.take(20).toList());
               topRatedItems = ContentSorter.sortByRating(allItems.take(20).toList());
               enriching = false;
@@ -829,14 +868,14 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
         // Criar listas ordenadas
         final popular = ContentSorter.sortByPopularity(allItems.take(20).toList());
         final topRated = ContentSorter.sortByRating(allItems.take(20).toList());
-        final latestSorted = ContentSorter.sortByLatest(latest);
+        final latestSorted = ContentSorter.sortByLatest(enrichedLatest);
 
         if (mounted) {
           setState(() {
             movieCategories = result.categories;
             categoryCounts = result.categoryCounts;
             // categoryThumbs já foi carregado acima se reset
-            featuredItems = featured;
+            featuredItems = enrichedFeatured;
             latestItems = latestSorted;
             popularItems = popular;
             topRatedItems = topRated;
@@ -936,42 +975,6 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
             ],
           ),
           const SizedBox(height: 24),
-          // Mais Vistos (Popularidade)
-          if (popularItems.isNotEmpty) ...[
-            const _SectionTitle(title: 'Mais Vistos'),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 200,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: popularItems.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) => SizedBox(
-                  width: 120,
-                  child: _MovieThumb(item: popularItems[index]),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-          // Mais Avaliados (Rating)
-          if (topRatedItems.isNotEmpty) ...[
-            const _SectionTitle(title: 'Mais Avaliados'),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 200,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: topRatedItems.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) => SizedBox(
-                  width: 120,
-                  child: _MovieThumb(item: topRatedItems[index]),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
           // Últimos Adicionados
           if (latest.isNotEmpty) ...[
             const _SectionTitle(title: 'Últimos Adicionados'),
@@ -2049,7 +2052,6 @@ class _FeaturedCard extends StatelessWidget {
 
     EpgChannel? epg;
     EpgProgram? current;
-    EpgProgram? next;
     if (showEpg && item.type == 'channel') {
       final epgMap = EpgService.getAllChannels().asMap().map((_, c) => MapEntry(c.displayName.trim().toLowerCase(), c));
       final name = item.title.trim().toLowerCase();
@@ -2064,7 +2066,6 @@ class _FeaturedCard extends StatelessWidget {
       }
       if (epg != null) {
         current = epg.currentProgram;
-        next = epg.nextProgram;
       }
     }
 
@@ -2129,82 +2130,64 @@ class _FeaturedCard extends StatelessWidget {
                         iconSize: 12,
                       ),
                     ),
-                  if (showEpg && epg != null) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  // CRÍTICO: Para canais, mostra qualidade + EPG compacto
+                  if (item.type == 'channel') ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(
                         children: [
-                          if (current != null) ...[
-                            Row(
-                              children: [
-                                const Icon(Icons.play_circle_filled, color: Colors.greenAccent, size: 16),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        current.title,
-                                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${current.startTimeFormatted} - ${current.endTimeFormatted}',
-                                        style: const TextStyle(color: Colors.white70, fontSize: 10),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (next != null) ...[
-                              const SizedBox(height: 8),
-                              Row(
+                          // Qualidade
+                          if (item.quality.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white10,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.schedule, color: Colors.orangeAccent, size: 14),
-                                  const SizedBox(width: 8),
-                                  Expanded(
+                                  const Icon(Icons.high_quality, color: Colors.white70, size: 12),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    item.quality.toUpperCase(),
+                                    style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          // EPG compacto ao lado
+                          if (showEpg && epg != null && current != null) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.greenAccent.withOpacity(0.5)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.live_tv, color: Colors.greenAccent, size: 12),
+                                  const SizedBox(width: 4),
+                                  Flexible(
                                     child: Text(
-                                      'Próximo: ${next.title} (${next.startTimeFormatted})',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                      current.title,
+                                      style: const TextStyle(color: Colors.greenAccent, fontSize: 10),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ] else ...[
-                            const Text(
-                              'EPG disponível na tela Canais',
-                              style: TextStyle(color: Colors.white54, fontSize: 11),
                             ),
                           ],
                         ],
                       ),
                     ),
                   ],
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      '',
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -2322,8 +2305,6 @@ class _ChannelThumbState extends State<_ChannelThumb> {
   Widget build(BuildContext context) {
     final title = widget.item.title;
     final image = widget.item.image;
-    final quality = (widget.item.quality).toUpperCase();
-    
     return Focus(
       onFocusChange: (f) => setState(() => _focused = f),
       onKeyEvent: (node, event) {
@@ -2414,8 +2395,6 @@ class _MovieThumbState extends State<_MovieThumb> {
   Widget build(BuildContext context) {
     final title = widget.item.title;
     final image = widget.item.image;
-    final quality = (widget.item.quality).toUpperCase();
-    
     return Focus(
       onFocusChange: (f) => setState(() => _focused = f),
       onKeyEvent: (node, event) {

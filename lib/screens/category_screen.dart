@@ -9,6 +9,8 @@ import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
 import '../models/epg_program.dart';
 import '../core/config.dart';
+import '../core/utils/logger.dart';
+import '../utils/content_enricher.dart';
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
 
@@ -34,7 +36,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   
   // Filtros
   String _qualityFilter = 'all'; // all, 4k, fhd, hd
-  String _sortBy = 'default'; // default, name, quality
+  String _sortBy = 'default'; // default, name, quality, alphabetical, rating, latest
 
   @override
   void initState() {
@@ -92,26 +94,110 @@ class _CategoryScreenState extends State<CategoryScreen> {
         );
       }
     } catch (e) {
-      print('❌ CategoryScreen: Erro ao carregar itens: $e');
+      AppLogger.error('❌ CategoryScreen: Erro ao carregar itens', error: e);
       data = [];
     }
 
+    // CRÍTICO: Mostra UI primeiro, depois enriquece com TMDB em background
     if (mounted) {
       setState(() {
         items = data;
         filteredItems = _applyFilters(data);
         visibleCount = filteredItems.length > pageSize ? pageSize : filteredItems.length;
         // Log útil para depuração em device
-        try {
-          // ignore: avoid_print
-          print('📂 CategoryScreen "${widget.categoryName}" (${widget.type}) carregou ${items.length} itens');
-        } catch (_) {}
+        AppLogger.info('📂 CategoryScreen "${widget.categoryName}" (${widget.type}) carregou ${items.length} itens');
         if (items.isNotEmpty) {
           final withImage = items.where((i) => i.image.isNotEmpty).toList();
           bannerItem = withImage.isNotEmpty ? withImage[Random().nextInt(withImage.length)] : items.first;
         }
         loading = false;
       });
+    }
+    
+    // Enriquece com TMDB em background (não bloqueia UI)
+    // Enriquece banner e TODOS os itens visíveis do grid
+    if (data.isNotEmpty) {
+      AppLogger.info('🔍 TMDB: Enriquecendo itens da categoria "${widget.categoryName}" (${widget.type})...');
+      // CRÍTICO: Enriquece TODOS os itens visíveis (até pageSize = 240)
+      // Isso garante que todos os itens exibidos tenham TMDB
+      final itemsToEnrich = <ContentItem>[];
+      if (bannerItem != null) {
+        itemsToEnrich.add(bannerItem!);
+        AppLogger.info('🔍 TMDB: Banner incluído: "${bannerItem!.title}"');
+      }
+      // Enriquece todos os itens visíveis (não apenas 100)
+      final gridItems = data.take(pageSize).toList();
+      itemsToEnrich.addAll(gridItems);
+      
+      AppLogger.info('🔍 TMDB: Enriquecendo ${itemsToEnrich.length} itens (${bannerItem != null ? "1 banner + " : ""}${gridItems.length} do grid)...');
+      AppLogger.debug('🔍 TMDB: Primeiros 3 itens para enriquecer:');
+      for (int i = 0; i < itemsToEnrich.length && i < 3; i++) {
+        AppLogger.debug('  [$i] "${itemsToEnrich[i].title}" - Rating atual: ${itemsToEnrich[i].rating}');
+      }
+      
+      final enriched = await ContentEnricher.enrichItems(itemsToEnrich);
+      final enrichedWithRating = enriched.where((e) => e.rating > 0).length;
+      AppLogger.info('✅ TMDB: ${enriched.length} itens processados, $enrichedWithRating com rating');
+      
+      // Debug: mostra primeiros 3 itens enriquecidos
+      AppLogger.debug('🔍 TMDB: Primeiros 3 itens após enriquecimento:');
+      for (int i = 0; i < enriched.length && i < 3; i++) {
+        AppLogger.debug('  [$i] "${enriched[i].title}" - Rating: ${enriched[i].rating}');
+      }
+      
+      // CRÍTICO: Atualiza itens usando índice direto (ordem preservada)
+      final updatedItems = <ContentItem>[];
+      int enrichedIndex = 0;
+      
+      // Atualiza banner se foi enriquecido
+      ContentItem? updatedBanner = bannerItem;
+      if (bannerItem != null && enriched.isNotEmpty) {
+        updatedBanner = enriched[enrichedIndex++];
+        AppLogger.info('✅ TMDB: Banner "${updatedBanner.title}" - Rating: ${updatedBanner.rating} (original: ${bannerItem!.rating})');
+      }
+      
+      // Atualiza itens do grid usando índice direto
+      for (int i = 0; i < data.length; i++) {
+        if (i < gridItems.length && enrichedIndex < enriched.length) {
+          // Item está na lista de enriquecidos
+          final enrichedItem = enriched[enrichedIndex++];
+          updatedItems.add(enrichedItem);
+          
+          // Debug: mostra primeiros 5 itens enriquecidos
+          if (i < 5) {
+            final ratingChanged = enrichedItem.rating != data[i].rating;
+            AppLogger.info('✅ TMDB: Item[$i] "${enrichedItem.title}" - Rating: ${enrichedItem.rating} (original: ${data[i].rating}) ${ratingChanged ? "✅ MUDOU" : "❌ IGUAL"}');
+          }
+        } else {
+          // Item não foi enriquecido, mantém original
+          updatedItems.add(data[i]);
+        }
+      }
+      
+      final finalItemsWithRating = updatedItems.where((e) => e.rating > 0).length;
+      AppLogger.info('✅ TMDB: ${finalItemsWithRating}/${updatedItems.length} itens com rating após atualização');
+      
+      // CRÍTICO: Força atualização do estado mesmo se não houver mudanças aparentes
+      if (mounted) {
+        setState(() {
+          // Força nova lista para garantir que o Flutter detecte mudanças
+          items = List.from(updatedItems);
+          filteredItems = _applyFilters(items);
+          if (updatedBanner != null) {
+            bannerItem = updatedBanner;
+          }
+        });
+        
+        // Verifica se os dados foram realmente aplicados
+        final finalItemsWithRating = filteredItems.where((e) => e.rating > 0).length;
+        AppLogger.info('✅ TMDB: Estado atualizado - ${finalItemsWithRating} itens filtrados com rating');
+        
+        // Debug: mostra primeiros 3 itens para verificar
+        for (int i = 0; i < filteredItems.length && i < 3; i++) {
+          final item = filteredItems[i];
+          AppLogger.debug('📋 Item[$i]: "${item.title}" - Rating: ${item.rating}, Type: ${item.type}');
+        }
+      }
     }
   }
 
@@ -125,19 +211,37 @@ class _CategoryScreenState extends State<CategoryScreen> {
       return true;
     }).toList();
     
-    if (_sortBy == 'name') {
-      result.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
-    } else if (_sortBy == 'quality') {
-      result.sort((a, b) {
-        int qScore(String q) {
-          q = q.toLowerCase();
-          if (q.contains('4k') || q.contains('uhd')) return 4;
-          if (q.contains('fhd') || q.contains('fullhd')) return 3;
-          if (q.contains('hd')) return 2;
-          return 1;
-        }
-        return qScore(b.quality).compareTo(qScore(a.quality));
-      });
+    // Aplicar ordenação usando ContentSorter
+    switch (_sortBy) {
+      case 'alphabetical':
+      case 'name':
+        result = ContentSorter.sortByAlphabetical(result);
+        break;
+      case 'rating':
+        result = ContentSorter.sortByRating(result);
+        break;
+      case 'latest':
+        result = ContentSorter.sortByLatest(result);
+        break;
+      case 'quality':
+        result.sort((a, b) {
+          int qScore(String q) {
+            q = q.toLowerCase();
+            if (q.contains('4k') || q.contains('uhd')) return 4;
+            if (q.contains('fhd') || q.contains('fullhd')) return 3;
+            if (q.contains('hd')) return 2;
+            return 1;
+          }
+          return qScore(b.quality).compareTo(qScore(a.quality));
+        });
+        break;
+      case 'popularity':
+        result = ContentSorter.sortByPopularity(result);
+        break;
+      case 'default':
+      default:
+        // Mantém ordem original
+        break;
     }
     
     return result;
@@ -260,8 +364,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           setState(() => _sortBy = 'default');
                           _updateFilters();
                         }),
-                        _buildFilterChip('A-Z', _sortBy == 'name', () {
-                          setState(() => _sortBy = 'name');
+                        _buildFilterChip('A-Z', _sortBy == 'alphabetical', () {
+                          setState(() => _sortBy = 'alphabetical');
+                          _updateFilters();
+                        }),
+                        _buildFilterChip('Avaliação', _sortBy == 'rating', () {
+                          setState(() => _sortBy = 'rating');
+                          _updateFilters();
+                        }),
+                        _buildFilterChip('Data', _sortBy == 'latest', () {
+                          setState(() => _sortBy = 'latest');
                           _updateFilters();
                         }),
                         _buildFilterChip('Qualidade', _sortBy == 'quality', () {
@@ -318,19 +430,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           ),
                         ),
                 ),
-                if (filteredItems.length > visibleCount)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.unfold_more),
-                      label: Text('Carregar mais (${visibleCount}/${filteredItems.length})'),
-                      onPressed: () {
-                        setState(() {
-                          visibleCount = (visibleCount + pageSize).clamp(0, filteredItems.length);
-                        });
-                      },
-                    ),
-                  ),
+                // Botão "Carregar mais" removido conforme solicitado
               ],
             ),
     );
