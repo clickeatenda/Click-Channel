@@ -8,29 +8,17 @@ class TmdbService {
   static const String _baseUrl = 'https://api.themoviedb.org/3';
   static String? _apiKey;
 
-  /// Token TMDB hardcoded (read-only token JWT)
-  /// O token contém a API key no campo "aud": "19fad72344d2e286604239f434af5d3a"
-  static const String _hardcodedToken = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIxOWZhZDcyMzQ0ZDJlMjg2NjA0MjM5ZjQzNGFmNWQzYSIsIm5iZiI6MTc2NjUzODE5Ni45MjcsInN1YiI6IjY5NGIzYmQ0YjBlMjkwOGFlYzhlYzU1MyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.zCu2gP5Rqn_0QSDb4SHqgsm0nJ9tYUofdyN2Xa6xw28';
-  
-  /// API Key extraída do token JWT (campo "aud")
-  static const String _hardcodedApiKey = '19fad72344d2e286604239f434af5d3a';
-
-  /// Inicializa a API key do TMDB (usa API key hardcoded ou .env)
+  /// Inicializa a API key do TMDB (lê de .env via Config)
   static void init() {
-    // Prioriza API key hardcoded extraída do token, fallback para .env
-    _apiKey = _hardcodedApiKey;
+    // Lê a chave do arquivo .env através de Config
+    _apiKey = Config.tmdbApiKey;
     if (_apiKey == null || _apiKey!.isEmpty) {
-      _apiKey = Config.tmdbApiKey;
-      if (_apiKey == null || _apiKey!.isEmpty) {
-        AppLogger.warning('⚠️ TMDB_API_KEY não configurada');
-      } else {
-        AppLogger.info('✅ TMDB API key do .env carregada');
-      }
+      AppLogger.warning('⚠️ TMDB_API_KEY não configurada (ver .env)');
     } else {
-      AppLogger.info('✅ TMDB API key hardcoded carregada: ${_apiKey!.substring(0, 8)}...');
+      AppLogger.info('✅ TMDB API key carregada (via .env)');
     }
-    
-    // CRÍTICO: Testa a API key imediatamente após inicialização
+
+    // Testa a API key imediatamente após inicialização
     _testApiKey();
   }
   
