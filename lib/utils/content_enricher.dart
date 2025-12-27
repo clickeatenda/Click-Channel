@@ -24,8 +24,12 @@ class ContentEnricher {
 
       try {
         // Limpa título para busca (remove informações extras como ano, qualidade, etc.)
-        // CRÍTICO: Limpeza mais conservadora para melhor matching
+        // CRÍTICO: Limpeza mais robusta para lidar com caracteres corrompidos e prefixos estranhos
         var cleanTitle = item.title;
+        
+        // CRÍTICO: Remove prefixos estranhos que aparecem nos logs (ex: "Ô£╗")
+        // Remove caracteres não-ASCII problemáticos no início
+        cleanTitle = cleanTitle.replaceAll(RegExp(r'^[^\x20-\x7E\u00C0-\u017F]+'), '');
         
         // Remove apenas padrões específicos, mantendo o título o mais próximo possível do original
         cleanTitle = cleanTitle
@@ -50,7 +54,24 @@ class ContentEnricher {
         TmdbMetadata? metadata;
         List<String> searchVariations = [cleanTitle];
         
-        // Adiciona variações: sem artigos, sem pontuação, etc.
+        // Normaliza caracteres especiais (remove acentos para melhor matching)
+        String normalize(String text) {
+          return text
+              .replaceAll('á', 'a').replaceAll('à', 'a').replaceAll('ã', 'a').replaceAll('â', 'a')
+              .replaceAll('é', 'e').replaceAll('è', 'e').replaceAll('ê', 'e')
+              .replaceAll('í', 'i').replaceAll('ì', 'i').replaceAll('î', 'i')
+              .replaceAll('ó', 'o').replaceAll('ò', 'o').replaceAll('õ', 'o').replaceAll('ô', 'o')
+              .replaceAll('ú', 'u').replaceAll('ù', 'u').replaceAll('û', 'u')
+              .replaceAll('ç', 'c')
+              .replaceAll('Á', 'A').replaceAll('À', 'A').replaceAll('Ã', 'A').replaceAll('Â', 'A')
+              .replaceAll('É', 'E').replaceAll('È', 'E').replaceAll('Ê', 'E')
+              .replaceAll('Í', 'I').replaceAll('Ì', 'I').replaceAll('Î', 'I')
+              .replaceAll('Ó', 'O').replaceAll('Ò', 'O').replaceAll('Õ', 'O').replaceAll('Ô', 'O')
+              .replaceAll('Ú', 'U').replaceAll('Ù', 'U').replaceAll('Û', 'U')
+              .replaceAll('Ç', 'C');
+        }
+        
+        // Adiciona variações: sem artigos, sem pontuação, normalizado, etc.
         if (cleanTitle.length > 5) {
           // Remove artigos comuns no início
           final withoutArticles = cleanTitle.replaceAll(RegExp(r'^(O|A|Os|As|The|El|La|Les|Der|Die|Das)\s+', caseSensitive: false), '').trim();
@@ -58,10 +79,24 @@ class ContentEnricher {
             searchVariations.add(withoutArticles);
           }
           
-          // Remove pontuação especial
-          final withoutPunctuation = cleanTitle.replaceAll(RegExp(r'[^\w\s]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+          // Versão normalizada (sem acentos)
+          final normalized = normalize(cleanTitle);
+          if (normalized != cleanTitle && normalized.length >= 3) {
+            searchVariations.add(normalized);
+          }
+          
+          // Remove pontuação especial (mas mantém espaços)
+          final withoutPunctuation = cleanTitle.replaceAll(RegExp(r'[^\w\s\u00C0-\u017F]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
           if (withoutPunctuation != cleanTitle && withoutPunctuation.length >= 3) {
             searchVariations.add(withoutPunctuation);
+          }
+          
+          // Combinação: sem artigos + normalizado
+          if (withoutArticles != cleanTitle) {
+            final normalizedWithoutArticles = normalize(withoutArticles);
+            if (normalizedWithoutArticles != cleanTitle && normalizedWithoutArticles.length >= 3) {
+              searchVariations.add(normalizedWithoutArticles);
+            }
           }
         }
         
@@ -86,16 +121,18 @@ class ContentEnricher {
 
         if (metadata != null) {
           // CRÍTICO: Enriquece mesmo se rating for 0 (pode ter descrição, gênero, etc.)
+          // CRÍTICO: SEMPRE usa rating do TMDB se disponível (mesmo que seja 0)
           final enrichedItem = item.enrichWithTmdb(
-            rating: metadata.rating > 0 ? metadata.rating : item.rating, // Mantém rating original se TMDB não tem
+            rating: metadata.rating, // SEMPRE usa rating do TMDB (pode ser 0)
             description: metadata.overview?.isNotEmpty == true ? metadata.overview! : item.description,
             genre: metadata.genres.isNotEmpty ? metadata.genres.join(', ') : item.genre,
             popularity: metadata.popularity,
             releaseDate: metadata.releaseDate,
           );
           
+          // Debug: verifica se rating foi aplicado corretamente
           if (metadata.rating > 0) {
-            AppLogger.info('✅ TMDB: Enriquecido "${item.title}" - Rating: ${metadata.rating}');
+            AppLogger.info('✅ TMDB: Enriquecido "${item.title}" - Rating: ${metadata.rating} -> Item.rating: ${enrichedItem.rating}');
             successCount++;
           } else {
             AppLogger.debug('ℹ️ TMDB: Encontrado "${item.title}" mas sem rating (tem descrição: ${metadata.overview?.isNotEmpty ?? false})');
@@ -184,11 +221,18 @@ class ContentSorter {
     return sorted;
   }
 
+  /// Ordena por ordem alfabética (A-Z)
+  static List<ContentItem> sortByAlphabetical(List<ContentItem> items) {
+    final sorted = List<ContentItem>.from(items);
+    sorted.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    return sorted;
+  }
+
   /// Filtra e ordena por tipo
   static List<ContentItem> filterAndSort(
     List<ContentItem> items, {
     String? type,
-    String sortBy = 'popularity', // 'popularity', 'rating', 'latest'
+    String sortBy = 'popularity', // 'popularity', 'rating', 'latest', 'alphabetical'
   }) {
     var filtered = items;
     
@@ -201,6 +245,8 @@ class ContentSorter {
         return sortByRating(filtered);
       case 'latest':
         return sortByLatest(filtered);
+      case 'alphabetical':
+        return sortByAlphabetical(filtered);
       case 'popularity':
       default:
         return sortByPopularity(filtered);

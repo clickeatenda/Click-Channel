@@ -4,6 +4,7 @@ import '../models/content_item.dart';
 import '../data/api_service.dart';
 import '../data/m3u_service.dart';
 import '../widgets/optimized_gridview.dart';
+import '../utils/content_enricher.dart';
 import 'series_detail_screen.dart';
 
 class SeriesLibraryScreen extends StatefulWidget {
@@ -41,12 +42,25 @@ class _SeriesLibraryScreenState extends State<SeriesLibraryScreen> {
         print('📺 SeriesLibraryScreen: ${data.length} séries do backend');
       }
       
+      // CRÍTICO: Mostra UI primeiro, depois enriquece com TMDB em background
       if (mounted) {
         setState(() {
           series = data;
           loading = false;
           error = null;
         });
+      }
+      
+      // Enriquece com TMDB em background (não bloqueia UI)
+      if (data.isNotEmpty) {
+        print('🔍 TMDB: Enriquecendo ${data.length} séries em background...');
+        final enriched = await ContentEnricher.enrichItems(data);
+        if (mounted) {
+          setState(() {
+            series = enriched;
+          });
+        }
+        print('✅ TMDB: ${enriched.where((e) => e.rating > 0).length} séries enriquecidas');
       }
     } catch (e) {
       if (mounted) {

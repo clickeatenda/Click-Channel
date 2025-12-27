@@ -192,20 +192,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           _currentEpgProgram = _epgChannel!.currentProgram;
           _nextEpgProgram = _epgChannel!.nextProgram;
           print('✅ EPG carregado para canal "${widget.item!.title}": ${_currentEpgProgram?.title ?? "Sem programa"}');
-          // CRÍTICO: Mostra painel de informações automaticamente para canais
-          if (mounted) {
-            setState(() {
-              _showInfo = true; // Mostra painel automaticamente para canais
-            });
-          }
         } else {
           print('⚠️ EPG não encontrado para canal "${widget.item!.title}"');
-          // Mesmo sem EPG, mostra painel para canais
-          if (mounted) {
-            setState(() {
-              _showInfo = true;
-            });
-          }
         }
         if (mounted) setState(() {});
       }
@@ -278,6 +266,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       }
     });
   }
+  
   
   void _toggleControls() {
     setState(() => _showControls = !_showControls);
@@ -404,9 +393,44 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
   
   Widget _buildPlayerView() {
-    return GestureDetector(
-      onTap: _toggleControls,
-      child: Stack(
+    return KeyboardListener(
+      focusNode: FocusNode()..requestFocus(),
+      onKeyEvent: (event) {
+        if (event is KeyDownEvent) {
+          // Mostra controles quando qualquer tecla é pressionada
+          if (!_showControls) {
+            setState(() => _showControls = true);
+            _startControlsTimer();
+          }
+          
+          // Mapeia teclas do controle remoto
+          final key = event.logicalKey;
+          if (key == LogicalKeyboardKey.select || 
+              key == LogicalKeyboardKey.enter ||
+              key == LogicalKeyboardKey.space) {
+            _togglePlayPause();
+          } else if (key == LogicalKeyboardKey.arrowLeft) {
+            _seekBackward();
+          } else if (key == LogicalKeyboardKey.arrowRight) {
+            _seekForward();
+          } else if (key == LogicalKeyboardKey.escape || 
+                     key == LogicalKeyboardKey.backspace) {
+            Navigator.pop(context);
+          } else if (key == LogicalKeyboardKey.keyI) {
+            // Tecla 'I' para informações
+            setState(() {
+              _showInfo = !_showInfo;
+              _showAudioOptions = false;
+              _showSubtitleOptions = false;
+              _showFitOptions = false;
+            });
+          }
+          // Para outras teclas, apenas mostra controles (já feito acima)
+        }
+      },
+      child: GestureDetector(
+        onTap: _toggleControls,
+        child: Stack(
         children: [
           // Vídeo
           Center(
@@ -444,6 +468,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           // Opções de ajuste de tela
           if (_showFitOptions) _buildFitOptionsPanel(),
         ],
+      ),
       ),
     );
   }
@@ -497,16 +522,35 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               ),
             ),
             // Botão de informações
-            IconButton(
-              icon: Icon(
-                Icons.info_outline,
-                color: _showInfo ? Colors.blueAccent : Colors.white,
+            Focus(
+              onKeyEvent: (node, event) {
+                if (event is KeyDownEvent &&
+                    (event.logicalKey == LogicalKeyboardKey.select ||
+                     event.logicalKey == LogicalKeyboardKey.enter ||
+                     event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+                  setState(() {
+                    _showInfo = !_showInfo;
+                    _showAudioOptions = false;
+                    _showSubtitleOptions = false;
+                    _showFitOptions = false;
+                  });
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: IconButton(
+                icon: Icon(
+                  Icons.info_outline,
+                  color: _showInfo ? Colors.blueAccent : Colors.white,
+                ),
+                onPressed: () => setState(() {
+                  _showInfo = !_showInfo;
+                  _showAudioOptions = false;
+                  _showSubtitleOptions = false;
+                  _showFitOptions = false;
+                }),
+                focusColor: Colors.blueAccent,
               ),
-              onPressed: () => setState(() {
-                _showInfo = !_showInfo;
-                _showAudioOptions = false;
-                _showSubtitleOptions = false;
-              }),
             ),
           ],
         ),
@@ -520,31 +564,72 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Retroceder 10s
-          IconButton(
-            icon: const Icon(Icons.replay_10, color: Colors.white, size: 40),
-            onPressed: _seekBackward,
+          Focus(
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  (event.logicalKey == LogicalKeyboardKey.select ||
+                   event.logicalKey == LogicalKeyboardKey.enter ||
+                   event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+                _seekBackward();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: IconButton(
+              icon: const Icon(Icons.replay_10, color: Colors.white, size: 40),
+              onPressed: _seekBackward,
+              focusColor: Colors.blueAccent,
+            ),
           ),
           const SizedBox(width: 32),
           // Play/Pause
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                _isPlaying ? Icons.pause : Icons.play_arrow,
-                color: Colors.white,
-                size: 56,
+          Focus(
+            autofocus: true,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  (event.logicalKey == LogicalKeyboardKey.select ||
+                   event.logicalKey == LogicalKeyboardKey.enter ||
+                   event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+                _togglePlayPause();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
               ),
-              onPressed: _togglePlayPause,
+              child: IconButton(
+                icon: Icon(
+                  _isPlaying ? Icons.pause : Icons.play_arrow,
+                  color: Colors.white,
+                  size: 56,
+                ),
+                onPressed: _togglePlayPause,
+                focusColor: Colors.blueAccent,
+              ),
             ),
           ),
           const SizedBox(width: 32),
           // Avançar 10s
-          IconButton(
-            icon: const Icon(Icons.forward_10, color: Colors.white, size: 40),
-            onPressed: _seekForward,
+          Focus(
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  (event.logicalKey == LogicalKeyboardKey.select ||
+                   event.logicalKey == LogicalKeyboardKey.enter ||
+                   event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+                _seekForward();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: IconButton(
+              icon: const Icon(Icons.forward_10, color: Colors.white, size: 40),
+              onPressed: _seekForward,
+              focusColor: Colors.blueAccent,
+            ),
           ),
         ],
       ),
@@ -661,27 +746,43 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     required VoidCallback onTap,
     bool isActive = false,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: isActive ? Colors.blueAccent : Colors.white, size: 20),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? Colors.blueAccent : Colors.white,
-                fontSize: 12,
-              ),
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.space)) {
+          onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive ? Colors.blueAccent : Colors.transparent,
+              width: 2,
             ),
-          ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: isActive ? Colors.blueAccent : Colors.white, size: 20),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isActive ? Colors.blueAccent : Colors.white,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

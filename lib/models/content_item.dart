@@ -61,6 +61,10 @@ class ContentItem {
     double? popularity,
     String? releaseDate,
   }) {
+    // CRÍTICO: Se rating foi fornecido (mesmo que seja 0), usa ele
+    // Isso garante que ratings do TMDB sejam aplicados corretamente
+    final finalRating = rating != null ? rating : this.rating;
+    
     return ContentItem(
       title: title,
       url: url,
@@ -69,7 +73,7 @@ class ContentItem {
       type: type,
       isSeries: isSeries,
       id: id,
-      rating: rating ?? this.rating,
+      rating: finalRating,
       year: year,
       quality: quality,
       audioType: audioType,
