@@ -45,7 +45,7 @@ TMDB_API_KEY=sua_chave_aqui
 
 **Exemplo:**
 ```env
-TMDB_API_KEY=1234567890abcdef1234567890abcdef
+TMDB_API_KEY=YOUR_TMDB_API_KEY_HERE
 ```
 
 3. **Salve o arquivo**
