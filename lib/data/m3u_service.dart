@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '../core/config.dart';
 import '../models/content_item.dart';
 import '../models/series_details.dart';
+import '../utils/content_enricher.dart';
 
 /// Serviço para ler e normalizar playlists M3U diretamente no app (opção B).
 /// Suporta tanto URL (HTTP/HTTPS) quanto caminho de arquivo local (file:// ou caminho absoluto).
@@ -1220,6 +1221,30 @@ class M3uService {
       if (cCats.isNotEmpty) {
         print('📁 Categorias de canais (primeiras 5): ${_channelCategories.take(5).join(", ")}');
       }
+      // Inicia enriquecimento em background para os primeiros itens (prioriza latest/featured)
+      // Não bloqueia o carregamento inicial da UI; atualiza _movieCache quando completo.
+      (() async {
+        try {
+          final sampleSize = movies.length < 200 ? movies.length : 200;
+          if (sampleSize == 0) return;
+          print('🔍 M3uService: Background enrichment TMDB (sample $sampleSize)...');
+          final sample = _movieCache!.take(sampleSize).toList();
+          final enriched = await ContentEnricher.enrichItems(sample);
+          // Aplica resultados enriquecidos no cache principal
+          int updated = 0;
+          for (var i = 0; i < enriched.length; i++) {
+            final e = enriched[i];
+            if (e.rating > 0 || (e.description.isNotEmpty && e.description != sample[i].description)) {
+              _movieCache![i] = e;
+              updated++;
+            }
+          }
+          print('✅ M3uService: Background enrichment concluído ($updated atualizados)');
+        } catch (e, st) {
+          print('⚠️ M3uService: Erro no background enrichment: $e');
+          print(st);
+        }
+      })();
     }();
 
     _pendingCacheEnsures[key] = future;
