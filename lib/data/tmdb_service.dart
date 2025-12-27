@@ -334,13 +334,18 @@ class TmdbMetadata {
     // Extrair diretor
     String? director;
     if (json['credits'] != null && json['credits']['crew'] != null) {
-      final crew = json['credits']['crew'] as List;
-      final directorData = crew.firstWhere(
-        (c) => c['job'] == 'Director',
-        orElse: () => null,
-      );
-      if (directorData != null) {
-        director = directorData['name'];
+      try {
+        final crew = json['credits']['crew'] as List;
+        final directorData = crew.cast<Map<String, dynamic>>().firstWhere(
+          (c) => c['job'] == 'Director',
+          orElse: () => <String, dynamic>{},
+        );
+        if (directorData.isNotEmpty && directorData['name'] != null) {
+          director = directorData['name'];
+        }
+      } catch (e) {
+        // Ignora erro ao buscar diretor
+        AppLogger.debug('⚠️ TMDB: Erro ao buscar diretor: $e');
       }
     }
 

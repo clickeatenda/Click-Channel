@@ -31,16 +31,29 @@ class MetaChipsWidget extends StatelessWidget {
     }
     
     // CRÍTICO: Usa rating real do item (do TMDB) em vez de hardcoded
-    // Se não tem rating, não mostra o chip de estrelas
-    final List<Widget> chips = [
-      _buildChip(Icons.high_quality, qualityLabel),
-    ];
+    final List<Widget> chips = [];
     
-    // Só mostra rating se for filme/série E tiver rating válido
+    // Sempre mostra qualidade
+    if (qualityLabel.isNotEmpty && qualityLabel != 'UNKNOWN') {
+      chips.add(_buildChip(Icons.high_quality, qualityLabel));
+    }
+    
+    // CRÍTICO: Mostra rating se for filme/série E tiver rating válido (> 0)
+    // Rating do TMDB vem em escala 0-10, então sempre divide por 2 para mostrar 0-5
     if (item.type != 'channel' && item.rating > 0) {
-      // Formata rating: se for 0-10, divide por 2 para mostrar 0-5 estrelas
-      final displayRating = item.rating > 5 ? (item.rating / 2).toStringAsFixed(1) : item.rating.toStringAsFixed(1);
+      // Rating do TMDB é sempre 0-10, então divide por 2 para mostrar 0-5 estrelas
+      final displayRating = (item.rating / 2).toStringAsFixed(1);
       chips.add(_buildChip(Icons.star, '$displayRating ★'));
+      // Debug: verificar se rating está sendo exibido
+      debugPrint('⭐ MetaChipsWidget: Exibindo rating ${item.rating} (${displayRating} ★) para "${item.title}"');
+    } else if (item.type != 'channel') {
+      // Debug: verificar por que rating não está sendo exibido
+      debugPrint('⚠️ MetaChipsWidget: Rating não exibido para "${item.title}" - rating: ${item.rating}, type: ${item.type}');
+    }
+    
+    // Se não tem chips, retorna container vazio
+    if (chips.isEmpty) {
+      return const SizedBox.shrink();
     }
     
     return Wrap(
