@@ -100,9 +100,21 @@ class ContentEnricher {
           }
         }
         
+        // CRÍTICO: Log detalhado de todas as variações que serão tentadas
+        AppLogger.info('🔍 TMDB: Tentando ${searchVariations.length} variações para "${item.title}":');
+        for (int i = 0; i < searchVariations.length; i++) {
+          AppLogger.info('   Variação ${i + 1}: "${searchVariations[i]}"');
+        }
+        
         // Tenta cada variação até encontrar
-        for (final variation in searchVariations) {
-          if (variation.length < 3) continue;
+        for (int i = 0; i < searchVariations.length; i++) {
+          final variation = searchVariations[i];
+          if (variation.length < 3) {
+            AppLogger.debug('   ⏭️ Variação ${i + 1} muito curta, pulando');
+            continue;
+          }
+          
+          AppLogger.info('   🔎 Tentando variação ${i + 1}/${searchVariations.length}: "$variation"');
           
           metadata = await TmdbService.searchContent(
             variation,
@@ -111,12 +123,16 @@ class ContentEnricher {
           );
           
           if (metadata != null) {
-            AppLogger.debug('✅ TMDB: Encontrado com variação "$variation"');
+            AppLogger.info('   ✅ SUCESSO com variação ${i + 1}: "$variation" - Rating: ${metadata.rating}');
             break; // Encontrou, para de tentar
+          } else {
+            AppLogger.debug('   ❌ Variação ${i + 1} não encontrou resultados');
           }
           
           // Pequeno delay entre tentativas para evitar rate limit
-          await Future.delayed(const Duration(milliseconds: 100));
+          if (i < searchVariations.length - 1) {
+            await Future.delayed(const Duration(milliseconds: 150));
+          }
         }
 
         if (metadata != null) {
