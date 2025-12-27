@@ -115,21 +115,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
     }
     
     // Enriquece com TMDB em background (não bloqueia UI)
-    // Enriquece banner e TODOS os itens visíveis do grid
+    // CRÍTICO: Enriquece TODOS os itens visíveis (até pageSize = 240) de uma só vez
+    // Isso garante consistência entre banner e grid (sem duplicação)
     if (data.isNotEmpty) {
       AppLogger.info('🔍 TMDB: Enriquecendo itens da categoria "${widget.categoryName}" (${widget.type})...');
-      // CRÍTICO: Enriquece TODOS os itens visíveis (até pageSize = 240)
-      // Isso garante que todos os itens exibidos tenham TMDB
-      final itemsToEnrich = <ContentItem>[];
-      if (bannerItem != null) {
-        itemsToEnrich.add(bannerItem!);
-        AppLogger.info('🔍 TMDB: Banner incluído: "${bannerItem!.title}"');
-      }
-      // Enriquece todos os itens visíveis (não apenas 100)
-      final gridItems = data.take(pageSize).toList();
-      itemsToEnrich.addAll(gridItems);
       
-      AppLogger.info('🔍 TMDB: Enriquecendo ${itemsToEnrich.length} itens (${bannerItem != null ? "1 banner + " : ""}${gridItems.length} do grid)...');
+      // CRÍTICO: Enriquece TODOS os itens visíveis (não separa banner do grid)
+      // Isso evita que o mesmo item seja enriquecido múltiplas vezes de forma inconsistente
+      final itemsToEnrich = data.take(pageSize).toList();
+      
+      AppLogger.info('🔍 TMDB: Enriquecendo ${itemsToEnrich.length} itens da categoria...');
       AppLogger.debug('🔍 TMDB: Primeiros 3 itens para enriquecer:');
       for (int i = 0; i < itemsToEnrich.length && i < 3; i++) {
         AppLogger.debug('  [$i] "${itemsToEnrich[i].title}" - Rating atual: ${itemsToEnrich[i].rating}');
@@ -145,31 +140,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
         AppLogger.debug('  [$i] "${enriched[i].title}" - Rating: ${enriched[i].rating}');
       }
       
-      // CRÍTICO: Atualiza itens usando índice direto (ordem preservada)
+      // CRÍTICO: Reconstrói a lista completa usando os itens enriquecidos
+      // Preserva ordem e garante que todos os itens visíveis tenham TMDB
       final updatedItems = <ContentItem>[];
-      int enrichedIndex = 0;
-      
-      // Atualiza banner se foi enriquecido
-      ContentItem? updatedBanner = bannerItem;
-      if (bannerItem != null && enriched.isNotEmpty) {
-        updatedBanner = enriched[enrichedIndex++];
-        AppLogger.info('✅ TMDB: Banner "${updatedBanner.title}" - Rating: ${updatedBanner.rating} (original: ${bannerItem!.rating})');
-      }
-      
-      // Atualiza itens do grid usando índice direto
       for (int i = 0; i < data.length; i++) {
-        if (i < gridItems.length && enrichedIndex < enriched.length) {
-          // Item está na lista de enriquecidos
-          final enrichedItem = enriched[enrichedIndex++];
-          updatedItems.add(enrichedItem);
+        if (i < enriched.length) {
+          // Item foi enriquecido
+          updatedItems.add(enriched[i]);
           
           // Debug: mostra primeiros 5 itens enriquecidos
           if (i < 5) {
-            final ratingChanged = enrichedItem.rating != data[i].rating;
-            AppLogger.info('✅ TMDB: Item[$i] "${enrichedItem.title}" - Rating: ${enrichedItem.rating} (original: ${data[i].rating}) ${ratingChanged ? "✅ MUDOU" : "❌ IGUAL"}');
+            final ratingChanged = enriched[i].rating != data[i].rating;
+            AppLogger.info('✅ TMDB: Item[$i] "${enriched[i].title}" - Rating: ${enriched[i].rating} (original: ${data[i].rating}) ${ratingChanged ? "✅ MUDOU" : "❌ IGUAL"}');
           }
         } else {
-          // Item não foi enriquecido, mantém original
+          // Item não foi enriquecido (além do pageSize), mantém original
           updatedItems.add(data[i]);
         }
       }
@@ -177,7 +162,23 @@ class _CategoryScreenState extends State<CategoryScreen> {
       final finalItemsWithRating = updatedItems.where((e) => e.rating > 0).length;
       AppLogger.info('✅ TMDB: ${finalItemsWithRating}/${updatedItems.length} itens com rating após atualização');
       
-      // CRÍTICO: Força atualização do estado mesmo se não houver mudanças aparentes
+      // CRÍTICO: Atualiza banner DEPOIS de enriquecer (usa item enriquecido)
+      // Isso garante que o banner tenha os mesmos dados TMDB que o grid
+      ContentItem? updatedBanner = bannerItem;
+      if (bannerItem != null && updatedItems.isNotEmpty) {
+        // Procura o banner enriquecido na lista atualizada
+        final bannerIndex = data.indexWhere((item) => 
+          item.url == bannerItem!.url && item.title == bannerItem!.title
+        );
+        if (bannerIndex >= 0 && bannerIndex < updatedItems.length) {
+          updatedBanner = updatedItems[bannerIndex];
+          AppLogger.info('✅ TMDB: Banner "${updatedBanner.title}" - Rating: ${updatedBanner.rating} (índice: $bannerIndex)');
+        } else {
+          AppLogger.warning('⚠️ TMDB: Banner não encontrado na lista enriquecida, mantendo original');
+        }
+      }
+      
+      // CRÍTICO: Força atualização do estado
       if (mounted) {
         setState(() {
           // Força nova lista para garantir que o Flutter detecte mudanças
@@ -189,13 +190,31 @@ class _CategoryScreenState extends State<CategoryScreen> {
         });
         
         // Verifica se os dados foram realmente aplicados
-        final finalItemsWithRating = filteredItems.where((e) => e.rating > 0).length;
-        AppLogger.info('✅ TMDB: Estado atualizado - ${finalItemsWithRating} itens filtrados com rating');
+        final finalFilteredItemsWithRating = filteredItems.where((e) => e.rating > 0).length;
+        AppLogger.info('✅ TMDB: Estado atualizado - ${finalFilteredItemsWithRating} itens filtrados com rating');
         
-        // Debug: mostra primeiros 3 itens para verificar
+        // Debug: mostra primeiros 3 itens filtrados para verificar
         for (int i = 0; i < filteredItems.length && i < 3; i++) {
           final item = filteredItems[i];
-          AppLogger.debug('📋 Item[$i]: "${item.title}" - Rating: ${item.rating}, Type: ${item.type}');
+          AppLogger.debug('📋 Item filtrado[$i]: "${item.title}" - Rating: ${item.rating}, Type: ${item.type}');
+        }
+        
+        // Debug: verifica se banner e grid têm dados consistentes
+        if (bannerItem != null) {
+          final bannerInGrid = filteredItems.firstWhere(
+            (item) => item.url == bannerItem!.url && item.title == bannerItem!.title,
+            orElse: () => ContentItem(
+              title: '', 
+              url: '', 
+              type: '', 
+              image: '', 
+              group: '',
+            ),
+          );
+          if (bannerInGrid.url.isNotEmpty) {
+            final consistent = bannerInGrid.rating == bannerItem!.rating;
+            AppLogger.debug('🔍 Consistência banner/grid: ${consistent ? "✅ OK" : "❌ INCONSISTENTE"} - Banner rating: ${bannerItem!.rating}, Grid rating: ${bannerInGrid.rating}');
+          }
         }
       }
     }

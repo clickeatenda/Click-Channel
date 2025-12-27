@@ -69,8 +69,6 @@ class TmdbService {
     }
 
     try {
-      AppLogger.info('🔍 TMDB: Buscando "$title" (tipo: $type${year != null ? ", ano: $year" : ""})');
-      
       // CRÍTICO: Verifica se API key está configurada
       if (_apiKey == null || _apiKey!.isEmpty) {
         AppLogger.error('❌ TMDB: API key não configurada!');
@@ -79,6 +77,9 @@ class TmdbService {
       
       // TMDB API v3 usa api_key como query parameter
       final searchUrl = '$_baseUrl/search/$type?api_key=$_apiKey&query=${Uri.encodeComponent(title)}&language=pt-BR';
+      
+      AppLogger.debug('🔍 TMDB API: Buscando "$title" (tipo: $type${year != null ? ", ano: $year" : ""})');
+      AppLogger.debug('   URL: ${searchUrl.replaceAll(_apiKey!, "***API_KEY***")}&...');
       
       // Tenta com ano primeiro (mais preciso)
       if (year != null && year.isNotEmpty && year.length == 4) {
@@ -119,12 +120,28 @@ class TmdbService {
         if (searchRes.statusCode == 200) {
           final searchData = json.decode(searchRes.body);
           if (searchData['results'] != null && (searchData['results'] as List).isNotEmpty) {
-            final result = searchData['results'][0];
+            final results = searchData['results'] as List;
+            final result = results[0];
             final foundTitle = result['title'] ?? result['name'] ?? 'Sem título';
+            final foundRating = (result['vote_average'] ?? 0.0).toDouble();
+            
             AppLogger.info('✅ TMDB: Encontrado "$foundTitle" (sem ano)');
+            AppLogger.debug('   Total de resultados: ${results.length}');
+            AppLogger.debug('   Melhor match: "$foundTitle" - Rating: $foundRating');
+            
+            // Log dos primeiros 3 resultados para análise
+            for (int i = 0; i < results.length && i < 3; i++) {
+              final r = results[i];
+              final t = r['title'] ?? r['name'] ?? 'Sem título';
+              final rat = (r['vote_average'] ?? 0.0).toDouble();
+              final yr = r['release_date'] ?? r['first_air_date'] ?? 'N/A';
+              AppLogger.debug('   Resultado ${i + 1}: "$t" (${yr.substring(0, yr.length > 4 ? 4 : yr.length)}) - Rating: $rat');
+            }
+            
             return await _fetchDetails(result['id'], type);
           } else {
             AppLogger.warning('⚠️ TMDB: Nenhum resultado encontrado para "$title"');
+            AppLogger.debug('   Response body (primeiros 200 chars): ${searchRes.body.length > 200 ? searchRes.body.substring(0, 200) : searchRes.body}');
           }
         } else if (searchRes.statusCode == 401) {
           AppLogger.error('❌ TMDB: API key inválida ou expirada! Status 401');

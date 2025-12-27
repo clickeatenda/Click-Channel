@@ -50,32 +50,14 @@ class Prefs {
   /// accidental startup with sample data. This is intentionally conservative:
   /// only clears values that match well-known placeholder domains or clearly
   /// invalid example strings.
-  /// 
-  /// IMPORTANTE: URLs válidas que contenham palavras-chave de placeholder
-  /// (como "playfacil.net" em URLs reais) NÃO devem ser limpas se tiverem
-  /// parâmetros válidos (username, password, etc).
   static Future<void> _sanitizePlaylistOverrideIfNeeded() async {
     if (_prefs == null) return;
     final v = _prefs!.getString(keyPlaylistOverride);
     if (v == null || v.trim().isEmpty) return;
     final s = v.trim().toLowerCase();
     
-    // CRÍTICO: Verifica se é URL válida com parâmetros antes de limpar
-    // URLs com parâmetros (username, password, type, etc) são válidas
-    final hasValidParams = s.contains('username=') || 
-                          s.contains('password=') || 
-                          s.contains('type=') ||
-                          s.contains('token=') ||
-                          s.contains('api_key=');
-    
-    // Se tem parâmetros válidos, NÃO limpa (mesmo que contenha palavras-chave de placeholder)
-    if (hasValidParams) {
-      print('✅ Prefs: URL com parâmetros válidos detectada - mantendo: ${v.substring(0, v.length > 60 ? 60 : v.length)}...');
-      return;
-    }
-    
-    // Known placeholder patterns to clear automatically (apenas se NÃO tiver parâmetros)
-    final placeholders = ['exemplo.com', 'example.com', 'via.placeholder.com'];
+    // Known placeholder patterns to clear automatically
+    final placeholders = ['exemplo.com', 'example.com', 'via.placeholder.com', 'test.com'];
     for (final p in placeholders) {
       if (s.contains(p)) {
         // Clear persisted playlist override and readiness flags
@@ -84,6 +66,10 @@ class Prefs {
         return;
       }
     }
+    
+    // IMPORTANTE: URLs reais (mesmo que contenham palavras-chave conhecidas) 
+    // NÃO são limpas. O usuário configurou, então mantemos.
+    print('✅ Prefs: URL configurada pelo usuário detectada - mantendo: ${v.substring(0, v.length > 60 ? 60 : v.length)}...');
   }
 
   /// Verifica se a playlist foi baixada e está pronta para uso

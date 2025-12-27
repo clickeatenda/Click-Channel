@@ -13,6 +13,7 @@ import '../screens/setup_screen.dart';
 import '../screens/player_dashboard_screen.dart';
 import '../screens/category_screen.dart';
 import '../screens/epg_screen.dart';
+import '../screens/debug_tmdb_screen.dart';
 import '../models/content_item.dart';
 
 
@@ -32,6 +33,7 @@ class AppRoutes {
   static const String category = '/category';
   static const String epg = '/epg';
   static const String splash = '/splash';
+  static const String debugTmdb = '/debug-tmdb';
 
   // Route generator
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
