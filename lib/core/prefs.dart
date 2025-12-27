@@ -6,6 +6,8 @@ class Prefs {
   static const String keyPlaylistOverride = 'playlist_url_override';
   static const String keyPlaylistReady = 'playlist_ready';
   static const String keyPlaylistLastDownload = 'playlist_last_download';
+  // TMDB API key stored at runtime (set via Settings) - optional
+  static const String keyTmdbApiKey = 'tmdb_api_key';
 
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -43,6 +45,20 @@ class Prefs {
       await _prefs!.remove(keyPlaylistLastDownload);
     } else {
       await _prefs!.setString(keyPlaylistOverride, value.trim());
+    }
+  }
+
+  /// --- TMDB API Key helpers ---
+  static String? getTmdbApiKey() {
+    return _prefs?.getString(keyTmdbApiKey);
+  }
+
+  static Future<void> setTmdbApiKey(String? value) async {
+    if (_prefs == null) await init();
+    if (value == null || value.trim().isEmpty) {
+      await _prefs!.remove(keyTmdbApiKey);
+    } else {
+      await _prefs!.setString(keyTmdbApiKey, value.trim());
     }
   }
 

@@ -232,7 +232,10 @@ class ClickChannelApp extends StatelessWidget {
     String initialRoute;
     final isReady = Prefs.isPlaylistReady();
     if (!hasPlaylist) {
-      initialRoute = AppRoutes.setup;
+        // Temporariamente pulamos a tela de setup inicial.
+        // Ao invés de exigir a URL na primeira execução, abrimos as Configurações
+        // para o usuário inserir a playlist manualmente via Settings.
+        initialRoute = AppRoutes.settings;
     } else if (hasPlaylist && isReady) {
       // CRÍTICO: Se tem playlist e está pronta, vai direto para Home (não passa pelo Setup)
       initialRoute = AppRoutes.home;
@@ -319,7 +322,25 @@ class ClickChannelApp extends StatelessWidget {
           home: SplashScreen(
             nextRoute: initialRoute,
             onInit: () async {
-              // Aqui pode adicionar qualquer inicialização adicional se necessário
+              // Se estamos abrindo Settings inicialmente (pular Setup),
+              // garante que não haja caches antigos sendo usados.
+              if (initialRoute == AppRoutes.settings) {
+                try {
+                  print('🧹 Splash onInit: Inicializando em modo Settings — limpando caches e resets...');
+                  M3uService.clearMemoryCache();
+                  await M3uService.clearAllCache(null);
+                  await EpgService.clearCache();
+                  await Prefs.setPlaylistOverride(null);
+                  await Prefs.setPlaylistReady(false);
+                  Config.setPlaylistOverride(null);
+                  await M3uService.writeInstallMarker();
+                  print('✅ Splash onInit: Limpeza concluída');
+                } catch (e) {
+                  print('⚠️ Splash onInit: Erro ao limpar caches para Settings: $e');
+                }
+              }
+
+              // Pequeno delay para suavizar a transição
               await Future.delayed(const Duration(milliseconds: 500));
             },
           ),

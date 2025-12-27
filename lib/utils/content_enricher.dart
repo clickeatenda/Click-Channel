@@ -1,5 +1,6 @@
 import '../models/content_item.dart';
 import '../data/tmdb_service.dart';
+import '../data/tmdb_cache.dart';
 import '../core/utils/logger.dart';
 
 /// Utilitário para enriquecer ContentItems com dados do TMDB
@@ -113,14 +114,37 @@ class ContentEnricher {
             AppLogger.debug('   ⏭️ Variação ${i + 1} muito curta, pulando');
             continue;
           }
-          
+
           AppLogger.info('   🔎 Tentando variação ${i + 1}/${searchVariations.length}: "$variation"');
-          
-          metadata = await TmdbService.searchContent(
-            variation,
-            year: item.year != "2024" && item.year.isNotEmpty && item.year.length == 4 ? item.year : null,
-            type: item.isSeries || item.type == 'series' ? 'tv' : 'movie',
-          );
+
+          // Tenta ler do cache local antes de consultar a API TMDB
+          try {
+            final normalizedKey = variation.toLowerCase().replaceAll(RegExp(r'[^\w\s\u00C0-\u017F]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+            final cached = await TmdbCache.get(normalizedKey);
+            if (cached != null) {
+              AppLogger.info('   🗄️ Cache: encontrado para "$variation" (chave: $normalizedKey) - Rating: ${cached.rating}');
+              metadata = cached;
+            }
+          } catch (e) {
+            AppLogger.debug('   ⚠️ Erro ao acessar cache TMDB: $e');
+          }
+
+          if (metadata == null) {
+            metadata = await TmdbService.searchContent(
+              variation,
+              year: item.year != "2024" && item.year.isNotEmpty && item.year.length == 4 ? item.year : null,
+              type: item.isSeries || item.type == 'series' ? 'tv' : 'movie',
+            );
+            // Se encontrou na API, persiste no cache para próximas buscas
+            if (metadata != null) {
+              try {
+                final normalizedKey = variation.toLowerCase().replaceAll(RegExp(r'[^\w\s\u00C0-\u017F]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+                await TmdbCache.put(normalizedKey, metadata);
+              } catch (e) {
+                AppLogger.debug('   ⚠️ Erro ao salvar cache TMDB: $e');
+              }
+            }
+          }
           
           if (metadata != null) {
             AppLogger.info('   ✅ SUCESSO com variação ${i + 1}: "$variation" - Rating: ${metadata.rating}');
