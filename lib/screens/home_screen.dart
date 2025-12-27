@@ -552,36 +552,42 @@ class _HomeBodyState extends State<_HomeBody> {
       // SEM fallback para backend - app deve estar limpo sem playlist
       final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
       if (hasM3u) {
-        // Carregar destaques de cada tipo em paralelo
+        // CRÍTICO: Carrega destaques SEM aguardar TMDB (UI rápida)
         final results = await Future.wait([
           M3uService.getCuratedFeaturedPrefer('movie', count: 6, pool: 30, maxItems: 600),
           M3uService.getCuratedFeaturedPrefer('series', count: 6, pool: 30, maxItems: 600),
           M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600),
         ]);
         
-        // CRÍTICO: Enriquece filmes e séries com TMDB (em background, não bloqueia UI)
-        List<ContentItem> enrichedMovies = results[0];
-        List<ContentItem> enrichedSeries = results[1];
+        // CRÍTICO: Atualiza UI IMEDIATAMENTE (sem aguardar TMDB)
+        if (!mounted) return;
+        setState(() {
+          featuredMovies = results[0];
+          featuredSeries = results[1];
+          featuredChannels = results[2];
+          loading = false; // UI mostra conteúdo AGORA
+        });
         
+        // CRÍTICO: Enriquece com TMDB em BACKGROUND (usuário já vê conteúdo)
         if (results[0].isNotEmpty) {
-          print('🔍 TMDB: Enriquecendo filmes em destaque (${results[0].length} itens)...');
-          enrichedMovies = await ContentEnricher.enrichItems(results[0]);
-          print('✅ TMDB: Filmes em destaque enriquecidos com sucesso');
+          print('🔍 TMDB: Enriquecendo filmes em destaque (${results[0].length} itens) em background...');
+          ContentEnricher.enrichItems(results[0]).then((enriched) {
+            if (mounted) {
+              setState(() => featuredMovies = enriched);
+              print('✅ TMDB: Filmes em destaque enriquecidos');
+            }
+          });
         }
         
         if (results[1].isNotEmpty) {
-          print('🔍 TMDB: Enriquecendo séries em destaque (${results[1].length} itens)...');
-          enrichedSeries = await ContentEnricher.enrichItems(results[1]);
-          print('✅ TMDB: Séries em destaque enriquecidas com sucesso');
+          print('🔍 TMDB: Enriquecendo séries em destaque (${results[1].length} itens) em background...');
+          ContentEnricher.enrichItems(results[1]).then((enriched) {
+            if (mounted) {
+              setState(() => featuredSeries = enriched);
+              print('✅ TMDB: Séries em destaque enriquecidas');
+            }
+          });
         }
-        
-        if (!mounted) return;
-        setState(() {
-          featuredMovies = enrichedMovies;
-          featuredSeries = enrichedSeries;
-          featuredChannels = results[2];
-          loading = false;
-        });
       } else {
         // Sem playlist configurada - retorna listas vazias
         print('⚠️ HomeScreen: Sem playlist configurada - retornando listas vazias');
