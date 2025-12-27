@@ -48,7 +48,7 @@
 **Problema:** Quase não apareceu informação do TMDB.
 
 **Correções aplicadas:**
-- ✅ **API Key extraída do token JWT**: `19fad72344d2e286604239f434af5d3a`
+- ✅ **API Key extraída do token JWT**: `[REDACTED_TMDB_API_KEY]` (removida do código atual; roteie se exposta)
 - ✅ **Debug completo** de todas as requisições:
   - Log de cada busca realizada
   - Status HTTP de cada resposta
@@ -160,7 +160,7 @@ adb logcat
 3. **Se TMDB não aparecer:**
    - Verifique os logs para ver se há erros HTTP
    - Verifique se a API key está sendo usada corretamente
-   - A API key está hardcoded: `19fad72344d2e286604239f434af5d3a`
+   - NOTA: A chave TMDB foi removida do código — configure `TMDB_API_KEY` no seu `.env` ou no ambiente do CI
 
 4. **Se EPG não aparecer:**
    - Configure a URL do EPG em Settings

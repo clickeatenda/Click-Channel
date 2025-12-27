@@ -66,13 +66,12 @@ Config.setPlaylistOverride(null);
 
 **Arquivo:** `lib/data/tmdb_service.dart`
 
-- ✅ API Key hardcoded: `19fad72344d2e286604239f434af5d3a`
-- ✅ Extraída do token JWT (campo "aud")
+- ✅ Chave TMDB removida do código-fonte e agora deve ser fornecida via `.env` (variável `TMDB_API_KEY`)
 - ✅ Debug completo de todas as requisições
 - ✅ Timeout de 10 segundos
 - ✅ Logs detalhados de sucesso/erro
 
-**O TMDB está configurado e funcionando!** A API key está hardcoded no código, então não precisa de configuração adicional.
+**Observação:** A chave foi removida do repositório por questões de segurança. Configure `TMDB_API_KEY` no seu `.env` (ou variável de ambiente) antes de executar o app.
 
 ## 🔍 Verificações Adicionais
 
@@ -121,7 +120,7 @@ Após reinstalar:
 - ✅ **Ícone aparece** no Firestick
 - ✅ **App inicia vazio** (sem canais)
 - ✅ **Nenhum cache antigo** é carregado
-- ✅ **TMDB funciona** automaticamente (API key hardcoded)
+- ✅ **TMDB funciona** quando `TMDB_API_KEY` estiver configurada (ver `.env`)
 - ✅ **Lista só aparece** após configurar URL manualmente
 
 ---
