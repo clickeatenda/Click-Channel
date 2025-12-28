@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../core/config.dart';
 import '../core/prefs.dart';
@@ -92,7 +93,7 @@ class TmdbService {
       if (year != null && year.isNotEmpty && year.length == 4) {
         try {
           final searchUrlWithYear = '$searchUrl&year=$year';
-          final searchRes = await http.get(Uri.parse(searchUrlWithYear)).timeout(const Duration(seconds: 15));
+          final searchRes = await _getWithRetry(Uri.parse(searchUrlWithYear), timeout: const Duration(seconds: 8));
           AppLogger.info('📡 TMDB: Status ${searchRes.statusCode} (com ano $year)');
           
           if (searchRes.statusCode == 200) {
@@ -121,7 +122,7 @@ class TmdbService {
 
       // Se não encontrou com ano, tenta sem
       try {
-        final searchRes = await http.get(Uri.parse(searchUrl)).timeout(const Duration(seconds: 15));
+        final searchRes = await _getWithRetry(Uri.parse(searchUrl), timeout: const Duration(seconds: 8));
         AppLogger.info('📡 TMDB: Status ${searchRes.statusCode} (sem ano)');
         
         if (searchRes.statusCode == 200) {
@@ -174,8 +175,8 @@ class TmdbService {
   static Future<TmdbMetadata?> _fetchDetails(int id, String type) async {
     try {
       final url = '$_baseUrl/$type/$id?api_key=$_apiKey&language=pt-BR&append_to_response=credits';
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-      
+      final res = await _getWithRetry(Uri.parse(url), timeout: const Duration(seconds: 8));
+
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         final metadata = TmdbMetadata.fromJson(data, type);
@@ -191,13 +192,33 @@ class TmdbService {
     return null;
   }
 
+  /// Helper que realiza requisições GET com retries exponenciais para falhas transitórias
+  static Future<http.Response> _getWithRetry(Uri uri, {Duration timeout = const Duration(seconds: 8), int maxRetries = 2}) async {
+    int attempt = 0;
+    while (true) {
+      attempt++;
+      try {
+        final res = await http.get(uri).timeout(timeout);
+        return res;
+      } catch (e) {
+        // Se atingiu o máximo de tentativas, rethrow para que o chamador trate
+        if (attempt > maxRetries) rethrow;
+
+        // Apenas loga e aguarda backoff para tentativas seguintes
+        final backoffMs = 250 * (1 << (attempt - 1)); // 250ms, 500ms, 1000ms...
+        AppLogger.warning('⚠️ TMDB: Request falhou (tentativa $attempt/$maxRetries). Retentando em ${backoffMs}ms — erro: $e');
+        await Future.delayed(Duration(milliseconds: backoffMs));
+      }
+    }
+  }
+
   /// Busca lista de filmes populares
   static Future<List<TmdbMetadata>> getPopularMovies({int page = 1}) async {
     if (!isConfigured) return [];
     
     try {
-      final url = '$_baseUrl/movie/popular?api_key=$_apiKey&language=pt-BR&page=$page';
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final url = '$_baseUrl/movie/popular?api_key=$_apiKey&language=pt-BR&page=$page&append_to_response=credits';
+      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
       
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
@@ -253,8 +274,8 @@ class TmdbService {
     if (!isConfigured) return [];
     
     try {
-      final url = '$_baseUrl/tv/popular?api_key=$_apiKey&language=pt-BR&page=$page';
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final url = '$_baseUrl/tv/popular?api_key=$_apiKey&language=pt-BR&page=$page&append_to_response=credits';
+      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
       
       if (res.statusCode == 200) {
         final data = json.decode(res.body);

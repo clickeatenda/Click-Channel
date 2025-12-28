@@ -25,38 +25,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoplay = true;
   bool _notifications = true;
   late TextEditingController _playlistController;
-  late TextEditingController _epgController;
   final FocusNode _urlFocusNode = FocusNode();
   final FocusNode _buttonFocusNode = FocusNode();
-  final FocusNode _epgUrlFocusNode = FocusNode();
-  final FocusNode _epgButtonFocusNode = FocusNode();
   bool _urlHasFocus = false;
   bool _buttonHasFocus = false;
-  bool _epgUrlHasFocus = false;
-  bool _epgButtonHasFocus = false;
 
   @override
   void initState() {
     super.initState();
     _playlistController = TextEditingController(text: Config.playlistRuntime ?? '');
-    _epgController = TextEditingController(text: EpgService.epgUrl ?? '');
     _urlFocusNode.addListener(() {
       if (mounted) setState(() => _urlHasFocus = _urlFocusNode.hasFocus);
     });
     _buttonFocusNode.addListener(() {
       if (mounted) setState(() => _buttonHasFocus = _buttonFocusNode.hasFocus);
     });
-    _epgUrlFocusNode.addListener(() {
-      if (mounted) setState(() => _epgUrlHasFocus = _epgUrlFocusNode.hasFocus);
-    });
-    _epgButtonFocusNode.addListener(() {
-      if (mounted) setState(() => _epgButtonHasFocus = _epgButtonFocusNode.hasFocus);
-    });
     // TMDB key controller (load from Prefs if set)
     _tmdbController = TextEditingController(text: Prefs.getTmdbApiKey() ?? '');
     _tmdbFocusNode.addListener(() {
       if (mounted) setState(() => _tmdbHasFocus = _tmdbFocusNode.hasFocus);
     });
+    // Focus nodes para botões TMDB (TV / Firestick navigation)
+    _tmdbSaveFocusNode = FocusNode();
+    _tmdbTestFocusNode = FocusNode();
+    _tmdbClearFocusNode = FocusNode();
   }
 
   Future<void> _saveTmdbKey() async {
@@ -104,13 +96,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _playlistController.dispose();
-    _epgController.dispose();
     _urlFocusNode.dispose();
     _buttonFocusNode.dispose();
-    _epgUrlFocusNode.dispose();
-    _epgButtonFocusNode.dispose();
     _tmdbController.dispose();
     _tmdbFocusNode.dispose();
+    _tmdbSaveFocusNode.dispose();
+    _tmdbTestFocusNode.dispose();
+    _tmdbClearFocusNode.dispose();
     super.dispose();
   }
 
@@ -118,11 +110,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _downloadProgress = 0.0;
   String _downloadStatus = '';
   
-  bool _isDownloadingEpg = false;
-  String _epgDownloadStatus = '';
   late TextEditingController _tmdbController;
   final FocusNode _tmdbFocusNode = FocusNode();
   bool _tmdbHasFocus = false;
+  // Focus nodes para botões TMDB (suporte Fire TV / DPAD)
+  late FocusNode _tmdbSaveFocusNode;
+  late FocusNode _tmdbTestFocusNode;
+  late FocusNode _tmdbClearFocusNode;
+  bool _tmdbSaveHasFocus = false;
+  bool _tmdbTestHasFocus = false;
+  bool _tmdbClearHasFocus = false;
 
   Future<void> _applyPlaylist() async {
     final value = _playlistController.text.trim();
@@ -296,66 +293,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
   }
-
-  Future<void> _applyEpg() async {
-    final value = _epgController.text.trim();
-    
-    if (value.isEmpty) {
-      await EpgService.clearCache();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('EPG removido'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-      return;
-    }
-
-    setState(() {
-      _isDownloadingEpg = true;
-      _epgDownloadStatus = 'Baixando EPG...';
-    });
-
-    try {
-      print('🔧 [Settings] Baixando EPG: $value');
-      
-      await EpgService.loadEpg(value);
-      
-      setState(() {
-        _isDownloadingEpg = false;
-        _epgDownloadStatus = '';
-      });
-      
-      final channelCount = EpgService.getAllChannels().length;
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ EPG carregado! $channelCount canais'),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ [Settings] Erro ao baixar EPG: $e');
-      setState(() {
-        _isDownloadingEpg = false;
-        _epgDownloadStatus = '';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Erro ao baixar EPG: $e'),
-            duration: const Duration(seconds: 5),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
   final List<HeaderNav> _navItems = [
     HeaderNav(label: 'Início'),
     HeaderNav(label: 'Filmes'),
@@ -442,19 +379,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   width: 3,
                                 ),
                               ),
-                              child: TextField(
-                                controller: _tmdbController,
-                                focusNode: _tmdbFocusNode,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: 'Insira a TMDB API key (opcional)',
-                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                  filled: true,
-                                  fillColor: Colors.white.withOpacity(0.03),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
+                              child: RawKeyboardListener(
+                                focusNode: FocusNode(),
+                                onKey: (event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).previousFocus();
+                                    } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      // Move focus to the Save button for TV remotes
+                                      _tmdbSaveFocusNode.requestFocus();
+                                    }
+                                  }
+                                },
+                                child: TextField(
+                                  controller: _tmdbController,
+                                  focusNode: _tmdbFocusNode,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: 'Insira a TMDB API key (opcional)',
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                    filled: true,
+                                    fillColor: Colors.white.withOpacity(0.03),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
                                   ),
+                                  onSubmitted: (_) => _tmdbSaveFocusNode.requestFocus(),
                                 ),
                               ),
                             ),
@@ -462,17 +413,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Row(
                               children: [
                                 ElevatedButton(
+                                  focusNode: _tmdbSaveFocusNode,
                                   onPressed: _saveTmdbKey,
                                   child: const Text('Salvar chave'),
                                 ),
                                 const SizedBox(width: 12),
                                 ElevatedButton(
+                                  focusNode: _tmdbTestFocusNode,
                                   onPressed: _testTmdbKey,
                                   child: const Text('Testar chave'),
                                   style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                                 ),
                                 const SizedBox(width: 12),
                                 TextButton(
+                                  focusNode: _tmdbClearFocusNode,
                                   onPressed: () async {
                                     _tmdbController.text = '';
                                     await Prefs.setTmdbApiKey(null);
@@ -669,231 +623,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const SizedBox(height: 12),
                               Text(
                                 'A lista será salva localmente',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.6),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    // EPG (Electronic Program Guide) Input
-                    const Text(
-                      'Guia de Programação (EPG)',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    GlassPanel(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.calendar_month, color: AppColors.primary, size: 20),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'URL do EPG (XMLTV)',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const Spacer(),
-                                TextButton.icon(
-                                  icon: const Icon(Icons.tv_outlined, size: 16),
-                                  label: const Text('Ver Guia'),
-                                  style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-                                  onPressed: () => Navigator.pushNamed(context, '/epg'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _epgUrlHasFocus ? AppColors.primary : Colors.transparent,
-                                  width: 3,
-                                ),
-                                boxShadow: _epgUrlHasFocus ? [
-                                  BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.4),
-                                    blurRadius: 12,
-                                    spreadRadius: 2,
-                                  ),
-                                ] : [],
-                              ),
-                              child: TextField(
-                                controller: _epgController,
-                                focusNode: _epgUrlFocusNode,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: 'https://exemplo.com/epg.xml',
-                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                  filled: true,
-                                  fillColor: Colors.white.withOpacity(0.05),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
-                                onSubmitted: (_) => _epgButtonFocusNode.requestFocus(),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            if (_isDownloadingEpg) ...[
-                              Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    _epgDownloadStatus,
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.7),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ] else ...[
-                              Row(
-                                children: [
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 150),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: _epgButtonHasFocus ? Colors.white : Colors.transparent,
-                                        width: 3,
-                                      ),
-                                      boxShadow: _epgButtonHasFocus ? [
-                                        BoxShadow(
-                                          color: AppColors.primary.withOpacity(0.6),
-                                          blurRadius: 16,
-                                          spreadRadius: 2,
-                                        ),
-                                      ] : [],
-                                    ),
-                                    child: ElevatedButton.icon(
-                                      focusNode: _epgButtonFocusNode,
-                                      onPressed: _applyEpg,
-                                      icon: const Icon(Icons.download, size: 20),
-                                      label: Text(
-                                        _epgButtonHasFocus ? '▶ BAIXAR EPG ◀' : 'Baixar EPG',
-                                        style: TextStyle(
-                                          fontSize: _epgButtonHasFocus ? 14 : 12,
-                                          fontWeight: _epgButtonHasFocus ? FontWeight.bold : FontWeight.normal,
-                                        ),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: _epgButtonHasFocus 
-                                            ? Colors.green
-                                            : Colors.green.withOpacity(0.8),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  if (EpgService.isLoaded)
-                                    AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: _epgButtonHasFocus ? Colors.amber : Colors.transparent,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: ElevatedButton.icon(
-                                        onPressed: () async {
-                                          final epgUrl = EpgService.epgUrl;
-                                          if (epgUrl != null && epgUrl.isNotEmpty) {
-                                            setState(() {
-                                              _isDownloadingEpg = true;
-                                              _epgDownloadStatus = 'Atualizando EPG...';
-                                            });
-                                            try {
-                                              await EpgService.loadEpg(epgUrl);
-                                              final channelCount = EpgService.getAllChannels().length;
-                                              setState(() {
-                                                _isDownloadingEpg = false;
-                                                _epgDownloadStatus = '';
-                                              });
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('✅ EPG atualizado! $channelCount canais'),
-                                                    duration: const Duration(seconds: 3),
-                                                    backgroundColor: Colors.green,
-                                                  ),
-                                                );
-                                              }
-                                            } catch (e) {
-                                              setState(() {
-                                                _isDownloadingEpg = false;
-                                                _epgDownloadStatus = '';
-                                              });
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('❌ Erro ao atualizar EPG: $e'),
-                                                    duration: const Duration(seconds: 3),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                              }
-                                            }
-                                          }
-                                        },
-                                        icon: const Icon(Icons.refresh, size: 18),
-                                        label: const Text('Atualizar EPG'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue.withOpacity(0.8),
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                        ),
-                                      ),
-                                    ),
-                                  if (EpgService.isLoaded)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        '${EpgService.getAllChannels().length} canais',
-                                        style: const TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'O EPG mostra a programação dos canais ao vivo',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.6),
                                   fontSize: 12,

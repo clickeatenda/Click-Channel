@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
-import '../core/config.dart';
-import '../data/m3u_service.dart';
+import '../data/tmdb_service.dart';
 import '../widgets/optimized_gridview.dart';
-import '../utils/content_enricher.dart';
 import 'content_detail_screen.dart';
 
 class MoviesLibraryScreen extends StatefulWidget {
@@ -29,42 +27,37 @@ class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
   Future<void> _loadMovies() async {
     print('🎬 MoviesLibraryScreen: Iniciando carregamento de filmes...');
     try {
-      // CRÍTICO: Só carrega dados se houver playlist configurada
-      // SEM fallback para backend - app deve estar limpo sem playlist
-      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
-      if (!hasM3u) {
-        print('⚠️ MoviesLibraryScreen: Sem playlist configurada - retornando lista vazia');
-        if (mounted) {
-          setState(() {
-            movies = [];
-            loading = false;
-            error = null;
-          });
-        }
-        return;
-      }
-
-      // CRÍTICO: Usa paginação para não travar o app com listas grandes
-      // Carrega apenas primeira página inicialmente (80 itens)
-      // IMPORTANTE: Usa cache já pré-carregado (não força reload completo)
-      print('🎬 MoviesLibraryScreen: Carregando filmes paginados (usando cache pré-carregado)...');
+      // CRÍTICO: Carrega filmes populares direto do TMDB (evita canais do M3U)
+      print('🎬 MoviesLibraryScreen: Carregando filmes populares do TMDB...');
       
-      // Mostra UI imediatamente enquanto carrega em background
       if (mounted) {
         setState(() {
           loading = true;
         });
       }
       
-      final pagedResult = await M3uService.fetchPagedFromEnv(
-        page: 1,
-        pageSize: 80,
-        typeFilter: 'movie',
-        maxItems: 999999, // Permite carregar todos do cache (já processado)
-      );
+      // Carrega filmes populares do TMDB
+      final tmdbMovieList = await TmdbService.getPopularMovies(page: 1);
       
-      List<ContentItem> data = pagedResult.items;
-      print('🎬 MoviesLibraryScreen: ✅ Carregados ${data.length} filmes (página 1 de ${(pagedResult.total / 80).ceil()})');
+      // Converte TmdbMetadata em ContentItem
+      List<ContentItem> data = [];
+      for (final movie in tmdbMovieList) {
+        data.add(ContentItem(
+          title: movie.title,
+          url: movie.backdropUrl ?? movie.posterUrl ?? '',
+          image: movie.posterUrl ?? '',
+          group: 'TMDB Popular',
+          type: 'movie',
+          rating: movie.rating,
+          popularity: movie.popularity,
+          releaseDate: movie.releaseDate,
+          genre: movie.genres.join(', '),
+          description: movie.overview ?? '',
+          director: movie.director,
+        ));
+      }
+      
+      print('🎬 MoviesLibraryScreen: ✅ Carregados ${data.length} filmes do TMDB');
       
       // CRÍTICO: Mostra UI imediatamente, enriquece TMDB em background
       if (mounted) {
@@ -73,18 +66,6 @@ class _MoviesLibraryScreenState extends State<MoviesLibraryScreen> {
           loading = false;
           error = null;
         });
-      }
-      
-      // Enriquece com TMDB em background (não bloqueia UI)
-      if (data.isNotEmpty) {
-        print('🔍 TMDB: Enriquecendo ${data.length} filmes em background...');
-        final enriched = await ContentEnricher.enrichItems(data);
-        if (mounted) {
-          setState(() {
-            movies = enriched;
-          });
-        }
-        print('✅ TMDB: ${enriched.where((e) => e.rating > 0).length} filmes enriquecidos');
       }
     } catch (e) {
       print('❌ MoviesLibraryScreen: Erro ao carregar: $e');

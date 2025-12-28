@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
-import '../data/api_service.dart';
-import '../data/m3u_service.dart';
+import '../data/tmdb_service.dart';
 import '../widgets/optimized_gridview.dart';
-import '../utils/content_enricher.dart';
 import 'series_detail_screen.dart';
 
 class SeriesLibraryScreen extends StatefulWidget {
@@ -26,23 +24,42 @@ class _SeriesLibraryScreenState extends State<SeriesLibraryScreen> {
   }
 
   Future<void> _loadSeries() async {
+    print('📺 SeriesLibraryScreen: Iniciando carregamento de séries...');
     try {
-      // Try M3U first for series
-      List<ContentItem> data = [];
-      try {
-        data = await M3uService.fetchFromEnv(limit: 100);
-        print('📺 SeriesLibraryScreen: ✅ Carregados ${data.length} itens da M3U');
-        // Filter only series
-        data = data.where((item) => item.isSeries).toList();
-        print('📺 SeriesLibraryScreen: ${data.length} séries após filtro');
-      } catch (e) {
-        print('⚠️ SeriesLibraryScreen: M3U falhou: $e');
-        print('⚠️ SeriesLibraryScreen: Tentando backend...');
-        data = await ApiService.fetchAllSeries(limit: 100);
-        print('📺 SeriesLibraryScreen: ${data.length} séries do backend');
+      // CRÍTICO: Carrega séries populares direto do TMDB (evita canais do M3U)
+      print('📺 SeriesLibraryScreen: Carregando séries populares do TMDB...');
+      
+      if (mounted) {
+        setState(() {
+          loading = true;
+        });
       }
       
-      // CRÍTICO: Mostra UI primeiro, depois enriquece com TMDB em background
+      // Carrega séries populares do TMDB
+      final tmdbSeriesList = await TmdbService.getPopularSeries(page: 1);
+      
+      // Converte TmdbMetadata em ContentItem
+      List<ContentItem> data = [];
+      for (final series_item in tmdbSeriesList) {
+        data.add(ContentItem(
+          title: series_item.title,
+          url: series_item.backdropUrl ?? series_item.posterUrl ?? '',
+          image: series_item.posterUrl ?? '',
+          group: 'TMDB Popular',
+          type: 'series',
+          isSeries: true,
+          rating: series_item.rating,
+          popularity: series_item.popularity,
+          releaseDate: series_item.releaseDate,
+          genre: series_item.genres.join(', '),
+          description: series_item.overview ?? '',
+          director: series_item.director,
+        ));
+      }
+      
+      print('📺 SeriesLibraryScreen: ✅ Carregadas ${data.length} séries do TMDB');
+      
+      // CRÍTICO: Mostra UI imediatamente, sem enriquecimento necessário (TMDB já tem tudo)
       if (mounted) {
         setState(() {
           series = data;
@@ -50,19 +67,8 @@ class _SeriesLibraryScreenState extends State<SeriesLibraryScreen> {
           error = null;
         });
       }
-      
-      // Enriquece com TMDB em background (não bloqueia UI)
-      if (data.isNotEmpty) {
-        print('🔍 TMDB: Enriquecendo ${data.length} séries em background...');
-        final enriched = await ContentEnricher.enrichItems(data);
-        if (mounted) {
-          setState(() {
-            series = enriched;
-          });
-        }
-        print('✅ TMDB: ${enriched.where((e) => e.rating > 0).length} séries enriquecidas');
-      }
     } catch (e) {
+      print('❌ SeriesLibraryScreen: Erro ao carregar: $e');
       if (mounted) {
         setState(() {
           loading = false;

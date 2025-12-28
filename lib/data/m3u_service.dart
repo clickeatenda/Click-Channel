@@ -841,12 +841,27 @@ class M3uService {
     // === HEURÍSTICAS DE SEGMENTAÇÃO MELHORADAS ===
     // ORDEM DE PRIORIDADE (do mais específico ao mais genérico)
 
-        // 🔴 REGRA -1 (PRIORIDADE MÁXIMA): "FILMES | SÉRIES" = CANAL (streaming contínuo)
-    // Esta categoria específica contém canais de streaming, não filmes/séries individuais
-    if (g.contains('filmes | séries') || g.contains('filmes | series') ||
-        g.contains('filmes|séries') || g.contains('filmes|series')) {
-      return 'channel';
-    }
+        // 🔴 REGRA -1 (PRIORIDADE MÁXIMA) REVISADA: "FILMES | SÉRIES"
+        // Antes tratávamos sempre como CANAL, mas isso causa muitos falsos positivos
+        // (listas que usam este rótulo para agrupar filmes e séries). Agora só
+        // considera CANAL se o título indicar claramente streaming/ao-vivo ou
+        // terminar com um número curto indicando um canal numerado (ex: "Netflix 1").
+        if (g.contains('filmes | séries') || g.contains('filmes | series') ||
+            g.contains('filmes|séries') || g.contains('filmes|series')) {
+          final lowerTitle = t;
+          // Se o título indica live/stream/24h ou termina com número (canal numerado),
+          // então é provável que se trate de um canal
+          if (lowerTitle.contains('live') || lowerTitle.contains('ao vivo') ||
+              lowerTitle.contains('24h') || RegExp(r'\b\d{1,3}\$').hasMatch(lowerTitle) || RegExp(r'\s\d{1,3}\$').hasMatch(lowerTitle)) {
+            return 'channel';
+          }
+          // Caso contrário: se NÃO tem padrão de série (S##E##), retorna 'movie'
+          // Isso evita que itens genéricos de "FILMES | SÉRIES" sejam forçados para 'series'
+          if (!RegExp(r's\d{2}e\d{2}|season\s*\d+|temporada\s*\d+|episódio\s*\d+').hasMatch(lowerTitle)) {
+            return 'movie'; // Sem padrão de série → assume filme
+          }
+          // Se TEM padrão de série, deixa as próximas heurísticas (regra 3) confirmarem
+        }
 
     // 🟢 REGRA 0 (NOVA): Categorias explícitas de FILMES 4K/UHD = FILME (antes de tudo!)/UHD = FILME (antes de tudo!)
     // Se o grupo contém "filmes 4k" ou "filmes uhd", é FILME independente do título

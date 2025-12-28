@@ -4,8 +4,10 @@ import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 import '../widgets/media_player_screen.dart';
 import '../data/m3u_service.dart';
+import '../data/tmdb_service.dart';
 import '../utils/content_enricher.dart';
 import '../core/config.dart';
+import '../core/utils/logger.dart';
 
 /// Tela de detalhes completa de filme/série com todas as informações
 class MovieDetailScreen extends StatefulWidget {
@@ -21,17 +23,21 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   List<ContentItem> similarItems = [];
   bool loadingSimilar = true;
   ContentItem? enrichedItem;
+  TmdbMetadata? tmdbMetadata;
   bool loadingMetadata = true;
+  bool loadingTmdb = true;
 
   @override
   void initState() {
     super.initState();
     _loadMetadata();
+    _loadTmdbMetadata(); // Lazy-load TMDB dados
     _loadSimilarItems();
   }
 
+  /// Carrega dados básicos do item (descrição, genero, etc)
   Future<void> _loadMetadata() async {
-    // Enriquece o item com dados do TMDB
+    // Enriquece o item com dados do TMDB (descrição, gênero, popularidade)
     try {
       final enriched = await ContentEnricher.enrichItem(widget.item);
       if (mounted) {
@@ -47,6 +53,38 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           enrichedItem = widget.item;
           loadingMetadata = false;
         });
+      }
+    }
+  }
+
+  /// Carrega metadados detalhados do TMDB (cast, diretor, orçamento, receita)
+  /// LAZY-LOAD: Executado em background, não bloqueia a UI
+  Future<void> _loadTmdbMetadata() async {
+    try {
+      AppLogger.info('🎬 Lazy-loading TMDB metadata para: ${widget.item.title}');
+      
+      final metadata = await TmdbService.searchContent(
+        widget.item.title,
+        year: widget.item.year.isNotEmpty ? widget.item.year : null,
+        type: widget.item.isSeries ? 'tv' : 'movie',
+      );
+      
+      if (metadata != null) {
+        AppLogger.info('✅ TMDB metadata carregado: cast=${metadata.cast.length}, director=${metadata.director}');
+      } else {
+        AppLogger.warning('⚠️ TMDB metadata não encontrado');
+      }
+      
+      if (mounted) {
+        setState(() {
+          tmdbMetadata = metadata;
+          loadingTmdb = false;
+        });
+      }
+    } catch (e) {
+      AppLogger.error('❌ Erro ao carregar TMDB metadata: $e');
+      if (mounted) {
+        setState(() => loadingTmdb = false);
       }
     }
   }
@@ -333,7 +371,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           ),
                           const SizedBox(height: 40),
                           
-                          // Top Cast
+                          // Top Cast - Dynamic from TMDB
                           const Text(
                             'TOP CAST',
                             style: TextStyle(
@@ -343,17 +381,26 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              _buildCastMember('Leonardo DiCaprio', 'Cobb'),
-                              const SizedBox(width: 16),
-                              _buildCastMember('Joseph Gordon-Levitt', 'Arthur'),
-                              const SizedBox(width: 16),
-                              _buildCastMember('Elliot Page', 'Ariadne'),
-                              const SizedBox(width: 16),
-                              _buildCastMember('Tom Hardy', 'Eames'),
-                            ],
-                          ),
+                          if (loadingTmdb)
+                            const SizedBox(
+                              height: 120,
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          else if (tmdbMetadata?.cast.isNotEmpty ?? false)
+                            Row(
+                              children: tmdbMetadata!.cast.take(4).map((member) {
+                                return Expanded(
+                                  child: _buildCastMemberFromTmdb(member),
+                                );
+                              }).toList(),
+                            )
+                          else
+                            const Text(
+                              'Cast information not available',
+                              style: TextStyle(color: Colors.white54, fontSize: 14),
+                            ),
                           const SizedBox(height: 40),
                           
                           // More Like This
@@ -494,7 +541,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           ),
                           const SizedBox(height: 24),
                           
-                          // Info Panel
+                          // Info Panel - Dynamic from TMDB
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
@@ -505,13 +552,36 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildInfoRow('Director', 'Christopher Nolan'),
+                                // Director - from TMDB
+                                if (tmdbMetadata?.director != null && tmdbMetadata!.director!.isNotEmpty)
+                                  _buildInfoRow('Director', tmdbMetadata!.director!)
+                                else
+                                  _buildInfoRow('Director', 'N/A'),
+                                
                                 const SizedBox(height: 12),
-                                _buildInfoRow('Budget', '\$160M'),
+                                
+                                // Budget - from TMDB, formatted
+                                if (tmdbMetadata?.budget != null && tmdbMetadata!.budget! > 0)
+                                  _buildInfoRow('Budget', '\$${(tmdbMetadata!.budget! / 1000000).toStringAsFixed(1)}M')
+                                else
+                                  _buildInfoRow('Budget', 'N/A'),
+                                
                                 const SizedBox(height: 12),
-                                _buildInfoRow('Box Office', '\$836.8M'),
+                                
+                                // Box Office - from TMDB, formatted
+                                if (tmdbMetadata?.revenue != null && tmdbMetadata!.revenue! > 0)
+                                  _buildInfoRow('Box Office', '\$${(tmdbMetadata!.revenue! / 1000000).toStringAsFixed(1)}M')
+                                else
+                                  _buildInfoRow('Box Office', 'N/A'),
+                                
                                 const SizedBox(height: 12),
-                                _buildInfoRow('Languages', 'EN, FR, JA'),
+                                
+                                // Runtime - from TMDB
+                                if (tmdbMetadata?.runtime != null && tmdbMetadata!.runtime! > 0)
+                                  _buildInfoRow('Runtime', '${tmdbMetadata!.runtime}m')
+                                else
+                                  _buildInfoRow('Runtime', 'N/A'),
+                                
                                 if (widget.item.quality.isNotEmpty) ...[
                                   const SizedBox(height: 12),
                                   _buildInfoRow('Quality', widget.item.quality.toUpperCase()),
@@ -532,36 +602,52 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
   }
 
-  Widget _buildCastMember(String name, String role) {
+  Widget _buildCastMemberFromTmdb(CastMember member) {
     return Column(
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: 70,
+          height: 70,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.grey[800],
             border: Border.all(color: Colors.white24, width: 2),
           ),
-          child: const Icon(Icons.person, color: Colors.white54, size: 40),
+          child: member.profilePath != null
+              ? ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: member.profileUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      color: Colors.grey[900],
+                      child: const Icon(Icons.person, color: Colors.white54, size: 30),
+                    ),
+                    errorWidget: (_, __, ___) => const Icon(Icons.person, color: Colors.white54, size: 30),
+                  ),
+                )
+              : const Icon(Icons.person, color: Colors.white54, size: 30),
         ),
         const SizedBox(height: 8),
         Text(
-          name,
+          member.name,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
           textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         Text(
-          role,
+          member.character,
           style: const TextStyle(
             color: Colors.white54,
-            fontSize: 10,
+            fontSize: 9,
           ),
           textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
