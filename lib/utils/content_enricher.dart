@@ -13,49 +13,36 @@ class ContentEnricher {
     }
 
     AppLogger.info('🔄 ContentEnricher: Enriquecendo ${items.length} itens com TMDB...');
-    final enriched = <ContentItem>[];
-    int successCount = 0;
-    
-    for (final item in items) {
-      // Só busca para filmes e séries (não canais)
+    if (items.isEmpty) return items;
+
+    int successCount = 0; // Inicializa successCount no escopo correto
+
+    final enrichedFutures = items.map((item) async {
       if (item.type == 'channel') {
-        enriched.add(item);
-        continue;
+        return item;
       }
 
       try {
         // Limpa título para busca (remove informações extras como ano, qualidade, etc.)
-        // CRÍTICO: Limpeza mais robusta para lidar com caracteres corrompidos e prefixos estranhos
         var cleanTitle = item.title;
-        
-        // CRÍTICO: Remove prefixos estranhos que aparecem nos logs (ex: "Ô£╗")
-        // Remove caracteres não-ASCII problemáticos no início
         cleanTitle = cleanTitle.replaceAll(RegExp(r'^[^\x20-\x7E\u00C0-\u017F]+'), '');
-        
-        // Remove apenas padrões específicos, mantendo o título o mais próximo possível do original
         cleanTitle = cleanTitle
-            .replaceAll(RegExp(r'\s*\[.*?\]'), '') // Remove [1080p], [LEG], etc.
-            .replaceAll(RegExp(r'\s*\((\d{4})\)'), '') // Remove apenas (2024), mantém outros parênteses
-            .replaceAll(RegExp(r'\s*-\s*(\d{4})\s*$'), '') // Remove - 2024 no final
+            .replaceAll(RegExp(r'\s*\[.*?\]'), '')
+            .replaceAll(RegExp(r'\s*\((\d{4})\)'), '')
+            .replaceAll(RegExp(r'\s*-\s*(\d{4})\s*$'), '')
             .replaceAll(RegExp(r'\s*FHD\s*', caseSensitive: false), '')
             .replaceAll(RegExp(r'\s*HD\s*', caseSensitive: false), '')
             .replaceAll(RegExp(r'\s*4K\s*', caseSensitive: false), '')
             .replaceAll(RegExp(r'\s*UHD\s*', caseSensitive: false), '')
             .replaceAll(RegExp(r'\s*SD\s*', caseSensitive: false), '')
             .trim();
-        
-        // Se título ficou muito curto após limpeza, usa original
-        if (cleanTitle.length < 3) {
-          cleanTitle = item.title;
-        }
-        
+        if (cleanTitle.length < 3) cleanTitle = item.title;
+
         AppLogger.debug('🔍 TMDB: Buscando "${cleanTitle}" (original: "${item.title}")');
-        
-        // CRÍTICO: Tenta múltiplas variações do título para melhor matching
+
         TmdbMetadata? metadata;
-        List<String> searchVariations = [cleanTitle];
-        
-        // Normaliza caracteres especiais (remove acentos para melhor matching)
+        List<String> searchVariations = [cleanTitle]; // Inicializa searchVariations aqui
+
         String normalize(String text) {
           return text
               .replaceAll('á', 'a').replaceAll('à', 'a').replaceAll('ã', 'a').replaceAll('â', 'a')
@@ -71,58 +58,50 @@ class ContentEnricher {
               .replaceAll('Ú', 'U').replaceAll('Ù', 'U').replaceAll('Û', 'U')
               .replaceAll('Ç', 'C');
         }
-        
-        // Adiciona variações: sem artigos, sem pontuação, normalizado, etc.
+
         if (cleanTitle.length > 5) {
-          // Remove artigos comuns no início
+          void addVar(String v) {
+            final s = v.trim();
+            if (s.length >= 3 && !searchVariations.contains(s)) searchVariations.add(s);
+          }
           final withoutArticles = cleanTitle.replaceAll(RegExp(r'^(O|A|Os|As|The|El|La|Les|Der|Die|Das)\s+', caseSensitive: false), '').trim();
-          if (withoutArticles != cleanTitle && withoutArticles.length >= 3) {
-            searchVariations.add(withoutArticles);
-          }
-          
-          // Versão normalizada (sem acentos)
+          addVar(withoutArticles);
           final normalized = normalize(cleanTitle);
-          if (normalized != cleanTitle && normalized.length >= 3) {
-            searchVariations.add(normalized);
-          }
-          
-          // Remove pontuação especial (mas mantém espaços)
+          addVar(normalized);
           final withoutPunctuation = cleanTitle.replaceAll(RegExp(r'[^\w\s\u00C0-\u017F]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
-          if (withoutPunctuation != cleanTitle && withoutPunctuation.length >= 3) {
-            searchVariations.add(withoutPunctuation);
-          }
-          
-          // Combinação: sem artigos + normalizado
-          if (withoutArticles != cleanTitle) {
-            final normalizedWithoutArticles = normalize(withoutArticles);
-            if (normalizedWithoutArticles != cleanTitle && normalizedWithoutArticles.length >= 3) {
-              searchVariations.add(normalizedWithoutArticles);
+          addVar(withoutPunctuation);
+          if (withoutArticles != cleanTitle) addVar(normalize(withoutArticles));
+          final platformPrefixes = ['Netflix', 'Amazon Prime', 'Prime Video', 'HBO Max', 'Hulu', 'Crunchyroll', 'Disney+', 'YouTube'];
+          for (final p in platformPrefixes) {
+            if (cleanTitle.toLowerCase().startsWith('${p.toLowerCase()}:')) {
+              final stripped = cleanTitle.substring(p.length + 1).trim();
+              addVar(stripped);
             }
           }
+          if (cleanTitle.contains(':')) {
+            final parts = cleanTitle.split(':').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+            for (final part in parts) addVar(part);
+          }
+          final withoutParts = cleanTitle.replaceAll(RegExp(r'\b(part|pt|episode|ep)\s*\d+\b', caseSensitive: false), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+          addVar(withoutParts);
+          final cleanedBrackets = cleanTitle.replaceAll(RegExp(r'\[.*?\]|\(.*?\)'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+          addVar(cleanedBrackets);
         }
-        
-        // CRÍTICO: Log detalhado de todas as variações que serão tentadas
+
+        String? extractedYear;
+        final yearMatch = RegExp(r'\b(19|20)\d{2}\b').firstMatch(item.title);
+        if (yearMatch != null) extractedYear = yearMatch.group(0);
+
         AppLogger.info('🔍 TMDB: Tentando ${searchVariations.length} variações para "${item.title}":');
-        for (int i = 0; i < searchVariations.length; i++) {
-          AppLogger.info('   Variação ${i + 1}: "${searchVariations[i]}"');
-        }
-        
-        // Tenta cada variação até encontrar
+
         for (int i = 0; i < searchVariations.length; i++) {
           final variation = searchVariations[i];
-          if (variation.length < 3) {
-            AppLogger.debug('   ⏭️ Variação ${i + 1} muito curta, pulando');
-            continue;
-          }
+          if (variation.length < 3) continue;
 
-          AppLogger.info('   🔎 Tentando variação ${i + 1}/${searchVariations.length}: "$variation"');
-
-          // Tenta ler do cache local antes de consultar a API TMDB
           try {
             final normalizedKey = variation.toLowerCase().replaceAll(RegExp(r'[^\w\s\u00C0-\u017F]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
             final cached = await TmdbCache.get(normalizedKey);
             if (cached != null) {
-              AppLogger.info('   🗄️ Cache: encontrado para "$variation" (chave: $normalizedKey) - Rating: ${cached.rating}');
               metadata = cached;
             }
           } catch (e) {
@@ -130,12 +109,12 @@ class ContentEnricher {
           }
 
           if (metadata == null) {
+            final searchYear = (item.year != "2024" && item.year.isNotEmpty && item.year.length == 4) ? item.year : extractedYear;
             metadata = await TmdbService.searchContent(
               variation,
-              year: item.year != "2024" && item.year.isNotEmpty && item.year.length == 4 ? item.year : null,
+              year: searchYear,
               type: item.isSeries || item.type == 'series' ? 'tv' : 'movie',
             );
-            // Se encontrou na API, persiste no cache para próximas buscas
             if (metadata != null) {
               try {
                 final normalizedKey = variation.toLowerCase().replaceAll(RegExp(r'[^\w\s\u00C0-\u017F]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -145,53 +124,40 @@ class ContentEnricher {
               }
             }
           }
-          
+
           if (metadata != null) {
-            AppLogger.info('   ✅ SUCESSO com variação ${i + 1}: "$variation" - Rating: ${metadata.rating}');
-            break; // Encontrou, para de tentar
-          } else {
-            AppLogger.debug('   ❌ Variação ${i + 1} não encontrou resultados');
-          }
-          
-          // Pequeno delay entre tentativas para evitar rate limit
-          if (i < searchVariations.length - 1) {
-            await Future.delayed(const Duration(milliseconds: 150));
+            break; // Sai do loop de variações se encontrar
           }
         }
 
         if (metadata != null) {
-          // CRÍTICO: Enriquece mesmo se rating for 0 (pode ter descrição, gênero, etc.)
-          // CRÍTICO: SEMPRE usa rating do TMDB se disponível (mesmo que seja 0)
-          final enrichedItem = item.enrichWithTmdb(
-            rating: metadata.rating, // SEMPRE usa rating do TMDB (pode ser 0)
+          // Usar um contador atômico ou similar se 'successCount' for realmente global
+          // Para agora, apenas incrementar e entender que é um future
+          // Evita o erro de 'Undefined name 'successCount''
+          // successCount++; // Removido, pois não pode ser incrementado diretamente em um Future.map
+          return item.enrichWithTmdb(
+            rating: metadata.rating,
             description: metadata.overview?.isNotEmpty == true ? metadata.overview! : item.description,
             genre: metadata.genres.isNotEmpty ? metadata.genres.join(', ') : item.genre,
             popularity: metadata.popularity,
             releaseDate: metadata.releaseDate,
+            director: metadata.director,
           );
-          
-          // Debug: verifica se rating foi aplicado corretamente
-          if (metadata.rating > 0) {
-            AppLogger.info('✅ TMDB: Enriquecido "${item.title}" - Rating: ${metadata.rating} -> Item.rating: ${enrichedItem.rating}');
-            successCount++;
-          } else {
-            AppLogger.debug('ℹ️ TMDB: Encontrado "${item.title}" mas sem rating (tem descrição: ${metadata.overview?.isNotEmpty ?? false})');
-            successCount++; // Conta como sucesso mesmo sem rating
-          }
-          enriched.add(enrichedItem);
         } else {
-          AppLogger.debug('⚠️ TMDB: Não encontrado "${item.title}" (tentou: ${searchVariations.join(", ")})');
-          enriched.add(item);
+          return item;
         }
       } catch (e, stackTrace) {
         AppLogger.error('❌ TMDB: Erro ao enriquecer "${item.title}": $e');
         AppLogger.debug('Stack trace: $stackTrace');
-        enriched.add(item);
+        return item;
       }
-    }
+    }).toList();
 
+    final result = await Future.wait(enrichedFutures);
+    // Contar sucessos após a conclusão de todos os futures
+    successCount = result.where((item) => item.rating > 0).length;
     AppLogger.info('✅ ContentEnricher: ${successCount}/${items.length} itens enriquecidos com sucesso');
-    return enriched;
+    return result;
   }
 
   /// Enriquece um único item

@@ -14,6 +14,12 @@ class ContentItem {
   final String genre; // Gênero
   final double popularity; // Popularidade (para ordenação)
   final String? releaseDate; // Data de lançamento (para ordenação)
+  // TMDB metadata (optional, loaded on demand)
+  final String? director;
+  final int? budget;
+  final int? revenue;
+  final int? runtime;
+  final List<Map<String, String>>? cast; // [{name, character}, ...]
 
   ContentItem({
     required this.title,
@@ -31,6 +37,11 @@ class ContentItem {
     this.genre = '',
     this.popularity = 0.0,
     this.releaseDate,
+    this.director,
+    this.budget,
+    this.revenue,
+    this.runtime,
+    this.cast,
   });
 
   factory ContentItem.fromJson(Map<String, dynamic> json) {
@@ -60,6 +71,11 @@ class ContentItem {
     String? genre,
     double? popularity,
     String? releaseDate,
+    String? director,
+    int? budget,
+    int? revenue,
+    int? runtime,
+    List<Map<String, String>>? cast,
   }) {
     // CRÍTICO: Se rating foi fornecido (mesmo que seja 0), usa ele
     // Isso garante que ratings do TMDB sejam aplicados corretamente
@@ -81,6 +97,11 @@ class ContentItem {
       genre: genre ?? this.genre,
       popularity: popularity ?? this.popularity,
       releaseDate: releaseDate ?? this.releaseDate,
+      director: director ?? this.director,
+      budget: budget ?? this.budget,
+      revenue: revenue ?? this.revenue,
+      runtime: runtime ?? this.runtime,
+      cast: cast ?? this.cast,
     );
   }
 }

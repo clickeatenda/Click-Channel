@@ -6,11 +6,13 @@ import '../models/content_item.dart';
 import '../widgets/optimized_gridview.dart';
 import '../widgets/media_player_screen.dart';
 import '../data/m3u_service.dart';
+import '../data/tmdb_service.dart';
 import '../data/epg_service.dart';
 import '../models/epg_program.dart';
 import '../core/config.dart';
 import '../core/utils/logger.dart';
 import '../utils/content_enricher.dart';
+
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
 
@@ -28,11 +30,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
   List<ContentItem> items = [];
   List<ContentItem> filteredItems = [];
   int visibleCount = 0;
-  final int pageSize = 240;
+  final int pageSize = 60;
   bool loading = true;
   ContentItem? bannerItem;
   bool _epgLoaded = false;
   Map<String, EpgChannel> _epgChannels = {};
+  bool _retryPreloadAttempted = false;
   
   // Filtros
   String _qualityFilter = 'all'; // all, 4k, fhd, hd
@@ -68,7 +71,59 @@ class _CategoryScreenState extends State<CategoryScreen> {
     List<ContentItem> data = [];
     try {
       final source = Config.playlistRuntime;
+      // Se não houver playlist configurada, tenta carregar via TMDB para filmes/séries
       if (source == null || source.isEmpty) {
+        if ((widget.type.toLowerCase() == 'movie' || widget.type.toLowerCase() == 'series') && TmdbService.isConfigured) {
+          AppLogger.info('ℹ️ CategoryScreen: Sem playlist; carregando lista do TMDB para ${widget.type}');
+          if (widget.type.toLowerCase() == 'movie') {
+            final tmdb = await TmdbService.getPopularMovies(page: 1);
+            data = tmdb.map((m) => ContentItem(
+              title: m.title,
+              url: m.backdropUrl ?? m.posterUrl ?? '',
+              image: m.posterUrl ?? '',
+              group: 'TMDB Popular',
+              type: 'movie',
+              isSeries: false,
+              rating: m.rating,
+              popularity: m.popularity,
+              releaseDate: m.releaseDate,
+              genre: m.genres.join(', '),
+              description: m.overview ?? '',
+            )).toList();
+          } else {
+            final tmdb = await TmdbService.getPopularSeries(page: 1);
+            data = tmdb.map((s) => ContentItem(
+              title: s.title,
+              url: s.backdropUrl ?? s.posterUrl ?? '',
+              image: s.posterUrl ?? '',
+              group: 'TMDB Popular',
+              type: 'series',
+              isSeries: true,
+              rating: s.rating,
+              popularity: s.popularity,
+              releaseDate: s.releaseDate,
+              genre: s.genres.join(', '),
+              description: s.overview ?? '',
+            )).toList();
+          }
+
+          if (mounted) {
+            setState(() {
+              items = data;
+              filteredItems = _applyFilters(data);
+              visibleCount = filteredItems.length > pageSize ? pageSize : filteredItems.length;
+              if (items.isNotEmpty) {
+                final withImage = items.where((i) => i.image.isNotEmpty).toList();
+                bannerItem = withImage.isNotEmpty ? withImage[Random().nextInt(withImage.length)] : items.first;
+              }
+              loading = false;
+            });
+          }
+
+          // Já temos dados TMDB, não precisa enriquecer via ContentEnricher
+          return;
+        }
+
         print('⚠️ CategoryScreen: Sem playlist configurada - retornando lista vazia');
         if (mounted) {
           setState(() {
@@ -79,13 +134,31 @@ class _CategoryScreenState extends State<CategoryScreen> {
         }
         return;
       }
-      
+
       // Usa cache completo para evitar lista vazia em categorias grandes (Netflix/Prime)
       if (widget.type.toLowerCase() == 'series') {
         data = await M3uService.fetchSeriesAggregatedForCategory(
           category: widget.categoryName,
           maxItems: 1000,
         );
+        // Se a lista vier vazia para séries, tenta um preload forçado uma vez
+        if (data.isEmpty && !_retryPreloadAttempted) {
+          _retryPreloadAttempted = true;
+          AppLogger.warning('⚠️ CategoryScreen: Lista de séries vazia para "${widget.categoryName}" — tentando preload de categorias e refetch');
+          try {
+            final src = Config.playlistRuntime;
+            if (src != null && src.isNotEmpty) {
+              await M3uService.preloadCategories(src);
+              data = await M3uService.fetchSeriesAggregatedForCategory(
+                category: widget.categoryName,
+                maxItems: 1000,
+              );
+              AppLogger.info('ℹ️ CategoryScreen: Refetch após preload retornou ${data.length} itens');
+            }
+          } catch (e) {
+            AppLogger.error('❌ CategoryScreen: Erro ao tentar preload/refetch de séries', error: e);
+          }
+        }
       } else {
         data = await M3uService.fetchCategoryItemsFromEnv(
           category: widget.categoryName,
@@ -96,6 +169,42 @@ class _CategoryScreenState extends State<CategoryScreen> {
     } catch (e) {
       AppLogger.error('❌ CategoryScreen: Erro ao carregar itens', error: e);
       data = [];
+    }
+
+    // Se a playlist existe mas a consulta M3U retornou vazia, tenta fallback via TMDB
+    if (data.isEmpty && TmdbService.isConfigured && (widget.type.toLowerCase() == 'movie' || widget.type.toLowerCase() == 'series')) {
+      AppLogger.warning('⚠️ CategoryScreen: M3U retornou vazio para "${widget.categoryName}". Tentando fallback TMDB.');
+      if (widget.type.toLowerCase() == 'movie') {
+        final tmdb = await TmdbService.getPopularMovies(page: 1);
+        data = tmdb.map((m) => ContentItem(
+          title: m.title,
+          url: m.backdropUrl ?? m.posterUrl ?? '',
+          image: m.posterUrl ?? '',
+          group: 'TMDB Fallback',
+          type: 'movie',
+          isSeries: false,
+          rating: m.rating,
+          popularity: m.popularity,
+          releaseDate: m.releaseDate,
+          genre: m.genres.join(', '),
+          description: m.overview ?? '',
+        )).toList();
+      } else {
+        final tmdb = await TmdbService.getPopularSeries(page: 1);
+        data = tmdb.map((s) => ContentItem(
+          title: s.title,
+          url: s.backdropUrl ?? s.posterUrl ?? '',
+          image: s.posterUrl ?? '',
+          group: 'TMDB Fallback',
+          type: 'series',
+          isSeries: true,
+          rating: s.rating,
+          popularity: s.popularity,
+          releaseDate: s.releaseDate,
+          genre: s.genres.join(', '),
+          description: s.overview ?? '',
+        )).toList();
+      }
     }
 
     // CRÍTICO: Mostra UI primeiro, depois enriquece com TMDB em background

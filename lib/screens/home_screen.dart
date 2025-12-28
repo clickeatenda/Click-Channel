@@ -8,6 +8,7 @@ import 'search_screen.dart';
 import '../data/watch_history_service.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
+import '../data/tmdb_service.dart';
 import '../utils/content_enricher.dart';
 import '../core/config.dart';
 import '../core/theme/app_colors.dart';
@@ -332,26 +333,31 @@ class _AppLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
-      child: Image.asset(
-        'assets/images/logo.png',
+      child: SizedBox(
         width: 40,
         height: 40,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
+        child: Image.asset(
+          'assets/images/logo.png',
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback com gradiente vermelho/rosa (padrão do app)
+            return Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
+                ),
               ),
-            ),
-            child: const Icon(Icons.live_tv, color: Colors.white, size: 24),
-          );
-        },
+              child: const Center(
+                child: Icon(Icons.play_arrow, color: Colors.white, size: 20),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -548,58 +554,79 @@ class _HomeBodyState extends State<_HomeBody> {
         });
       }
       
-      // CRÍTICO: Só carrega dados se houver playlist configurada
-      // SEM fallback para backend - app deve estar limpo sem playlist
-      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
-      if (hasM3u) {
-        // CRÍTICO: Carrega destaques SEM aguardar TMDB (UI rápida)
-        final results = await Future.wait([
-          M3uService.getCuratedFeaturedPrefer('movie', count: 6, pool: 30, maxItems: 600),
-          M3uService.getCuratedFeaturedPrefer('series', count: 6, pool: 30, maxItems: 600),
-          M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600),
-        ]);
+      // CRÍTICO: Carregar TMDB IMEDIATAMENTE (não bloqueado por M3U)
+      try {
+        final tmdbMoviesList = await TmdbService.getPopularMovies(page: 1);
+        final tmdbSeriesList = await TmdbService.getPopularSeries(page: 1);
         
-        // CRÍTICO: Atualiza UI IMEDIATAMENTE (sem aguardar TMDB)
+        // Converte lista de TmdbMetadata em ContentItem para filmes do TMDB
+        List<ContentItem> tmdbMovies = [];
+        for (final item in tmdbMoviesList.take(6)) {
+          tmdbMovies.add(ContentItem(
+            title: item.title,
+            url: item.backdropUrl ?? item.posterUrl ?? '',
+            image: item.posterUrl ?? '',
+            group: 'TMDB Popular',
+            type: 'movie',
+            rating: item.rating,
+            popularity: item.popularity,
+            releaseDate: item.releaseDate,
+            genre: item.genres.join(', '),
+            description: item.overview ?? '',
+            director: item.director,
+          ));
+        }
+        
+        // Converte lista de TmdbMetadata em ContentItem para séries do TMDB
+        List<ContentItem> tmdbSeries = [];
+        for (final item in tmdbSeriesList.take(6)) {
+          tmdbSeries.add(ContentItem(
+            title: item.title,
+            url: item.backdropUrl ?? item.posterUrl ?? '',
+            image: item.posterUrl ?? '',
+            group: 'TMDB Popular',
+            type: 'series',
+            isSeries: true,
+            rating: item.rating,
+            popularity: item.popularity,
+            releaseDate: item.releaseDate,
+            genre: item.genres.join(', '),
+            description: item.overview ?? '',
+            director: item.director,
+          ));
+        }
+        
+        // CRÍTICO: Atualiza UI IMEDIATAMENTE com TMDB (sem aguardar M3U)
         if (!mounted) return;
         setState(() {
-          featuredMovies = results[0];
-          featuredSeries = results[1];
-          featuredChannels = results[2];
+          featuredMovies = tmdbMovies.isNotEmpty ? tmdbMovies : [];
+          featuredSeries = tmdbSeries.isNotEmpty ? tmdbSeries : [];
           loading = false; // UI mostra conteúdo AGORA
         });
         
-        // CRÍTICO: Enriquece com TMDB em BACKGROUND (usuário já vê conteúdo)
-        if (results[0].isNotEmpty) {
-          print('🔍 TMDB: Enriquecendo filmes em destaque (${results[0].length} itens) em background...');
-          ContentEnricher.enrichItems(results[0]).then((enriched) {
-            if (mounted) {
-              setState(() => featuredMovies = enriched);
-              print('✅ TMDB: Filmes em destaque enriquecidos');
-            }
-          });
-        }
-        
-        if (results[1].isNotEmpty) {
-          print('🔍 TMDB: Enriquecendo séries em destaque (${results[1].length} itens) em background...');
-          ContentEnricher.enrichItems(results[1]).then((enriched) {
-            if (mounted) {
-              setState(() => featuredSeries = enriched);
-              print('✅ TMDB: Séries em destaque enriquecidas');
-            }
-          });
-        }
-      } else {
-        // Sem playlist configurada - retorna listas vazias
-        print('⚠️ HomeScreen: Sem playlist configurada - retornando listas vazias');
+        print('✅ HomeScreen: TMDB carregado imediatamente');
+      } catch (e) {
+        print('❌ HomeScreen: Erro ao carregar TMDB: $e');
         if (!mounted) return;
-        setState(() {
-          featuredMovies = [];
-          featuredSeries = [];
-          featuredChannels = [];
-          loading = false;
-        });
+        setState(() => loading = false);
       }
-    } catch (_) {
+      
+      // Carregar canais do M3U em BACKGROUND (não bloqueia UI)
+      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+      if (hasM3u) {
+        try {
+          final channels = await M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600);
+          if (!mounted) return;
+          setState(() {
+            featuredChannels = channels;
+          });
+          print('✅ HomeScreen: Canais M3U carregados em background');
+        } catch (e) {
+          print('❌ HomeScreen: Erro ao carregar canais M3U: $e');
+        }
+      }
+    } catch (e) {
+      print('❌ HomeScreen._load() erro geral: $e');
       if (!mounted) return;
       setState(() => loading = false);
     }
@@ -784,29 +811,35 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
           metaThumbs = meta.thumbs;
         }
         
-        // Featured e latest com limites menores (usa cache já processado)
-        final featured = reset ? await M3uService.getDailyFeaturedMovies(count: 5, pool: 20, maxItems: 999999) : featuredItems;
-        final latest = reset ? await M3uService.getLatestMovies(count: 10, maxItems: 999999) : latestItems;
+        // Featured e latest com limites menores (usa TMDB em vez de M3U)
+        List<ContentItem> enrichedFeatured = [];
+        List<ContentItem> enrichedLatest = [];
         
-        // CRÍTICO: Enriquece featuredItems e latestItems com TMDB (banners e últimos adicionados)
-        List<ContentItem> enrichedFeatured = featured;
-        List<ContentItem> enrichedLatest = latest;
-        if (reset && (featured.isNotEmpty || latest.isNotEmpty)) {
-          print('🔍 TMDB: Enriquecendo ${featured.length} filmes em destaque + ${latest.length} últimos adicionados...');
-          final allToEnrich = <ContentItem>[];
-          if (featured.isNotEmpty) allToEnrich.addAll(featured);
-          if (latest.isNotEmpty) allToEnrich.addAll(latest);
-          
-          final enriched = await ContentEnricher.enrichItems(allToEnrich);
-          
-          // Separa novamente
-          if (featured.isNotEmpty) {
-            enrichedFeatured = enriched.take(featured.length).toList();
+        if (reset) {
+          // Carrega featured filmes do TMDB diretamente
+          try {
+            final tmdbMovieList = await TmdbService.getPopularMovies(page: 1);
+            enrichedFeatured = [];
+            for (final movie in tmdbMovieList.take(5)) {
+              enrichedFeatured.add(ContentItem(
+                title: movie.title,
+                url: movie.backdropUrl ?? movie.posterUrl ?? '',
+                image: movie.posterUrl ?? '',
+                group: 'TMDB Popular',
+                type: 'movie',
+                rating: movie.rating,
+                popularity: movie.popularity,
+                releaseDate: movie.releaseDate,
+                genre: movie.genres.join(', '),
+                description: movie.overview ?? '',
+                director: movie.director,
+              ));
+            }
+            print('✅ TMDB: ${enrichedFeatured.length} filmes em destaque carregados');
+          } catch (e) {
+            print('❌ TMDB: Erro ao carregar featured filmes: $e');
+            enrichedFeatured = [];
           }
-          if (latest.isNotEmpty) {
-            enrichedLatest = enriched.skip(featured.length).take(latest.length).toList();
-          }
-          print('✅ TMDB: Filmes enriquecidos com sucesso (${enrichedFeatured.length} featured, ${enrichedLatest.length} latest)');
         }
 
         // Preparar lista para enriquecimento e ordenação
@@ -1122,20 +1155,33 @@ class _SeriesBodyState extends State<_SeriesBody> {
       }
 
       final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'series', maxItems: 400);
-      final f = await M3uService.getCuratedFeaturedPrefer('series', count: 5, pool: 20, maxItems: 400);
-      final l = await M3uService.getLatestByType('series', count: 10, maxItems: 400);
       
-      // CRÍTICO: Enriquece séries com TMDB (em background, não bloqueia UI)
-      List<ContentItem> enrichedFeatured = f;
-      List<ContentItem> enrichedLatest = l;
-      if (f.isNotEmpty || l.isNotEmpty) {
-        print('🔍 TMDB: Enriquecendo séries (${f.length + l.length} itens)...');
-        final allSeries = [...f, ...l];
-        final enriched = await ContentEnricher.enrichItems(allSeries);
-        // Separa novamente
-        enrichedFeatured = enriched.take(f.length).toList();
-        enrichedLatest = enriched.skip(f.length).take(l.length).toList();
-        print('✅ TMDB: Séries enriquecidas com sucesso');
+      // CRÍTICO: Carrega featured séries do TMDB em vez de M3U
+      List<ContentItem> enrichedFeatured = [];
+      List<ContentItem> enrichedLatest = [];
+      
+      try {
+        final tmdbSeriesList = await TmdbService.getPopularSeries(page: 1);
+        for (final series in tmdbSeriesList.take(5)) {
+          enrichedFeatured.add(ContentItem(
+            title: series.title,
+            url: series.backdropUrl ?? series.posterUrl ?? '',
+            image: series.posterUrl ?? '',
+            group: 'TMDB Popular',
+            type: 'series',
+            isSeries: true,
+            rating: series.rating,
+            popularity: series.popularity,
+            releaseDate: series.releaseDate,
+            genre: series.genres.join(', '),
+            description: series.overview ?? '',
+            director: series.director,
+          ));
+        }
+        print('✅ TMDB: ${enrichedFeatured.length} séries em destaque carregadas');
+      } catch (e) {
+        print('❌ TMDB: Erro ao carregar featured séries: $e');
+        enrichedFeatured = [];
       }
       
       if (!mounted) return;
