@@ -76,15 +76,29 @@ class ContentItem {
     int? revenue,
     int? runtime,
     List<Map<String, String>>? cast,
+    String? image, // NOVO: permite atualizar imagem com poster TMDB
   }) {
     // CRÍTICO: Se rating foi fornecido (mesmo que seja 0), usa ele
     // Isso garante que ratings do TMDB sejam aplicados corretamente
     final finalRating = rating ?? this.rating;
     
+    // CRÍTICO: Só usa imagem TMDB se a original estiver vazia ou inválida
+    // OU se a nova imagem for válida (não vazia)
+    String finalImage = this.image;
+    if (image != null && image.isNotEmpty) {
+      // Prioriza imagem TMDB se a original estiver vazia ou for placeholder
+      if (this.image.isEmpty || 
+          this.image.contains('placeholder') ||
+          this.image.contains('no-image') ||
+          !this.image.startsWith('http')) {
+        finalImage = image;
+      }
+    }
+    
     return ContentItem(
       title: title,
       url: url,
-      image: image,
+      image: finalImage,
       group: group,
       type: type,
       isSeries: isSeries,
