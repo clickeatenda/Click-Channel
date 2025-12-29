@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../models/content_item.dart';
@@ -37,13 +38,24 @@ class _CategoryScreenState extends State<CategoryScreen> {
   
   // Filtros
   String _qualityFilter = 'all'; // all, 4k, fhd, hd
-  String _sortBy = 'default'; // default, name, quality, alphabetical, rating, latest
+  String _sortBy = 'latest'; // PADRÃO: mais recentes primeiro
+  
+  // Busca
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _showSearch = false;
 
   @override
   void initState() {
     super.initState();
     _loadItems();
     _loadEpg();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadEpg() async {
@@ -64,7 +76,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Future<void> _loadItems() async {
-    // CRÍTICO: Tenta carregar de M3U primeiro, depois fallback para TMDB se estiver vazio
     List<ContentItem> data = [];
     bool usedTmdbFallback = false;
     
@@ -72,11 +83,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
       final source = Config.playlistRuntime;
       if (source == null || source.isEmpty) {
         print('⚠️ CategoryScreen: Sem playlist configurada - tentando TMDB');
-        // Sem playlist, tenta TMDB
         data = await _loadFromTmdb();
         usedTmdbFallback = true;
       } else {
-        // Usa cache completo para evitar lista vazia em categorias grandes (Netflix/Prime)
         if (widget.type.toLowerCase() == 'series') {
           data = await M3uService.fetchSeriesAggregatedForCategory(
             category: widget.categoryName,
@@ -90,13 +99,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
           );
         }
         
-        // Se M3U retornou vazio ou apenas canais (tipo 'channel'), tenta TMDB como fallback
         if (data.isEmpty) {
           AppLogger.info('⚠️ M3U: Categoria "${widget.categoryName}" retornou vazio - tentando TMDB');
           data = await _loadFromTmdb();
           usedTmdbFallback = true;
         } else {
-          // Verifica se todos os itens são canais quando deveriam ser filmes/séries
           final allAreChannels = data.every((item) => item.type.toLowerCase() == 'channel');
           if (allAreChannels && widget.type.toLowerCase() != 'channel') {
             AppLogger.info('⚠️ M3U: "${widget.categoryName}" retornou ${data.length} canais quando esperava ${widget.type} - usando TMDB');
@@ -107,7 +114,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
       }
     } catch (e) {
       AppLogger.error('❌ CategoryScreen: Erro ao carregar itens', error: e);
-      // Tenta TMDB como último recurso
       data = await _loadFromTmdb();
       usedTmdbFallback = true;
     }
@@ -116,7 +122,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
       AppLogger.info('✅ Usando fallback TMDB para categoria "${widget.categoryName}" (${widget.type}) - ${data.length} itens');
     }
 
-    // Mostra UI imediatamente - o TMDB é carregado dinamicamente pelo LazyTmdbLoader no grid
     if (mounted) {
       setState(() {
         items = data;
@@ -130,11 +135,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
         loading = false;
       });
     }
-    // NOTA: O enriquecimento TMDB agora é feito dinamicamente pelo LazyTmdbLoader
-    // quando cada card é renderizado, evitando sobrecarga na abertura da categoria
   }
 
-  /// Carrega conteúdo do TMDB como fallback para categoria vazia ou tipo incorreto
   Future<List<ContentItem>> _loadFromTmdb() async {
     try {
       final isMovie = widget.type.toLowerCase() == 'movie';
@@ -145,34 +147,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
         return [];
       }
       
-      // Tenta carregar baseado na categoria
       late List<dynamic> tmdbItems;
       
-      // Mapeamento de categorias para métodos TMDB
       final categoryLower = widget.categoryName.toLowerCase();
       if (categoryLower.contains('top') || categoryLower.contains('melhor') || categoryLower.contains('avaliado')) {
-        // Carrega top rated
         tmdbItems = isMovie 
           ? await TmdbService.getTopRatedMovies(page: 1)
           : await TmdbService.getTopRatedSeries(page: 1);
       } else if (categoryLower.contains('recente') || categoryLower.contains('novo') || categoryLower.contains('latest')) {
-        // Carrega latest
         tmdbItems = isMovie 
           ? await TmdbService.getLatestMovies(page: 1)
-          : await TmdbService.getLatestMovies(page: 1); // Series também usa getLatestMovies para consistência
+          : await TmdbService.getLatestMovies(page: 1);
       } else {
-        // Padrão: carrega populares
         tmdbItems = isMovie 
           ? await TmdbService.getPopularMovies(page: 1)
           : await TmdbService.getPopularSeries(page: 1);
       }
       
-      // Converte TmdbMetadata para ContentItem
       final items = tmdbItems
-        .take(150) // Carrega mais para ter variedade
         .map((m) => ContentItem(
-          title: m.title,
-          url: '', // TMDB não tem URL de streaming
+          title: m.title ?? 'Sem título',
+          url: '',
           image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
           group: 'TMDB ${widget.categoryName}',
           type: isMovie ? 'movie' : 'series',
@@ -192,16 +187,30 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   List<ContentItem> _applyFilters(List<ContentItem> source) {
-    var result = source.where((item) {
-      if (_qualityFilter == 'all') return true;
-      final q = item.quality.toLowerCase();
-      if (_qualityFilter == '4k') return q.contains('4k') || q.contains('uhd');
-      if (_qualityFilter == 'fhd') return q.contains('fhd') || q.contains('fullhd');
-      if (_qualityFilter == 'hd') return q.contains('hd');
-      return true;
-    }).toList();
+    var result = source.toList();
     
-    // Aplicar ordenação usando ContentSorter
+    // 1. Aplicar busca por texto
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      result = result.where((item) {
+        return item.title.toLowerCase().contains(query) ||
+               item.description.toLowerCase().contains(query) ||
+               item.genre.toLowerCase().contains(query);
+      }).toList();
+    }
+    
+    // 2. Aplicar filtro de qualidade
+    if (_qualityFilter != 'all') {
+      result = result.where((item) {
+        final q = item.quality.toLowerCase();
+        if (_qualityFilter == '4k') return q.contains('4k') || q.contains('uhd');
+        if (_qualityFilter == 'fhd') return q.contains('fhd') || q.contains('fullhd');
+        if (_qualityFilter == 'hd') return q.contains('hd');
+        return true;
+      }).toList();
+    }
+    
+    // 3. Aplicar ordenação
     switch (_sortBy) {
       case 'alphabetical':
       case 'name':
@@ -211,7 +220,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
         result = ContentSorter.sortByRating(result);
         break;
       case 'latest':
-        result = ContentSorter.sortByLatest(result);
+        // Ordena por mais recente (ano + título)
+        result.sort((a, b) {
+          // Primeiro por ano (mais recente primeiro)
+          final yearCompare = b.year.compareTo(a.year);
+          if (yearCompare != 0) return yearCompare;
+          // Se mesmo ano, ordena por título
+          return a.title.compareTo(b.title);
+        });
         break;
       case 'quality':
         result.sort((a, b) {
@@ -230,7 +246,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         break;
       case 'default':
       default:
-        // Mantém ordem original
+        // Mantém ordem original do M3U
         break;
     }
     
@@ -244,6 +260,23 @@ class _CategoryScreenState extends State<CategoryScreen> {
     });
   }
 
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+    _updateFilters();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _showSearch = !_showSearch;
+      if (!_showSearch) {
+        _searchController.clear();
+        _searchQuery = '';
+        _updateFilters();
+      }
+    });
+  }
 
   Widget _buildFilterChip(String label, bool selected, VoidCallback onTap) {
     return Padding(
@@ -279,7 +312,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Column(
               children: [
-                // Header compacto com título e botão voltar
+                // Header com título, busca e botão voltar
                 Container(
                   padding: EdgeInsets.only(
                     top: MediaQuery.of(context).padding.top + 8,
@@ -294,32 +327,57 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       end: Alignment.bottomCenter,
                     ),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.categoryName,
-                              style: AppTypography.headlineMedium,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _showSearch
+                              ? TextField(
+                                  controller: _searchController,
+                                  autofocus: true,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: 'Buscar em ${widget.categoryName}...',
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                  onChanged: _onSearchChanged,
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.categoryName,
+                                      style: AppTypography.headlineMedium,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      '${widget.type.toUpperCase()} • ${filteredItems.length} itens',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.6),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                          ),
+                          // Botão de busca
+                          IconButton(
+                            icon: Icon(
+                              _showSearch ? Icons.close : Icons.search,
+                              color: Colors.white,
                             ),
-                            Text(
-                              '${widget.type.toUpperCase()} • ${filteredItems.length} itens',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
+                            onPressed: _toggleSearch,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -331,6 +389,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
+                        // Filtros de qualidade
                         _buildFilterChip('Todos', _qualityFilter == 'all', () {
                           setState(() => _qualityFilter = 'all');
                           _updateFilters();
@@ -350,31 +409,36 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         const SizedBox(width: 16),
                         Container(width: 1, height: 20, color: Colors.white24),
                         const SizedBox(width: 16),
-                        _buildFilterChip('Padrão', _sortBy == 'default', () {
-                          setState(() => _sortBy = 'default');
+                        // Ordenação
+                        _buildFilterChip('📅 Recentes', _sortBy == 'latest', () {
+                          setState(() => _sortBy = 'latest');
+                          _updateFilters();
+                        }),
+                        _buildFilterChip('⭐ Avaliação', _sortBy == 'rating', () {
+                          setState(() => _sortBy = 'rating');
+                          _updateFilters();
+                        }),
+                        _buildFilterChip('🔥 Popular', _sortBy == 'popularity', () {
+                          setState(() => _sortBy = 'popularity');
                           _updateFilters();
                         }),
                         _buildFilterChip('A-Z', _sortBy == 'alphabetical', () {
                           setState(() => _sortBy = 'alphabetical');
                           _updateFilters();
                         }),
-                        _buildFilterChip('Avaliação', _sortBy == 'rating', () {
-                          setState(() => _sortBy = 'rating');
-                          _updateFilters();
-                        }),
-                        _buildFilterChip('Data', _sortBy == 'latest', () {
-                          setState(() => _sortBy = 'latest');
-                          _updateFilters();
-                        }),
-                        _buildFilterChip('Qualidade', _sortBy == 'quality', () {
+                        _buildFilterChip('📊 Qualidade', _sortBy == 'quality', () {
                           setState(() => _sortBy = 'quality');
+                          _updateFilters();
+                        }),
+                        _buildFilterChip('Padrão', _sortBy == 'default', () {
+                          setState(() => _sortBy = 'default');
                           _updateFilters();
                         }),
                       ],
                     ),
                   ),
                 ),
-                // Grid content principal - MESMO VISUAL PARA TODOS
+                // Grid content principal
                 Expanded(
                   child: items.isEmpty
                       ? Center(
@@ -396,31 +460,53 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             ],
                           ),
                         )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: OptimizedGridView(
-                            items: filteredItems.take(visibleCount).toList(),
-                            epgChannels: _epgChannels,
-                                onTap: (item) {
-                                  if (item.isSeries || item.type == 'series') {
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
-                                  } else if (item.type == 'channel') {
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
-                                  } else {
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
-                                  }
-                                },
-                            crossAxisCount: 6,
-                            childAspectRatio: 0.55,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            showMetaChips: true,
-                            metaFontSize: 9,
-                            metaIconSize: 11,
+                      : filteredItems.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.search_off, color: Colors.white30, size: 48),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Nenhum resultado para "$_searchQuery"',
+                                  style: const TextStyle(color: Colors.white54),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.clear),
+                                  label: const Text('Limpar busca'),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _onSearchChanged('');
+                                  },
+                                ),
+                              ],
+                            ),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: OptimizedGridView(
+                              items: filteredItems.take(visibleCount).toList(),
+                              epgChannels: _epgChannels,
+                                  onTap: (item) {
+                                    if (item.isSeries || item.type == 'series') {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
+                                    } else if (item.type == 'channel') {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+                                    } else {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
+                                    }
+                                  },
+                              crossAxisCount: 6,
+                              childAspectRatio: 0.55,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              showMetaChips: true,
+                              metaFontSize: 9,
+                              metaIconSize: 11,
+                            ),
                           ),
-                        ),
                 ),
-                // Botão "Carregar mais" removido conforme solicitado
               ],
             ),
     );
