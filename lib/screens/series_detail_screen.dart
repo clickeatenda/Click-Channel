@@ -547,10 +547,10 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                           const SizedBox(height: 40),
                           
                           // More Like This
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 'Séries Similares',
                                 style: TextStyle(
                                   color: Colors.white,

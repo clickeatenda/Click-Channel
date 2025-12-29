@@ -6,13 +6,12 @@ import '../models/content_item.dart';
 import '../widgets/optimized_gridview.dart';
 import '../widgets/media_player_screen.dart';
 import '../data/m3u_service.dart';
-import '../data/tmdb_service.dart';
 import '../data/epg_service.dart';
+import '../data/tmdb_service.dart';
 import '../models/epg_program.dart';
 import '../core/config.dart';
 import '../core/utils/logger.dart';
 import '../utils/content_enricher.dart';
-
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
 
@@ -30,12 +29,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
   List<ContentItem> items = [];
   List<ContentItem> filteredItems = [];
   int visibleCount = 0;
-  final int pageSize = 60;
+  final int pageSize = 240;
   bool loading = true;
   ContentItem? bannerItem;
   bool _epgLoaded = false;
   Map<String, EpgChannel> _epgChannels = {};
-  bool _retryPreloadAttempted = false;
   
   // Filtros
   String _qualityFilter = 'all'; // all, 4k, fhd, hd
@@ -66,145 +64,56 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Future<void> _loadItems() async {
-    // CRÍTICO: Só carrega dados se houver playlist configurada
-    // SEM fallback para backend - app deve estar limpo sem playlist
+    // CRÍTICO: Tenta carregar de M3U primeiro, depois fallback para TMDB se estiver vazio
     List<ContentItem> data = [];
+    bool usedTmdbFallback = false;
+    
     try {
       final source = Config.playlistRuntime;
-      // Se não houver playlist configurada, tenta carregar via TMDB para filmes/séries
       if (source == null || source.isEmpty) {
-        if ((widget.type.toLowerCase() == 'movie' || widget.type.toLowerCase() == 'series') && TmdbService.isConfigured) {
-          AppLogger.info('ℹ️ CategoryScreen: Sem playlist; carregando lista do TMDB para ${widget.type}');
-          if (widget.type.toLowerCase() == 'movie') {
-            final tmdb = await TmdbService.getPopularMovies(page: 1);
-            data = tmdb.map((m) => ContentItem(
-              title: m.title,
-              url: m.backdropUrl ?? m.posterUrl ?? '',
-              image: m.posterUrl ?? '',
-              group: 'TMDB Popular',
-              type: 'movie',
-              isSeries: false,
-              rating: m.rating,
-              popularity: m.popularity,
-              releaseDate: m.releaseDate,
-              genre: m.genres.join(', '),
-              description: m.overview ?? '',
-            )).toList();
-          } else {
-            final tmdb = await TmdbService.getPopularSeries(page: 1);
-            data = tmdb.map((s) => ContentItem(
-              title: s.title,
-              url: s.backdropUrl ?? s.posterUrl ?? '',
-              image: s.posterUrl ?? '',
-              group: 'TMDB Popular',
-              type: 'series',
-              isSeries: true,
-              rating: s.rating,
-              popularity: s.popularity,
-              releaseDate: s.releaseDate,
-              genre: s.genres.join(', '),
-              description: s.overview ?? '',
-            )).toList();
-          }
-
-          if (mounted) {
-            setState(() {
-              items = data;
-              filteredItems = _applyFilters(data);
-              visibleCount = filteredItems.length > pageSize ? pageSize : filteredItems.length;
-              if (items.isNotEmpty) {
-                final withImage = items.where((i) => i.image.isNotEmpty).toList();
-                bannerItem = withImage.isNotEmpty ? withImage[Random().nextInt(withImage.length)] : items.first;
-              }
-              loading = false;
-            });
-          }
-
-          // Já temos dados TMDB, não precisa enriquecer via ContentEnricher
-          return;
-        }
-
-        print('⚠️ CategoryScreen: Sem playlist configurada - retornando lista vazia');
-        if (mounted) {
-          setState(() {
-            items = [];
-            filteredItems = [];
-            loading = false;
-          });
-        }
-        return;
-      }
-
-      // Usa cache completo para evitar lista vazia em categorias grandes (Netflix/Prime)
-      if (widget.type.toLowerCase() == 'series') {
-        data = await M3uService.fetchSeriesAggregatedForCategory(
-          category: widget.categoryName,
-          maxItems: 1000,
-        );
-        // Se a lista vier vazia para séries, tenta um preload forçado uma vez
-        if (data.isEmpty && !_retryPreloadAttempted) {
-          _retryPreloadAttempted = true;
-          AppLogger.warning('⚠️ CategoryScreen: Lista de séries vazia para "${widget.categoryName}" — tentando preload de categorias e refetch');
-          try {
-            final src = Config.playlistRuntime;
-            if (src != null && src.isNotEmpty) {
-              await M3uService.preloadCategories(src);
-              data = await M3uService.fetchSeriesAggregatedForCategory(
-                category: widget.categoryName,
-                maxItems: 1000,
-              );
-              AppLogger.info('ℹ️ CategoryScreen: Refetch após preload retornou ${data.length} itens');
-            }
-          } catch (e) {
-            AppLogger.error('❌ CategoryScreen: Erro ao tentar preload/refetch de séries', error: e);
-          }
-        }
+        print('⚠️ CategoryScreen: Sem playlist configurada - tentando TMDB');
+        // Sem playlist, tenta TMDB
+        data = await _loadFromTmdb();
+        usedTmdbFallback = true;
       } else {
-        data = await M3uService.fetchCategoryItemsFromEnv(
-          category: widget.categoryName,
-          typeFilter: widget.type,
-          maxItems: 1000,
-        );
+        // Usa cache completo para evitar lista vazia em categorias grandes (Netflix/Prime)
+        if (widget.type.toLowerCase() == 'series') {
+          data = await M3uService.fetchSeriesAggregatedForCategory(
+            category: widget.categoryName,
+            maxItems: 1000,
+          );
+        } else {
+          data = await M3uService.fetchCategoryItemsFromEnv(
+            category: widget.categoryName,
+            typeFilter: widget.type,
+            maxItems: 1000,
+          );
+        }
+        
+        // Se M3U retornou vazio ou apenas canais (tipo 'channel'), tenta TMDB como fallback
+        if (data.isEmpty) {
+          AppLogger.info('⚠️ M3U: Categoria "${widget.categoryName}" retornou vazio - tentando TMDB');
+          data = await _loadFromTmdb();
+          usedTmdbFallback = true;
+        } else {
+          // Verifica se todos os itens são canais quando deveriam ser filmes/séries
+          final allAreChannels = data.every((item) => item.type.toLowerCase() == 'channel');
+          if (allAreChannels && widget.type.toLowerCase() != 'channel') {
+            AppLogger.info('⚠️ M3U: "${widget.categoryName}" retornou ${data.length} canais quando esperava ${widget.type} - usando TMDB');
+            data = await _loadFromTmdb();
+            usedTmdbFallback = true;
+          }
+        }
       }
     } catch (e) {
       AppLogger.error('❌ CategoryScreen: Erro ao carregar itens', error: e);
-      data = [];
+      // Tenta TMDB como último recurso
+      data = await _loadFromTmdb();
+      usedTmdbFallback = true;
     }
-
-    // Se a playlist existe mas a consulta M3U retornou vazia, tenta fallback via TMDB
-    if (data.isEmpty && TmdbService.isConfigured && (widget.type.toLowerCase() == 'movie' || widget.type.toLowerCase() == 'series')) {
-      AppLogger.warning('⚠️ CategoryScreen: M3U retornou vazio para "${widget.categoryName}". Tentando fallback TMDB.');
-      if (widget.type.toLowerCase() == 'movie') {
-        final tmdb = await TmdbService.getPopularMovies(page: 1);
-        data = tmdb.map((m) => ContentItem(
-          title: m.title,
-          url: m.backdropUrl ?? m.posterUrl ?? '',
-          image: m.posterUrl ?? '',
-          group: 'TMDB Fallback',
-          type: 'movie',
-          isSeries: false,
-          rating: m.rating,
-          popularity: m.popularity,
-          releaseDate: m.releaseDate,
-          genre: m.genres.join(', '),
-          description: m.overview ?? '',
-        )).toList();
-      } else {
-        final tmdb = await TmdbService.getPopularSeries(page: 1);
-        data = tmdb.map((s) => ContentItem(
-          title: s.title,
-          url: s.backdropUrl ?? s.posterUrl ?? '',
-          image: s.posterUrl ?? '',
-          group: 'TMDB Fallback',
-          type: 'series',
-          isSeries: true,
-          rating: s.rating,
-          popularity: s.popularity,
-          releaseDate: s.releaseDate,
-          genre: s.genres.join(', '),
-          description: s.overview ?? '',
-        )).toList();
-      }
+    
+    if (usedTmdbFallback && data.isNotEmpty) {
+      AppLogger.info('✅ Usando fallback TMDB para categoria "${widget.categoryName}" (${widget.type}) - ${data.length} itens');
     }
 
     // CRÍTICO: Mostra UI primeiro, depois enriquece com TMDB em background
@@ -224,16 +133,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
     }
     
     // Enriquece com TMDB em background (não bloqueia UI)
-    // CRÍTICO: Enriquece TODOS os itens visíveis (até pageSize = 240) de uma só vez
-    // Isso garante consistência entre banner e grid (sem duplicação)
+    // Enriquece banner e TODOS os itens visíveis do grid
     if (data.isNotEmpty) {
       AppLogger.info('🔍 TMDB: Enriquecendo itens da categoria "${widget.categoryName}" (${widget.type})...');
+      // CRÍTICO: Enriquece TODOS os itens visíveis (até pageSize = 240)
+      // Isso garante que todos os itens exibidos tenham TMDB
+      final itemsToEnrich = <ContentItem>[];
+      if (bannerItem != null) {
+        itemsToEnrich.add(bannerItem!);
+        AppLogger.info('🔍 TMDB: Banner incluído: "${bannerItem!.title}"');
+      }
+      // Enriquece todos os itens visíveis (não apenas 100)
+      final gridItems = data.take(pageSize).toList();
+      itemsToEnrich.addAll(gridItems);
       
-      // CRÍTICO: Enriquece TODOS os itens visíveis (não separa banner do grid)
-      // Isso evita que o mesmo item seja enriquecido múltiplas vezes de forma inconsistente
-      final itemsToEnrich = data.take(pageSize).toList();
-      
-      AppLogger.info('🔍 TMDB: Enriquecendo ${itemsToEnrich.length} itens da categoria...');
+      AppLogger.info('🔍 TMDB: Enriquecendo ${itemsToEnrich.length} itens (${bannerItem != null ? "1 banner + " : ""}${gridItems.length} do grid)...');
       AppLogger.debug('🔍 TMDB: Primeiros 3 itens para enriquecer:');
       for (int i = 0; i < itemsToEnrich.length && i < 3; i++) {
         AppLogger.debug('  [$i] "${itemsToEnrich[i].title}" - Rating atual: ${itemsToEnrich[i].rating}');
@@ -249,21 +163,31 @@ class _CategoryScreenState extends State<CategoryScreen> {
         AppLogger.debug('  [$i] "${enriched[i].title}" - Rating: ${enriched[i].rating}');
       }
       
-      // CRÍTICO: Reconstrói a lista completa usando os itens enriquecidos
-      // Preserva ordem e garante que todos os itens visíveis tenham TMDB
+      // CRÍTICO: Atualiza itens usando índice direto (ordem preservada)
       final updatedItems = <ContentItem>[];
+      int enrichedIndex = 0;
+      
+      // Atualiza banner se foi enriquecido
+      ContentItem? updatedBanner = bannerItem;
+      if (bannerItem != null && enriched.isNotEmpty) {
+        updatedBanner = enriched[enrichedIndex++];
+        AppLogger.info('✅ TMDB: Banner "${updatedBanner.title}" - Rating: ${updatedBanner.rating} (original: ${bannerItem!.rating})');
+      }
+      
+      // Atualiza itens do grid usando índice direto
       for (int i = 0; i < data.length; i++) {
-        if (i < enriched.length) {
-          // Item foi enriquecido
-          updatedItems.add(enriched[i]);
+        if (i < gridItems.length && enrichedIndex < enriched.length) {
+          // Item está na lista de enriquecidos
+          final enrichedItem = enriched[enrichedIndex++];
+          updatedItems.add(enrichedItem);
           
           // Debug: mostra primeiros 5 itens enriquecidos
           if (i < 5) {
-            final ratingChanged = enriched[i].rating != data[i].rating;
-            AppLogger.info('✅ TMDB: Item[$i] "${enriched[i].title}" - Rating: ${enriched[i].rating} (original: ${data[i].rating}) ${ratingChanged ? "✅ MUDOU" : "❌ IGUAL"}');
+            final ratingChanged = enrichedItem.rating != data[i].rating;
+            AppLogger.info('✅ TMDB: Item[$i] "${enrichedItem.title}" - Rating: ${enrichedItem.rating} (original: ${data[i].rating}) ${ratingChanged ? "✅ MUDOU" : "❌ IGUAL"}');
           }
         } else {
-          // Item não foi enriquecido (além do pageSize), mantém original
+          // Item não foi enriquecido, mantém original
           updatedItems.add(data[i]);
         }
       }
@@ -271,23 +195,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       final finalItemsWithRating = updatedItems.where((e) => e.rating > 0).length;
       AppLogger.info('✅ TMDB: ${finalItemsWithRating}/${updatedItems.length} itens com rating após atualização');
       
-      // CRÍTICO: Atualiza banner DEPOIS de enriquecer (usa item enriquecido)
-      // Isso garante que o banner tenha os mesmos dados TMDB que o grid
-      ContentItem? updatedBanner = bannerItem;
-      if (bannerItem != null && updatedItems.isNotEmpty) {
-        // Procura o banner enriquecido na lista atualizada
-        final bannerIndex = data.indexWhere((item) => 
-          item.url == bannerItem!.url && item.title == bannerItem!.title
-        );
-        if (bannerIndex >= 0 && bannerIndex < updatedItems.length) {
-          updatedBanner = updatedItems[bannerIndex];
-          AppLogger.info('✅ TMDB: Banner "${updatedBanner.title}" - Rating: ${updatedBanner.rating} (índice: $bannerIndex)');
-        } else {
-          AppLogger.warning('⚠️ TMDB: Banner não encontrado na lista enriquecida, mantendo original');
-        }
-      }
-      
-      // CRÍTICO: Força atualização do estado
+      // CRÍTICO: Força atualização do estado mesmo se não houver mudanças aparentes
       if (mounted) {
         setState(() {
           // Força nova lista para garantir que o Flutter detecte mudanças
@@ -299,33 +207,72 @@ class _CategoryScreenState extends State<CategoryScreen> {
         });
         
         // Verifica se os dados foram realmente aplicados
-        final finalFilteredItemsWithRating = filteredItems.where((e) => e.rating > 0).length;
-        AppLogger.info('✅ TMDB: Estado atualizado - ${finalFilteredItemsWithRating} itens filtrados com rating');
+        final finalItemsWithRating = filteredItems.where((e) => e.rating > 0).length;
+        AppLogger.info('✅ TMDB: Estado atualizado - ${finalItemsWithRating} itens filtrados com rating');
         
-        // Debug: mostra primeiros 3 itens filtrados para verificar
+        // Debug: mostra primeiros 3 itens para verificar
         for (int i = 0; i < filteredItems.length && i < 3; i++) {
           final item = filteredItems[i];
-          AppLogger.debug('📋 Item filtrado[$i]: "${item.title}" - Rating: ${item.rating}, Type: ${item.type}');
-        }
-        
-        // Debug: verifica se banner e grid têm dados consistentes
-        if (bannerItem != null) {
-          final bannerInGrid = filteredItems.firstWhere(
-            (item) => item.url == bannerItem!.url && item.title == bannerItem!.title,
-            orElse: () => ContentItem(
-              title: '', 
-              url: '', 
-              type: '', 
-              image: '', 
-              group: '',
-            ),
-          );
-          if (bannerInGrid.url.isNotEmpty) {
-            final consistent = bannerInGrid.rating == bannerItem!.rating;
-            AppLogger.debug('🔍 Consistência banner/grid: ${consistent ? "✅ OK" : "❌ INCONSISTENTE"} - Banner rating: ${bannerItem!.rating}, Grid rating: ${bannerInGrid.rating}');
-          }
+          AppLogger.debug('📋 Item[$i]: "${item.title}" - Rating: ${item.rating}, Type: ${item.type}');
         }
       }
+    }
+  }
+
+  /// Carrega conteúdo do TMDB como fallback para categoria vazia ou tipo incorreto
+  Future<List<ContentItem>> _loadFromTmdb() async {
+    try {
+      final isMovie = widget.type.toLowerCase() == 'movie';
+      final isSeries = widget.type.toLowerCase() == 'series';
+      
+      if (!isMovie && !isSeries) {
+        AppLogger.info('⚠️ TMDB: Tipo "${widget.type}" não suportado, retornando vazio');
+        return [];
+      }
+      
+      // Tenta carregar baseado na categoria
+      late List<dynamic> tmdbItems;
+      
+      // Mapeamento de categorias para métodos TMDB
+      final categoryLower = widget.categoryName.toLowerCase();
+      if (categoryLower.contains('top') || categoryLower.contains('melhor') || categoryLower.contains('avaliado')) {
+        // Carrega top rated
+        tmdbItems = isMovie 
+          ? await TmdbService.getTopRatedMovies(page: 1)
+          : await TmdbService.getTopRatedSeries(page: 1);
+      } else if (categoryLower.contains('recente') || categoryLower.contains('novo') || categoryLower.contains('latest')) {
+        // Carrega latest
+        tmdbItems = isMovie 
+          ? await TmdbService.getLatestMovies(page: 1)
+          : await TmdbService.getLatestMovies(page: 1); // Series também usa getLatestMovies para consistência
+      } else {
+        // Padrão: carrega populares
+        tmdbItems = isMovie 
+          ? await TmdbService.getPopularMovies(page: 1)
+          : await TmdbService.getPopularSeries(page: 1);
+      }
+      
+      // Converte TmdbMetadata para ContentItem
+      final items = tmdbItems
+        .take(150) // Carrega mais para ter variedade
+        .map((m) => ContentItem(
+          title: m.title,
+          url: '', // TMDB não tem URL de streaming
+          image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+          group: 'TMDB ${widget.categoryName}',
+          type: isMovie ? 'movie' : 'series',
+          id: m.id.toString(),
+          rating: m.rating ?? 0,
+          year: m.releaseDate?.substring(0, 4) ?? '',
+          description: m.overview ?? '',
+        ))
+        .toList();
+      
+      AppLogger.info('✅ TMDB Fallback: Carregados ${items.length} itens para "${widget.categoryName}" (${widget.type})');
+      return items;
+    } catch (e) {
+      AppLogger.error('❌ TMDB Fallback: Erro ao carregar', error: e);
+      return [];
     }
   }
 

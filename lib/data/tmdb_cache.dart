@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'tmdb_service.dart';
+import 'tmdb_disk_cache.dart';
 
 /// Cache simples baseado em SharedPreferences.
 /// Chave: map de normalizedTitle -> { ts: epochMillis, data: {...tmdb JSON...} }
@@ -11,6 +12,12 @@ class TmdbCache {
   /// Recupera metadados em cache por chave normalizada. Retorna null se ausente ou expirado.
   static Future<TmdbMetadata?> get(String normalizedKey) async {
     try {
+      // Primeiro tenta cache em disco (mais rápido para vários itens)
+      try {
+        final disk = await TmdbDiskCache.get(normalizedKey);
+        if (disk != null) return disk;
+      } catch (_) {}
+
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_prefsKey);
       if (raw == null) return null;
@@ -19,7 +26,7 @@ class TmdbCache {
       final entry = map[normalizedKey] as Map<String, dynamic>;
       final ts = (entry['ts'] ?? 0) as int;
       final now = DateTime.now().millisecondsSinceEpoch;
-      final ttlMs = _defaultTtlDays * 24 * 3600 * 1000;
+      const ttlMs = _defaultTtlDays * 24 * 3600 * 1000;
       if (now - ts > ttlMs) {
         // expirado
         map.remove(normalizedKey);
@@ -37,6 +44,7 @@ class TmdbCache {
   /// Salva metadados em cache para a chave normalizada
   static Future<void> put(String normalizedKey, TmdbMetadata metadata) async {
     try {
+      // Grava tanto em SharedPreferences quanto em cache de disco
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_prefsKey);
       final Map<String, dynamic> map = raw != null ? json.decode(raw) as Map<String, dynamic> : <String, dynamic>{};
@@ -45,6 +53,9 @@ class TmdbCache {
         'data': metadata.toCacheJson(),
       };
       await prefs.setString(_prefsKey, json.encode(map));
+      try {
+        await TmdbDiskCache.put(normalizedKey, metadata);
+      } catch (_) {}
     } catch (e) {
       // ignora erros de cache
     }
@@ -54,5 +65,8 @@ class TmdbCache {
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKey);
+    try {
+      await TmdbDiskCache.clear();
+    } catch (_) {}
   }
 }

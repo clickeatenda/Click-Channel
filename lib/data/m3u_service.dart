@@ -44,6 +44,8 @@ class M3uService {
   
   // Proteção contra requisições duplicadas simultâneas
   static final Map<String, Future<List<String>>> _pendingRequests = {};
+  // Completers para sinalizar quando o preload de uma source específica termina
+  static final Map<String, Completer<void>> _preloadCompleters = {};
 
   /// Verifica se o preload já foi feito para a source atual
   static bool isPreloaded(String source) => _preloadDone && _preloadSource == source;
@@ -339,6 +341,13 @@ class M3uService {
 
   /// Pré-carrega categorias para primeira abertura rápida
   static Future<void> preloadCategories(String source) async {
+    // Registra completer para sinalizar conclusão do preload
+    try {
+      final key = source.trim();
+      if (!_preloadCompleters.containsKey(key)) {
+        _preloadCompleters[key] = Completer<void>();
+      }
+    } catch (_) {}
     // CRÍTICO: Valida que a source corresponde à URL salva em Prefs
     final savedUrl = Config.playlistRuntime;
     final normalizedSource = source.trim().replaceAll(RegExp(r'/+$'), '');
@@ -453,10 +462,35 @@ class M3uService {
       _preloadDone = true;
       _preloadSource = source;
 
+      // Completa o completer associado (se existir)
+      try {
+        final c = _preloadCompleters[source.trim()];
+        if (c != null && !c.isCompleted) c.complete();
+      } catch (_) {}
+
       print('✅ M3uService: Preload concluído - ${movieItems.length} filmes, ${seriesItems.length} séries, ${channelItems.length} canais');
       print('✅ M3uService: ${_movieCategories.length} cat filmes, ${_seriesCategories.length} cat séries');
     } catch (e) {
       print('⚠️ M3uService: Erro no preload: $e');
+      try {
+        final c = _preloadCompleters[source.trim()];
+        if (c != null && !c.isCompleted) c.completeError(e);
+      } catch (_) {}
+    }
+  }
+
+  /// Aguarda até que o preload para uma source específica seja concluído
+  /// Retorna true se o preload estiver completo ou for concluído dentro do timeout
+  static Future<bool> waitUntilPreloaded(String source, {Duration timeout = const Duration(seconds: 4)}) async {
+    if (source.trim().isEmpty) return false;
+    if (isPreloaded(source)) return true;
+    final key = source.trim();
+    try {
+      final completer = _preloadCompleters.putIfAbsent(key, () => Completer<void>());
+      await completer.future.timeout(timeout);
+      return isPreloaded(source);
+    } catch (_) {
+      return isPreloaded(source);
     }
   }
 

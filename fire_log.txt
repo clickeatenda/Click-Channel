@@ -1,0 +1,1079 @@
+--------- beginning of main
+12-29 10:52:49.557   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:52:49.557   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:52:49.557   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:52:49.557   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:52:49.557   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:52:49.557   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:52:49.557   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:52:49.557   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:52:49.557   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:52:49.557   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:52:59.562   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:52:59.562   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:52:59.562   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:52:59.562   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:52:59.562   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:52:59.563   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:52:59.563   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:52:59.563   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:52:59.563   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:52:59.563   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:00.345  1454 20744 I whad    : DeviceClusterManager:onHeartBeat:seq=6775,xmit=433115185162064,recv=433115367355945,uniqueId=XX0RV9,highNetworkLatency=1
+12-29 10:53:02.016  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433111.127318,skewX=430830.925948,skewY=5.865823,drift=1.782576,reportedDrift=1.782576,numExchanges=708629
+12-29 10:53:09.589   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:09.589   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:09.589   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:53:09.589   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:53:09.589   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:53:09.589   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:53:09.589   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:53:09.589   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:53:09.589   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:09.589   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:19.594   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:19.594   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:19.594   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:53:19.594   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:53:19.594   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:53:19.595   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:53:19.595   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:53:19.595   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:53:19.595   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:19.595   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:20.315  1454 20753 I whad    : DeviceClusterManager:onHeartBeat:seq=6777,xmit=433135181825743,recv=433135337368316,uniqueId=XX0RV9,highNetworkLatency=1
+12-29 10:53:29.621   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:29.621   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:29.621   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:53:29.621   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:53:29.621   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:53:29.621   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:53:29.621   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:53:29.621   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:53:29.621   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:29.621   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:30.346  1454 20757 I whad    : DeviceClusterManager:onHeartBeat:seq=6778,xmit=433145186753914,recv=433145367635812,uniqueId=XX0RV9,highNetworkLatency=1
+12-29 10:53:34.666  1399 20764 I SPCH-Cont_HealthLogger: Current State = {"ProfileValidated":"true","ProfileType":"ADULT","Gateway":"avs-alexa-18-na.amazon.com:443","memoryLow":"false","ReleaseVersion":"655.1.3","AlexaLegalTermsAccepted":"true","memoryAvailable":"932970496","SupportsFarField":"false","RemoteSettingsStrategy":"VizArcus","memoryTotalPss":"47454","memoryTotalSharedDirty":"3484","DeviceFamily":"SMP","str.auto_wake_up_always":"0","OOBECompleted":"true","AppVersion":"3.0.16038.0","AlexaCaptionsSupported":"true","memoryTotalPrivateDirty":"25167","AlexaShortcutsEnabled":"{\"all\": true, \"runtime\": true, \"locale\": true, \"isChild\": false}","Account":"valid","ConnectionState":"CONNECTED","AlexaCaptionsEnabled":"false","AlexaExperience":"FULL"}
+12-29 10:53:39.626   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:39.626   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:39.626   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:53:39.626   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:53:39.626   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:53:39.626   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:53:39.627   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:53:39.627   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:53:39.627   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:39.627   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:49.653   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:49.653   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:49.653   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:53:49.653   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:53:49.653   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:53:49.653   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:53:49.653   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:53:49.653   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:53:49.653   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:49.653   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:50.315  1454 20765 I whad    : DeviceClusterManager:onHeartBeat:seq=6780,xmit=433165182530487,recv=433165337446410,uniqueId=XX0RV9,highNetworkLatency=1
+12-29 10:53:53.304   618   753 I WifiDiagsUtil: event=RUN_TEST_CONTINUOUSLY
+12-29 10:53:53.304   618   753 I WifiDiagsUtil: event=logPacketStats, rx_bytes=86531333, rx_packets=60568, tx_bytes=2139811, tx_packets=30796
+12-29 10:53:53.305   618   753 I WifiDiagsUtil: event=logPacketStats, daily_rx_bytes=174309181, daily_rx_packets=130264, daily_tx_bytes=6123856, daily_tx_packets=68406
+12-29 10:53:53.307   618   753 I WifiDiagsUtil: event=pingTest, TARGET_TYPE=LOCALHOST, IP=127.0.0.1
+12-29 10:53:53.311   618   753 I WifiDiagsUtil: event=pingsComplete, TARGET_TYPE=LOCALHOST, IP=XXX, PKTS_TX=5, PKTS_RX=5, PKT_LOSS=0.0%, AVG_TIME=0,34
+12-29 10:53:53.311   618   753 I WifiDiagsUtil: event=pingTest, TARGET_TYPE=GATEWAY, IP=192.168.3.1
+12-29 10:53:53.323   618   753 I WifiDiagsUtil: event=pingsComplete, TARGET_TYPE=GATEWAY, IP=XXX, PKTS_TX=5, PKTS_RX=5, PKT_LOSS=0.0%, AVG_TIME=2,07
+12-29 10:53:53.323   618   753 I WifiDiagsUtil: event=pingTest, TARGET_TYPE=NAMESERVER1, IP=XXX
+12-29 10:53:53.337   618   753 I WifiDiagsUtil: event=pingsComplete, TARGET_TYPE=NAMESERVER1, IP=XXX, PKTS_TX=5, PKTS_RX=5, PKT_LOSS=0.0%, AVG_TIME=2,56
+12-29 10:53:53.338   618   753 I WifiDiagsUtil: event=preConfiguredDNSDetected, action=skipPingTest, nameserver=xxx.xxx.xxx...
+12-29 10:53:53.338   618   753 I WifiDiagsUtil: event=pingTest, TARGET_TYPE=NAMESERVER3, IP=XXX
+12-29 10:53:53.351   618   753 I WifiDiagsUtil: event=pingsComplete, TARGET_TYPE=NAMESERVER3, IP=XXX, PKTS_TX=5, PKTS_RX=5, PKT_LOSS=0.0%, AVG_TIME=2,20
+12-29 10:53:53.351   618   753 I WifiDiagsUtil: event=runHttpConnectionTestAttempt, host=http://firetvcaptiveportal.com/generate_204
+12-29 10:53:53.709   618   753 I WifiDiagsUtil: event=runHttpConnectionTestSuccess, host=http://firetvcaptiveportal.com/generate_204, httpCode=204, latency=357
+12-29 10:53:53.709   618   753 I WifiDiagsUtil: event=GOOD_CONNECTION
+12-29 10:53:53.709   618   753 I NetWatchDog: event=resetNetWatchdog, timeoutMS=900000
+12-29 10:53:53.710   618   753 I WifiDiagsUtil: event=reportNetworkStatistics, action=reportNetworkConnectivity, hasConnectivity=true
+12-29 10:53:53.710   618   753 I WifiDiagsUtil: broadcastDiagsResults
+12-29 10:53:53.713   618   753 I WifiDiagsUtil: event=stateDuration, duration=1110123
+12-29 10:53:53.713   618   753 I WifiDiagsUtil: event=recordDataInTestEndpointStatistics, isEmitmetric=false
+12-29 10:53:53.733 20189 20772 I com.amazon.diode.events.EventSaverService: Got external event for client WifiDiagsUtil
+12-29 10:53:53.735 20189 20772 W com.amazon.diode.store.FIFOFile: Overwriting 1 elements to make room in store WifiDiagsUtil
+12-29 10:53:53.987   618   630 W IMGMemtrackHAL: hal_get_memory: memtrack cache rebuild was required
+12-29 10:53:54.072   618   630 W IMGMemtrackHAL: hal_get_memory: memtrack cache rebuild was required
+12-29 10:53:54.122   618   630 W IMGMemtrackHAL: hal_get_memory: memtrack cache rebuild was required
+12-29 10:53:57.114 25906 25983 I DiebusMetrics: Starting reporting metrics
+12-29 10:53:57.114 25906 25983 I DiebusMetrics: End reporting metrics
+12-29 10:53:57.769 25906 25968 I DiebusMetrics: Starting reporting metrics
+12-29 10:53:57.769 25906 25968 I DiebusMetrics: End reporting metrics
+12-29 10:53:59.658   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:59.658   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:53:59.658   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:53:59.658   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:53:59.658   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:53:59.659   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:53:59.659   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:53:59.659   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:53:59.659   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:53:59.659   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:02.017  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433171.128940,skewX=430860.926759,skewY=5.865880,drift=1.782576,reportedDrift=1.782576,numExchanges=708725
+12-29 10:54:09.685   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:09.685   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:09.685   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:54:09.685   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:54:09.685   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:54:09.685   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:54:09.685   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:54:09.685   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:54:09.685   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:09.685   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:17.199 20852 20852 I main.wifi_log_levels: wifi_log_levels:wlan0:rssi=-52;rssi2=-48;noise=-84;noise2=-81;channel=149;txframes=13895468;txfails=303399;txper=2%;txaggr= 1 0 0 0 0 0 0 0;rxframes=27596072;rxcrc=28078225;rxper=50.4%;rxdrop=21636543;phymode=AC;phyrate=866;lasttxrate=NSS2_MCS9_BW80;lastrxrate=NSS2_MCS9_BW80; 
+12-29 10:54:17.219 20853 20853 I main.wifi_log_levels: tx_packets=13660073;tx_bytes=3042227783;tx_errors=12;tx_dropped=0;rx_packets=25584347;rx_bytes=2886176204;rx_errors=0;rx_dropped=0;wlan0 arp=STALE 
+12-29 10:54:17.238 20854 20854 I main.wifi_log_levels: max_rssi=-45;min_rssi=-69;max_noise=-81;min_noise=-92;noise histogram=0 0 0 0 1 92 2948 569286 13541 0 3039 
+12-29 10:54:17.276 20856 20856 I main.wifi_log_levels: wifi_log_levels:ch_busy=8%;ch_idle=92%;ch_tx=0%;ch_rx=0%;tx_ok=94%;tx_fail=6%;tx_retry=0%;rx_ok=9%;rx_fcs=91%;tx_ok=32;tx_fail=2;tx_retry=0;rx_ok=12;rx_fcs=118;cck_false=0;cck_crc=0;ofdm_false=860;ofdm_crc=1; 
+12-29 10:54:17.422 20867 20867 I main.wifi_log_levels: TXRATE=NSS2_MCS9, BW80, SGI, VHT, LDPC; PER=04%; PERCNT=30%;RXRATE=NSS2_MCS9, BW80, SGI, VHT, LDPC; PERCNT=80%;RXRATE=6M, BW20, OFDM, BCC; PERCNT=20%; 
+12-29 10:54:17.454  1399 29103 I com.amazon.vizzini/mo: Using the FireOSPlatformDCPMetricsCollector
+12-29 10:54:17.457   889 20872 I ...imp/TokenJobQueue[0]: Begin executing task GetToken:com.amazon.vizzini/com.amazon.dcp.sso.token.oauth.amazon.access_token
+12-29 10:54:17.458   889 20872 I ...imp/TokenJobQueue[0]: Scheduled running concurrent job GetToken:com.amazon.vizzini/com.amazon.dcp.sso.token.oauth.amazon.access_token.
+12-29 10:54:17.458   889 20873 I ...nformationQueryer[0]: Populate change for remote MAP info.
+12-29 10:54:17.458   889 20873 I ...nformationQueryer[0]: CacheContainsPartialResults? true
+12-29 10:54:17.460   889 20873 I ...imp/TokenJobQueue[0]: Finish executing task GetToken:com.amazon.vizzini/com.amazon.dcp.sso.token.oauth.amazon.access_token.
+12-29 10:54:19.690   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:19.690   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:19.690   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:54:19.690   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:54:19.690   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:54:19.691   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:54:19.691   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:54:19.691   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:54:19.691   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:19.691   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:20.325  1454 20831 I whad    : DeviceClusterManager:onHeartBeat:seq=6783,xmit=433195183801383,recv=433195347485345,uniqueId=XX0RV9,highNetworkLatency=1
+12-29 10:54:29.717   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:29.717   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:29.717   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:54:29.717   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:54:29.717   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:54:29.717   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:54:29.717   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:54:29.717   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:54:29.717   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:29.717   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:34.726  1399 20882 I SPCH-Cont_HealthLogger: Current State = {"ProfileValidated":"true","ProfileType":"ADULT","Gateway":"avs-alexa-18-na.amazon.com:443","memoryLow":"false","ReleaseVersion":"655.1.3","AlexaLegalTermsAccepted":"true","memoryAvailable":"932970496","SupportsFarField":"false","RemoteSettingsStrategy":"VizArcus","memoryTotalPss":"47454","memoryTotalSharedDirty":"3484","DeviceFamily":"SMP","str.auto_wake_up_always":"0","OOBECompleted":"true","AppVersion":"3.0.16038.0","AlexaCaptionsSupported":"true","memoryTotalPrivateDirty":"25167","AlexaShortcutsEnabled":"{\"all\": true, \"runtime\": true, \"locale\": true, \"isChild\": false}","Account":"valid","ConnectionState":"CONNECTED","AlexaCaptionsEnabled":"false","AlexaExperience":"FULL"}
+12-29 10:54:39.722   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:39.722   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:39.722   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:54:39.722   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:54:39.722   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:54:39.722   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:54:39.723   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:54:39.723   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:54:39.723   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:39.723   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:49.749   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:49.749   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:49.749   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:54:49.749   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:54:49.749   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:54:49.749   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:54:49.749   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:54:49.749   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:54:49.749   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:49.749   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:59.754   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:59.754   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:54:59.754   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:54:59.754   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:54:59.754   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:54:59.755   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:54:59.755   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:54:59.755   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:54:59.755   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:54:59.755   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:02.034  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433231.145607,skewX=430890.935092,skewY=5.865937,drift=1.782576,reportedDrift=1.782576,numExchanges=708824
+12-29 10:55:03.797   827  4042 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:03.798   827  4042 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:06.051  1454  2516 I whad    : Maintenance:onStitchGroupLogTimeout:NonParticipants=; StableNonParticipants=XX0RV9,XX0QS8; StableParticipants=; UnstableParticipants=; UntestedParticipants=
+12-29 10:55:06.248  1399  2650 I DirectiveCache: Cleaning up DirectiveCache, current size: 0
+12-29 10:55:06.248  1399  2066 E SPCH-MinervaSchemaStorage: No schema was found for source SIM_basic
+12-29 10:55:06.249  1399  2066 E SPCH-MinervaSchemaRetriever: No schema was found for metric SIM.DirectiveCache.CacheEmptyBeforeTrim in source SIM_basic
+12-29 10:55:06.249  1399  2066 E SPCH-MinervaSchemaStorage: No schema was found for source SIM_basic
+12-29 10:55:06.249  1399  2066 E SPCH-MinervaSchemaRetriever: No schema was found for metric SIM.DirectiveCache.UnchangedCacheSize in source SIM_basic
+12-29 10:55:09.781   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:09.781   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:09.781   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:55:09.781   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:55:09.781   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:55:09.781   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:55:09.781   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:55:09.781   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:55:09.781   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:09.781   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:17.018  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433246.129930,skewX=431438.207778,skewY=5.866916,drift=1.784354,reportedDrift=1.784354,numExchanges=708848
+12-29 10:55:18.867  1148  1148 I ADM     : [ADM][D2SM]Received Intent: Intent { act=com.amazon.dcp.messaging.action.FLUSH_MESSAGES flg=0x4 (has extras) } startId: 1
+12-29 10:55:18.868  1148 20898 I ADM     : [ADM][D2SM]in NetworkCallback.onAvailable
+12-29 10:55:18.871  1148  1148 I ADM     : [ADM][D2SM]Received Intent: Intent { act=com.amazon.dcp.messaging.action.SCHEDULE_FLUSH cmp=com.amazon.device.messaging/.OdotService } startId: 2
+12-29 10:55:18.887  1148 20899 I ADM     : [ADM][D2SM][Flush]Metrics Key is: Size. Value is: 209
+12-29 10:55:18.887  1148 20899 I ADM     : [ADM][D2SM][Flush]Metrics Key is: NumOfMessages. Value is: 1
+12-29 10:55:18.887 10266 10266 I AmazonAppstore.AndroidKeystoreKeyProvider: Key already initialized in Keystore
+12-29 10:55:18.887 10266 10266 I AmazonAppstore.DeviceInformation: Requesting device type from MAP
+12-29 10:55:18.888 10266 10266 I AmazonAppstore.MigrationHelper: Migration status - true
+12-29 10:55:18.888  1148 20899 I ADM     : [ADM][D2SM][Flush]Metrics Key is: App. Value is: com.amazon.tv.launcher
+12-29 10:55:18.888  1148 20899 I ADM     : [ADM][D2SM][Flush]Metrics Key is: Topic. Value is: FireTvComradeData
+12-29 10:55:18.889  1148 20899 I ADM     : [ADM][D2SM][Flush]Flush Messages: Flushing a batch of 1 messages.
+12-29 10:55:18.891  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:18.896 10266 10266 I AmazonAppstore.AndroidKeystoreKeyProvider: Key already initialized in Keystore
+12-29 10:55:18.896 10266 10266 I AmazonAppstore.DeviceInformation: Requesting device type from MAP
+12-29 10:55:18.896 10266 10266 I AmazonAppstore.MigrationHelper: Migration status - true
+12-29 10:55:18.909 10266 10266 I SyncToDeviceJob: SimpleSignIn : SSI Sync started at 1767016518909
+12-29 10:55:18.911 10266 20900 I JugglerConfig: SimpleSignIn : Feature config fetch : {"ATVPDKIKX0DER": false,"default": false}
+12-29 10:55:18.917 10266 20900 I SyncToDeviceJob: SimpleSignIn : Feature not enabled.
+12-29 10:55:18.927  1148 20899 I DCP     : [2ddeb181-6458-442a-abf3-99e9f40fa360][Auth]POST https://device-messaging-na.amazon.com/PostMessages  (attempt 1)
+12-29 10:55:18.930  1148 20901 I com.amazon.dcp.framework.ConnectivityEnforcer: Network with type -1 is already connected
+12-29 10:55:18.930  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:18.931  1148 20899 I ...g/AmazonSerialNumber: MAP Client side on FireOS 6 or below calls android.os.Build to get the DSN.
+12-29 10:55:18.931  1148 20899 I ...onInformationQueryer: Populate change for remote MAP info.
+12-29 10:55:18.931  1148 20899 I ...onInformationQueryer: CacheContainsPartialResults? true
+12-29 10:55:18.934  1148 20899 E ...ng/DeviceTypeHelpers: Cannot get remote map information even including the calling app itself! This could happen only the calling app is IMP!
+12-29 10:55:18.936  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:18.936  1148 20899 I ...g/LocalKeyValueStore: Create DE shared preference, OS supports direct boot.
+12-29 10:55:18.937  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:18.992  1148 20899 I DCP     : ConnectException occurred: Connection refused
+12-29 10:55:18.993  1148 20899 W DCP     : [2ddeb181-6458-442a-abf3-99e9f40fa360][Auth]Unexpected state transition Handshaking -> WaitingForResponse
+12-29 10:55:18.995  1148 20899 E DCP     : Error occurred while establishing connection!
+12-29 10:55:18.995  1148 20899 E DCP     : java.net.ConnectException: Connection refused
+12-29 10:55:18.995  1148 20899 E DCP     : 	at java.net.PlainSocketImpl.socketConnect(Native Method)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:334)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:194)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:178)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:356)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at java.net.Socket.connect(Socket.java:605)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.internal.Platform.connectSocket(Platform.java:113)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connectSocket(Connection.java:196)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connect(Connection.java:172)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connectAndSetOwner(Connection.java:367)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.OkHttpClient$1.connectAndSetOwner(OkHttpClient.java:130)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:329)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:246)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:457)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.connect(HttpURLConnectionImpl.java:126)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getOutputStream(HttpURLConnectionImpl.java:257)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getOutputStream(DelegatingHttpsURLConnection.java:218)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getOutputStream(HttpsURLConnectionImpl.java)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.identity.auth.request.HttpOutputStreamWrapper.flushToUnderlyingStream(HttpOutputStreamWrapper.java:3)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpURLConnection.performOnConnectionRequested(AuthenticatedHttpURLConnection.java:18)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.onConnectionRequested(WrappableHttpURLConnection.java:16)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.connect(WrappableHttpURLConnection.java:1)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpsURLConnection.connect(AuthenticatedHttpsURLConnection.java:1)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWrapper.connect(DCP:326)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.LoggingURLConnection.connect(DCP:83)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.doEstablishConnectionWithBody(DCP:95)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.access$000(DCP:19)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory$1.onBodyAvailable(DCP:76)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.establishConnectionWithTimeout(DCP:168)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.doEstablishConnectionWithBody(DCP:88)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.access$000(DCP:24)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry$1.onBodyAvailable(DCP:76)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.writeBodyIfRequired(DCP:194)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.call(DCP:89)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.device.messaging.OdotServiceHelper.doWebserviceCall(DCP:1148)
+12-29 10:55:18.995  1148 20899 E DCP     : 	at com.amazon.device.messaging.OdotServiceHelp
+12-29 10:55:18.995  1148 20899 I DCP     : Connection attempt will be performed in 0 sec
+12-29 10:55:19.577  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:19.577  1148 20899 I ...g/AmazonSerialNumber: MAP Client side on FireOS 6 or below calls android.os.Build to get the DSN.
+12-29 10:55:19.578  1148 20899 I ...onInformationQueryer: Populate change for remote MAP info.
+12-29 10:55:19.578  1148 20899 I ...onInformationQueryer: CacheContainsPartialResults? true
+12-29 10:55:19.581  1148 20899 E ...ng/DeviceTypeHelpers: Cannot get remote map information even including the calling app itself! This could happen only the calling app is IMP!
+12-29 10:55:19.583  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:19.584  1148 20899 I ...g/LocalKeyValueStore: Create DE shared preference, OS supports direct boot.
+12-29 10:55:19.585  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:19.659  1148 20899 I DCP     : ConnectException occurred: Connection refused
+12-29 10:55:19.661  1148 20899 E DCP     : Error occurred while establishing connection!
+12-29 10:55:19.661  1148 20899 E DCP     : java.net.ConnectException: Connection refused
+12-29 10:55:19.661  1148 20899 E DCP     : 	at java.net.PlainSocketImpl.socketConnect(Native Method)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:334)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:194)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:178)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:356)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at java.net.Socket.connect(Socket.java:605)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.internal.Platform.connectSocket(Platform.java:113)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connectSocket(Connection.java:196)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connect(Connection.java:172)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connectAndSetOwner(Connection.java:367)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.OkHttpClient$1.connectAndSetOwner(OkHttpClient.java:130)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:329)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:246)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:457)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.connect(HttpURLConnectionImpl.java:126)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getOutputStream(HttpURLConnectionImpl.java:257)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getOutputStream(DelegatingHttpsURLConnection.java:218)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getOutputStream(HttpsURLConnectionImpl.java)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.identity.auth.request.HttpOutputStreamWrapper.flushToUnderlyingStream(HttpOutputStreamWrapper.java:3)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpURLConnection.performOnConnectionRequested(AuthenticatedHttpURLConnection.java:18)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.onConnectionRequested(WrappableHttpURLConnection.java:16)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.connect(WrappableHttpURLConnection.java:1)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpsURLConnection.connect(AuthenticatedHttpsURLConnection.java:1)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWrapper.connect(DCP:326)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.LoggingURLConnection.connect(DCP:83)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.doEstablishConnectionWithBody(DCP:95)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.access$000(DCP:19)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory$1.onBodyAvailable(DCP:76)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.establishConnectionWithTimeout(DCP:168)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.waitAndEstablishConnection(DCP:124)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.doEstablishConnectionWithBody(DCP:93)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.access$000(DCP:24)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry$1.onBodyAvailable(DCP:76)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.writeBodyIfRequired(DCP:194)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.call(DCP:89)
+12-29 10:55:19.661  1148 20899 E DCP     : 	at com.amazon.device.me
+12-29 10:55:19.662  1148 20899 I DCP     : Connection attempt will be performed in 0 sec
+12-29 10:55:19.786   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:19.786   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:19.786   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:55:19.786   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:55:19.786   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:55:19.786   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:55:19.786   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:55:19.786   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:55:19.786   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:19.786   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:20.325  1454 20895 I whad    : DeviceClusterManager:onHeartBeat:seq=6789,xmit=433255182852627,recv=433255347612207,uniqueId=XX0RV9,highNetworkLatency=1
+12-29 10:55:20.539  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:20.539  1148 20899 I ...g/AmazonSerialNumber: MAP Client side on FireOS 6 or below calls android.os.Build to get the DSN.
+12-29 10:55:20.539  1148 20899 I ...onInformationQueryer: Populate change for remote MAP info.
+12-29 10:55:20.540  1148 20899 I ...onInformationQueryer: CacheContainsPartialResults? true
+12-29 10:55:20.542  1148 20899 E ...ng/DeviceTypeHelpers: Cannot get remote map information even including the calling app itself! This could happen only the calling app is IMP!
+12-29 10:55:20.545  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:20.546  1148 20899 I ...g/LocalKeyValueStore: Create DE shared preference, OS supports direct boot.
+12-29 10:55:20.547  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:20.617  1148 20899 I DCP     : ConnectException occurred: Connection refused
+12-29 10:55:20.619  1148 20899 E DCP     : Error occurred while establishing connection!
+12-29 10:55:20.619  1148 20899 E DCP     : java.net.ConnectException: Connection refused
+12-29 10:55:20.619  1148 20899 E DCP     : 	at java.net.PlainSocketImpl.socketConnect(Native Method)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:334)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:194)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:178)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:356)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at java.net.Socket.connect(Socket.java:605)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.internal.Platform.connectSocket(Platform.java:113)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connectSocket(Connection.java:196)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connect(Connection.java:172)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connectAndSetOwner(Connection.java:367)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.OkHttpClient$1.connectAndSetOwner(OkHttpClient.java:130)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:329)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:246)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:457)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.connect(HttpURLConnectionImpl.java:126)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getOutputStream(HttpURLConnectionImpl.java:257)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getOutputStream(DelegatingHttpsURLConnection.java:218)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getOutputStream(HttpsURLConnectionImpl.java)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.identity.auth.request.HttpOutputStreamWrapper.flushToUnderlyingStream(HttpOutputStreamWrapper.java:3)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpURLConnection.performOnConnectionRequested(AuthenticatedHttpURLConnection.java:18)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.onConnectionRequested(WrappableHttpURLConnection.java:16)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.connect(WrappableHttpURLConnection.java:1)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpsURLConnection.connect(AuthenticatedHttpsURLConnection.java:1)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWrapper.connect(DCP:326)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.LoggingURLConnection.connect(DCP:83)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.doEstablishConnectionWithBody(DCP:95)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.access$000(DCP:19)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory$1.onBodyAvailable(DCP:76)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.establishConnectionWithTimeout(DCP:168)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.waitAndEstablishConnection(DCP:124)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.doEstablishConnectionWithBody(DCP:93)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.access$000(DCP:24)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry$1.onBodyAvailable(DCP:76)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.writeBodyIfRequired(DCP:194)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.call(DCP:89)
+12-29 10:55:20.619  1148 20899 E DCP     : 	at com.amazon.device.me
+12-29 10:55:20.620  1148 20899 I DCP     : Connection attempt will be performed in 1 sec
+12-29 10:55:22.178  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:22.178  1148 20899 I ...g/AmazonSerialNumber: MAP Client side on FireOS 6 or below calls android.os.Build to get the DSN.
+12-29 10:55:22.179  1148 20899 I ...onInformationQueryer: Populate change for remote MAP info.
+12-29 10:55:22.179  1148 20899 I ...onInformationQueryer: CacheContainsPartialResults? true
+12-29 10:55:22.181  1148 20899 E ...ng/DeviceTypeHelpers: Cannot get remote map information even including the calling app itself! This could happen only the calling app is IMP!
+12-29 10:55:22.184  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:22.184  1148 20899 I ...g/LocalKeyValueStore: Create DE shared preference, OS supports direct boot.
+12-29 10:55:22.185  1148 20899 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:55:22.264  1148 20899 I DCP     : ConnectException occurred: Connection refused
+12-29 10:55:22.266  1148 20899 E DCP     : Error occurred while establishing connection!
+12-29 10:55:22.266  1148 20899 E DCP     : java.net.ConnectException: Connection refused
+12-29 10:55:22.266  1148 20899 E DCP     : 	at java.net.PlainSocketImpl.socketConnect(Native Method)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:334)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:194)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:178)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:356)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at java.net.Socket.connect(Socket.java:605)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.internal.Platform.connectSocket(Platform.java:113)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connectSocket(Connection.java:196)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connect(Connection.java:172)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.Connection.connectAndSetOwner(Connection.java:367)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.OkHttpClient$1.connectAndSetOwner(OkHttpClient.java:130)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:329)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:246)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:457)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.connect(HttpURLConnectionImpl.java:126)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getOutputStream(HttpURLConnectionImpl.java:257)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getOutputStream(DelegatingHttpsURLConnection.java:218)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getOutputStream(HttpsURLConnectionImpl.java)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.identity.auth.request.HttpOutputStreamWrapper.flushToUnderlyingStream(HttpOutputStreamWrapper.java:3)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpURLConnection.performOnConnectionRequested(AuthenticatedHttpURLConnection.java:18)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.onConnectionRequested(WrappableHttpURLConnection.java:16)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.connect(WrappableHttpURLConnection.java:1)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpsURLConnection.connect(AuthenticatedHttpsURLConnection.java:1)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWrapper.connect(DCP:326)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.LoggingURLConnection.connect(DCP:83)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.doEstablishConnectionWithBody(DCP:95)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.access$000(DCP:19)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory$1.onBodyAvailable(DCP:76)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.establishConnectionWithTimeout(DCP:168)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.waitAndEstablishConnection(DCP:124)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.doEstablishConnectionWithBody(DCP:93)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.access$000(DCP:24)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry$1.onBodyAvailable(DCP:76)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.writeBodyIfRequired(DCP:194)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.call(DCP:89)
+12-29 10:55:22.266  1148 20899 E DCP     : 	at com.amazon.device.me
+12-29 10:55:22.268  1148 20899 E ADM     : [ADM][D2SM][Flush]IOException making request
+12-29 10:55:22.268  1148 20899 E ADM     : java.net.ConnectException: Connection refused
+12-29 10:55:22.268  1148 20899 E ADM     : 	at java.net.PlainSocketImpl.socketConnect(Native Method)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:334)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:194)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:178)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:356)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at java.net.Socket.connect(Socket.java:605)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.internal.Platform.connectSocket(Platform.java:113)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.Connection.connectSocket(Connection.java:196)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.Connection.connect(Connection.java:172)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.Connection.connectAndSetOwner(Connection.java:367)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.OkHttpClient$1.connectAndSetOwner(OkHttpClient.java:130)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:329)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:246)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:457)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.connect(HttpURLConnectionImpl.java:126)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getOutputStream(HttpURLConnectionImpl.java:257)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getOutputStream(DelegatingHttpsURLConnection.java:218)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getOutputStream(HttpsURLConnectionImpl.java)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.identity.auth.request.HttpOutputStreamWrapper.flushToUnderlyingStream(HttpOutputStreamWrapper.java:3)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpURLConnection.performOnConnectionRequested(AuthenticatedHttpURLConnection.java:18)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.onConnectionRequested(WrappableHttpURLConnection.java:16)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.identity.auth.device.framework.WrappableHttpURLConnection.connect(WrappableHttpURLConnection.java:1)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.identity.auth.device.api.AuthenticatedHttpsURLConnection.connect(AuthenticatedHttpsURLConnection.java:1)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionWrapper.connect(DCP:326)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.LoggingURLConnection.connect(DCP:83)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.doEstablishConnectionWithBody(DCP:95)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory.access$000(DCP:19)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithExternalConnectionFactory$1.onBodyAvailable(DCP:76)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.establishConnectionWithTimeout(DCP:168)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.waitAndEstablishConnection(DCP:124)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.doEstablishConnectionWithBody(DCP:93)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry.access$000(DCP:24)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionEstablisherWithRetry$1.onBodyAvailable(DCP:76)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.processBody(DCP:46)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput.access$000(DCP:15)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.ConnectionWithBufferedOutput$1.close(DCP:22)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:339)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.org.apache.commons.io.IOUtils.closeQuietly(DCP:298)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.writeBodyIfRequired(DCP:194)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.dcp.framework.iuc.InstrumentedWebserviceCall.call(DCP:89)
+12-29 10:55:22.268  1148 20899 E ADM     : 	at com.amazon.device.mes
+12-29 10:55:22.268  1148 20899 E ADM     : [ADM][D2SM][Flush]PostMessagesListener: onNetworkFailure
+12-29 10:55:22.269  1148 20899 I ADM     : [ADM][D2SM][Flush]Metrics Key is: Failure. Value is: 1
+12-29 10:55:22.269  1148 20899 I ADM     : [ADM][D2SM][Flush]Metrics Key is: FailureReason. Value is: NetworkFailure
+12-29 10:55:22.270  1148 20899 I ADM     : [ADM][D2SM][Flush]PostMessagesListener: Didn't receive response for message id f3d, treating as failed with retry
+12-29 10:55:22.284  1148 20899 E ADM     : [ADM][D2SM][Flush]Failed to retrieve the number of retries from message: f3d
+12-29 10:55:22.316  1148 20899 I ADM     : [ADM][D2SM][Flush]Queue size: 5 (0 without retry time). Next flush in 643 seconds.
+12-29 10:55:22.321  1148 20899 I ADM     : [ADM][D2SM][Flush]Setting alarm to flush ODOT messages.
+12-29 10:55:22.335  1148 20899 I ADM     : [ADM][D2SM][Schedule]Queue size: 5 (0 without retry time). Next flush in 643 seconds.
+12-29 10:55:22.340  1148 20899 I ADM     : [ADM][D2SM][Schedule]Suppressed setting new alarm at 433894481 because an alarm was already scheduled at 433894462.
+12-29 10:55:23.342  1148  1148 I ADM     : [ADM][D2SM]Queues are not busy, stopping: 2
+12-29 10:55:27.115 25906 25983 I DiebusMetrics: Starting reporting metrics
+12-29 10:55:27.115 25906 25983 I DiebusMetrics: End reporting metrics
+12-29 10:55:27.771 25906 25968 I DiebusMetrics: Starting reporting metrics
+12-29 10:55:27.772 25906 25968 I DiebusMetrics: End reporting metrics
+12-29 10:55:29.813   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:29.813   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:29.813   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:55:29.813   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:55:29.813   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:55:29.813   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:55:29.813   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:55:29.813   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:55:29.813   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:29.813   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:34.786  1399 20915 I SPCH-Cont_HealthLogger: Current State = {"ProfileValidated":"true","ProfileType":"ADULT","Gateway":"avs-alexa-18-na.amazon.com:443","memoryLow":"false","ReleaseVersion":"655.1.3","AlexaLegalTermsAccepted":"true","memoryAvailable":"932970496","SupportsFarField":"false","RemoteSettingsStrategy":"VizArcus","memoryTotalPss":"47454","memoryTotalSharedDirty":"3484","DeviceFamily":"SMP","str.auto_wake_up_always":"0","OOBECompleted":"true","AppVersion":"3.0.16038.0","AlexaCaptionsSupported":"true","memoryTotalPrivateDirty":"25167","AlexaShortcutsEnabled":"{\"all\": true, \"runtime\": true, \"locale\": true, \"isChild\": false}","Account":"valid","ConnectionState":"CONNECTED","AlexaCaptionsEnabled":"false","AlexaExperience":"FULL"}
+12-29 10:55:39.818   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:39.818   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:39.818   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:55:39.818   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:55:39.818   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:55:39.818   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:55:39.819   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:55:39.819   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:55:39.819   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:39.819   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:49.845   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:49.845   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:49.845   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:55:49.845   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:55:49.845   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:55:49.845   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:55:49.845   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:55:49.845   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:55:49.845   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:49.845   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:59.850   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:59.850   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:55:59.850   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:55:59.850   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:55:59.850   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:55:59.850   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:55:59.851   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:55:59.851   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:55:59.851   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:55:59.851   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:07.884 25906 19631 I BuellerApplication: Kick off Launcher idle task
+12-29 10:56:07.905 25906 19631 I MediaBrowseDatabaseCach: Trim method beginning.  3750 initial rows.
+12-29 10:56:07.906 25906 19631 I MediaBrowseDatabaseCach: Trim method did not delete any rows because only contains 3750 rows, max is 5000 and trim cache percentage is 0.75
+12-29 10:56:07.906 25906 19631 I ImageCacheV2: Disk cleanup requested
+12-29 10:56:09.877   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:09.877   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:09.877   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:56:09.877   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:56:09.877   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:56:09.877   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:56:09.877   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:56:09.877   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:56:09.877   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:09.877   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:17.018  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433306.129084,skewX=431475.211626,skewY=5.866986,drift=1.784354,reportedDrift=1.784354,numExchanges=708945
+12-29 10:56:18.318 21006 21006 I main.wifi_log_levels: wifi_log_levels:wlan0:rssi=-50;rssi2=-46;noise=-84;noise2=-81;channel=149;txframes=13895974;txfails=303435;txper=2%;txaggr= 0 0 0 0 0 0 0 0;rxframes=27597661;rxcrc=28088136;rxper=50.4%;rxdrop=21637182;phymode=AC;phyrate=866;lasttxrate=MCS0_BW20;lastrxrate=6M_BW20; 
+12-29 10:56:18.337 21007 21007 I main.wifi_log_levels: tx_packets=13660560;tx_bytes=3042319798;tx_errors=12;tx_dropped=0;rx_packets=25585428;rx_bytes=2886333937;rx_errors=0;rx_dropped=0;wlan0 arp=STALE 
+12-29 10:56:18.357 21008 21008 I main.wifi_log_levels: max_rssi=-45;min_rssi=-69;max_noise=-81;min_noise=-92;noise histogram=0 0 0 0 0 113 2982 467011 10630 0 1781 
+12-29 10:56:18.395 21010 21010 I main.wifi_log_levels: wifi_log_levels:ch_busy=3%;ch_idle=97%;ch_tx=0%;ch_rx=0%;tx_ok=100%;tx_fail=0%;tx_retry=0%;rx_ok=18%;rx_fcs=82%;tx_ok=21;tx_fail=0;tx_retry=0;rx_ok=9;rx_fcs=41;cck_false=0;cck_crc=0;ofdm_false=14;ofdm_crc=0; 
+12-29 10:56:18.501 21018 21018 I main.wifi_log_levels: RXRATE=6M, BW20, OFDM, BCC; PERCNT=80%;RXRATE=NSS2_MCS9, BW80, SGI, VHT, LDPC; PERCNT=20%; 
+12-29 10:56:19.882   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:19.882   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:19.882   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:56:19.882   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:56:19.883   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:56:19.883   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:56:19.883   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:56:19.883   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:56:19.883   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:19.883   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:20.335  1454 20981 I whad    : DeviceClusterManager:onHeartBeat:seq=6795,xmit=433315182171243,recv=433315357739907,uniqueId=XX0RV9,highNetworkLatency=1
+12-29 10:56:29.909   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:29.909   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:29.909   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:56:29.909   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:56:29.909   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:56:29.909   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:56:29.909   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:56:29.909   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:56:29.909   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:29.909   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:34.846  1399 21030 I SPCH-Cont_HealthLogger: Current State = {"ProfileValidated":"true","ProfileType":"ADULT","Gateway":"avs-alexa-18-na.amazon.com:443","memoryLow":"false","ReleaseVersion":"655.1.3","AlexaLegalTermsAccepted":"true","memoryAvailable":"932970496","SupportsFarField":"false","RemoteSettingsStrategy":"VizArcus","memoryTotalPss":"47454","memoryTotalSharedDirty":"3484","DeviceFamily":"SMP","str.auto_wake_up_always":"0","OOBECompleted":"true","AppVersion":"3.0.16038.0","AlexaCaptionsSupported":"true","memoryTotalPrivateDirty":"25167","AlexaShortcutsEnabled":"{\"all\": true, \"runtime\": true, \"locale\": true, \"isChild\": false}","Account":"valid","ConnectionState":"CONNECTED","AlexaCaptionsEnabled":"false","AlexaExperience":"FULL"}
+12-29 10:56:39.914   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:39.914   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:39.914   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:56:39.914   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:56:39.914   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:56:39.915   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:56:39.915   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:56:39.915   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:56:39.915   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:39.915   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:43.212 19979 19979 I AmznGallery__RemoteConfigurationJob: Started fetching remote configuration.
+12-29 10:56:43.360 19979 21034 I AmznGallery__RemoteConfigurationJob: Received remote configuration
+12-29 10:56:43.360 19979 21034 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:56:43.374 19979 21034 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:56:43.385 19979 21034 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:56:43.396 19979 21034 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:56:43.410 19979 21034 I AmznGallery__RemoteFetchConfigurationProcessor: Setting remote config fetch time: 0
+12-29 10:56:43.410 19979 21034 I AmznGallery__RemoteConfigurationManager: Cancelling previous jobs.
+12-29 10:56:43.420 19979 21034 I AmznGallery__RemoteConfigurationManager: Adding to job scheduler.
+12-29 10:56:43.421 19979 21034 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:56:43.422 19979 19979 I AmznGallery__RemoteConfigurationJob: onStopJob invoked with parameters: android.app.job.JobParameters@7353c15
+12-29 10:56:43.429 19979 21041 W JobInfo : Specified interval for 5235 is +10m0s0ms. Clamped to +15m0s0ms
+12-29 10:56:43.438 19979 21034 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:56:43.449 19979 21034 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:56:43.458 19979 21034 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 10:56:49.941   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:49.941   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:49.941   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:56:49.941   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:56:49.941   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:56:49.941   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:56:49.941   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:56:49.941   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:56:49.941   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:49.941   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:57.115 25906 25983 I DiebusMetrics: Starting reporting metrics
+12-29 10:56:57.120 25906 25983 I DiebusMetrics: End reporting metrics
+12-29 10:56:57.772 25906 25968 I DiebusMetrics: Starting reporting metrics
+12-29 10:56:57.772 25906 25968 I DiebusMetrics: End reporting metrics
+12-29 10:56:59.946   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:59.946   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:56:59.946   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:56:59.947   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:56:59.947   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:56:59.947   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:56:59.947   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:56:59.947   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:56:59.947   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:56:59.947   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:01.313  1454  8140 I whad    : TimeSyncClient:clientThread:totalStats:sent=110875,recvdOnTime=110875,lateOrDuplicate=0,slots=4532,emptySlots=0,activeSec=4626,elapsedSec=67994,exchangesPerSec=24
+12-29 10:57:09.678 25081 25089 W JavaBinder: BinderProxy is being destroyed but the application did not call unlinkToDeath to unlink all of its death recipients beforehand.  Releasing leaked death recipient: com.amazon.whisperlink.android.transport.messenger.TMessengerTransport
+12-29 10:57:09.973   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:09.973   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:09.973   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:57:09.973   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:57:09.973   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:57:09.973   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:57:09.973   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:57:09.973   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:57:09.973   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:09.973   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:17.008  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433366.120415,skewX=431505.258315,skewY=5.867042,drift=1.784354,reportedDrift=1.784354,numExchanges=709039
+12-29 10:57:19.978   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:19.978   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:19.978   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:57:19.978   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:57:19.978   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:57:19.978   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:57:19.979   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:57:19.979   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:57:19.979   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:19.979   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:30.005   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:30.005   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:30.005   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:57:30.005   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:57:30.005   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:57:30.005   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:57:30.005   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:57:30.005   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:57:30.005   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:30.005   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:34.905  1399 21060 I SPCH-Cont_HealthLogger: Current State = {"ProfileValidated":"true","ProfileType":"ADULT","Gateway":"avs-alexa-18-na.amazon.com:443","memoryLow":"false","ReleaseVersion":"655.1.3","AlexaLegalTermsAccepted":"true","memoryAvailable":"932970496","SupportsFarField":"false","RemoteSettingsStrategy":"VizArcus","memoryTotalPss":"47454","memoryTotalSharedDirty":"3484","DeviceFamily":"SMP","str.auto_wake_up_always":"0","OOBECompleted":"true","AppVersion":"3.0.16038.0","AlexaCaptionsSupported":"true","memoryTotalPrivateDirty":"25167","AlexaShortcutsEnabled":"{\"all\": true, \"runtime\": true, \"locale\": true, \"isChild\": false}","Account":"valid","ConnectionState":"CONNECTED","AlexaCaptionsEnabled":"false","AlexaExperience":"FULL"}
+12-29 10:57:40.010   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:40.010   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:40.010   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:57:40.010   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:57:40.010   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:57:40.011   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:57:40.011   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:57:40.011   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:57:40.011   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:40.011   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:50.037   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:50.037   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:57:50.037   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:57:50.037   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:57:50.037   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:57:50.037   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:57:50.037   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:57:50.037   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:57:50.037   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:57:50.037   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:00.042   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:00.042   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:00.042   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:58:00.042   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:58:00.042   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:58:00.043   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:58:00.043   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:58:00.043   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:58:00.043   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:00.043   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:10.069   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:10.069   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:10.069   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:58:10.069   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:58:10.069   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:58:10.069   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:58:10.069   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:58:10.069   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:58:10.069   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:10.069   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:17.037  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433426.148999,skewX=431535.272362,skewY=5.867099,drift=1.784354,reportedDrift=1.784354,numExchanges=709138
+12-29 10:58:19.551 21149 21149 I main.wifi_log_levels: wifi_log_levels:wlan0:rssi=-51;rssi2=-48;noise=-84;noise2=-81;channel=149;txframes=13896408;txfails=303453;txper=2%;txaggr= 1 0 0 0 0 0 0 0;rxframes=27599210;rxcrc=28093201;rxper=50.4%;rxdrop=21637794;phymode=AC;phyrate=866;lasttxrate=NSS2_MCS9_BW80;lastrxrate=NSS2_MCS9_BW80; 
+12-29 10:58:19.573 21150 21150 I main.wifi_log_levels: tx_packets=13660996;tx_bytes=3042372249;tx_errors=12;tx_dropped=0;rx_packets=25586483;rx_bytes=2886490772;rx_errors=0;rx_dropped=0;wlan0 arp=STALE 
+12-29 10:58:19.594 21151 21151 I main.wifi_log_levels: max_rssi=-45;min_rssi=-69;max_noise=-81;min_noise=-92;noise histogram=0 0 0 0 0 66 3152 583113 13152 0 2394 
+12-29 10:58:19.636 21153 21153 I main.wifi_log_levels: wifi_log_levels:ch_busy=6%;ch_idle=94%;ch_tx=0%;ch_rx=0%;tx_ok=100%;tx_fail=0%;tx_retry=0%;rx_ok=12%;rx_fcs=88%;tx_ok=34;tx_fail=0;tx_retry=0;rx_ok=12;rx_fcs=85;cck_false=0;cck_crc=0;ofdm_false=715;ofdm_crc=11; 
+12-29 10:58:19.751 21162 21162 I main.wifi_log_levels: RXRATE=6M, BW20, OFDM, BCC; PERCNT=60%;RXRATE=NSS2_MCS9, BW80, SGI, VHT, LDPC; PERCNT=40%; 
+12-29 10:58:20.074   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:20.074   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:20.074   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:58:20.074   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:58:20.074   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:58:20.075   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:58:20.075   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:58:20.075   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:58:20.075   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:20.075   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:27.120 25906 25983 I DiebusMetrics: Starting reporting metrics
+12-29 10:58:27.121 25906 25983 I DiebusMetrics: End reporting metrics
+12-29 10:58:27.773 25906 25968 I DiebusMetrics: Starting reporting metrics
+12-29 10:58:27.773 25906 25968 I DiebusMetrics: End reporting metrics
+12-29 10:58:30.101   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:30.101   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:30.101   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:58:30.101   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:58:30.101   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:58:30.101   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:58:30.101   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:58:30.101   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:58:30.101   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:30.101   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:34.949  1399 21174 I SPCH-Cont_HealthLogger: Current State = {"ProfileValidated":"true","ProfileType":"ADULT","Gateway":"avs-alexa-18-na.amazon.com:443","memoryLow":"false","ReleaseVersion":"655.1.3","AlexaLegalTermsAccepted":"true","memoryAvailable":"932970496","SupportsFarField":"false","RemoteSettingsStrategy":"VizArcus","memoryTotalPss":"47454","memoryTotalSharedDirty":"3484","DeviceFamily":"SMP","str.auto_wake_up_always":"0","OOBECompleted":"true","AppVersion":"3.0.16038.0","AlexaCaptionsSupported":"true","memoryTotalPrivateDirty":"25167","AlexaShortcutsEnabled":"{\"all\": true, \"runtime\": true, \"locale\": true, \"isChild\": false}","Account":"valid","ConnectionState":"CONNECTED","AlexaCaptionsEnabled":"false","AlexaExperience":"FULL"}
+12-29 10:58:40.106   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:40.106   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:40.106   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:58:40.106   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:58:40.106   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:58:40.106   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:58:40.107   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:58:40.107   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:58:40.107   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:40.107   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:50.133   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:50.133   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:50.133   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:58:50.133   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:58:50.133   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:58:50.133   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:58:50.133   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:58:50.133   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:58:50.133   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:58:50.133   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:58:53.814   618   753 I WifiDiagsUtil: event=RUN_TEST_CONTINUOUSLY
+12-29 10:58:53.814   618   753 I WifiDiagsUtil: event=logPacketStats, rx_bytes=391876, rx_packets=2679, tx_bytes=175185, tx_packets=1179
+12-29 10:58:53.814   618   753 I WifiDiagsUtil: event=logPacketStats, daily_rx_bytes=174701057, daily_rx_packets=132943, daily_tx_bytes=6299041, daily_tx_packets=69585
+12-29 10:58:53.817   618   753 I WifiDiagsUtil: event=pingTest, TARGET_TYPE=LOCALHOST, IP=127.0.0.1
+12-29 10:58:53.820   618   753 I WifiDiagsUtil: event=pingsComplete, TARGET_TYPE=LOCALHOST, IP=XXX, PKTS_TX=5, PKTS_RX=5, PKT_LOSS=0.0%, AVG_TIME=0,30
+12-29 10:58:53.820   618   753 I WifiDiagsUtil: event=pingTest, TARGET_TYPE=GATEWAY, IP=192.168.3.1
+12-29 10:58:53.831   618   753 I WifiDiagsUtil: event=pingsComplete, TARGET_TYPE=GATEWAY, IP=XXX, PKTS_TX=5, PKTS_RX=5, PKT_LOSS=0.0%, AVG_TIME=1,79
+12-29 10:58:53.831   618   753 I WifiDiagsUtil: event=pingTest, TARGET_TYPE=NAMESERVER1, IP=XXX
+12-29 10:58:53.846   618   753 I WifiDiagsUtil: event=pingsComplete, TARGET_TYPE=NAMESERVER1, IP=XXX, PKTS_TX=5, PKTS_RX=5, PKT_LOSS=0.0%, AVG_TIME=2,64
+12-29 10:58:53.846   618   753 I WifiDiagsUtil: event=preConfiguredDNSDetected, action=skipPingTest, nameserver=xxx.xxx.xxx...
+12-29 10:58:53.846   618   753 I WifiDiagsUtil: event=pingTest, TARGET_TYPE=NAMESERVER3, IP=XXX
+12-29 10:58:53.859   618   753 I WifiDiagsUtil: event=pingsComplete, TARGET_TYPE=NAMESERVER3, IP=XXX, PKTS_TX=5, PKTS_RX=5, PKT_LOSS=0.0%, AVG_TIME=2,15
+12-29 10:58:53.859   618   753 I WifiDiagsUtil: event=runHttpConnectionTestAttempt, host=http://firetvcaptiveportal.com/generate_204
+12-29 10:58:54.244   618   753 I WifiDiagsUtil: event=runHttpConnectionTestSuccess, host=http://firetvcaptiveportal.com/generate_204, httpCode=204, latency=384
+12-29 10:58:54.244   618   753 I WifiDiagsUtil: event=GOOD_CONNECTION
+12-29 10:58:54.245   618   753 I NetWatchDog: event=resetNetWatchdog, timeoutMS=900000
+12-29 10:58:54.245   618   753 I WifiDiagsUtil: event=reportNetworkStatistics, action=reportNetworkConnectivity, hasConnectivity=true
+12-29 10:58:54.245   618   753 I WifiDiagsUtil: broadcastDiagsResults
+12-29 10:58:54.249   618   753 I WifiDiagsUtil: event=stateDuration, duration=1410659
+12-29 10:58:54.249   618   753 I WifiDiagsUtil: event=recordDataInTestEndpointStatistics, isEmitmetric=false
+12-29 10:58:54.268 20189 21182 I com.amazon.diode.events.EventSaverService: Got external event for client WifiDiagsUtil
+12-29 10:58:54.269 20189 21182 W com.amazon.diode.store.FIFOFile: Overwriting 1 elements to make room in store WifiDiagsUtil
+12-29 10:58:58.493  1175  1175 I MetricsJobService: onStartJob - Received callback from JobScheduler for JobID: ; 2
+12-29 10:58:58.496  1175 21184 W MetricsJobService: onStartJob - Unknown JobId, no component will be notified;
+12-29 10:59:00.138   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:00.138   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:00.138   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:59:00.138   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:59:00.138   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:59:00.139   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:59:00.139   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:59:00.139   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:59:00.139   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:00.139   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:10.165   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:10.165   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:10.165   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:59:10.165   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:59:10.165   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:59:10.165   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:59:10.165   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:59:10.165   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:59:10.165   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:10.165   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:17.016  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433486.127605,skewX=431565.292296,skewY=5.867156,drift=1.784354,reportedDrift=1.784354,numExchanges=709236
+12-29 10:59:17.717  1399 29103 I com.amazon.vizzini/mo: Using the FireOSPlatformDCPMetricsCollector
+12-29 10:59:17.722   889 21193 I ...imp/TokenJobQueue[0]: Begin executing task GetToken:com.amazon.vizzini/com.amazon.dcp.sso.token.oauth.amazon.access_token
+12-29 10:59:17.723   889 21193 I ...imp/TokenJobQueue[0]: Scheduled running concurrent job GetToken:com.amazon.vizzini/com.amazon.dcp.sso.token.oauth.amazon.access_token.
+12-29 10:59:17.723   889 21194 I ...nformationQueryer[0]: Populate change for remote MAP info.
+12-29 10:59:17.723   889 21194 I ...nformationQueryer[0]: CacheContainsPartialResults? true
+12-29 10:59:17.727   889 21194 I ...imp/TokenJobQueue[0]: Finish executing task GetToken:com.amazon.vizzini/com.amazon.dcp.sso.token.oauth.amazon.access_token.
+12-29 10:59:20.170   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:20.170   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:20.170   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:59:20.170   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:59:20.170   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:59:20.171   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:59:20.171   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:59:20.171   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:59:20.171   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:20.171   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:30.197   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:30.197   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:30.197   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:59:30.197   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:59:30.197   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:59:30.197   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:59:30.197   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:59:30.197   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:59:30.197   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:30.197   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:35.006  1399 21203 I SPCH-Cont_HealthLogger: Current State = {"ProfileValidated":"true","ProfileType":"ADULT","Gateway":"avs-alexa-18-na.amazon.com:443","memoryLow":"false","ReleaseVersion":"655.1.3","AlexaLegalTermsAccepted":"true","memoryAvailable":"932970496","SupportsFarField":"false","RemoteSettingsStrategy":"VizArcus","memoryTotalPss":"47454","memoryTotalSharedDirty":"3484","DeviceFamily":"SMP","str.auto_wake_up_always":"0","OOBECompleted":"true","AppVersion":"3.0.16038.0","AlexaCaptionsSupported":"true","memoryTotalPrivateDirty":"25167","AlexaShortcutsEnabled":"{\"all\": true, \"runtime\": true, \"locale\": true, \"isChild\": false}","Account":"valid","ConnectionState":"CONNECTED","AlexaCaptionsEnabled":"false","AlexaExperience":"FULL"}
+12-29 10:59:40.202   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:40.202   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:40.202   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:59:40.202   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:59:40.202   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:59:40.203   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:59:40.203   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:59:40.203   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:59:40.203   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:40.203   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:50.229   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:50.229   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:50.229   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 10:59:50.229   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 10:59:50.229   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 10:59:50.229   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 10:59:50.229   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 10:59:50.229   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 10:59:50.229   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 10:59:50.229   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 10:59:57.121 25906 25983 I DiebusMetrics: Starting reporting metrics
+12-29 10:59:57.121 25906 25983 I DiebusMetrics: End reporting metrics
+12-29 10:59:57.773 25906 25968 I DiebusMetrics: Starting reporting metrics
+12-29 10:59:57.774 25906 25968 I DiebusMetrics: End reporting metrics
+12-29 11:00:00.234   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 11:00:00.234   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 11:00:00.234   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 11:00:00.234   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 11:00:00.234   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 11:00:00.235   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 11:00:00.235   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 11:00:00.235   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 11:00:00.235   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 11:00:00.235   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 11:00:03.837   827  6515 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+12-29 11:00:03.838   827  6515 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+--------- beginning of system
+12-29 11:00:04.460   618   630 I UsageStatsService: User[0] Flushing usage stats to disk
+12-29 11:00:06.248  1399  2650 I DirectiveCache: Cleaning up DirectiveCache, current size: 0
+12-29 11:00:06.248  1399  2066 E SPCH-MinervaSchemaStorage: No schema was found for source SIM_basic
+12-29 11:00:06.248  1399  2066 E SPCH-MinervaSchemaRetriever: No schema was found for metric SIM.DirectiveCache.CacheEmptyBeforeTrim in source SIM_basic
+12-29 11:00:06.249  1399  2066 E SPCH-MinervaSchemaStorage: No schema was found for source SIM_basic
+12-29 11:00:06.249  1399  2066 E SPCH-MinervaSchemaRetriever: No schema was found for metric SIM.DirectiveCache.UnchangedCacheSize in source SIM_basic
+12-29 11:00:10.261   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 11:00:10.261   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 11:00:10.261   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 11:00:10.261   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 11:00:10.261   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 11:00:10.261   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 11:00:10.261   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 11:00:10.261   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 11:00:10.261   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 11:00:10.261   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 11:00:16.224   285   285 I perfmonitord:ProcessCpuMonitor: Running ProcessCPUMonitor
+12-29 11:00:16.270   285   285 I perfmonitord: Current status: 
+12-29 11:00:16.270   285   285 I perfmonitord: Benefits string: 
+12-29 11:00:16.270   285   285 E perfmonitord:StatUtil: Error of parsing benefits string
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: Process Name         PID   : CPU % 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: audioserver          288   : 21.53% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: system_server        618   : 3.93% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: surfaceflinger       245   : 1.37% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: ksmd                 26    : 1.28% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: .amazon.vizzini      1399  : 0.71% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: .client.metrics      1175  : 0.54% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: .amazon.venezia      10266 : 0.52% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: zon.tv.launcher      25906 : 0.48% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: hif_thread           841   : 0.45% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: adbd                 258   : 0.42% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: disp_osd2_irq_k      135   : 0.30% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: main_thread          838   : 0.28% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: ksdioirqd/mmc1       219   : 0.27% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: com.amazon.imp       889   : 0.26% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: hdmi_timer_kthr      100   : 0.26% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: rx_thread            846   : 0.25% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: rcu_preempt          7     : 0.25% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: v.devicecontrol      1430  : 0.23% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: mmcqd/0              151   : 0.22% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: logd                 197   : 0.19% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: com.amazon.whad      1454  : 0.13% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: perfmonitord         285   : 0.11% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: disp_osd1_irq_k      134   : 0.11% 
+12-29 11:00:16.272   285   285 I perfmonitord:ProcessCpuMonitor: cec_timer_kthre      101   : 0.10% 
+12-29 11:00:16.272   285   285 I perfmonitord:StatUtil: CPUUtilization is at 9%
+12-29 11:00:16.273   285   285 I perfmonitord:StatUtil: MemoryUtilization is at 54%
+12-29 11:00:16.273   285   285 I perfmonitord:VmStatMonitor: pgpgin=86660629,pgpgout=27481220,pswpin=1997073,pswpout=3439170,pgmajfault=2634986,pgscan_direct_normal=13918908,pgscan_direct_high=163556,pgscan_direct_movable=0,pgscan_kswapd_normal=14104804,pgscan_kswapd_high=27932412,allocstall=29747,workingset_refault=12085120,kswapd_low_wmark_hit_quickly=38211
+12-29 11:00:16.274  1175  3321 I MinervaRemoteDmlConfigDataProvider: Cached value expired. Syncing with config.
+12-29 11:00:17.016  1454  8140 I whad    : TimeSyncClient:clientThread:reason=skewOrDriftChange,server=XX0QS8,time=433546.127293,skewX=431595.292612,skewY=5.867213,drift=1.784354,reportedDrift=1.784354,numExchanges=709336
+12-29 11:00:17.274   285   285 E IMGMemtrackHAL: DbgFsParseFile: fopen of /d/pvr/driver_stats failed (Permission denied)
+12-29 11:00:17.269   285   285 W perfmonitord: type=1400 audit(0.0:645): avc: denied { read } for name="driver_stats" dev="debugfs" ino=10045 scontext=u:r:perfmonitord:s0 tcontext=u:object_r:debugfs:s0 tclass=file permissive=0
+12-29 11:00:17.295   285   285 E IMGMemtrackHAL: DbgFsParseFile: fopen of /d/pvr/driver_stats failed (Permission denied)
+12-29 11:00:17.289   285   285 W perfmonitord: type=1400 audit(0.0:646): avc: denied { read } for name="driver_stats" dev="debugfs" ino=10045 scontext=u:r:perfmonitord:s0 tcontext=u:object_r:debugfs:s0 tclass=file permissive=0
+12-29 11:00:17.303   285   285 I perfmonitord: Current status: 
+12-29 11:00:17.303   285   285 I perfmonitord: Benefits string: 
+12-29 11:00:17.303   285   285 E perfmonitord:StatUtil: Error of parsing benefits string
+12-29 11:00:17.304   285   285 I perfmonitord:ProcessMemMonitor: .tv.alexaalerts      18291 : 5535 
+12-29 11:00:17.304   285   285 I perfmonitord:ProcessMemMonitor: ryconfigservice      1946  : 4046 
+12-29 11:00:18.308   285   285 E perfmonitord:StatUtil: file open error is - No such file or directory
+12-29 11:00:18.308   285   285 I perfmonitord: Current status: 
+12-29 11:00:18.308   285   285 I perfmonitord: Benefits string: 
+12-29 11:00:18.308   285   285 E perfmonitord:StatUtil: Error of parsing benefits string
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_total = 1836836 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_free = 208800 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_available = 850516 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_buffers = 49728 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_cached = 724188 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_active_anon = 205600 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_inactive_anon = 268544 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_active_file = 521528 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_inactive_file = 246356 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_swap_total = 383020 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_swap_free = 155520 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_swap_uncompressed = 227500 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: zram_mem_used_kb = 62632 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_shmem = 2372 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_s_unreclaim = 48488 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_kernel_stack = 15832 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_page_tables = 31344 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_other_free = 137380 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_other_file = 767628 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_ksm_pages_sharing = 34160 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_ksm_overhead = 1866 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: mem_ksm_saving = 32294 Kb
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: lmk_kills_backup = 0
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: lmk_kills_fg = 0
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: lmk_kills_other = 0
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: lmk_kills_perceptible = 0
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: lmk_kills_persistent = 0
+12-29 11:00:18.310   285   285 I perfmonitord:SystemMemMonitor: lmk_kills_visible = 0
+12-29 11:00:18.354  1175  3321 I BatchCreator: enqueueBatchForTransmission - enqueueBatchForTransmission;
+12-29 11:00:18.380  1175  3321 I BoundedBatchFileQueue: batch file added: 1767016818379_us-east-1_0001
+12-29 11:00:19.314   285   285 I perfmonitord: Current status: 
+12-29 11:00:19.314   285   285 I perfmonitord: Benefits string: 
+12-29 11:00:19.314   285   285 E perfmonitord:StatUtil: Error of parsing benefits string
+12-29 11:00:20.266   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 11:00:20.266   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 11:00:20.266   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 11:00:20.266   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 11:00:20.266   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 11:00:20.267   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 11:00:20.267   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 11:00:20.267   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 11:00:20.267   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 11:00:20.267   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 11:00:20.318   285   285 I perfmonitord: Current status: 
+12-29 11:00:20.318   285   285 I perfmonitord: Benefits string: 
+12-29 11:00:20.319   285   285 E perfmonitord:StatUtil: Error of parsing benefits string
+12-29 11:00:20.587 21295 21295 I main.wifi_log_levels: wifi_log_levels:wlan0:rssi=-51;rssi2=-47;noise=-84;noise2=-81;channel=149;txframes=13896910;txfails=303479;txper=2%;txaggr= 0 0 0 0 0 0 0 0;rxframes=27600801;rxcrc=28096644;rxper=50.4%;rxdrop=21638264;phymode=AC;phyrate=866;lasttxrate=MCS0_BW20;lastrxrate=6M_BW20; 
+12-29 11:00:20.607 21296 21296 I main.wifi_log_levels: tx_packets=13661472;tx_bytes=3042429180;tx_errors=12;tx_dropped=0;rx_packets=25587566;rx_bytes=2886647233;rx_errors=0;rx_dropped=0;wlan0 arp=STALE 
+12-29 11:00:20.627 21297 21297 I main.wifi_log_levels: max_rssi=-45;min_rssi=-69;max_noise=-81;min_noise=-92;noise histogram=0 0 0 0 0 100 2566 476759 10702 0 1338 
+12-29 11:00:20.665 21299 21299 I main.wifi_log_levels: wifi_log_levels:ch_busy=4%;ch_idle=96%;ch_tx=0%;ch_rx=0%;tx_ok=91%;tx_fail=9%;tx_retry=0%;rx_ok=24%;rx_fcs=76%;tx_ok=34;tx_fail=3;tx_retry=0;rx_ok=8;rx_fcs=25;cck_false=0;cck_crc=0;ofdm_false=324;ofdm_crc=8; 
+12-29 11:00:20.805 21310 21310 I main.wifi_log_levels: TXRATE=NSS2_MCS9, BW80, SGI, VHT, LDPC; PER=04%; PERCNT=70%;RXRATE=6M, BW20, OFDM, BCC; PERCNT=50%;RXRATE=NSS2_MCS9, BW80, SGI, VHT, LDPC; PERCNT=50%; 
+12-29 11:00:21.322   285   285 I perfmonitord: Current status: 
+12-29 11:00:21.322   285   285 I perfmonitord: Benefits string: 
+12-29 11:00:21.322   285   285 E perfmonitord:StatUtil: Error of parsing benefits string
+12-29 11:00:21.322   285   285 I perfmonitord:DiskUsageMonitor: /system partition total space=1074000kB used space=986356kB percent used=92%
+12-29 11:00:21.322   285   285 I perfmonitord:DiskUsageMonitor: /system partition available space=71260kB available space percentage=7%
+12-29 11:00:21.322   285   285 I perfmonitord:DiskUsageMonitor: /system partition free inodes=66866 total inodes=69408 free inodes percentage=96%
+12-29 11:00:21.322   285   285 I perfmonitord:DiskUsageMonitor: /system partition available inodes=66866 total inodes=69408 available inodes percentage=96%
+12-29 11:00:21.323   285   285 I perfmonitord:DiskUsageMonitor: /data partition total space=5534816kB used space=3813684kB percent used=69%
+12-29 11:00:21.323   285   285 I perfmonitord:DiskUsageMonitor: /data partition available space=1704748kB available space percentage=31%
+12-29 11:00:21.323   285   285 I perfmonitord:DiskUsageMonitor: /data partition free inodes=336469 total inodes=357632 free inodes percentage=94%
+12-29 11:00:21.323   285   285 I perfmonitord:DiskUsageMonitor: /data partition available inodes=336469 total inodes=357632 available inodes percentage=94%
+12-29 11:00:23.381   285 21314 I perfmonitord:ProcessRssMonitor: 
+12-29 11:00:23.381   285 21314 I perfmonitord:ProcessRssMonitor: Process Name         PID   : RSS(kb)    RSWAP(kb)  Total RSS  
+12-29 11:00:23.381   285 21314 I perfmonitord:ProcessRssMonitor: 
+12-29 11:00:23.381   285 21314 I perfmonitord:ProcessRssMonitor: system_server        618   : 130660     18536      149196    
+12-29 11:00:24.350 25906 26069 I WeblabFeature: Refreshing treatment for: FTV_TNF_AUTO_PLAY_475495
+12-29 11:00:24.350 25906 26070 I WeblabFeature: Refreshing treatment for: FTV_POLISH_KEYBOARD_SUPPORT_513912
+12-29 11:00:24.351 25906 26068 I WeblabFeature: Refreshing treatment for: FTV_SEARCH_DECOUPLING_ALPHA_222720
+12-29 11:00:24.352 25906 25906 I AsyncWeblabTreatmentTas: Received a treatment of T1 for : FTV_TNF_AUTO_PLAY_475495
+12-29 11:00:24.352 25906 25906 I AsyncWeblabTreatmentTas: Received a treatment of C_DEFAULT for : FTV_POLISH_KEYBOARD_SUPPORT_513912
+12-29 11:00:24.353 25906 25906 I AsyncWeblabTreatmentTas: Received a treatment of C_DEFAULT for : FTV_SEARCH_DECOUPLING_ALPHA_222720
+12-29 11:00:24.382   285 21314 I perfmonitord:ProcessRssMonitor: zon.tv.launcher      25906 : 124512     24172      148684    
+12-29 11:00:25.382   285 21314 I perfmonitord:ProcessRssMonitor: .amazon.venezia      10266 : 134300     8184       142484    
+12-29 11:00:26.383   285 21314 I perfmonitord:ProcessRssMonitor: ample.clickflix      20552 : 121508     8156       129664    
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: 
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: Alloc Process IonMemory:
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: ProcessName          PID   : Total-Size(kb)/Num : Buffers-Size(kb)/Num 
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: surfaceflinger       24    : 26488/5 : 8100/3, 2160/1, 28/1
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: zon.tv.launcher      2590  : 12868/22 : 2028/1, 4/1, 652/2, 168/2, 84/5, 2476/1, 100/9, 5400/1
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: 
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: Client Process IonMemory:
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: ProcessName          PID   Total-Size(kb)  NumBuffs   DbgName             
+12-29 11:00:26.426   285   285 I perfmonitord:IonMemMonitor: system_server        618   270             2                              
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: .amazon.vizzini      1399  270             1                              
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: OSD_ion_client       118   0               1          from_kernel         
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: surfaceflinger       245   24328           6                              
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: zon.tv.launcher      25906 13138           23                             
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: on.device.blepa      10431 270             1                              
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: com.dcsapp.iptv      12059 270             1                              
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: ample.clickflix      20552 270             1                              
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: device.services      827   270             1                              
+12-29 11:00:26.427   285   285 I perfmonitord:IonMemMonitor: m.amazon.tv.ime      25406 270             1                              
+12-29 11:00:27.383   285 21314 I perfmonitord:ProcessRssMonitor: .bueller.photos      19979 : 113476     8384       121860    
+12-29 11:00:28.383   285 21314 I perfmonitord:ProcessRssMonitor: com.dcsapp.iptv      12059 : 82320      29508      111828    
+12-29 11:00:29.384   285 21314 I perfmonitord:ProcessRssMonitor: .tv.settings.v2      19543 : 99120      8436       107556    
+12-29 11:00:30.293   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 0; audio level: 0.000
+12-29 11:00:30.293   288 10607 I Node    : dolby-audio-meter, AdapterPcmSystem adapter audio meter: channel 1; audio level: 0.000
+12-29 11:00:30.293   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 0; audio level: 0.000
+12-29 11:00:30.293   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 1; audio level: 0.000
+12-29 11:00:30.293   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 2; audio level: 0.000
+12-29 11:00:30.293   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 3; audio level: 0.000
+12-29 11:00:30.293   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 4; audio level: 0.000
+12-29 11:00:30.293   288 10607 I RendererNode: dolby-audio-meter, Renderer renderer audio meter: channel 5; audio level: 0.000
+12-29 11:00:30.293   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 0; audio level: 0.000
+12-29 11:00:30.293   288 10607 I Node    : dolby-audio-meter, AdapterPcmOut adapter audio meter: channel 1; audio level: 0.000
+12-29 11:00:30.384   285 21314 I perfmonitord:ProcessRssMonitor: .amazon.vizzini      1399  : 84792      14820      99612     
+12-29 11:00:31.384   285 21314 I perfmonitord:ProcessRssMonitor: .amazon.ceviche      18882 : 88168      8400       96568     
+12-29 11:00:32.385   285 21314 I perfmonitord:ProcessRssMonitor: com.amazon.adep      19328 : 81988      8584       90572     
+12-29 11:00:33.385   285 21314 I perfmonitord:ProcessRssMonitor: om.amazon.diode      20189 : 75608      8516       84124     
+12-29 11:00:34.386   285 21314 I perfmonitord:ProcessRssMonitor: iaplayer.fireos      4059  : 73844      8616       82460     
+12-29 11:00:35.066  1399 21319 I SPCH-Cont_HealthLogger: Current State = {"ProfileValidated":"true","ProfileType":"ADULT","Gateway":"avs-alexa-18-na.amazon.com:443","memoryLow":"false","ReleaseVersion":"655.1.3","AlexaLegalTermsAccepted":"true","memoryAvailable":"932970496","SupportsFarField":"false","RemoteSettingsStrategy":"VizArcus","memoryTotalPss":"47454","memoryTotalSharedDirty":"3484","DeviceFamily":"SMP","str.auto_wake_up_always":"0","OOBECompleted":"true","AppVersion":"3.0.16038.0","AlexaCaptionsSupported":"true","memoryTotalPrivateDirty":"25167","AlexaShortcutsEnabled":"{\"all\": true, \"runtime\": true, \"locale\": true, \"isChild\": false}","Account":"valid","ConnectionState":"CONNECTED","AlexaCaptionsEnabled":"false","AlexaExperience":"FULL"}
+12-29 11:00:35.386   285 21314 I perfmonitord:ProcessRssMonitor: htning.services      20446 : 72388      8756       81144     

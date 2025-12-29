@@ -49,58 +49,22 @@ void main() async {
   final savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
   final hasPlaylist = savedPlaylistUrl != null && savedPlaylistUrl.isNotEmpty;
   
-  print('🔍 main: Verificando estado inicial...');
-  print('   - Playlist salva: ${hasPlaylist ? "SIM" : "NÃO"}');
-  if (hasPlaylist) {
-    print('   - URL: ${savedPlaylistUrl!.substring(0, savedPlaylistUrl.length > 60 ? 60 : savedPlaylistUrl.length)}...');
-  }
-  
-  // CRÍTICO: Verifica install marker ANTES de decidir se limpa dados
-  final hasMarker = await M3uService.hasInstallMarker();
-  print('   - Install marker: ${hasMarker ? "SIM" : "NÃO"}');
-  
-  // CRÍTICO: Verifica se há cache de disco
-  final hasAnyCache = await M3uService.hasAnyCache();
-  print('   - Cache de disco: ${hasAnyCache ? "SIM" : "NÃO"}');
-  
-  // CRÍTICO: SITUAÇÃO ANÔMALA - Tem cache mas não tem playlist
-  // Isso indica cache antigo/corrupto que deve ser limpo
-  if (hasAnyCache && !hasPlaylist) {
-    print('🚨 main: SITUAÇÃO ANÔMALA detectada: Cache existe mas não há playlist salva!');
-    print('   Isso indica cache antigo/corrupto. Limpando TUDO...');
-    
-    // Limpa TUDO para garantir estado limpo
-    M3uService.clearMemoryCache();
-    await M3uService.clearAllCache(null);
-    await EpgService.clearCache();
-    await Prefs.setPlaylistOverride(null);
-    await Prefs.setPlaylistReady(false);
-    Config.setPlaylistOverride(null);
-    
-    // Recria marker para não cair nessa situação novamente
-    await M3uService.writeInstallMarker();
-    
-    print('✅ main: Cache anômalo limpo. App pronto para configuração limpa.');
-  }
-  
   // CRÍTICO: Se tem playlist salva, GARANTE que está marcada como pronta
   // Isso evita que o app solicite novamente a lista
   if (hasPlaylist) {
     final isReady = Prefs.isPlaylistReady();
-    print('   - Playlist pronta: ${isReady ? "SIM" : "NÃO"}');
     if (!isReady) {
       print('⚠️ main: Playlist salva mas não marcada como pronta. Marcando como pronta...');
       await Prefs.setPlaylistReady(true);
     }
   }
   
-  // CRÍTICO: Só considera primeira execução se NÃO houver playlist salva E NÃO houver marker
-  // Se tem playlist salva OU marker, significa que já foi configurado antes
-  final isFirstRun = !hasMarker && !hasPlaylist && !hasAnyCache;
-  print('   - Primeira execução: ${isFirstRun ? "SIM (vai limpar tudo)" : "NÃO (mantém dados)"}');
+  // CRÍTICO: Só considera primeira execução se NÃO houver playlist salva
+  // Se tem playlist salva, significa que já foi configurado antes
+  final isFirstRun = !await M3uService.hasInstallMarker() && !hasPlaylist;
   
   if (isFirstRun) {
-    print('🚨 main: PRIMEIRA EXECUÇÃO detectada (sem marker, sem playlist, sem cache) - Limpando TODOS os dados...');
+    print('🚨 main: PRIMEIRA EXECUÇÃO detectada (sem marker e sem playlist) - Limpando TODOS os dados e caches...');
     
     // CRÍTICO: Limpa TODOS os dados persistentes (múltiplas vezes para garantir)
     for (int i = 0; i < 3; i++) {
@@ -116,18 +80,49 @@ void main() async {
     
     // Cria install marker para marcar que não é mais primeira execução
     await M3uService.writeInstallMarker();
-    print('✅ main: Install marker criado');
     
-    print('✅ main: Primeira execução - App limpo e pronto para configuração');
+    // CRÍTICO: Verifica e limpa qualquer dado restaurado do backup do Android (múltiplas vezes)
+    for (int i = 0; i < 3; i++) {
+      final verifyNoUrl = Prefs.getPlaylistOverride();
+      if (verifyNoUrl != null && verifyNoUrl.isNotEmpty) {
+        print('⚠️ main: Dados restaurados detectados (tentativa ${i + 1})! Limpando...');
+        await Prefs.setPlaylistOverride(null);
+        await Prefs.setPlaylistReady(false);
+        Config.setPlaylistOverride(null);
+        // Pequeno delay para garantir que a escrita foi persistida
+        await Future.delayed(const Duration(milliseconds: 100));
+      } else {
+        break; // Se já está limpo, para o loop
+      }
+    }
+    
+    // Verificação final
+    final finalCheck = Prefs.getPlaylistOverride();
+    if (finalCheck != null && finalCheck.isNotEmpty) {
+      print('❌ main: ERRO CRÍTICO: Não foi possível limpar playlist restaurada!');
+      print('   URL restaurada: ${finalCheck.substring(0, finalCheck.length > 50 ? 50 : finalCheck.length)}');
+    } else {
+      print('✅ main: Primeira execução - App limpo e pronto para configuração');
+    }
   } else if (hasPlaylist) {
-    // Tem playlist salva - cria marker se não existir
+    // Tem playlist salva mas não tem marker - cria marker para manter consistência
+    final hasMarker = await M3uService.hasInstallMarker();
     if (!hasMarker) {
       print('ℹ️ main: Playlist encontrada mas sem marker - criando marker...');
       await M3uService.writeInstallMarker();
     }
-  } else if (hasMarker && !hasPlaylist && !hasAnyCache) {
-    // Tem marker mas não tem playlist nem cache - app foi usado mas playlist foi removida
-    print('ℹ️ main: Marker existe mas não há playlist - usuário removeu configuração');
+  }
+  
+  if (!hasPlaylist) {
+    // SEM PLAYLIST CONFIGURADA - LIMPA TUDO SEMPRE
+    print('🚨 main: SEM PLAYLIST CONFIGURADA - Limpando TODOS os dados e caches...');
+    
+    // Limpa TODOS os caches (memória e disco) - SEMPRE
+    M3uService.clearMemoryCache();
+    await M3uService.clearAllCache(null);
+    await EpgService.clearCache();
+    
+    print('✅ main: App limpo - SEM playlist configurada');
   }
   
   if (hasPlaylist) {
@@ -136,17 +131,42 @@ void main() async {
     // SEMPRE define o override para garantir que seja usado
     Config.setPlaylistOverride(savedPlaylistUrl);
     
-    // CRÍTICO: Sempre tenta (re)construir o cache em memória para garantir que
-    // a lista de séries e categorias esteja disponível — mesmo que o cache
-    // local não exista ou esteja desatualizado. preloadCategories possui
-    // validações internas e não bloqueará a inicialização do app.
-    print('📦 main: Iniciando (re)construção de categorias em background (preloadCategories)...');
-    M3uService.preloadCategories(savedPlaylistUrl).then((_) {
-      print('✅ main: Categorias pré-carregadas/reconstruídas com sucesso');
-    }).catchError((e) {
-      print('⚠️ main: Erro ao (re)pré-carregar categorias: $e');
-      // Continua mesmo se preload falhar (não bloqueia app)
-    });
+    // CRÍTICO: Verifica se cache existe E corresponde à URL salva
+    final hasCache = await M3uService.hasCachedPlaylist(savedPlaylistUrl);
+    if (hasCache) {
+      print('✅ main: Cache encontrado para playlist salva. Usando cache permanente.');
+      
+      // CRÍTICO: Pré-carrega categorias ANTES de continuar (não em background)
+      // Isso garante que a lista M3U esteja disponível imediatamente quando o app abrir
+      print('📦 main: Pré-carregando categorias do cache (aguardando conclusão)...');
+      try {
+        await M3uService.preloadCategories(savedPlaylistUrl);
+        print('✅ main: Categorias pré-carregadas com sucesso do cache');
+      } catch (e) {
+        print('⚠️ main: Erro ao pré-carregar categorias: $e');
+        // Continua mesmo se preload falhar (não bloqueia app)
+      }
+    } else {
+      print('⚠️ main: Cache não encontrado ou inválido para playlist salva. Cache será recriado quando necessário.');
+      // Limpa qualquer cache antigo que possa estar causando confusão
+      print('🧹 main: Limpando caches antigos para evitar conflitos...');
+      await M3uService.clearAllCache(savedPlaylistUrl);
+    }
+    
+    // GARANTE que a URL está salva corretamente (tripla verificação)
+    final verifyUrl1 = Prefs.getPlaylistOverride();
+    if (verifyUrl1 != savedPlaylistUrl) {
+      print('⚠️ main: Inconsistência detectada! Re-salvando URL...');
+      await Prefs.setPlaylistOverride(savedPlaylistUrl);
+      Config.setPlaylistOverride(savedPlaylistUrl);
+      // Verifica novamente
+      final verifyUrl2 = Prefs.getPlaylistOverride();
+      if (verifyUrl2 != savedPlaylistUrl) {
+        print('❌ main: ERRO CRÍTICO: Não foi possível salvar URL em Prefs!');
+      } else {
+        print('✅ main: URL re-salva com sucesso!');
+      }
+    }
   } else {
     print('ℹ️ main: Nenhuma playlist salva encontrada. Usuário precisa configurar via Setup.');
     // Se não tem playlist mas tem cache, limpa cache antigo
@@ -157,6 +177,28 @@ void main() async {
     }
   }
   
+  // Inicializar TMDB Service (carrega de Prefs/Settings ou .env)
+  TmdbService.init();
+  if (TmdbService.isConfigured) {
+    print('✅ main: TMDB Service inicializado e configurado');
+  } else {
+    print('⚠️ main: TMDB Service NÃO está configurado - ratings não serão carregados');
+  }
+
+  // CRÍTICO: Sempre tenta (re)construir o cache em memória para garantir que
+  // a lista de séries e categorias esteja disponível — mesmo que o cache
+  // local não exista ou esteja desatualizado. preloadCategories possui
+  // validações internas e não bloqueará a inicialização do app.
+  if (hasPlaylist) {
+    print('📦 main: Iniciando (re)construção de categorias em background (preloadCategories)...');
+    M3uService.preloadCategories(savedPlaylistUrl).then((_) {
+      print('✅ main: Categorias pré-carregadas/reconstruídas com sucesso');
+    }).catchError((e) {
+      print('⚠️ main: Erro ao (re)pré-carregar categorias: $e');
+      // Continua mesmo se preload falhar (não bloqueia app)
+    });
+  }
+
   // Carregar EPG do cache em background (APENAS se houver playlist configurada)
   // SEM playlist, EPG não deve ser carregado
   if (hasPlaylist) {
@@ -223,10 +265,7 @@ class ClickChannelApp extends StatelessWidget {
     String initialRoute;
     final isReady = Prefs.isPlaylistReady();
     if (!hasPlaylist) {
-        // Temporariamente pulamos a tela de setup inicial.
-        // Ao invés de exigir a URL na primeira execução, abrimos as Configurações
-        // para o usuário inserir a playlist manualmente via Settings.
-        initialRoute = AppRoutes.settings;
+      initialRoute = AppRoutes.setup;
     } else if (hasPlaylist && isReady) {
       // CRÍTICO: Se tem playlist e está pronta, vai direto para Home (não passa pelo Setup)
       initialRoute = AppRoutes.home;
@@ -313,25 +352,7 @@ class ClickChannelApp extends StatelessWidget {
           home: SplashScreen(
             nextRoute: initialRoute,
             onInit: () async {
-              // Se estamos abrindo Settings inicialmente (pular Setup),
-              // garante que não haja caches antigos sendo usados.
-              if (initialRoute == AppRoutes.settings) {
-                try {
-                  print('🧹 Splash onInit: Inicializando em modo Settings — limpando caches e resets...');
-                  M3uService.clearMemoryCache();
-                  await M3uService.clearAllCache(null);
-                  await EpgService.clearCache();
-                  await Prefs.setPlaylistOverride(null);
-                  await Prefs.setPlaylistReady(false);
-                  Config.setPlaylistOverride(null);
-                  await M3uService.writeInstallMarker();
-                  print('✅ Splash onInit: Limpeza concluída');
-                } catch (e) {
-                  print('⚠️ Splash onInit: Erro ao limpar caches para Settings: $e');
-                }
-              }
-
-              // Pequeno delay para suavizar a transição
+              // Aqui pode adicionar qualquer inicialização adicional se necessário
               await Future.delayed(const Duration(milliseconds: 500));
             },
           ),
