@@ -19,12 +19,14 @@ class OptimizedGridView extends StatefulWidget {
   final bool showMetaChips;
   final double metaFontSize;
   final double metaIconSize;
+  final ValueChanged<ContentItem>? onItemUpdated; // Novo callback
   final Map<String, EpgChannel>? epgChannels;
 
   const OptimizedGridView({
     super.key,
     required this.items,
     required this.onTap,
+    this.onItemUpdated, // Novo callback
     this.crossAxisCount = 5,
     this.childAspectRatio = 0.6,
     this.crossAxisSpacing = 16,
@@ -73,6 +75,7 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
         // Usa LazyTmdbLoader para carregar dados do TMDB sob demanda
         return LazyTmdbLoader(
           item: item,
+          onItemEnriched: widget.onItemUpdated, // Passa callback
           builder: (enrichedItem, isLoading) {
             return _OptimizedGridCard(
               item: enrichedItem,
