@@ -136,26 +136,17 @@ void main() async {
     // SEMPRE define o override para garantir que seja usado
     Config.setPlaylistOverride(savedPlaylistUrl);
     
-    // CRÍTICO: Verifica se cache existe E corresponde à URL salva
-    final hasCache = await M3uService.hasCachedPlaylist(savedPlaylistUrl);
-    if (hasCache) {
-      print('✅ main: Cache encontrado para playlist salva. Usando cache permanente.');
-      
-      // CRÍTICO: Pré-carrega categorias EM BACKGROUND (não bloqueia inicialização)
-      // Isso melhora o tempo de abertura do app (não aguarda conclusão)
-      print('📦 main: Iniciando pré-carregamento de categorias em background...');
-      M3uService.preloadCategories(savedPlaylistUrl).then((_) {
-        print('✅ main: Categorias pré-carregadas com sucesso do cache');
-      }).catchError((e) {
-        print('⚠️ main: Erro ao pré-carregar categorias: $e');
-        // Continua mesmo se preload falhar (não bloqueia app)
-      });
-    } else {
-      // CRÍTICO: Não limpa a playlist salva! Apenas avisa que precisa redownload
-      print('⚠️ main: Cache não encontrado para playlist salva.');
-      print('   A playlist será re-baixada automaticamente quando necessário.');
-      // NÃO limpa a URL salva - mantém a configuração do usuário
-    }
+    // CRÍTICO: Sempre tenta (re)construir o cache em memória para garantir que
+    // a lista de séries e categorias esteja disponível — mesmo que o cache
+    // local não exista ou esteja desatualizado. preloadCategories possui
+    // validações internas e não bloqueará a inicialização do app.
+    print('📦 main: Iniciando (re)construção de categorias em background (preloadCategories)...');
+    M3uService.preloadCategories(savedPlaylistUrl).then((_) {
+      print('✅ main: Categorias pré-carregadas/reconstruídas com sucesso');
+    }).catchError((e) {
+      print('⚠️ main: Erro ao (re)pré-carregar categorias: $e');
+      // Continua mesmo se preload falhar (não bloqueia app)
+    });
   } else {
     print('ℹ️ main: Nenhuma playlist salva encontrada. Usuário precisa configurar via Setup.');
     // Se não tem playlist mas tem cache, limpa cache antigo
