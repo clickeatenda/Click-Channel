@@ -855,6 +855,7 @@ class M3uService {
     final type = _inferType(group, title);
     final quality = _inferQuality(title, group);
     final audioType = _inferAudioType(title);
+    final year = _extractYear(title);
 
     return ContentItem(
       title: title,
@@ -865,6 +866,7 @@ class M3uService {
       isSeries: type == 'series',
       quality: quality,
       audioType: audioType,
+      year: year,
     );
   }
 
@@ -1047,6 +1049,32 @@ class M3uService {
     if (t.contains('[multi]') || t.contains('(multi)')) return 'multi';
     return '';
   }
+
+  static String _extractYear(String title) {
+    // Procura por (YYYY)
+    final regex = RegExp(r'\((\d{4})\)');
+    final match = regex.firstMatch(title);
+    if (match != null) {
+      return match.group(1)!;
+    }
+    
+    // Procura por [YYYY]
+    final regexBrackets = RegExp(r'\[(\d{4})\]');
+    final matchBrackets = regexBrackets.firstMatch(title);
+    if (matchBrackets != null) {
+      return matchBrackets.group(1)!;
+    }
+    
+    // Procura por espaço YYYY no final
+    final regexEnd = RegExp(r'\s(\d{4})$');
+    final matchEnd = regexEnd.firstMatch(title);
+    if (matchEnd != null) {
+      return matchEnd.group(1)!;
+    }
+    
+    return ""; // Se não encontrar, retorna vazio (ContentItem vai usar default ou vazio)
+  }
+
   static Map<String, String> extractSeriesInfo(String title) {
     final t = title.toLowerCase();
     final result = <String, String>{};
@@ -1211,6 +1239,7 @@ class M3uService {
           isSeries: m['type'] == 'series',
           quality: m['quality'] ?? 'sd',
           audioType: m['audioType'] ?? '',
+          year: m['year'] ?? '',
         );
         if (item.type == 'movie') {
           movies.add(item);
@@ -1857,6 +1886,8 @@ List<Map<String, String>> _parseLinesIsolate(Map<String, dynamic> args) {
         }
       }
       
+      final year = M3uService._extractYear(title);
+      
       results.add({
         'title': meta['title'] ?? meta['tvg-name'] ?? 'Sem título',
         'url': trimmed,
@@ -1865,6 +1896,7 @@ List<Map<String, String>> _parseLinesIsolate(Map<String, dynamic> args) {
         'type': type,
         'quality': quality,
         'audioType': audioType,
+        'year': year,
       });
       pendingExtInf = null;
       if (results.length >= limit) break;
