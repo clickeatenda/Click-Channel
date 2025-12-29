@@ -304,6 +304,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
+  void _onItemUpdated(ContentItem enriched) {
+    // Atualiza na lista principal em memória (sem setState para evitar rebuild total)
+    // Isso garante que próximas ordenações usem os dados enriquecidos (data, rating)
+    final index = items.indexWhere((i) => i.title == enriched.title); // Usa título como chave primária para séries agrupadas
+    if (index != -1) {
+      items[index] = enriched;
+    }
+    
+    // Atualiza na lista filtrada também
+    final fIndex = filteredItems.indexWhere((i) => i.title == enriched.title);
+    if (fIndex != -1) {
+      filteredItems[fIndex] = enriched;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -360,7 +375,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     Text(
-                                      '${widget.type.toUpperCase()} • ${filteredItems.length} itens',
+                                      '${widget.type == 'series' ? 'SÉRIES' : widget.type == 'movie' ? 'FILMES' : 'CANAIS'} • ${filteredItems.length} itens${visibleCount < filteredItems.length ? " (Exibindo $visibleCount)" : ""}',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.6),
                                         fontSize: 11,
@@ -488,15 +503,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             child: OptimizedGridView(
                               items: filteredItems.take(visibleCount).toList(),
                               epgChannels: _epgChannels,
-                                  onTap: (item) {
-                                    if (item.isSeries || item.type == 'series') {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
-                                    } else if (item.type == 'channel') {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
-                                    } else {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
-                                    }
-                                  },
+                              onItemUpdated: _onItemUpdated, // Callback para atualizar dados em background
+                              onTap: (item) {
+                                if (item.isSeries || item.type == 'series') {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
+                                } else if (item.type == 'channel') {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+                                } else {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
+                                }
+                              },
                               crossAxisCount: 6,
                               childAspectRatio: 0.55,
                               crossAxisSpacing: 12,
