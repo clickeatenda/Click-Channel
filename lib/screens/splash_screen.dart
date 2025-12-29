@@ -55,25 +55,27 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _initializeApp() async {
     try {
-      // CRÍTICO: Reduz delays artificiais para melhorar tempo de abertura
-      // Total: ~500ms vs. ~1400ms anterior
-      _updateProgress(0.2, 'Carregando configurações...');
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Simula progresso da inicialização
+      _updateProgress(0.1, 'Carregando configurações...');
+      await Future.delayed(const Duration(milliseconds: 300));
       
-      _updateProgress(0.4, 'Verificando playlist...');
-      await Future.delayed(const Duration(milliseconds: 100));
+      _updateProgress(0.3, 'Verificando playlist...');
+      await Future.delayed(const Duration(milliseconds: 300));
       
-      _updateProgress(0.6, 'Carregando dados...');
-      await Future.delayed(const Duration(milliseconds: 100));
+      _updateProgress(0.5, 'Carregando dados...');
+      await Future.delayed(const Duration(milliseconds: 300));
       
       // Executa inicialização real se fornecida
       if (widget.onInit != null) {
-        _updateProgress(0.8, 'Preparando conteúdo...');
+        _updateProgress(0.7, 'Preparando conteúdo...');
         await widget.onInit!();
       }
       
-      _updateProgress(1.0, 'Pronto!');
+      _updateProgress(0.9, 'Finalizando...');
       await Future.delayed(const Duration(milliseconds: 200));
+      
+      _updateProgress(1.0, 'Pronto!');
+      await Future.delayed(const Duration(milliseconds: 300));
       
       // Navega para próxima tela
       if (mounted && widget.nextRoute != null) {
@@ -85,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     } catch (e) {
       if (mounted) {
         _updateProgress(1.0, 'Erro ao inicializar');
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(seconds: 1));
         // Mesmo com erro, tenta navegar
         if (widget.nextRoute != null) {
           Navigator.of(context).pushReplacementNamed(widget.nextRoute!);
@@ -188,7 +190,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Streaming IPTV',
                     style: TextStyle(
                       color: Colors.white70,
@@ -235,7 +237,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   const SizedBox(height: 40),
                   
                   // Indicador de carregamento animado
-                  SizedBox(
+                  const SizedBox(
                     width: 40,
                     height: 40,
                     child: CircularProgressIndicator(

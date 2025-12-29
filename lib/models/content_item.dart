@@ -79,7 +79,7 @@ class ContentItem {
   }) {
     // CRÍTICO: Se rating foi fornecido (mesmo que seja 0), usa ele
     // Isso garante que ratings do TMDB sejam aplicados corretamente
-    final finalRating = rating != null ? rating : this.rating;
+    final finalRating = rating ?? this.rating;
     
     return ContentItem(
       title: title,

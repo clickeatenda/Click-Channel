@@ -421,8 +421,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ElevatedButton(
                                   focusNode: _tmdbTestFocusNode,
                                   onPressed: _testTmdbKey,
-                                  child: const Text('Testar chave'),
                                   style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                                  child: const Text('Testar chave'),
                                 ),
                                 const SizedBox(width: 12),
                                 TextButton(

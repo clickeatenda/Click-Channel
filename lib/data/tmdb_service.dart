@@ -9,6 +9,9 @@ import '../core/utils/logger.dart';
 class TmdbService {
   static const String _baseUrl = 'https://api.themoviedb.org/3';
   static String? _apiKey;
+  
+  /// API key fallback hardcoded (atualizada em 29/12/2024)
+  static const String _fallbackApiKey = 'a274643800798d966ea5556ad951ff8d';
 
   /// Inicializa a API key do TMDB (lê de .env via Config)
   static void init() {
@@ -22,7 +25,9 @@ class TmdbService {
         // Lê a chave do arquivo .env através de Config como fallback
         _apiKey = Config.tmdbApiKey;
         if (_apiKey == null || _apiKey!.isEmpty) {
-          AppLogger.warning('⚠️ TMDB_API_KEY não configurada (ver .env ou Settings)');
+          // Usa fallback hardcoded como última opção
+          _apiKey = _fallbackApiKey;
+          AppLogger.info('✅ TMDB API key carregada (via fallback hardcoded)');
         } else {
           AppLogger.info('✅ TMDB API key carregada (via .env)');
         }
@@ -30,7 +35,9 @@ class TmdbService {
     } catch (e) {
       _apiKey = Config.tmdbApiKey;
       if (_apiKey == null || _apiKey!.isEmpty) {
-        AppLogger.warning('⚠️ TMDB_API_KEY não configurada (erro ao ler Prefs)');
+        // Usa fallback hardcoded como última opção
+        _apiKey = _fallbackApiKey;
+        AppLogger.info('✅ TMDB API key carregada (via fallback hardcoded após erro)');
       }
     }
 

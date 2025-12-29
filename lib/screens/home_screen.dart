@@ -333,31 +333,26 @@ class _AppLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
+      child: Image.asset(
+        'assets/images/logo.png',
         width: 40,
         height: 40,
-        child: Image.asset(
-          'assets/images/logo.png',
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            // Fallback com gradiente vermelho/rosa (padrão do app)
-            return Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
-                ),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
               ),
-              child: const Center(
-                child: Icon(Icons.play_arrow, color: Colors.white, size: 20),
-              ),
-            );
-          },
-        ),
+            ),
+            child: const Icon(Icons.live_tv, color: Colors.white, size: 24),
+          );
+        },
       ),
     );
   }
@@ -554,79 +549,103 @@ class _HomeBodyState extends State<_HomeBody> {
         });
       }
       
-      // CRÍTICO: Carregar TMDB IMEDIATAMENTE (não bloqueado por M3U)
+      // CRÍTICO: Carrega destaques TMDB (Popular Movies/Series) + Canais M3U se houver playlist
+      // Destaques TMDB não dependem de playlist, sempre disponíveis se TMDB configurado
       try {
-        final tmdbMoviesList = await TmdbService.getPopularMovies(page: 1);
-        final tmdbSeriesList = await TmdbService.getPopularSeries(page: 1);
+        // Buscar destaques do TMDB em paralelo
+        final tmdbResults = await Future.wait([
+          TmdbService.getPopularMovies(page: 1),
+          TmdbService.getPopularSeries(page: 1),
+        ]);
         
-        // Converte lista de TmdbMetadata em ContentItem para filmes do TMDB
-        List<ContentItem> tmdbMovies = [];
-        for (final item in tmdbMoviesList.take(6)) {
-          tmdbMovies.add(ContentItem(
-            title: item.title,
-            url: item.backdropUrl ?? item.posterUrl ?? '',
-            image: item.posterUrl ?? '',
+        // Converter TmdbMetadata para ContentItem
+        List<ContentItem> tmdbMovies = tmdbResults[0]
+          .take(6)
+          .map((m) => ContentItem(
+            title: m.title,
+            url: '', // TMDB items não têm URL de streaming
+            image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
             group: 'TMDB Popular',
             type: 'movie',
-            rating: item.rating,
-            popularity: item.popularity,
-            releaseDate: item.releaseDate,
-            genre: item.genres.join(', '),
-            description: item.overview ?? '',
-            director: item.director,
-          ));
-        }
-        
-        // Converte lista de TmdbMetadata em ContentItem para séries do TMDB
-        List<ContentItem> tmdbSeries = [];
-        for (final item in tmdbSeriesList.take(6)) {
-          tmdbSeries.add(ContentItem(
-            title: item.title,
-            url: item.backdropUrl ?? item.posterUrl ?? '',
-            image: item.posterUrl ?? '',
+            id: m.id.toString(),
+            rating: m.rating,
+            year: m.releaseDate?.substring(0, 4) ?? '',
+            description: m.overview ?? '',
+          ))
+          .toList();
+          
+        List<ContentItem> tmdbSeries = tmdbResults[1]
+          .take(6)
+          .map((s) => ContentItem(
+            title: s.title,
+            url: '', // TMDB items não têm URL de streaming
+            image: s.posterPath != null ? 'https://image.tmdb.org/t/p/w342${s.posterPath}' : '',
             group: 'TMDB Popular',
             type: 'series',
-            isSeries: true,
-            rating: item.rating,
-            popularity: item.popularity,
-            releaseDate: item.releaseDate,
-            genre: item.genres.join(', '),
-            description: item.overview ?? '',
-            director: item.director,
-          ));
+            id: s.id.toString(),
+            rating: s.rating,
+            year: s.releaseDate?.substring(0, 4) ?? '',
+            description: s.overview ?? '',
+          ))
+          .toList();
+        
+        print('✅ TMDB: Carregados ${tmdbMovies.length} filmes + ${tmdbSeries.length} séries em destaque');
+        
+        // Carrega canais M3U se houver playlist
+        List<ContentItem> channels = [];
+        final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+        if (hasM3u) {
+          channels = await M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600);
+          print('✅ M3U: Carregados ${channels.length} canais em destaque');
         }
         
-        // CRÍTICO: Atualiza UI IMEDIATAMENTE com TMDB (sem aguardar M3U)
         if (!mounted) return;
         setState(() {
-          featuredMovies = tmdbMovies.isNotEmpty ? tmdbMovies : [];
-          featuredSeries = tmdbSeries.isNotEmpty ? tmdbSeries : [];
-          loading = false; // UI mostra conteúdo AGORA
+          featuredMovies = tmdbMovies;
+          featuredSeries = tmdbSeries;
+          featuredChannels = channels;
+          loading = false;
         });
-        
-        print('✅ HomeScreen: TMDB carregado imediatamente');
       } catch (e) {
-        print('❌ HomeScreen: Erro ao carregar TMDB: $e');
-        if (!mounted) return;
-        setState(() => loading = false);
-      }
-      
-      // Carregar canais do M3U em BACKGROUND (não bloqueia UI)
-      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
-      if (hasM3u) {
-        try {
-          final channels = await M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600);
+        print('⚠️ Erro ao carregar destaques TMDB: $e');
+        // Se TMDB falhar, tenta M3U como fallback
+        final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+        if (hasM3u) {
+          try {
+            final results = await Future.wait([
+              M3uService.getCuratedFeaturedPrefer('movie', count: 6, pool: 30, maxItems: 600),
+              M3uService.getCuratedFeaturedPrefer('series', count: 6, pool: 30, maxItems: 600),
+              M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600),
+            ]);
+            
+            print('⚠️ Usando fallback M3U para destaques');
+            if (!mounted) return;
+            setState(() {
+              featuredMovies = results[0];
+              featuredSeries = results[1];
+              featuredChannels = results[2];
+              loading = false;
+            });
+          } catch (_) {
+            if (!mounted) return;
+            setState(() {
+              featuredMovies = [];
+              featuredSeries = [];
+              featuredChannels = [];
+              loading = false;
+            });
+          }
+        } else {
           if (!mounted) return;
           setState(() {
-            featuredChannels = channels;
+            featuredMovies = [];
+            featuredSeries = [];
+            featuredChannels = [];
+            loading = false;
           });
-          print('✅ HomeScreen: Canais M3U carregados em background');
-        } catch (e) {
-          print('❌ HomeScreen: Erro ao carregar canais M3U: $e');
         }
       }
-    } catch (e) {
-      print('❌ HomeScreen._load() erro geral: $e');
+    } catch (_) {
       if (!mounted) return;
       setState(() => loading = false);
     }
@@ -785,169 +804,166 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
   Future<void> _loadMovies({bool reset = false}) async {
     print('🎬 MoviesLibraryBody: Carregando categorias de filmes...');
     try {
-      if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
-        print('🎬 MoviesLibraryBody: via M3U (paginado)');
-        
-        // CRÍTICO: Usa cache já pré-carregado (não força reload)
-        // Se cache já existe, usa diretamente sem reprocessar tudo
-        // Isso torna o carregamento muito mais rápido
-        final maxItems = 999999; // Usa cache completo já pré-carregado
-        
-        final result = await M3uService.fetchPagedFromEnv(
-          page: _currentPage,
-          pageSize: _pageSize,
-          maxItems: maxItems, // Usa cache completo (já processado)
-          typeFilter: 'movie',
-        );
+      // Melhor fluxo: buscar TMDB em paralelo para mostrar destaques imediatamente
+      // e buscar M3U (lista de filmes) separadamente. Evita mostrar canais como
+      // filmes recomendados quando TMDB ainda não carregou.
+      final hasPlaylist = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
 
-        // Carrega meta apenas se reset (primeira vez) e não tem categorias ainda
-        // CRÍTICO: Usa cache completo já pré-carregado (não força reprocessamento)
-        Map<String, String> metaThumbs = categoryThumbs;
-        if (reset && movieCategories.isEmpty) {
-          final meta = await M3uService.fetchCategoryMetaFromEnv(
-            typeFilter: 'movie',
-            maxItems: 999999, // Usa cache completo
-          );
-          metaThumbs = meta.thumbs;
+      // Iniciar fetchs TMDB (não aguardamos aqui, atualizaremos quando retornarem)
+      Future<List<dynamic>>? tmdbPopularFuture;
+      Future<List<dynamic>>? tmdbTopRatedFuture;
+      if (reset) {
+        try {
+          tmdbPopularFuture = TmdbService.getPopularMovies(page: 1);
+          tmdbTopRatedFuture = TmdbService.getTopRatedMovies(page: 1);
+        } catch (e) {
+          print('❌ Erro ao iniciar TMDB: $e');
         }
-        
-        // Featured e latest com limites menores (usa TMDB em vez de M3U)
-        List<ContentItem> enrichedFeatured = [];
-        List<ContentItem> enrichedLatest = [];
-        
-        if (reset) {
-          // Carrega featured filmes do TMDB diretamente
-          try {
-            final tmdbMovieList = await TmdbService.getPopularMovies(page: 1);
-            enrichedFeatured = [];
-            for (final movie in tmdbMovieList.take(5)) {
-              enrichedFeatured.add(ContentItem(
-                title: movie.title,
-                url: movie.backdropUrl ?? movie.posterUrl ?? '',
-                image: movie.posterUrl ?? '',
-                group: 'TMDB Popular',
-                type: 'movie',
-                rating: movie.rating,
-                popularity: movie.popularity,
-                releaseDate: movie.releaseDate,
-                genre: movie.genres.join(', '),
-                description: movie.overview ?? '',
-                director: movie.director,
-              ));
-            }
-            print('✅ TMDB: ${enrichedFeatured.length} filmes em destaque carregados');
-          } catch (e) {
-            print('❌ TMDB: Erro ao carregar featured filmes: $e');
-            enrichedFeatured = [];
-          }
-        }
+      }
 
-        // Preparar lista para enriquecimento e ordenação
-        List<ContentItem> allItems = [];
-        if (reset || movies.isEmpty) {
-          allItems = result.items;
-        } else {
-          allItems = [...movies, ...result.items];
-        }
-
-        // CRÍTICO: Mostra UI primeiro, depois enriquece em background
-        // Isso torna o carregamento muito mais rápido
-        if (mounted) {
-          setState(() {
-            movieCategories = result.categories;
-            categoryCounts = result.categoryCounts;
-            categoryThumbs = metaThumbs;
-            featuredItems = enrichedFeatured;
-            latestItems = enrichedLatest;
-            // Removido: popularItems e topRatedItems não são mais exibidos
-            popularItems = [];
-            topRatedItems = [];
-            if (reset || movies.isEmpty) {
-              movies = allItems;
-            } else {
-              movies = allItems;
-            }
-            hasMore = movies.length < result.total;
-            loading = false;
-            loadingMore = false;
-            _applyFilters();
-          });
-        }
-        
-        // Enriquecer com dados do TMDB (em background, não bloqueia UI)
-        if (reset && allItems.isNotEmpty) {
-          setState(() => enriching = true);
-          // Enriquece mais itens (primeiros 200 para melhor cobertura)
-          final sample = allItems.take(200).toList();
-          print('🔍 TMDB: Enriquecendo ${sample.length} itens em background...');
-          final enriched = await ContentEnricher.enrichItems(sample);
-          // Atualiza os itens enriquecidos na lista completa
-          int enrichedCount = 0;
-          for (var i = 0; i < enriched.length && i < allItems.length; i++) {
-            if (enriched[i].rating > 0 || enriched[i].description.isNotEmpty) {
-              allItems[i] = enriched[i];
-              enrichedCount++;
-            }
-          }
-          print('✅ TMDB: ${enrichedCount} itens enriquecidos com sucesso');
-          
-          // Atualiza UI com dados enriquecidos
-          if (mounted) {
-            setState(() {
-              movies = allItems;
-              featuredItems = enrichedFeatured;
-              latestItems = ContentSorter.sortByLatest(enrichedLatest);
-              popularItems = ContentSorter.sortByPopularity(allItems.take(20).toList());
-              topRatedItems = ContentSorter.sortByRating(allItems.take(20).toList());
-              enriching = false;
-            });
-          }
-        }
-
-        // Criar listas ordenadas
-        final popular = ContentSorter.sortByPopularity(allItems.take(20).toList());
-        final topRated = ContentSorter.sortByRating(allItems.take(20).toList());
-        final latestSorted = ContentSorter.sortByLatest(enrichedLatest);
-
-        if (mounted) {
-          setState(() {
-            movieCategories = result.categories;
-            categoryCounts = result.categoryCounts;
-            // categoryThumbs já foi carregado acima se reset
-            featuredItems = enrichedFeatured;
-            latestItems = latestSorted;
-            popularItems = popular;
-            topRatedItems = topRated;
-            if (reset || movies.isEmpty) {
-              movies = allItems;
-            } else {
-              movies = allItems;
-            }
-            hasMore = movies.length < result.total;
-            loading = false;
-            loadingMore = false;
-            enriching = false;
-            _applyFilters();
-          });
-        }
-      } else {
-        // CRÍTICO: Sem playlist configurada - retorna listas vazias
-        // SEM fallback para backend - app deve estar limpo sem playlist
-        print('⚠️ MoviesLibraryBody: Sem playlist configurada - retornando listas vazias');
+      // Se não há playlist, ainda queremos mostrar destaques TMDB (app não deve depender de M3U)
+      if (!hasPlaylist) {
+        print('🎬 MoviesLibraryBody: sem playlist - exibindo apenas destaques TMDB');
+        // Apply immediately placeholders enquanto TMDB carrega
         if (mounted) {
           setState(() {
             movieCategories = [];
             categoryCounts = {};
             categoryThumbs = {};
             movies = [];
-            featuredItems = [];
-            latestItems = [];
-            popularItems = [];
-            topRatedItems = [];
+            hasMore = false;
             loading = false;
             loadingMore = false;
-            hasMore = false;
             _applyFilters();
+          });
+        }
+        // Atualiza destaques quando TMDB terminar
+        tmdbPopularFuture?.then((tmdbPopular) {
+          final featured = tmdbPopular.take(5).map((m) => ContentItem(
+            title: m.title,
+            url: '',
+            image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+            group: 'TMDB Popular',
+            type: 'movie',
+            id: m.id.toString(),
+            rating: m.rating,
+            year: m.releaseDate?.substring(0, 4) ?? '',
+            description: m.overview ?? '',
+          )).toList();
+          if (mounted) setState(() => featuredItems = featured);
+        }).catchError((e) { print('❌ TMDB popular falhou: $e'); return Future.value(null); });
+
+        tmdbTopRatedFuture?.then((tmdbTopRated) {
+          final latest = tmdbTopRated.take(10).map((m) => ContentItem(
+            title: m.title,
+            url: '',
+            image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+            group: 'TMDB TopRated',
+            type: 'movie',
+            id: m.id.toString(),
+            rating: m.rating,
+            year: m.releaseDate?.substring(0, 4) ?? '',
+            description: m.overview ?? '',
+          )).toList();
+          if (mounted) setState(() => latestItems = latest);
+        }).catchError((e) { print('❌ TMDB toprated falhou: $e'); return Future.value(null); });
+
+        return;
+      }
+
+      // Se houver playlist, carregamos M3U (paginado) para a lista principal, mas
+      // não usamos M3U para os destaques — os destaques virão do TMDB quando disponíveis.
+      print('🎬 MoviesLibraryBody: via M3U (paginado) - carregando lista enquanto TMDB carrega em paralelo');
+      const maxItems = 999999;
+      final result = await M3uService.fetchPagedFromEnv(
+        page: _currentPage,
+        pageSize: _pageSize,
+        maxItems: maxItems,
+        typeFilter: 'movie',
+      );
+
+      // Carrega meta apenas se reset (primeira vez) e não tem categorias ainda
+      Map<String, String> metaThumbs = categoryThumbs;
+      if (reset && movieCategories.isEmpty) {
+        final meta = await M3uService.fetchCategoryMetaFromEnv(
+          typeFilter: 'movie',
+          maxItems: 999999,
+        );
+        metaThumbs = meta.thumbs;
+      }
+
+      // UI inicial com lista M3U (rápido) e destaques vazios enquanto TMDB responde
+      if (mounted) {
+        setState(() {
+          movieCategories = result.categories;
+          categoryCounts = result.categoryCounts;
+          categoryThumbs = metaThumbs;
+          featuredItems = featuredItems; // mantém o que já existe (possivelmente vazio)
+          latestItems = latestItems;
+          popularItems = [];
+          topRatedItems = [];
+          movies = (reset || movies.isEmpty) ? result.items : [...movies, ...result.items];
+          hasMore = movies.length < result.total;
+          loading = false;
+          loadingMore = false;
+          _applyFilters();
+        });
+      }
+
+      // Quando TMDB terminar, atualiza os destaques — isso evita mostrar canais como filmes
+      tmdbPopularFuture?.then((tmdbPopular) {
+        final featured = tmdbPopular.take(5).map((m) => ContentItem(
+          title: m.title,
+          url: '',
+          image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+          group: 'TMDB Popular',
+          type: 'movie',
+          id: m.id.toString(),
+          rating: m.rating,
+          year: m.releaseDate?.substring(0, 4) ?? '',
+          description: m.overview ?? '',
+        )).toList();
+        if (mounted) setState(() => featuredItems = featured);
+      }).catchError((e) { print('❌ TMDB popular falhou: $e'); return Future.value(null); });
+
+      tmdbTopRatedFuture?.then((tmdbTopRated) {
+        final latest = tmdbTopRated.take(10).map((m) => ContentItem(
+          title: m.title,
+          url: '',
+          image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+          group: 'TMDB TopRated',
+          type: 'movie',
+          id: m.id.toString(),
+          rating: m.rating,
+          year: m.releaseDate?.substring(0, 4) ?? '',
+          description: m.overview ?? '',
+        )).toList();
+        if (mounted) setState(() => latestItems = latest);
+      }).catchError((e) { print('❌ TMDB toprated falhou: $e'); return Future.value(null); });
+
+      // Enriquecer com dados do TMDB (em background, não bloqueia UI)
+      if (reset && movies.isNotEmpty) {
+        setState(() => enriching = true);
+        final sample = movies.take(200).toList();
+        print('🔍 TMDB: Enriquecendo ${sample.length} itens em background...');
+        final enriched = await ContentEnricher.enrichItems(sample);
+        int enrichedCount = 0;
+        for (var i = 0; i < enriched.length && i < movies.length; i++) {
+          if (enriched[i].rating > 0 || enriched[i].description.isNotEmpty) {
+            movies[i] = enriched[i];
+            enrichedCount++;
+          }
+        }
+        print('✅ TMDB: ${enrichedCount} itens enriquecidos com sucesso');
+        if (mounted) {
+          final sorted = List<ContentItem>.from(latestItems)..sort((a, b) => b.rating.compareTo(a.rating));
+          setState(() {
+            movies = movies;
+            featuredItems = featuredItems;
+            latestItems = latestItems;
+            popularItems = movies.take(20).toList();
+            topRatedItems = sorted.take(20).toList();
+            enriching = false;
           });
         }
       }
@@ -1156,33 +1172,49 @@ class _SeriesBodyState extends State<_SeriesBody> {
 
       final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'series', maxItems: 400);
       
-      // CRÍTICO: Carrega featured séries do TMDB em vez de M3U
-      List<ContentItem> enrichedFeatured = [];
-      List<ContentItem> enrichedLatest = [];
+      // Featured e latest - SEMPRE TMDB (ignora M3U para destaques)
+      List<ContentItem> f = [];
+      List<ContentItem> l = [];
       
-      try {
-        final tmdbSeriesList = await TmdbService.getPopularSeries(page: 1);
-        for (final series in tmdbSeriesList.take(5)) {
-          enrichedFeatured.add(ContentItem(
-            title: series.title,
-            url: series.backdropUrl ?? series.posterUrl ?? '',
-            image: series.posterUrl ?? '',
+      if (true) { // Sempre carrega do TMDB
+        try {
+          print('🔍 TMDB: Carregando séries em destaque...');
+          final tmdbPopular = await TmdbService.getPopularSeries(page: 1);
+          final tmdbTopRated = await TmdbService.getTopRatedSeries(page: 1);
+          
+          f = tmdbPopular.take(5).map((s) => ContentItem(
+            title: s.title,
+            url: '',
+            image: s.posterPath != null ? 'https://image.tmdb.org/t/p/w342${s.posterPath}' : '',
             group: 'TMDB Popular',
             type: 'series',
-            isSeries: true,
-            rating: series.rating,
-            popularity: series.popularity,
-            releaseDate: series.releaseDate,
-            genre: series.genres.join(', '),
-            description: series.overview ?? '',
-            director: series.director,
-          ));
+            id: s.id.toString(),
+            rating: s.rating,
+            year: s.releaseDate?.substring(0, 4) ?? '',
+            description: s.overview ?? '',
+          )).toList();
+          
+          l = tmdbTopRated.take(10).map((s) => ContentItem(
+            title: s.title,
+            url: '',
+            image: s.posterPath != null ? 'https://image.tmdb.org/t/p/w342${s.posterPath}' : '',
+            group: 'TMDB TopRated',
+            type: 'series',
+            id: s.id.toString(),
+            rating: s.rating,
+            year: s.releaseDate?.substring(0, 4) ?? '',
+            description: s.overview ?? '',
+          )).toList();
+          
+          print('✅ TMDB: ${f.length} séries em destaque + ${l.length} top rated');
+        } catch (e) {
+          print('❌ Erro ao carregar séries TMDB: $e');
         }
-        print('✅ TMDB: ${enrichedFeatured.length} séries em destaque carregadas');
-      } catch (e) {
-        print('❌ TMDB: Erro ao carregar featured séries: $e');
-        enrichedFeatured = [];
       }
+      
+      // CRÍTICO: Não enriquece TMDB (já tem dados)
+      List<ContentItem> enrichedFeatured = f;
+      List<ContentItem> enrichedLatest = l;
       
       if (!mounted) return;
       setState(() {

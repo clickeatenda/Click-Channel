@@ -397,47 +397,14 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       focusNode: FocusNode()..requestFocus(),
       onKeyEvent: (event) {
         if (event is KeyDownEvent) {
-          final key = event.logicalKey;
-          
-          // CRÍTICO: Se painéis de opções estão abertos, NÃO intercepta teclas de navegação
-          // Deixa o Focus Widget lidar com a navegação entre opções
-          final hasOpenPanel = _showInfo || _showAudioOptions || _showSubtitleOptions || _showFitOptions;
-          
-          if (hasOpenPanel) {
-            // Com painel aberto, só intercepta teclas específicas (não navegação)
-            if (key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.backspace) {
-              // Fecha painel ou sai do player
-              if (_showInfo || _showAudioOptions || _showSubtitleOptions || _showFitOptions) {
-                setState(() {
-                  _showInfo = false;
-                  _showAudioOptions = false;
-                  _showSubtitleOptions = false;
-                  _showFitOptions = false;
-                });
-              } else {
-                Navigator.pop(context);
-              }
-            } else if (key == LogicalKeyboardKey.keyI) {
-              // Tecla 'I' para toggle de informações
-              setState(() {
-                _showInfo = !_showInfo;
-                _showAudioOptions = false;
-                _showSubtitleOptions = false;
-                _showFitOptions = false;
-              });
-            }
-            // Para outras teclas com painel aberto, não intercepta (deixa Focus lidar)
-            return;
-          }
-          
-          // SEM painéis abertos: intercepta teclas para controles do player
           // Mostra controles quando qualquer tecla é pressionada
           if (!_showControls) {
             setState(() => _showControls = true);
             _startControlsTimer();
           }
           
-          // Mapeia teclas do controle remoto para ações do player
+          // Mapeia teclas do controle remoto
+          final key = event.logicalKey;
           if (key == LogicalKeyboardKey.select || 
               key == LogicalKeyboardKey.enter ||
               key == LogicalKeyboardKey.space) {
