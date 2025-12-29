@@ -128,6 +128,7 @@ class ContentEnricher {
             genre: metadata.genres.isNotEmpty ? metadata.genres.join(', ') : item.genre,
             popularity: metadata.popularity,
             releaseDate: metadata.releaseDate,
+            image: metadata.posterUrl, // NOVO: usa imagem do TMDB se disponível
           );
           
           // Debug: verifica se rating foi aplicado corretamente
@@ -173,6 +174,7 @@ class ContentEnricher {
           genre: metadata.genres.isNotEmpty ? metadata.genres.join(', ') : item.genre,
           popularity: metadata.popularity,
           releaseDate: metadata.releaseDate,
+          image: metadata.posterUrl, // NOVO: usa imagem do TMDB se disponível
         );
       }
     } catch (e) {

@@ -560,7 +560,7 @@ class _HomeBodyState extends State<_HomeBody> {
         
         // Converter TmdbMetadata para ContentItem
         List<ContentItem> tmdbMovies = tmdbResults[0]
-          .take(6)
+          .take(10)
           .map((m) => ContentItem(
             title: m.title,
             url: '', // TMDB items não têm URL de streaming
@@ -575,7 +575,7 @@ class _HomeBodyState extends State<_HomeBody> {
           .toList();
           
         List<ContentItem> tmdbSeries = tmdbResults[1]
-          .take(6)
+          .take(10)
           .map((s) => ContentItem(
             title: s.title,
             url: '', // TMDB items não têm URL de streaming
