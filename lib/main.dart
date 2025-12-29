@@ -13,6 +13,7 @@ import 'core/config.dart';
 import 'data/epg_service.dart';
 import 'data/m3u_service.dart';
 import 'data/tmdb_service.dart';
+import 'data/favorites_service.dart';
 
 /// Variáveis globais para compartilhar estado entre main e app
 bool _hasPlaylist = false;
@@ -74,6 +75,9 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
       
       // Init preferences
       await Prefs.init();
+      
+      // Init favorites
+      await FavoritesService.init();
       
       // Load playlist from prefs
       _savedPlaylistUrl = await Config.loadPlaylistFromPrefs();

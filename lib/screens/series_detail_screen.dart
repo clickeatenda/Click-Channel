@@ -9,6 +9,8 @@ import '../data/m3u_service.dart';
 import '../widgets/media_player_screen.dart';
 import '../utils/content_enricher.dart';
 
+import '../data/favorites_service.dart'; // NOVO import
+
 /// Tela de detalhes completa de série com todas as informações
 /// Layout similar ao MovieDetailScreen
 class SeriesDetailScreen extends StatefulWidget {
@@ -29,14 +31,44 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   bool loadingMetadata = true;
   List<ContentItem> similarItems = [];
   bool loadingSimilar = true;
+  bool isFavorite = false; // Novo estado
 
   @override
   void initState() {
     super.initState();
+    isFavorite = FavoritesService.isFavorite(widget.item); // Inicializa estado
     _loadDetails();
     _loadMetadata();
     _loadSimilarItems();
   }
+
+  Future<void> _toggleFavorite() async {
+    await FavoritesService.toggleFavorite(widget.item);
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+    // Feedback visual/tátil
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(isFavorite ? Icons.check_circle : Icons.delete, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(isFavorite ? 'Série adicionada aos Favoritos' : 'Série removida dos Favoritos'),
+            ],
+          ),
+          backgroundColor: isFavorite ? Colors.green : Colors.red,
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+          width: 300,
+        ),
+      );
+    }
+  }
+
+
 
   Future<void> _loadMetadata() async {
     // Enriquece o item com dados do TMDB
@@ -382,12 +414,20 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                               const SizedBox(width: 12),
                               // My List
                               OutlinedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.add, size: 20),
-                                label: const Text('Minha Lista'),
+                                onPressed: _toggleFavorite,
+                                icon: Icon(
+                                  isFavorite ? Icons.check : Icons.add,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                                label: Text(isFavorite ? 'Minha Lista' : 'Adicionar'),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
-                                  side: const BorderSide(color: Colors.white38),
+                                  backgroundColor: isFavorite ? Colors.white10 : Colors.transparent,
+                                  side: BorderSide(
+                                    color: isFavorite ? AppColors.primary : Colors.white38,
+                                    width: isFavorite ? 2 : 1,
+                                  ),
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),

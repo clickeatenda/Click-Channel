@@ -18,6 +18,7 @@ import '../models/epg_program.dart';
 import '../widgets/media_player_screen.dart';
 import '../widgets/adaptive_cached_image.dart';
 import '../widgets/meta_chips_widget.dart';
+import '../data/favorites_service.dart'; // NOVO import
 import '../routes/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -669,6 +670,21 @@ class _HomeBodyState extends State<_HomeBody> {
             _WatchedCarousel(items: watchedItems),
             const SizedBox(height: 16),
           ],
+          
+          // Carrossel "Minha Lista" (Favoritos) - Atualização em tempo real
+          ValueListenableBuilder<List<ContentItem>>(
+            valueListenable: FavoritesService.favoritesNotifier,
+            builder: (context, favorites, _) {
+              if (favorites.isEmpty) return const SizedBox.shrink();
+              return Column(
+                children: [
+                   // Reusa _FeaturedCarousel que já funciona bem
+                  _FeaturedCarousel(items: favorites, title: 'Minha Lista'),
+                  const SizedBox(height: 20),
+                ],
+              );
+            },
+          ),
           
           // Destaques
           if (loading) const Center(child: CircularProgressIndicator()),

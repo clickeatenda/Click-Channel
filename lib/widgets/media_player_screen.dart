@@ -7,6 +7,8 @@ import '../data/watch_history_service.dart';
 import '../data/epg_service.dart';
 import '../models/epg_program.dart';
 
+import '../data/favorites_service.dart'; // NOVO import
+
 /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
 class MediaPlayerScreen extends StatefulWidget {
   final String url;
@@ -25,6 +27,7 @@ class MediaPlayerScreen extends StatefulWidget {
 }
 
 class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+  // ... (campos existentes)
   late final Player _player;
   late final VideoController _controller;
   
@@ -36,9 +39,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   bool _showAudioOptions = false;
   bool _showSubtitleOptions = false;
   bool _showFitOptions = false;
+  bool isFavorite = false; // Novo estado
   
   // Informações de mídia
   String _videoQuality = 'Carregando...';
+  // ... (restante dos campos)
   String _videoCodec = '';
   String _audioCodec = '';
   String _currentAudio = 'Padrão';
@@ -56,6 +61,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   // Opções de ajuste de tela
   BoxFit _videoFit = BoxFit.contain;
   int _fitIndex = 0;
+  // ... (resto dos campos)
+
   final List<Map<String, dynamic>> _fitOptions = [
     {'fit': BoxFit.contain, 'label': 'Ajustar', 'icon': Icons.fit_screen},
     {'fit': BoxFit.cover, 'label': 'Preencher', 'icon': Icons.crop_free},
@@ -72,7 +79,122 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.item != null) {
+      isFavorite = FavoritesService.isFavorite(widget.item!); // Inicializa estado
+    }
     _initPlayer();
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (widget.item == null) return;
+    await FavoritesService.toggleFavorite(widget.item!);
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+    // Feedback é mostrado via ícone preenchido
+  }
+  
+  // ... (método _initPlayer original inalterado) ...
+
+  // ... (dentro de _buildTopBar) ...
+  
+  Widget _buildTopBar() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 8,
+          left: 16,
+          right: 16,
+          bottom: 8,
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+          ),
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title ?? widget.item?.title ?? 'Reproduzindo',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    _videoQuality,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Botão de Favorito (NOVO)
+            if (widget.item != null)
+              Focus(
+                child: IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : Colors.white,
+                  ),
+                  onPressed: _toggleFavorite,
+                  tooltip: 'Favoritar',
+                ),
+              ),
+
+            // Botão de informações
+            Focus(
+              onKeyEvent: (node, event) {
+                if (event is KeyDownEvent &&
+                    (event.logicalKey == LogicalKeyboardKey.select ||
+                     event.logicalKey == LogicalKeyboardKey.enter ||
+                     event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+                  setState(() {
+                    _showInfo = !_showInfo;
+                    _showAudioOptions = false;
+                    _showSubtitleOptions = false;
+                    _showFitOptions = false;
+                  });
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: IconButton(
+                icon: Icon(
+                  Icons.info_outline,
+                  color: _showInfo ? Colors.blueAccent : Colors.white,
+                ),
+                onPressed: () => setState(() {
+                  _showInfo = !_showInfo;
+                  _showAudioOptions = false;
+                  _showSubtitleOptions = false;
+                  _showFitOptions = false;
+                }),
+                focusColor: Colors.blueAccent,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
   
   Future<void> _initPlayer() async {
