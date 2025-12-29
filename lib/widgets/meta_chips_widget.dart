@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/content_item.dart';
 
 /// Widget reutilizável para exibir metadados de conteúdo
-/// Mostra: stream host, tipo de áudio (DUB/LEG), qualidade e avaliação
+/// Mostra: qualidade e avaliação (rating)
 class MetaChipsWidget extends StatelessWidget {
   final ContentItem item;
   final double iconSize;
@@ -11,80 +11,95 @@ class MetaChipsWidget extends StatelessWidget {
   const MetaChipsWidget({
     super.key,
     required this.item,
-    this.iconSize = 16,
-    this.fontSize = 12,
+    this.iconSize = 12,
+    this.fontSize = 9,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Debug: log do item para verificar se está chegando
+    // print('🔍 MetaChipsWidget: "${item.title}" - type: ${item.type}, rating: ${item.rating}');
+    
     final quality = item.quality.toUpperCase();
-    // Mapear qualidade para labels mais amigáveis
-    String qualityLabel = quality;
+    String qualityLabel = 'SD';
+    Color qualityColor = Colors.grey;
+    
     if (quality.contains('UHD') || quality.contains('4K')) {
       qualityLabel = '4K';
+      qualityColor = Colors.amber;
     } else if (quality.contains('FHD') || quality == 'FULLHD') {
       qualityLabel = 'FHD';
+      qualityColor = Colors.green;
     } else if (quality.contains('HD')) {
       qualityLabel = 'HD';
-    } else if (quality.isEmpty || quality == 'UNKNOWN') {
-      qualityLabel = 'SD';
+      qualityColor = Colors.blue;
     }
     
-    // CRÍTICO: Usa rating real do item (do TMDB) em vez de hardcoded
-    final List<Widget> chips = [];
-    
-    // Sempre mostra qualidade
-    if (qualityLabel.isNotEmpty && qualityLabel != 'UNKNOWN') {
-      chips.add(_buildChip(Icons.high_quality, qualityLabel));
+    // Para canais, mostra apenas qualidade
+    if (item.type == 'channel') {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildMiniChip(qualityLabel, qualityColor),
+        ],
+      );
     }
     
-    // CRÍTICO: Mostra rating para filmes e séries (baseado no TMDB).
-    // Mesmo que o rating ainda seja 0 (ainda não enriquecido), exibimos um placeholder
-    // para garantir consistência visual. TMDB fornece rating 0-10; aqui mostramos 0-5 com 1 casa.
-    if (item.type != 'channel') {
-      String ratingLabel;
-      if (item.rating > 0) {
-        // Mostra a avaliação no formato 0-10 (ex: 6.8/10) para coincidir com a tela de detalhe
-        ratingLabel = '${item.rating.toStringAsFixed(1)}/10';
-        debugPrint('⭐ MetaChipsWidget: Exibindo rating ${item.rating} (${ratingLabel}) para "${item.title}"');
-      } else {
-        // Placeholder enquanto o enriquecimento não ocorrer
-        ratingLabel = '— ★';
-        debugPrint('ℹ️ MetaChipsWidget: Placeholder de rating para "${item.title}" (rating ainda não disponível)');
-      }
-      chips.add(_buildChip(Icons.star, ratingLabel));
-    }
-    
-    // Se não tem chips, retorna container vazio
-    if (chips.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      children: chips,
+    // Para filmes e séries, mostra qualidade + rating
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildMiniChip(qualityLabel, qualityColor),
+        const SizedBox(width: 4),
+        _buildRatingChip(item.rating),
+      ],
     );
   }
 
-  Widget _buildChip(IconData icon, String text) {
+  Widget _buildMiniChip(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white24),
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingChip(double rating) {
+    final hasRating = rating > 0;
+    final ratingText = hasRating ? rating.toStringAsFixed(1) : '—';
+    final ratingColor = hasRating 
+        ? (rating >= 7 ? Colors.green : rating >= 5 ? Colors.amber : Colors.red)
+        : Colors.grey;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: ratingColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: ratingColor.withOpacity(0.5), width: 0.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white70, size: iconSize),
-          const SizedBox(width: 6),
+          Icon(Icons.star, color: ratingColor, size: iconSize),
+          const SizedBox(width: 2),
           Text(
-            text,
+            ratingText,
             style: TextStyle(
-              color: Colors.white70,
+              color: ratingColor,
               fontSize: fontSize,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -92,3 +107,4 @@ class MetaChipsWidget extends StatelessWidget {
     );
   }
 }
+
