@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async'; // Para Timer debounce
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 import '../data/m3u_service.dart';
 import '../widgets/media_player_screen.dart';
 import 'series_detail_screen.dart';
+import 'movie_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -21,6 +23,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<ContentItem> _results = [];
   bool _loading = false;
   String _lastQuery = '';
+  Timer? _debounce;
   
   // Filtros
   String _typeFilter = 'all'; // all, movie, series, channel
@@ -40,20 +43,34 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _searchFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _performSearch(String query) async {
-    if (query.isEmpty || query.length < 2) {
-      setState(() {
-        _results = [];
-        _lastQuery = '';
-      });
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    if (query.length < 2) {
+      if (_results.isNotEmpty) {
+        setState(() {
+          _results = [];
+          _loading = false;
+          _lastQuery = '';
+        });
+      }
       return;
     }
-    
+
+    // Debounce de 800ms para evitar travamentos enquanto digita
+    _debounce = Timer(const Duration(milliseconds: 800), () {
+      _performSearch(query);
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty || query.length < 2) return;
     if (query == _lastQuery) return;
     
     setState(() {
@@ -62,8 +79,10 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      // Buscar em todas as categorias
-      final allItems = await M3uService.searchAllContent(query, maxResults: 200);
+      // Buscar em todas as categorias (agora com delay devido ao debounce)
+      // M3uService.searchAllContent roda em memória (~50-100ms para 50k itens)
+      // Se necessário, M3uService pode ser otimizado para usar compute()
+      final allItems = await M3uService.searchAllContent(query, maxResults: 300);
       
       if (mounted) {
         setState(() {
@@ -111,6 +130,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _updateFilters() {
     if (_lastQuery.isNotEmpty) {
+      // Re-aplica filtros nos resultados atuais sem refazer a busca completa se possível,
+      // mas como filters são aplicados pós-busca, o ideal é refazer busca no cache ou armazenar raw
+      // Para simplificar e garantir consistência:
       _performSearch(_lastQuery);
     }
   }
@@ -160,25 +182,16 @@ class _SearchScreenState extends State<SearchScreen> {
                                     icon: const Icon(Icons.clear, color: Colors.white54),
                                     onPressed: () {
                                       _searchController.clear();
-                                      setState(() {
-                                        _results = [];
-                                        _lastQuery = '';
-                                      });
+                                      _onSearchChanged('');
                                     },
                                   )
                                 : null,
                           ),
-                          onChanged: (value) {
-                            if (value.length >= 2) {
-                              _performSearch(value);
-                            } else if (value.isEmpty) {
-                              setState(() {
-                                _results = [];
-                                _lastQuery = '';
-                              });
-                            }
+                          onChanged: _onSearchChanged,
+                          onSubmitted: (val) {
+                            if (_debounce?.isActive ?? false) _debounce!.cancel();
+                            _performSearch(val);
                           },
-                          onSubmitted: _performSearch,
                         ),
                       ),
                     ],
@@ -307,6 +320,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                       if (item.isSeries) {
                                         Navigator.push(context, MaterialPageRoute(
                                           builder: (_) => SeriesDetailScreen(item: item),
+                                        ));
+                                      } else if (item.type == 'movie') {
+                                        // CRÍTICO: Rota correta para filmes
+                                        Navigator.push(context, MaterialPageRoute(
+                                          builder: (_) => MovieDetailScreen(item: item),
                                         ));
                                       } else {
                                         Navigator.push(context, MaterialPageRoute(
