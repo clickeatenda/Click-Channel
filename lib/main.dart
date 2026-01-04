@@ -113,18 +113,18 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
       
       if (_hasPlaylist && _savedPlaylistUrl != null) {
         Config.setPlaylistOverride(_savedPlaylistUrl);
-        
-        final hasCache = await M3uService.hasCachedPlaylist(_savedPlaylistUrl!);
-        if (hasCache) {
-          await M3uService.preloadCategories(_savedPlaylistUrl!);
-        }
       }
-      
+        
       // Inicializar TMDB Service
       TmdbService.init();
       
-      // Iniciar carregamento em background (não bloqueia)
+      // Iniciar carregamento em background (não bloqueia a splash screen por muito tempo)
       if (_hasPlaylist && _savedPlaylistUrl != null) {
+        // 1. Tenta carregar meta-cache do disco primeiro (MUITO RÁPIDO) 
+        // para que a Home tenha categorias imediatamente
+        await M3uService.loadMetaCache(_savedPlaylistUrl!);
+        
+        // 2. Inicia o preload pesado (parse do arquivo) em background
         M3uService.preloadCategories(_savedPlaylistUrl!).catchError((_) {});
         EpgService.loadFromCache().catchError((_) {});
       }

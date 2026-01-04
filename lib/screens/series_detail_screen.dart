@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/app_colors.dart';
 import '../core/config.dart';
@@ -10,6 +11,8 @@ import '../widgets/media_player_screen.dart';
 import '../utils/content_enricher.dart';
 
 import '../data/favorites_service.dart'; // NOVO import
+import '../data/jellyfin_service.dart';
+
 
 /// Tela de detalhes completa de série com todas as informações
 /// Layout similar ao MovieDetailScreen
@@ -34,16 +37,37 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   bool isFavorite = false; // Novo estado
 
   @override
+  void dispose() {
+    // Limpeza AGRESSIVA de memória ao sair da tela
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
-    isFavorite = FavoritesService.isFavorite(widget.item); // Inicializa estado
+    isFavorite = FavoritesService.isFavorite(widget.item);
+    
+    // DELAY CRÍTICO: Evita travamento na transição de tela
+    // Carregamento IMEDIATO (sem delay artificial)
+    // 1. Carrega detalhes básicos (crítico para UI)
     _loadDetails();
-    _loadMetadata();
-    _loadSimilarItems();
+    
+    // 2. Metadados e Similares podem carregar em background logo depois
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadMetadata();
+         Future.delayed(const Duration(milliseconds: 500), () {
+           if(mounted) _loadSimilarItems();
+         });
+      }
+    });
   }
 
   Future<void> _toggleFavorite() async {
     await FavoritesService.toggleFavorite(widget.item);
+    if (!mounted) return;
     setState(() {
       isFavorite = !isFavorite;
     });
@@ -71,7 +95,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
 
 
   Future<void> _loadMetadata() async {
-    // Enriquece o item com dados do TMDB
+    // Enriquece o item com dados do TMDB EM BACKGROUND
     try {
       final enriched = await ContentEnricher.enrichItem(widget.item);
       if (mounted) {
@@ -91,10 +115,26 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   }
 
   Future<void> _loadDetails() async {
-    // Preferir M3U quando disponível
+    // Carrega detalhes da série (temporadas/episódios)
     SeriesDetails? d;
-    if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
-      // Carregar tipos de áudio disponíveis
+    if (widget.item.group == 'Jellyfin' || widget.item.id.length > 30) {
+      // Lógica JELLYFIN (Prioritária)
+      try {
+        final seasons = await JellyfinService.getSeasons(widget.item.id);
+        final Map<String, List<ContentItem>> seasonsMap = {};
+        
+        for (final s in seasons) {
+           final seasonName = s.title;
+           final episodes = await JellyfinService.getEpisodes(widget.item.id, s.id);
+           seasonsMap[seasonName] = episodes;
+        }
+        
+        d = SeriesDetails(seasons: seasonsMap);
+      } catch (e) {
+        print('❌ Erro ao carregar detalhes Jellyfin: $e');
+      }
+    } else if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
+      // Lógica M3U (Fallback)
       availableAudioTypes = await M3uService.getAvailableAudioTypesForSeries(widget.item.title, widget.item.group);
       d = await M3uService.fetchSeriesDetailsFromM3u(widget.item.title, widget.item.group);
     } else {
@@ -120,13 +160,14 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   }
 
   Future<void> _loadSimilarItems() async {
+    // Carrega séries similares EM BACKGROUND (não é crítico)
     try {
       List<ContentItem> items = [];
       if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
         items = await M3uService.fetchCategoryItemsFromEnv(
           category: _displayItem.group,
           typeFilter: 'series',
-          maxItems: 20,
+          maxItems: 10,
         );
         // Remove o item atual
         items.removeWhere((i) => i.title == _displayItem.title);
@@ -182,567 +223,167 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.black, // Fundo preto puro para performance
       body: Stack(
         children: [
-          // Background blur com poster
-          if (_displayItem.image.isNotEmpty)
-            Positioned.fill(
-              child: CachedNetworkImage(
-                imageUrl: _displayItem.image,
-                fit: BoxFit.cover,
-                color: Colors.black.withOpacity(0.7),
-                colorBlendMode: BlendMode.darken,
-              ),
-            ),
-          // Overlay escuro
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.black.withOpacity(0.95),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // Background estático OTIMIZADO (sem CachedNetworkImage pesado em background)
+          // Background Image REMOVIDA para performance extrema no Firestick
+          // Apenas fundo preto (definido no Scaffold backgroundColor)
+
+          
           // Conteúdo
           SafeArea(
             child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // COLUNA ESQUERDA - Informações
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Botão voltar
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Tags de gênero
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              if (_displayItem.genre.isNotEmpty)
-                                ..._displayItem.genre.split(',').take(3).map((g) => Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        g.trim().toUpperCase(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          
-                          // Ano e informações
-                          Row(
-                            children: [
-                              Text(
-                                _displayItem.year,
-                                style: const TextStyle(color: Colors.white70, fontSize: 14),
-                              ),
-                              if (sortedSeasons.isNotEmpty) ...[
-                                const SizedBox(width: 12),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[800],
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    '${sortedSeasons.length} Temporada${sortedSeasons.length > 1 ? 's' : ''}',
-                                    style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                  ),
-                                ),
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   // COLUNA DA ESQUERDA: Pôster + Info
+                   SizedBox(
+                     width: 240, 
+                     child: Column(
+                       children: [
+                         // Botão Voltar (Importante!)
+                         Align(
+                           alignment: Alignment.centerLeft,
+                           child: Padding(
+                             padding: const EdgeInsets.only(bottom: 16),
+                             child: FloatingActionButton.small(
+                               onPressed: () => Navigator.pop(context),
+                               backgroundColor: Colors.white10,
+                               child: const Icon(Icons.arrow_back, color: Colors.white),
+                             ),
+                           ),
+                         ),
+                         
+                         ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: CachedNetworkImage(
+                              imageUrl: _displayItem.image,
+                              width: 240,
+                              height: 360,
+                              fit: BoxFit.cover,
+                              memCacheWidth: 240,
+                              errorWidget: (_, __, ___) => Container(color: Colors.grey[900], height: 360),
+                            ),
+                         ),
+                         const SizedBox(height: 16),
+                         // Info Panel simplificado
+                         Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildInfoRow('Temporadas', '${sortedSeasons.length}'), 
+                                if (selectedSeason != null && details != null && details!.seasons[selectedSeason] != null) ...[
+                                  const SizedBox(height: 8),
+                                  _buildInfoRow('Episódios', '${details!.seasons[selectedSeason]!.length}'),
+                                ]
                               ],
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Título
+                            ),
+                         ),
+                       ],
+                     ),
+                   ),
+                   
+                   const SizedBox(width: 32),
+                   
+                   // COLUNA DA DIREITA
+                   Expanded(
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                          const SizedBox(height: 60), // Espaço topo alinhar com poster
                           Text(
                             _displayItem.title,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 48,
+                              fontSize: 32,
                               fontWeight: FontWeight.bold,
                               height: 1.1,
                             ),
                           ),
                           const SizedBox(height: 16),
                           
-                          // Rating e Match Score
-                          Row(
-                            children: [
-                              // Rating com estrela (do TMDB)
-                              if (_displayItem.rating > 0)
-                                Row(
-                                  children: [
-                                    const Icon(Icons.star, color: Colors.amber, size: 24),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${_displayItem.rating.toStringAsFixed(1)} / 10',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              if (_displayItem.rating > 0) const SizedBox(width: 24),
-                              // Match Score (baseado em popularidade)
-                              if (_displayItem.popularity > 0)
-                                Row(
-                                  children: [
-                                    const Icon(Icons.trending_up, color: Colors.green, size: 20),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${(_displayItem.popularity.clamp(0, 100)).toInt()}% Match',
-                                      style: const TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                            ],
+                          // Botões
+                          Wrap(
+                           spacing: 12,
+                           runSpacing: 12,
+                           children: [
+                             ElevatedButton.icon(
+                               onPressed: (selectedSeason != null && details != null && details!.seasons.isNotEmpty && details!.seasons[selectedSeason]!.isNotEmpty) 
+                                ? () {
+                                   final firstEpisode = details!.seasons[selectedSeason]!.first;
+                                   Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: firstEpisode.url, item: firstEpisode)));
+                                 }
+                                : null,
+                               icon: const Icon(Icons.play_arrow),
+                               label: const Text('Assistir'),
+                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                             ),
+                             OutlinedButton.icon(
+                               onPressed: _toggleFavorite,
+                               icon: Icon(isFavorite ? Icons.check : Icons.add, size: 18),
+                               label: Text(isFavorite ? 'Salvo' : 'Minha Lista'),
+                               style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: isFavorite ? AppColors.primary : Colors.white38)),
+                             ),
+                           ],
                           ),
+                          
+                          const SizedBox(height: 24),
+                          Text(_displayItem.description.isNotEmpty ? _displayItem.description : 'Sem sinopse.', maxLines: 4, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70)),
+                          
                           const SizedBox(height: 32),
-                          
-                          // Audio Type Selector (DUB/LEG)
-                          if (availableAudioTypes.isNotEmpty) ...[
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: availableAudioTypes.map((audioType) {
-                                final isSelected = selectedAudioType == audioType;
-                                return FilterChip(
-                                  label: Text(audioType.toUpperCase()),
-                                  selected: isSelected,
-                                  onSelected: (selected) async {
-                                    setState(() => selectedAudioType = selected ? audioType : null);
-                                    // Recarregar detalhes com novo audioType
-                                    SeriesDetails? d;
-                                    if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
-                                      d = await M3uService.fetchSeriesDetailsFromM3u(
-                                        widget.item.title,
-                                        widget.item.group,
-                                        audioType: selected ? audioType : null,
-                                      );
-                                    }
-                                    if (d != null && mounted) {
-                                      setState(() {
-                                        details = d;
-                                        if (d != null && d.seasons.isNotEmpty) {
-                                          final keys = d.seasons.keys.toList();
-                                          keys.sort((a, b) {
-                                            int na = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-                                            int nb = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-                                            return na.compareTo(nb);
-                                          });
-                                          selectedSeason = keys.first;
-                                        }
-                                      });
-                                    }
-                                  },
-                                  backgroundColor: isSelected ? AppColors.primary : Colors.transparent,
-                                  side: BorderSide(
-                                    color: isSelected ? AppColors.primary : Colors.white24,
-                                  ),
-                                  labelStyle: TextStyle(
-                                    color: isSelected ? Colors.white : Colors.white70,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                          
-                          // Botões de ação
-                          Row(
-                            children: [
-                              // Watch Now (primeiro episódio da primeira temporada)
-                              if (selectedSeason != null && details!.seasons[selectedSeason]!.isNotEmpty)
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    final firstEpisode = details!.seasons[selectedSeason]!.first;
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => MediaPlayerScreen(
-                                          url: firstEpisode.url,
-                                          item: firstEpisode,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.play_arrow, size: 24),
-                                  label: const Text('Assistir Agora', style: TextStyle(fontSize: 16)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              const SizedBox(width: 12),
-                              // My List
-                              OutlinedButton.icon(
-                                onPressed: _toggleFavorite,
-                                icon: Icon(
-                                  isFavorite ? Icons.check : Icons.add,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
-                                label: Text(isFavorite ? 'Minha Lista' : 'Adicionar'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: isFavorite ? Colors.white10 : Colors.transparent,
-                                  side: BorderSide(
-                                    color: isFavorite ? AppColors.primary : Colors.white38,
-                                    width: isFavorite ? 2 : 1,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              // Share
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.share, color: Colors.white70),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.white10,
-                                  padding: const EdgeInsets.all(12),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 40),
-                          
-                          // Synopsis
-                          const Text(
-                            'Sinopse',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _displayItem.description.isNotEmpty
-                                ? _displayItem.description
-                                : 'Sinopse não disponível.',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 15,
-                              height: 1.6,
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                          
-                          // Temporadas e Episódios
-                          const Text(
-                            'TEMPORADAS E EPISÓDIOS',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          const Divider(color: Colors.white12),
                           const SizedBox(height: 16),
                           
-                          // Seletor de Temporada
+                          // Selector de Temporadas Otimizado
                           SizedBox(
-                            height: 50,
+                            height: 40,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: sortedSeasons.length,
                               separatorBuilder: (_, __) => const SizedBox(width: 8),
                               itemBuilder: (ctx, i) {
                                 final season = sortedSeasons[i];
-                                final isActive = season == selectedSeason;
-                                final episodeCount = details!.seasons[season]?.length ?? 0;
-                                return FilterChip(
-                                  label: Text('$season (${episodeCount} eps)'),
-                                  selected: isActive,
-                                  onSelected: (selected) {
-                                    if (selected) {
-                                      setState(() => selectedSeason = season);
-                                    }
-                                  },
-                                  backgroundColor: isActive ? AppColors.primary : Colors.transparent,
-                                  side: BorderSide(
-                                    color: isActive ? AppColors.primary : Colors.white24,
-                                  ),
-                                  labelStyle: TextStyle(
-                                    color: isActive ? Colors.white : Colors.white70,
-                                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                                  ),
+                                return _SeasonChip(
+                                  label: '$season',
+                                  isActive: season == selectedSeason,
+                                  onPressed: () => setState(() => selectedSeason = season),
                                 );
                               },
                             ),
                           ),
+                          
                           const SizedBox(height: 24),
                           
-                          // Lista de Episódios da Temporada Selecionada
+                          // Lista de Episódios
                           if (selectedSeason != null && details != null && details!.seasons.containsKey(selectedSeason))
-                            ...details!.seasons[selectedSeason]!.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final episode = entry.value;
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[900]!.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.white10),
-                                ),
-                                child: ListTile(
-                                  leading: Container(
-                                    width: 50,
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '${index + 1}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
+                             Builder(
+                               builder: (context) {
+                                 final episodes = details!.seasons[selectedSeason]!;
+                                 final limit = 20; 
+                                 final displayedEpisodes = episodes.take(limit).toList();
+                                 return Column(
+                                   children: [
+                                     ...displayedEpisodes.asMap().entries.map((entry) => _EpisodeItem(episode: entry.value, index: entry.key)).toList(),
+                                      if (episodes.length > limit)
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text('Mais ${episodes.length - limit} episódios...', style: const TextStyle(color: Colors.white54)),
                                         ),
-                                      ),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    episode.title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    'Episódio ${index + 1}',
-                                    style: const TextStyle(color: Colors.white54),
-                                  ),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.play_circle_outline, color: AppColors.primary),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => MediaPlayerScreen(
-                                            url: episode.url,
-                                            item: episode,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => MediaPlayerScreen(
-                                          url: episode.url,
-                                          item: episode,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            }).toList(),
-                          
-                          const SizedBox(height: 40),
-                          
-                          // More Like This
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Séries Similares',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          if (loadingSimilar)
-                            const Center(child: CircularProgressIndicator())
-                          else if (similarItems.isEmpty)
-                            const Text(
-                              'Nenhuma série similar encontrada',
-                              style: TextStyle(color: Colors.white54),
-                            )
-                          else
-                            SizedBox(
-                              height: 280,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: similarItems.length,
-                                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                                itemBuilder: (context, index) {
-                                  final item = similarItems[index];
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => SeriesDetailScreen(item: item),
-                                        ),
-                                      );
-                                    },
-                                    child: SizedBox(
-                                      width: 160,
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Expanded(
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(8),
-                                              child: CachedNetworkImage(
-                                                imageUrl: item.image,
-                                                fit: BoxFit.cover,
-                                                width: double.infinity,
-                                                placeholder: (_, __) => Container(
-                                                  color: Colors.grey[900],
-                                                  child: const Center(
-                                                    child: CircularProgressIndicator(),
-                                                  ),
-                                                ),
-                                                errorWidget: (_, __, ___) => Container(
-                                                  color: Colors.grey[900]!,
-                                                  child: const Icon(
-                                                    Icons.image_not_supported,
-                                                    color: Colors.white24,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            item.title,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                    
-                    // COLUNA DIREITA - Poster e Info Panel
-                    SizedBox(
-                      width: 320,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 80),
-                          // Poster grande
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: _displayItem.image,
-                              width: double.infinity,
-                              height: 480,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(
-                                color: Colors.grey[900]!,
-                                height: 480,
-                                child: const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
-                              errorWidget: (_, __, ___) => Container(
-                                color: Colors.grey[900]!,
-                                height: 480,
-                                child: const Icon(
-                                  Icons.image_not_supported,
-                                  color: Colors.white24,
-                                  size: 64,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          
-                          // Info Panel
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[900]!.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white10),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildInfoRow('Temporadas', '${sortedSeasons.length}'),
-                                const SizedBox(height: 12),
-                                if (selectedSeason != null && details!.seasons[selectedSeason] != null)
-                                  _buildInfoRow('Episódios (${selectedSeason})', '${details!.seasons[selectedSeason]!.length}'),
-                                if (widget.item.quality.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  _buildInfoRow('Qualidade', widget.item.quality.toUpperCase()),
-                                ],
-                                if (availableAudioTypes.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  _buildInfoRow('Áudio', availableAudioTypes.join(', ').toUpperCase()),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                                   ],
+                                 );
+                               }
+                             ),
+                       ],
+                     ),
+                   ),
+                ],
               ),
             ),
           ),
@@ -776,6 +417,261 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Widget para chip de temporada com suporte a foco
+class _SeasonChip extends StatefulWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  const _SeasonChip({
+    required this.label,
+    required this.isActive,
+    required this.onPressed,
+  });
+
+  @override
+  State<_SeasonChip> createState() => _SeasonChipState();
+}
+
+class _SeasonChipState extends State<_SeasonChip> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent && 
+            (event.logicalKey == LogicalKeyboardKey.enter || 
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          widget.onPressed();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onPressed,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: widget.isActive 
+                ? AppColors.primary 
+                : (_isFocused ? Colors.white12 : Colors.transparent),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: widget.isActive 
+                  ? AppColors.primary 
+                  : (_isFocused ? Colors.white : Colors.white24),
+              width: _isFocused ? 2 : 1,
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: (widget.isActive || _isFocused) ? Colors.white : Colors.white70,
+              fontWeight: (widget.isActive || _isFocused) ? FontWeight.bold : FontWeight.normal,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget para item de episódio com suporte a foco de controle remoto
+class _EpisodeItem extends StatefulWidget {
+  final ContentItem episode;
+  final int index;
+
+  const _EpisodeItem({
+    required this.episode,
+    required this.index,
+  });
+
+  @override
+  State<_EpisodeItem> createState() => _EpisodeItemState();
+}
+
+class _EpisodeItemState extends State<_EpisodeItem> {
+  bool _isFocused = false;
+
+  void _play() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MediaPlayerScreen(
+          url: widget.episode.url,
+          item: widget.episode,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent && 
+            (event.logicalKey == LogicalKeyboardKey.enter || 
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _play();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: _play,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: _isFocused 
+                ? AppColors.primary.withOpacity(0.3) 
+                : Colors.grey[900]!.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _isFocused ? AppColors.primary : Colors.white10,
+              width: _isFocused ? 2 : 1,
+            ),
+            boxShadow: _isFocused ? [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.2),
+                blurRadius: 10,
+                spreadRadius: 2,
+              )
+            ] : null,
+          ),
+          child: ListTile(
+            leading: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: _isFocused ? AppColors.primary : Colors.grey[800],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  '${widget.index + 1}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            title: Text(
+              widget.episode.title,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: _isFocused ? FontWeight.bold : FontWeight.w600,
+              ),
+            ),
+            subtitle: Text(
+              'Episódio ${widget.index + 1}',
+              style: const TextStyle(color: Colors.white54),
+            ),
+            trailing: Icon(
+              Icons.play_circle_fill, 
+              color: _isFocused ? Colors.white : AppColors.primary,
+              size: 32,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Card para série similar com suporte a foco
+class _SimilarSeriesCard extends StatefulWidget {
+  final ContentItem item;
+  const _SimilarSeriesCard({required this.item});
+
+  @override
+  State<_SimilarSeriesCard> createState() => _SimilarSeriesCardState();
+}
+
+class _SimilarSeriesCardState extends State<_SimilarSeriesCard> {
+  bool _isFocused = false;
+
+  void _open() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SeriesDetailScreen(item: widget.item),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent && 
+            (event.logicalKey == LogicalKeyboardKey.enter || 
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _open();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: _open,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 140,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _isFocused ? AppColors.primary : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: CachedNetworkImage(
+                    imageUrl: widget.item.image,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    memCacheWidth: 140, // Otimização de memória
+                    placeholder: (_, __) => Container(color: Colors.white12),
+                    errorWidget: (_, __, ___) => Container(
+                      color: Colors.white10,
+                      child: const Icon(Icons.movie, color: Colors.white30),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.item.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _isFocused ? Colors.white : Colors.white70,
+                  fontSize: 12,
+                  fontWeight: _isFocused ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

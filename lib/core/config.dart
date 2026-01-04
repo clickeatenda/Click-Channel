@@ -100,14 +100,8 @@ class Config {
     }
   }
 
-  /// TMDB API Key (key: TMDB_API_KEY)
-  static String? get tmdbApiKey {
-    try {
-      final v = dotenv_pkg.dotenv.env['TMDB_API_KEY'];
-      if (v == null || v.isEmpty) return null;
-      return v.trim();
-    } catch (_) {
-      return null;
-    }
+  /// TMDB API Key (Hardcoded default)
+  static String get tmdbApiKey {
+    return 'a274643800798d966ea5556ad951ff8d';
   }
 }
