@@ -9,39 +9,26 @@ import '../core/utils/logger.dart';
 class TmdbService {
   static const String _baseUrl = 'https://api.themoviedb.org/3';
   static String? _apiKey;
-  
-  /// API key fallback hardcoded (atualizada em 29/12/2024)
-  static const String _fallbackApiKey = 'a274643800798d966ea5556ad951ff8d';
 
-  /// Inicializa a API key do TMDB (lê de .env via Config)
+  /// Inicializa a API key do TMDB
   static void init() {
-    // Prioriza chave configurada em runtime via Prefs (Settings)
+    // A chave agora é hardcoded via Config.tmdbApiKey para máxima estabilidade
+    _apiKey = Config.tmdbApiKey;
+    
+    // Se o usuário configurou uma chave manual nas Settings, ela ainda pode ser usada,
+    // mas o padrão hardcoded garante que o app nunca fique sem chave.
     try {
       final prefKey = Prefs.getTmdbApiKey();
       if (prefKey != null && prefKey.isNotEmpty) {
         _apiKey = prefKey.trim();
-        AppLogger.info('✅ TMDB API key carregada (via Prefs/Settings)');
+        AppLogger.info('✅ TMDB API key carregada (via Settings personalizada)');
       } else {
-        // Lê a chave do arquivo .env através de Config como fallback
-        _apiKey = Config.tmdbApiKey;
-        if (_apiKey == null || _apiKey!.isEmpty) {
-          // Usa fallback hardcoded como última opção
-          _apiKey = _fallbackApiKey;
-          AppLogger.info('✅ TMDB API key carregada (via fallback hardcoded)');
-        } else {
-          AppLogger.info('✅ TMDB API key carregada (via .env)');
-        }
+        AppLogger.info('✅ TMDB API key carregada (via hardcode estável)');
       }
     } catch (e) {
-      _apiKey = Config.tmdbApiKey;
-      if (_apiKey == null || _apiKey!.isEmpty) {
-        // Usa fallback hardcoded como última opção
-        _apiKey = _fallbackApiKey;
-        AppLogger.info('✅ TMDB API key carregada (via fallback hardcoded após erro)');
-      }
+      AppLogger.warning('⚠️ TMDB: Erro ao ler Prefs, usando hardcode');
     }
 
-    // Dispara teste assíncrono da chave (não bloqueia init)
     testApiKeyNow();
   }
   
@@ -333,6 +320,7 @@ class TmdbMetadata {
   final List<CastMember> cast;
   final String? director;
   final String type; // 'movie' ou 'tv'
+  final String? originalTitle;
 
   TmdbMetadata({
     required this.id,
@@ -351,6 +339,7 @@ class TmdbMetadata {
     this.cast = const [],
     this.director,
     required this.type,
+    this.originalTitle,
     });
 
     /// Serializa metadados para cache local
@@ -457,6 +446,7 @@ class TmdbMetadata {
       cast: castList,
       director: director,
       type: type,
+      originalTitle: json['original_title'] ?? json['original_name'],
     );
   }
 

@@ -54,6 +54,7 @@ class _SeriesLibraryScreenState extends State<SeriesLibraryScreen> {
           genre: series_item.genres.join(', '),
           description: series_item.overview ?? '',
           director: series_item.director,
+          originalTitle: series_item.originalTitle,
         ));
       }
       

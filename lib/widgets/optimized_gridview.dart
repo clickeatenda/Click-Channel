@@ -7,7 +7,7 @@ import '../data/epg_service.dart';
 import 'meta_chips_widget.dart';
 import 'lazy_tmdb_loader.dart';
 
-/// GridView otimizado com lazy loading e suporte a TV remoto
+/// GridView otimizado com lazy loading, suporte a TV remoto e Header opcional
 class OptimizedGridView extends StatefulWidget {
   final List<ContentItem> items;
   final ValueChanged<ContentItem> onTap;
@@ -19,14 +19,16 @@ class OptimizedGridView extends StatefulWidget {
   final bool showMetaChips;
   final double metaFontSize;
   final double metaIconSize;
-  final ValueChanged<ContentItem>? onItemUpdated; // Novo callback
+  final ValueChanged<ContentItem>? onItemUpdated;
   final Map<String, EpgChannel>? epgChannels;
+  final VoidCallback? onEndReached;
+  final Widget? headerWidget; // Novo Banner
 
   const OptimizedGridView({
     super.key,
     required this.items,
     required this.onTap,
-    this.onItemUpdated, // Novo callback
+    this.onItemUpdated,
     this.crossAxisCount = 5,
     this.childAspectRatio = 0.6,
     this.crossAxisSpacing = 16,
@@ -36,6 +38,8 @@ class OptimizedGridView extends StatefulWidget {
     this.metaFontSize = 10,
     this.metaIconSize = 12,
     this.epgChannels,
+    this.onEndReached,
+    this.headerWidget,
   });
 
   @override
@@ -49,6 +53,12 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      if (!mounted) return;
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 600) {
+        widget.onEndReached?.call();
+      }
+    });
   }
 
   @override
@@ -59,36 +69,54 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
+    return CustomScrollView(
       controller: _scrollController,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: widget.crossAxisCount,
-        childAspectRatio: widget.childAspectRatio,
-        crossAxisSpacing: widget.crossAxisSpacing,
-        mainAxisSpacing: widget.mainAxisSpacing,
-      ),
       physics: widget.physics ?? const BouncingScrollPhysics(),
-      itemCount: widget.items.length,
-      itemBuilder: (context, index) {
-        final item = widget.items[index];
+      slivers: [
+        // Header (Banner)
+        if (widget.headerWidget != null)
+          SliverToBoxAdapter(
+            child: widget.headerWidget!,
+          ),
+
+        // Grid com Padding
+        SliverPadding(
+          padding: EdgeInsets.zero, // Padding externo é controlado pelo pai ou aqui se precisar
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: widget.crossAxisCount,
+              childAspectRatio: widget.childAspectRatio,
+              crossAxisSpacing: widget.crossAxisSpacing,
+              mainAxisSpacing: widget.mainAxisSpacing,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final item = widget.items[index];
+                
+                return LazyTmdbLoader(
+                  item: item,
+                  onItemEnriched: widget.onItemUpdated,
+                  builder: (enrichedItem, isLoading) {
+                    return _OptimizedGridCard(
+                      item: enrichedItem,
+                      isLoadingTmdb: isLoading,
+                      showMetaChips: widget.showMetaChips,
+                      metaFontSize: widget.metaFontSize,
+                      metaIconSize: widget.metaIconSize,
+                      epgChannels: widget.epgChannels,
+                      onTap: () => widget.onTap(enrichedItem),
+                    );
+                  },
+                );
+              },
+              childCount: widget.items.length,
+            ),
+          ),
+        ),
         
-        // Usa LazyTmdbLoader para carregar dados do TMDB sob demanda
-        return LazyTmdbLoader(
-          item: item,
-          onItemEnriched: widget.onItemUpdated, // Passa callback
-          builder: (enrichedItem, isLoading) {
-            return _OptimizedGridCard(
-              item: enrichedItem,
-              isLoadingTmdb: isLoading,
-              showMetaChips: widget.showMetaChips,
-              metaFontSize: widget.metaFontSize,
-              metaIconSize: widget.metaIconSize,
-              epgChannels: widget.epgChannels,
-              onTap: () => widget.onTap(enrichedItem),
-            );
-          },
-        );
-      },
+        // Espaço extra no final
+        const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
+      ],
     );
   }
 }
@@ -157,8 +185,8 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Focus(
-        onKey: (node, event) {
-          if (event is RawKeyDownEvent &&
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
               (event.logicalKey == LogicalKeyboardKey.enter ||
                event.logicalKey == LogicalKeyboardKey.select ||
                event.logicalKey == LogicalKeyboardKey.space ||

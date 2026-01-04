@@ -20,7 +20,8 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
-  List<ContentItem> _results = [];
+  List<ContentItem> _rawResults = []; // Resultados SEM filtro
+  List<ContentItem> _results = [];    // Resultados FILTRADOS (exibidos)
   bool _loading = false;
   String _lastQuery = '';
   Timer? _debounce;
@@ -55,6 +56,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (query.length < 2) {
       if (_results.isNotEmpty) {
         setState(() {
+          _rawResults = [];
           _results = [];
           _loading = false;
           _lastQuery = '';
@@ -63,7 +65,7 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
 
-    // Debounce de 800ms para evitar travamentos enquanto digita
+    // Debounce de 800ms
     _debounce = Timer(const Duration(milliseconds: 800), () {
       _performSearch(query);
     });
@@ -71,7 +73,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _performSearch(String query) async {
     if (query.isEmpty || query.length < 2) return;
-    if (query == _lastQuery) return;
+    // Removemos a verificação rigida de _lastQuery aqui para permitir retry, 
+    // mas idealmente só buscamos se mudar.
+    if (query == _lastQuery && _rawResults.isNotEmpty) return; 
     
     setState(() {
       _loading = true;
@@ -79,20 +83,19 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      // Buscar em todas as categorias (agora com delay devido ao debounce)
-      // M3uService.searchAllContent roda em memória (~50-100ms para 50k itens)
-      // Se necessário, M3uService pode ser otimizado para usar compute()
       final allItems = await M3uService.searchAllContent(query, maxResults: 300);
       
       if (mounted) {
         setState(() {
-          _results = _applyFilters(allItems);
+          _rawResults = allItems; // Salva o resultado bruto
+          _results = _applyFilters(allItems); // Aplica filtros
           _loading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          _rawResults = [];
           _results = [];
           _loading = false;
         });
@@ -108,31 +111,18 @@ class _SearchScreenState extends State<SearchScreen> {
         if (_typeFilter == 'series' && !item.isSeries && item.type != 'series') return false;
         if (_typeFilter == 'channel' && item.type != 'channel') return false;
       }
-      
-      // Filtro por qualidade
-      if (_qualityFilter != 'all') {
-        final q = item.quality.toLowerCase();
-        if (_qualityFilter == '4k') {
-          // Só mostra 4K/UHD
-          if (!q.contains('4k') && !q.contains('uhd')) return false;
-        } else if (_qualityFilter == 'fhd') {
-          // Só mostra FHD/FullHD (exclui 4K)
-          if (!q.contains('fhd') && !q.contains('fullhd')) return false;
-        } else if (_qualityFilter == 'hd') {
-          // Mostra HD (inclui FHD e 4K também, pois são HD)
-          if (!q.contains('hd') && !q.contains('4k') && !q.contains('uhd')) return false;
-        }
-      }
-      
       return true;
     }).toList();
   }
 
   void _updateFilters() {
-    if (_lastQuery.isNotEmpty) {
-      // Re-aplica filtros nos resultados atuais sem refazer a busca completa se possível,
-      // mas como filters são aplicados pós-busca, o ideal é refazer busca no cache ou armazenar raw
-      // Para simplificar e garantir consistência:
+    // Reaplica os filtros usando a lista bruta JÁ carregada
+    if (_rawResults.isNotEmpty) {
+      setState(() {
+        _results = _applyFilters(_rawResults);
+      });
+    } else if (_lastQuery.isNotEmpty) {
+      // Se por acaso não tiver rawResults mas tiver query (raro), busca de novo
       _performSearch(_lastQuery);
     }
   }
@@ -231,33 +221,6 @@ class _SearchScreenState extends State<SearchScreen> {
                           selected: _typeFilter == 'channel',
                           onTap: () {
                             setState(() => _typeFilter = 'channel');
-                            _updateFilters();
-                          },
-                        ),
-                        const SizedBox(width: 16),
-                        Container(width: 1, height: 24, color: Colors.white24),
-                        const SizedBox(width: 16),
-                        _FilterChip(
-                          label: '4K',
-                          selected: _qualityFilter == '4k',
-                          onTap: () {
-                            setState(() => _qualityFilter = _qualityFilter == '4k' ? 'all' : '4k');
-                            _updateFilters();
-                          },
-                        ),
-                        _FilterChip(
-                          label: 'FHD',
-                          selected: _qualityFilter == 'fhd',
-                          onTap: () {
-                            setState(() => _qualityFilter = _qualityFilter == 'fhd' ? 'all' : 'fhd');
-                            _updateFilters();
-                          },
-                        ),
-                        _FilterChip(
-                          label: 'HD',
-                          selected: _qualityFilter == 'hd',
-                          onTap: () {
-                            setState(() => _qualityFilter = _qualityFilter == 'hd' ? 'all' : 'hd');
                             _updateFilters();
                           },
                         ),

@@ -20,6 +20,7 @@ class ContentItem {
   final int? revenue;
   final int? runtime;
   final List<Map<String, String>>? cast; // [{name, character}, ...]
+  final String? originalTitle; // Título original (para busca alternativa)
 
   ContentItem({
     required this.title,
@@ -42,6 +43,7 @@ class ContentItem {
     this.revenue,
     this.runtime,
     this.cast,
+    this.originalTitle,
   });
 
   factory ContentItem.fromJson(Map<String, dynamic> json) {
@@ -86,13 +88,9 @@ class ContentItem {
     // OU se a nova imagem for válida (não vazia)
     String finalImage = this.image;
     if (image != null && image.isNotEmpty) {
-      // Prioriza imagem TMDB se a original estiver vazia ou for placeholder
-      if (this.image.isEmpty || 
-          this.image.contains('placeholder') ||
-          this.image.contains('no-image') ||
-          !this.image.startsWith('http')) {
-        finalImage = image;
-      }
+      // Prioriza SEMPRE a imagem do TMDB (qualidade superior)
+      // A menos que não tenha, aí mantém original
+      finalImage = image;
     }
     
     return ContentItem(
@@ -116,6 +114,7 @@ class ContentItem {
       revenue: revenue ?? this.revenue,
       runtime: runtime ?? this.runtime,
       cast: cast ?? this.cast,
+      originalTitle: originalTitle,
     );
   }
 }

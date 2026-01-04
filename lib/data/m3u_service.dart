@@ -103,7 +103,7 @@ class M3uService {
       }
       
       for (final file in files) {
-        if (file is File && file.path.contains('m3u_cache_')) {
+        if (file is File && (file.path.contains('m3u_cache_') || file.path.contains('m3u_meta_'))) {
           // Se este é o arquivo que queremos manter, pula
           if (keepFile != null && file.path == keepFile.path) {
             print('💾 M3uService: Mantendo cache válido: ${file.path}');
@@ -151,6 +151,68 @@ class M3uService {
       return false;
     } catch (e) {
       print('⚠️ M3uService: Erro ao verificar caches de disco: $e');
+      return false;
+    }
+  }
+
+  static Future<File> _getMetaCacheFile(String source) async {
+    final dir = await getApplicationSupportDirectory();
+    final hash = source.hashCode;
+    return File('${dir.path}/m3u_meta_$hash.json');
+  }
+
+  /// Salva os nomes das categorias e contagens em um arquivo JSON leve.
+  /// Isso permite que o app exiba as categorias instantaneamente sem abrir o M3U de 100MB+.
+  static Future<void> _saveMetaCache(String source) async {
+    try {
+      final file = await _getMetaCacheFile(source);
+      final data = {
+        'movie_categories': _movieCategories,
+        'movie_counts': _movieCategoryCounts,
+        'movie_thumbs': _movieCategoryThumb,
+        'series_categories': _seriesCategories,
+        'series_counts': _seriesCategoryCounts,
+        'series_thumbs': _seriesCategoryThumb,
+        'channel_categories': _channelCategories,
+        'channel_counts': _channelCategoryCounts,
+        'channel_thumbs': _channelCategoryThumb,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      await file.writeAsString(jsonEncode(data));
+      print('💾 M3uService: Meta-dados de categorias salvos em disco');
+    } catch (e) {
+      print('⚠️ M3uService: Erro ao salvar meta-cache: $e');
+    }
+  }
+
+  /// Carrega os nomes das categorias do disco (Rápido).
+  static Future<bool> loadMetaCache(String source) async {
+    try {
+      if (source.isEmpty) return false;
+      final file = await _getMetaCacheFile(source);
+      if (!await file.exists()) return false;
+      
+      final content = await file.readAsString();
+      final data = jsonDecode(content);
+      
+      _movieCategories = List<String>.from(data['movie_categories'] ?? []);
+      _movieCategoryCounts = Map<String, int>.from(data['movie_counts'] ?? {});
+      _movieCategoryThumb = Map<String, String>.from(data['movie_thumbs'] ?? {});
+      
+      _seriesCategories = List<String>.from(data['series_categories'] ?? []);
+      _seriesCategoryCounts = Map<String, int>.from(data['series_counts'] ?? {});
+      _seriesCategoryThumb = Map<String, String>.from(data['series_thumbs'] ?? {});
+      
+      _channelCategories = List<String>.from(data['channel_categories'] ?? []);
+      _channelCategoryCounts = Map<String, int>.from(data['channel_counts'] ?? {});
+      _channelCategoryThumb = Map<String, String>.from(data['channel_thumbs'] ?? {});
+      
+      _movieCacheSource = source;
+      _movieCacheMaxItems = 999999; // Marca como tendo categorias completas
+      print('✅ M3uService: Meta-dados carregados do disco (${_movieCategories.length} filmes, ${_seriesCategories.length} séries)');
+      return true;
+    } catch (e) {
+      print('⚠️ M3uService: Erro ao carregar meta-cache: $e');
       return false;
     }
   }
@@ -341,13 +403,16 @@ class M3uService {
 
   /// Pré-carrega categorias para primeira abertura rápida
   static Future<void> preloadCategories(String source) async {
-    // Registra completer para sinalizar conclusão do preload
-    try {
-      final key = source.trim();
-      if (!_preloadCompleters.containsKey(key)) {
-        _preloadCompleters[key] = Completer<void>();
-      }
-    } catch (_) {}
+    final sourceKey = source.trim();
+    // Registra completer para sinalizar conclusão do preload IMEDIATAMENTE e de forma síncrona
+    if (!_preloadCompleters.containsKey(sourceKey)) {
+      _preloadCompleters[sourceKey] = Completer<void>();
+    }
+    
+    // Tenta carregar meta-cache do disco primeiro (MUITO RÁPIDO)
+    // Isso resolve o problema das categorias não aparecerem na Home
+    await loadMetaCache(source);
+
     // CRÍTICO: Valida que a source corresponde à URL salva em Prefs
     final savedUrl = Config.playlistRuntime;
     final normalizedSource = source.trim().replaceAll(RegExp(r'/+$'), '');
@@ -373,101 +438,72 @@ class M3uService {
       return;
     }
     
-    // CRÍTICO: Limpa cache em memória ANTES de fazer preload
-    // Isso garante que não haverá dados antigos misturados
-    print('🧹 M3uService: Limpando cache em memória antes de preload...');
-    clearMemoryCache();
+    // CRÍTICO: Limpa apenas o cache de ITENS (pesado) antes de fazer preload
+    // Não limpa as listas de categorias (_movieCategories), pois elas foram 
+    // povoadas pelo loadMetaCache(source) logo acima e são usadas pela Home.
+    _movieCache = null;
+    _seriesCache = null;
+    _channelCache = null;
+    print('🧹 M3uService: Limpando caches de itens pesados antes de preload...');
     
     try {
-      // Carrega linhas do cache local
-      final file = await _getCacheFile(source);
-      if (!await file.exists()) {
-        print('⚠️ M3uService: Cache não encontrado para preload');
-        return;
-      }
+    final file = await _getCacheFile(source);
+    if (!await file.exists()) {
+      print('⚠️ M3uService: Cache não encontrado para preload');
+      return;
+    }
 
-      print('📦 M3uService: Iniciando preload de $source...');
-      
-      // Lê TODAS as linhas - sem limite
-      final lines = <String>[];
-      int lineCount = 0;
-      
-      await for (final line in file.openRead().transform(utf8.decoder).transform(const LineSplitter())) {
-        lines.add(line);
-        lineCount++;
-      }
+    print('📦 M3uService: Iniciando preload via isolate (Arquivo: ${file.path})...');
+    
+    // Parse em isolate passando o PATH do arquivo - MUITO mais eficiente em memória
+    // Evita copiar a lista de strings entre isolados
+    final parsedMaps = await compute(_parseFileIsolate, {
+      'path': file.path, 
+      'limit': 999999
+    });
+    
+    print('📦 M3uService: Isolate retornou ${parsedMaps.length} itens');
+    
+    final items = parsedMaps.map((m) => ContentItem(
+      title: m['title'] ?? '',
+      url: m['url'] ?? '',
+      image: m['image'] ?? '',
+      group: m['group'] ?? 'Geral',
+      type: m['type'] ?? 'movie',
+      quality: m['quality'] ?? 'sd',
+      audioType: m['audioType'] ?? '',
+      year: m['year'] ?? '',
+    )).toList();
+    
+    // Separa por tipo
+    final movieItems = items.where((i) => i.type == 'movie').toList();
+    final seriesItems = items.where((i) => i.type == 'series').toList();
+    final channelItems = items.where((i) => i.type != 'movie' && i.type != 'series').toList();
 
-      print('📦 M3uService: Leu $lineCount linhas, parseando...');
-      
-      // Debug: mostra primeiras linhas do arquivo
-      if (lines.length >= 5) {
-        print('📝 Linha 0: ${lines[0].substring(0, lines[0].length > 100 ? 100 : lines[0].length)}');
-        print('📝 Linha 1: ${lines[1].substring(0, lines[1].length > 100 ? 100 : lines[1].length)}');
-        print('📝 Linha 2: ${lines[2].substring(0, lines[2].length > 100 ? 100 : lines[2].length)}');
-      }
+    // Cacheia os items
+    _movieCache = movieItems;
+    _seriesCache = seriesItems;
+    _channelCache = channelItems;
+    _movieCacheSource = source;
+    _movieCacheMaxItems = 999999;
 
-      // Parse em isolate - SEM LIMITE para capturar TODO o conteúdo
-      final parsedMaps = await compute(_parseLinesIsolate, {'lines': lines, 'limit': 999999});
-      
-      print('📦 M3uService: Parse retornou ${parsedMaps.length} itens');
-      
-      // Debug: mostra tipos dos primeiros itens
-      int mc = 0, sc = 0, cc = 0;
-      for (final m in parsedMaps) {
-        if (m['type'] == 'movie') mc++;
-        else if (m['type'] == 'series') sc++;
-        else cc++;
-      }
-      print('📊 Breakdown antes de cache: $mc filmes, $sc séries, $cc canais');
-      
-      final items = parsedMaps.map((m) => ContentItem(
-        title: m['title'] ?? '',
-        url: m['url'] ?? '',
-        image: m['image'] ?? '',
-        group: m['group'] ?? 'Geral',
-        type: m['type'] ?? 'movie',
-        quality: m['quality'] ?? 'sd',
-        audioType: m['audioType'] ?? '',
-      )).toList();
-      
-      // Separa por tipo
-      final movieItems = items.where((i) => i.type == 'movie').toList();
-      final seriesItems = items.where((i) => i.type == 'series').toList();
-      final channelItems = items.where((i) => i.type != 'movie' && i.type != 'series').toList();
+    // Extrai categorias
+    _extractCategories(movieItems, _movieCategories, _movieCategoryCounts, _movieCategoryThumb);
+    _extractCategories(seriesItems, _seriesCategories, _seriesCategoryCounts, _seriesCategoryThumb);
+    _extractCategories(channelItems, _channelCategories, _channelCategoryCounts, _channelCategoryThumb);
 
-      // Cacheia os items para uso imediato na Home
-      _movieCache = movieItems;
-      _seriesCache = seriesItems;
-      _channelCache = channelItems;
-      _movieCacheSource = source;
-      _movieCacheMaxItems = 999999;
+    // Marca preload como feito
+    _preloadDone = true;
+    _preloadSource = source;
 
-      // Extrai categorias
-      _extractCategories(movieItems, _movieCategories, _movieCategoryCounts, _movieCategoryThumb);
-      _extractCategories(seriesItems, _seriesCategories, _seriesCategoryCounts, _seriesCategoryThumb);
-      _extractCategories(channelItems, _channelCategories, _channelCategoryCounts, _channelCategoryThumb);
+    // Salva meta-dados em disco para o próximo boot rápido
+    await _saveMetaCache(source);
 
-      // Debug: mostra alguns exemplos de cada tipo
-      if (movieItems.isNotEmpty) {
-        print('🎬 Exemplo de FILME: ${movieItems.first.title} (grupo: ${movieItems.first.group})');
-      }
-      if (seriesItems.isNotEmpty) {
-        print('📺 Exemplo de SÉRIE: ${seriesItems.first.title} (grupo: ${seriesItems.first.group})');
-      }
-      if (channelItems.isNotEmpty) {
-        print('📡 Exemplo de CANAL: ${channelItems.first.title} (grupo: ${channelItems.first.group})');
-      }
-
-      // Marca preload como feito
-      _preloadDone = true;
-      _preloadSource = source;
-
-      // Completa o completer associado (se existir)
-      try {
-        final c = _preloadCompleters[source.trim()];
-        if (c != null && !c.isCompleted) c.complete();
-      } catch (_) {}
-
+    // Completa o completer associado
+    try {
+      final c = _preloadCompleters[source.trim()];
+      if (c != null && !c.isCompleted) c.complete();
+    } catch (_) {}
       print('✅ M3uService: Preload concluído - ${movieItems.length} filmes, ${seriesItems.length} séries, ${channelItems.length} canais');
       print('✅ M3uService: ${_movieCategories.length} cat filmes, ${_seriesCategories.length} cat séries');
     } catch (e) {
@@ -577,10 +613,16 @@ class M3uService {
       print('⚡ M3uService: Usando cache existente (${_movieCache!.length} itens) - carregamento instantâneo!');
     }
     
-    // CRÍTICO: Se cache é null, retorna vazio (não há dados)
+    // CRÍTICO: Se o cache de itens ainda é null (preload em curso), retorna lista vazia
+    // mas inclui as categorias já conhecidas (via meta-cache) para que a UI monte a estrutura.
     if (_movieCache == null) {
-      print('⚠️ M3uService: fetchPagedFromEnv - Cache é null, retornando vazio');
-      return const M3uPagedResult(items: [], total: 0, categories: [], categoryCounts: {});
+      print('ℹ️ M3uService: fetchPagedFromEnv - Cache de itens ainda não pronto. Retornando categorias conhecidas.');
+      return M3uPagedResult(
+        items: const [],
+        total: 0,
+        categories: _movieCategories,
+        categoryCounts: _movieCategoryCounts,
+      );
     }
 
     final total = _movieCache!.length;
@@ -797,21 +839,17 @@ class M3uService {
   }
 
   static Map<String, String> _parseExtInf(String extInf) {
-    // Exemplo: #EXTINF:-1 tvg-id="AMC" tvg-name="A&E FHD" tvg-logo="..." group-title="FILMES | SÉRIES",A&E FHD
     final attrs = <String, String>{};
 
-    // Captura chave="valor" - regex melhorado para capturar hífens e underscores
-    // Aceita: tvg-logo, tvg_logo, logo, cover, etc.
-    final regex = RegExp(r'([\w\-_]+)="([^"]*)"');
+    // Regex robusto para atributos M3U: chave="valor com espaços" ou chave=valor_sem_aspas
+    // Suporta hífens e underscores nas chaves.
+    final regex = RegExp(r'([\w\-_]+)\s*=\s*(?:"([^"]*)"|([^,\s]*))');
+    
     for (final m in regex.allMatches(extInf)) {
-      final key = m.group(1) ?? '';
-      final value = m.group(2) ?? '';
-      if (key.isNotEmpty && value.isNotEmpty) {
+      final key = m.group(1)?.toLowerCase() ?? '';
+      final value = (m.group(2) ?? m.group(3) ?? '').trim();
+      if (key.isNotEmpty) {
         attrs[key] = value;
-        // Debug para primeiros itens
-        if (key.contains('logo') || key.contains('cover') || key.contains('image')) {
-          print('🖼️ ParseExtInf: Capturou $key="${value.substring(0, value.length > 40 ? 40 : value.length)}"');
-        }
       }
     }
 
@@ -968,41 +1006,13 @@ class M3uService {
       return 'channel';
     }
 
-    // 🟡 REGRA 8: Mega-categorias de séries (novelas, doramas, etc)
-    if (g.contains('novela') || g.contains('series variadas') || 
-        g.contains('dorama') || g.contains('tokusatsu')) {
-      return 'series';
-    }
-
-    // 🟡 REGRA 9: Plataformas de streaming (Netflix, HBO, etc) = SÉRIE
-    // Exceto se já foi identificado como canal numérico (regra 2)
-    if (g.contains('netflix') || g.contains('globo play') || 
-        g.contains('amazon prime video') || g.contains('amazon prime') ||
-        g.contains('disney+') || g.contains('hbo max') || g.contains('hbo') ||
-        g.contains('paramount+') || g.contains('paramount') ||
-        g.contains('apple tv+') || g.contains('apple tv') ||
-        g.contains('star+') || g.contains('star plus') ||
-        g.contains('starz') || g.contains('discovery+')) {
-      return 'series';
-    }
-
-    // 🟡 REGRA 10: Categorias explícitas de séries
-    if (g.contains('série') || g.contains('serie') || g.contains('series') || 
-        g.contains('anime') || g.contains('desenho') || g.contains('tokusatsu') ||
-        g.contains('reelshort') || g.contains('cursos') ||
-        g.contains('brasil paralelo') || g.contains('fitness') ||
-        g.contains('shows nacionais') || g.contains('shows internacionais') ||
-        g.contains('reality show')) {
-      return 'series';
-    }
-
-    // 🔵 REGRA 11: Filmes explícitos
+    // 🔵 REGRA 8: Filmes explícitos (Prioridade sobre plataformas)
     if (g.contains('filme') || g.contains('movie') || g.contains('movies') ||
         g.contains('cinema') || g.contains('lançamento') || g.contains('réelshort')) {
       return 'movie';
     }
 
-    // 🔵 REGRA 12: Gêneros de filme
+    // 🔵 REGRA 9: Gêneros de filme
     if (g.contains('ação') || g.contains('drama') || g.contains('comédia') ||
         g.contains('terror') || g.contains('suspense') || g.contains('romance') ||
         g.contains('ficção') || g.contains('fantasia') || g.contains('documentário') ||
@@ -1014,10 +1024,33 @@ class M3uService {
       return 'movie';
     }
 
-    // 🔵 REGRA 13: Top 10 / Destaques
+    // 🔵 REGRA 10: Top 10 / Destaques
     if (g.contains('top 10') || g.contains('sessão da tarde') ||
         g.contains('destaque') || g.contains('bestseller')) {
       return 'movie';
+    }
+
+    // 🟡 REGRA 11: Categorias explícitas de séries
+    if (g.contains('série') || g.contains('serie') || g.contains('series') || 
+        g.contains('anime') || g.contains('desenho') || g.contains('novela') ||
+        g.contains('dorama') || g.contains('tokusatsu') ||
+        g.contains('reelshort') || g.contains('cursos') ||
+        g.contains('brasil paralelo') || g.contains('fitness') ||
+        g.contains('shows nacionais') || g.contains('shows internacionais') ||
+        g.contains('reality show')) {
+      return 'series';
+    }
+
+    // 🟡 REGRA 12: Plataformas de streaming (Netflix, HBO, etc) = SÉRIE (Fallback)
+    // Se não foi identificado como filme explicitamente acima, assume série para estas categorias
+    if (g.contains('netflix') || g.contains('globo play') || 
+        g.contains('amazon prime video') || g.contains('amazon prime') ||
+        g.contains('disney+') || g.contains('hbo max') || g.contains('hbo') ||
+        g.contains('paramount+') || g.contains('paramount') ||
+        g.contains('apple tv+') || g.contains('apple tv') ||
+        g.contains('star+') || g.contains('star plus') ||
+        g.contains('starz') || g.contains('discovery+')) {
+      return 'series';
     }
 
     // === PADRÃO SEGURO FINAL ===
@@ -1051,28 +1084,26 @@ class M3uService {
   }
 
   static String _extractYear(String title) {
+    if (title.isEmpty) return "";
+    
     // Procura por (YYYY)
     final regex = RegExp(r'\((\d{4})\)');
     final match = regex.firstMatch(title);
-    if (match != null) {
-      return match.group(1)!;
-    }
+    if (match != null) return match.group(1)!;
     
     // Procura por [YYYY]
     final regexBrackets = RegExp(r'\[(\d{4})\]');
     final matchBrackets = regexBrackets.firstMatch(title);
-    if (matchBrackets != null) {
-      return matchBrackets.group(1)!;
+    if (matchBrackets != null) return matchBrackets.group(1)!;
+    
+    // Procura por ano solto no final 19XX ou 20XX
+    final regexEnd = RegExp(r'\b(19\d{2}|20\d{2})\b');
+    final matches = regexEnd.allMatches(title).toList();
+    if (matches.isNotEmpty) {
+      return matches.last.group(1)!;
     }
     
-    // Procura por espaço YYYY no final
-    final regexEnd = RegExp(r'\s(\d{4})$');
-    final matchEnd = regexEnd.firstMatch(title);
-    if (matchEnd != null) {
-      return matchEnd.group(1)!;
-    }
-    
-    return ""; // Se não encontrar, retorna vazio (ContentItem vai usar default ou vazio)
+    return "";
   }
 
   static Map<String, String> extractSeriesInfo(String title) {
@@ -1124,19 +1155,51 @@ class M3uService {
   /// Ex: "The Office S05E12" -> "The Office"
   static String extractSeriesBaseTitle(String title) {
     var base = title;
-    // Remove padrões S##E## ou S## E## (case-insensitive)
-    base = base.replaceAll(RegExp(r'S\d{1,2}\s*E\d{1,2}', caseSensitive: false), '');
-    // Remove (YYYY)
-    base = base.replaceAll(RegExp(r'\(\d{4}\)'), '');
-    // Remove espaçamentos e separadores redundantes
+
+    // 1. Remove tudo entre colchetes e chaves (ex: [FHD], {LEG}, [Dual])
+    base = base.replaceAll(RegExp(r'\[.*?\]'), '');
+    base = base.replaceAll(RegExp(r'\{.*?\}'), '');
+    
+    // 2. Remove padrões de Temporada/Episódio variados
+    // S01E01, S01 E01, s01e01
+    base = base.replaceAll(RegExp(r'\bS\d{1,2}\s*E\d{1,2}\b', caseSensitive: false), ' ');
+    // T01E01, T01 E01
+    base = base.replaceAll(RegExp(r'\bT\d{1,2}\s*E\d{1,2}\b', caseSensitive: false), ' ');
+    // 1x01, 01x01
+    base = base.replaceAll(RegExp(r'\b\d{1,2}x\d{1,2}\b'), ' ');
+    // Season 1, Temporada 1
+    base = base.replaceAll(RegExp(r'\b(season|temporada)\s*\d+', caseSensitive: false), ' ');
+    // Ep 01, Episodio 01
+    base = base.replaceAll(RegExp(r'\b(ep|epis[oó]dio)\s*\d+', caseSensitive: false), ' ');
+    
+    // 3. Remove (Ano) - ex: (2023)
+    base = base.replaceAll(RegExp(r'\(\d{4}\)'), ' ');
+    
+    // 4. Remove marcadores de qualidade e idioma comuns fora de colchetes
+    base = base.replaceAll(RegExp(r'\b(FHD|HD|SD|4K|UHD|H265|HEVC|1080p|720p|480p)\b', caseSensitive: false), ' ');
+    base = base.replaceAll(RegExp(r'\b(DUBLADO|LEGENDADO|LEG|DUB|DUAL)\b', caseSensitive: false), ' ');
+
+    // 5. Limpeza final de pontuação e espaços
+    // Remove caracteres especiais isolados que sobraram
+    base = base.replaceAll(RegExp(r'\s+[\-\|:]+\s+'), ' '); // Remove separadores soltos no meio
+    base = base.replaceAll(RegExp(r'[\.\-_\|\:]+$'), ''); // Remove pontuação no final
+    
+    // Normaliza espaços múltiplos
     base = base.replaceAll(RegExp(r'\s+'), ' ').trim();
-    // Remove traços/pipe no fim
-    base = base.replaceAll(RegExp(r'[\-\|]+\s*$'), '').trim();
+    
     return base.isEmpty ? title : base;
   }
 
   /// Garante cache de filmes em memória e usa compute para parse em isolate.
   static Future<void> _ensureMovieCache({required String source, int maxItems = 999999}) async {
+    // EARLY RETURN: Se o cache já está carregado e é da mesma source, não faz nada
+    if (_seriesCache != null && 
+        _seriesCache!.isNotEmpty && 
+        _movieCacheSource == source) {
+      print('⚡ _ensureMovieCache: Cache já pronto (${_seriesCache!.length} séries). Skip!');
+      return;
+    }
+    
     // CRÍTICO: Verifica se há playlist válida ANTES de carregar cache
     final savedUrl = Config.playlistRuntime;
     if (savedUrl == null || savedUrl.isEmpty) {
@@ -1181,22 +1244,20 @@ class M3uService {
       return;
     }
 
-    // CRÍTICO: Evita recomputar se já temos cache suficiente
-    // Se cache já existe e tem itens, usa diretamente (muito mais rápido)
-    if (_movieCache != null &&
-        _movieCacheSource == source &&
-        _movieCache!.isNotEmpty) {
-      // Se maxItems é menor ou igual ao que já temos, não precisa reprocessar
-      if (maxItems <= _movieCacheMaxItems) {
-        print('♻️ M3uService: Cache já existe e é suficiente - usando cache existente (${_movieCache!.length} itens)');
+    // Verificação de preload em andamento
+    final preloadKey = source.trim();
+    if (_preloadCompleters.containsKey(preloadKey) && !isPreloaded(source)) {
+      // Se já temos a lista carregada em memória (cache pronto), não precisamos esperar.
+      if (_movieCache != null || _seriesCache != null || _channelCache != null) {
         return;
       }
-      // Se maxItems é maior mas cache já tem muitos itens, também não reprocessa
-      // (evita reprocessar 374k itens toda vez)
-      if (_movieCache!.length >= 1000 && maxItems > _movieCacheMaxItems) {
-        print('♻️ M3uService: Cache já tem ${_movieCache!.length} itens - usando cache existente (não reprocessa)');
-        _movieCacheMaxItems = maxItems; // Atualiza maxItems sem reprocessar
-        return;
+
+      print('⏳ M3uService: fetch solicitou itens, mas parse ainda em curso. Aguardando...');
+      try {
+        // Aguarda o término do parse em andamento (com timeout de segurança)
+        await _preloadCompleters[preloadKey]!.future.timeout(const Duration(seconds: 15));
+      } catch (e) {
+        print('⚠️ M3uService: Timeout aguardando parse completo. Prosseguindo com o que temos.');
       }
     }
 
@@ -1206,15 +1267,20 @@ class M3uService {
       return;
     }
 
-    // Sem limite artificial - carrega tudo
+    // Sem limite artificial - carrega tudo se for para categorias
     final safeLimit = maxItems;
 
     final future = () async {
-      final lines = await _loadLines(source);
-      final parsedMaps = await compute(_parseLinesIsolate, {
-        'lines': lines,
-        'limit': safeLimit,
-      });
+    final file = await _getCacheFile(source); // Get the cache file for the source
+    if (!await file.exists()) {
+      print('⚠️ M3uService: Cache não encontrado para _ensureMovieCache');
+      return;
+    }
+
+    final parsedMaps = await compute(_parseFileIsolate, {
+      'path': file.path, // Pass the file path to the isolate
+      'limit': safeLimit,
+    });
 
       final movies = <ContentItem>[];
       final series = <ContentItem>[];
@@ -1267,22 +1333,44 @@ class M3uService {
         }
       }
 
-      _movieCache = movies;
-      _seriesCache = series;
-      _channelCache = channels;
-      _movieCacheSource = source;
-      _movieCacheMaxItems = safeLimit;
+      // CRÍTICO: Só atualiza o cache se esta versão tem MAIS itens que a atual
+      // Isso evita que caches parciais sobrescrevam o cache completo
+      final currentMovieCount = _movieCache?.length ?? 0;
+      final currentSeriesCount = _seriesCache?.length ?? 0;
+      final currentChannelCount = _channelCache?.length ?? 0;
+      
+      if (movies.length >= currentMovieCount && 
+          series.length >= currentSeriesCount && 
+          channels.length >= currentChannelCount) {
+        
+        _movieCache = movies;
+        _seriesCache = series;
+        _channelCache = channels;
+        _movieCacheSource = source;
+        _movieCacheMaxItems = safeLimit;
+        
+        print('✅ DEBUG: Cache ATUALIZADO - movies=${movies.length} (era $currentMovieCount), series=${series.length} (era $currentSeriesCount), channels=${channels.length} (era $currentChannelCount)');
+      } else {
+        print('⚠️ DEBUG: Cache NÃO atualizado - tentativa de sobrescrever cache maior com menor! movies=${movies.length} vs $currentMovieCount, series=${series.length} vs $currentSeriesCount');
+        return; // NÃO sobrescreve
+      }
+      
       _movieCategoryCounts = counts;
       _movieCategories = cats.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       _movieCategoryThumb = thumbs;
+      
       _seriesCategoryCounts = sCounts;
       _seriesCategories = sCats.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       _seriesCategoryThumb = sThumbs;
+      
       _channelCategoryCounts = cCounts;
       _channelCategories = cCats.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       _channelCategoryThumb = cThumbs;
       
-      print('📊 M3uService Cache: ${movies.length} filmes, ${series.length} séries, ${channels.length} canais');
+      // CRÍTICO: Salva meta-cache no disco após parse bem sucedido para persistir categorias
+      await _saveMetaCache(source);
+      
+      print('📊 M3uService Cache Atualizado: ${movies.length} filmes, ${series.length} séries, ${channels.length} canais');
       print('📊 Categorias: ${cats.length} filmes, ${sCats.length} séries, ${cCats.length} canais');
       if (sCats.isNotEmpty) {
         print('📁 Categorias de séries detectadas: ${_seriesCategories.join(", ")}');
@@ -1299,25 +1387,39 @@ class M3uService {
       if (cCats.isNotEmpty) {
         print('📁 Categorias de canais (primeiras 5): ${_channelCategories.take(5).join(", ")}');
       }
-      // Inicia enriquecimento em background para os primeiros itens (prioriza latest/featured)
-      // Não bloqueia o carregamento inicial da UI; atualiza _movieCache quando completo.
+      // CRÍTICO: Enriquecimento em background RE-ATIVADO, MAS com proteção total do grupo/categoria
+      // O enriquecimento APENAS adiciona metadados (rating, descrição, gênero)
+      // NUNCA modifica: title, url, group, type, isSeries
       (() async {
         try {
           final sampleSize = movies.length < 200 ? movies.length : 200;
           if (sampleSize == 0) return;
-          print('🔍 M3uService: Background enrichment TMDB (sample $sampleSize)...');
+          print('🔍 M3uService: Background enrichment TMDB (sample $sampleSize) - PROTEGENDO categorias originais...');
           final sample = _movieCache!.take(sampleSize).toList();
           final enriched = await ContentEnricher.enrichItems(sample);
-          // Aplica resultados enriquecidos no cache principal
+          
+          // CRÍTICO: Aplica APENAS se o grupo não mudou
           int updated = 0;
-          for (var i = 0; i < enriched.length; i++) {
-            final e = enriched[i];
-            if (e.rating > 0 || (e.description.isNotEmpty && e.description != sample[i].description)) {
-              _movieCache![i] = e;
-              updated++;
+          for (var i = 0; i < enriched.length && i < sample.length; i++) {
+            final original = sample[i];
+            final enrichedItem = enriched[i];
+            
+            // VALIDAÇÃO: Garante que campos críticos não mudaram
+            if (enrichedItem.title == original.title &&
+                enrichedItem.url == original.url &&
+                enrichedItem.group == original.group &&
+                enrichedItem.type == original.type) {
+              
+              // OK para aplicar - categoria preservada
+              if (enrichedItem.rating > 0 || (enrichedItem.description.isNotEmpty && enrichedItem.description != original.description)) {
+                _movieCache![i] = enrichedItem;
+                updated++;
+              }
+            } else {
+              print('⚠️ TMDB: Item "${original.title}" teve alteração em campos críticos - IGNORANDO enriquecimento para preservar integridade');
             }
           }
-          print('✅ M3uService: Background enrichment concluído ($updated atualizados)');
+          print('✅ M3uService: Background enrichment concluído ($updated atualizados, categorias preservadas)');
         } catch (e, st) {
           print('⚠️ M3uService: Erro no background enrichment: $e');
           print(st);
@@ -1340,6 +1442,8 @@ class M3uService {
     String typeFilter = 'movie',
     int maxItems = 999999,
   }) async {
+    print('🔍 fetchCategoryItemsFromEnv: category="$category", typeFilter="$typeFilter"');
+    
     final source = Config.playlistRuntime;
     if (source == null || source.isEmpty) {
       print('⚠️ M3uService: fetchCategoryItemsFromEnv - Sem URL configurada, retornando lista vazia');
@@ -1350,18 +1454,28 @@ class M3uService {
 
     await _ensureMovieCache(source: source, maxItems: maxItems);
     
-    // CRÍTICO: Se cache é null, retorna lista vazia (não há dados)
+    // DEBUG: Estado do cache
+    print('🔍 Cache state: _movieCache=${_movieCache?.length ?? "null"}, _seriesCache=${_seriesCache?.length ?? "null"}, _channelCache=${_channelCache?.length ?? "null"}');
+    
+    // Se o cache global tem menos itens do que o solicitado e não é o cache completo (9999),
+    // pode ser necessário aguardar ou re-priorizar.
     if (_movieCache == null && _seriesCache == null && _channelCache == null) {
-      print('⚠️ M3uService: fetchCategoryItemsFromEnv - Cache é null, retornando lista vazia');
+      print('ℹ️ M3uService: fetchCategoryItemsFromEnv - Cache ainda não pronto.');
       return [];
     }
 
     final normalized = category.trim().toLowerCase();
+    
+    // Busca no cache correto
     final base = (typeFilter == 'series')
-      ? (_seriesCache ?? const <ContentItem>[])
-      : (typeFilter == 'channel')
-        ? (_channelCache ?? const <ContentItem>[])
-        : (_movieCache ?? const <ContentItem>[]);
+        ? (_seriesCache ?? [])
+        : (typeFilter == 'channel')
+            ? (_channelCache ?? [])
+            : (_movieCache ?? []);
+    
+    if (base.isEmpty && !isPreloaded(source)) {
+       print('⏳ fetchCategoryItemsFromEnv: Cache de $typeFilter vazio, mas preload em curso...');
+    }
     
     final filtered = base
       .where((e) => e.group.trim().toLowerCase() == normalized)
@@ -1389,7 +1503,23 @@ class M3uService {
       // Retorna meta vazio ao invés de lançar exceção
       return const M3uCategoryMeta(categories: [], counts: {}, thumbs: {});
     }
-    await _ensureMovieCache(source: source, maxItems: maxItems);
+
+    // Se já temos meta-dados (nomes das categorias e contagens) carregados no cache 
+    // ou via meta-cache persistente, retornamos IMEDIATAMENTE.
+    // Isso é FUNDAMENTAL para a Home abrir instantaneamente.
+    if (_movieCacheSource == source && 
+        ((typeFilter == 'movie' && _movieCategories.isNotEmpty) ||
+         (typeFilter == 'series' && _seriesCategories.isNotEmpty) ||
+         (typeFilter == 'channel' && _channelCategories.isNotEmpty))) {
+      print('⚡ M3uService: fetchCategoryMetaFromEnv - Retornando categorias de cache instantaneamente');
+      
+      // DISPARA o _ensureMovieCache em background caso o cache total de ITENS ainda não exista
+      // Isso garante que quando o usuário clicar em uma categoria, o parse já esteja adiantado.
+      _ensureMovieCache(source: source, maxItems: maxItems).catchError((e) => print('⚠️ Background cache fail: $e'));
+    } else {
+      // Se não temos NADA em memória, aí sim esperamos o parse.
+      await _ensureMovieCache(source: source, maxItems: maxItems);
+    }
     if (typeFilter == 'series') {
       return M3uCategoryMeta(categories: _seriesCategories, counts: _seriesCategoryCounts, thumbs: _seriesCategoryThumb);
     }
@@ -1399,6 +1529,9 @@ class M3uService {
     return M3uCategoryMeta(categories: _movieCategories, counts: _movieCategoryCounts, thumbs: _movieCategoryThumb);
   }
 
+  // Cache de agregação de séries (para não reagregar toda vez)
+  static final Map<String, List<ContentItem>> _seriesAggregationCache = {};
+  
   /// Retorna uma lista agregada por série (título base) para a categoria informada.
   /// Útil para navegar primeiro por séries, depois abrir temporadas/episódios na tela de detalhes.
   static Future<List<ContentItem>> fetchSeriesAggregatedForCategory({
@@ -1410,43 +1543,72 @@ class M3uService {
       print('⚠️ M3uService: fetchSeriesAggregatedForCategory - Sem URL configurada, retornando lista vazia');
       return [];
     }
+    
+    // Verifica cache de agregação primeiro
+    final cacheKey = '${source}_$category';
+    if (_seriesAggregationCache.containsKey(cacheKey)) {
+      print('✅ fetchSeriesAggregatedForCategory: Usando cache para \"$category\"');
+      return _seriesAggregationCache[cacheKey]!;
+    }
+    
     await _ensureMovieCache(source: source, maxItems: maxItems);
     
-    // CRÍTICO: Se cache é null, retorna lista vazia
+    // SE cache é null, retorna lista vazia
     if (_seriesCache == null) {
       print('⚠️ M3uService: fetchSeriesAggregatedForCategory - Cache é null, retornando lista vazia');
       return [];
     }
     
     final normalized = category.trim().toLowerCase();
+    
+    // Normalização agressiva para evitar problemas de matching
+    String normalize(String text) {
+      return text
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), ' ')  // Múltiplos espaços -> um espaço
+        .replaceAll(RegExp(r'[^\w\s]'), ''); // Remove caracteres especiais
+    }
+    
+    final normalizedCategory = normalize(category);
+    
+    print('🔍 fetchSeriesAggregatedForCategory: "$category" (normalizado: "$normalizedCategory")');
+    print('   Cache tem ${_seriesCache?.length ?? 0} séries totais');
+    
+    // Filtragem com matching mais flexível
     final list = _seriesCache!
-        .where((e) => e.group.trim().toLowerCase() == normalized)
+        .where((e) {
+          final itemGroup = normalize(e.group);
+          // Tenta match exato primeiro
+          if (itemGroup == normalizedCategory) return true;
+          // Se não deu match exato, tenta contains (para casos como "Netflix HD" vs "Netflix")
+          if (itemGroup.contains(normalizedCategory) || normalizedCategory.contains(itemGroup)) return true;
+          return false;
+        })
         .toList();
+    
+    print('   Encontrou ${list.length} episódios na categoria "$category"');
+        
     final map = <String, ContentItem>{};
     for (final it in list) {
       final baseTitle = extractSeriesBaseTitle(it.title);
       if (!map.containsKey(baseTitle)) {
-        // CRÍTICO: Busca a melhor imagem disponível para a capa da série
-        // Tenta primeiro o item atual, depois busca em todos os episódios da série
         String cover = '';
         if (it.image.isNotEmpty) {
           cover = it.image;
         } else {
-          // Busca em todos os episódios da mesma série
+          // Busca em outros episódios da MESMA série DENTRO desta categoria
           final seriesEpisodes = list.where(
             (x) => extractSeriesBaseTitle(x.title) == baseTitle && x.image.isNotEmpty
           ).toList();
           if (seriesEpisodes.isNotEmpty) {
             cover = seriesEpisodes.first.image;
-            print('📺 fetchSeriesAggregatedForCategory: Imagem encontrada para "$baseTitle" em outro episódio');
-          } else {
-            print('⚠️ fetchSeriesAggregatedForCategory: Nenhuma imagem encontrada para "$baseTitle"');
           }
         }
         
         map[baseTitle] = ContentItem(
           title: baseTitle,
-          url: it.url, // um URL de exemplo (episódio) será substituído na tela de detalhes
+          url: it.url, 
           image: cover,
           group: it.group,
           type: 'series',
@@ -1471,8 +1633,15 @@ class M3uService {
         }
       }
     }
+    
     final aggregated = map.values.toList()
       ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    
+    // Salva no cache de agregação para próximas consultas
+    _seriesAggregationCache[cacheKey] = aggregated;
+    
+    print('✅ fetchSeriesAggregatedForCategory retornando ${aggregated.length} séries para "$category" (cached)');
+    
     return aggregated;
   }
 
@@ -1687,28 +1856,52 @@ class M3uService {
     final results = <ContentItem>[];
     
     // Buscar em filmes
+    int i = 0;
     for (final item in (_movieCache ?? [])) {
       if (results.length >= maxResults) break;
+      if (++i % 500 == 0) await Future.delayed(Duration.zero); // Yield para UI
+      
       if (item.title.toLowerCase().contains(q) || item.group.toLowerCase().contains(q)) {
         results.add(item);
       }
     }
     
-    // Buscar em séries (agregar por título base para não duplicar)
+    // Buscar em séries
     final seenSeries = <String>{};
+    i = 0;
     for (final item in (_seriesCache ?? [])) {
       if (results.length >= maxResults) break;
+      if (++i % 500 == 0) await Future.delayed(Duration.zero); // Yield
+      
       final baseTitle = extractSeriesBaseTitle(item.title).toLowerCase();
       if (seenSeries.contains(baseTitle)) continue;
+      
       if (item.title.toLowerCase().contains(q) || item.group.toLowerCase().contains(q)) {
         seenSeries.add(baseTitle);
-        results.add(item);
+        // Cria um item representando a SÉRIE, não o episódio
+        results.add(ContentItem(
+          title: baseTitle, // Título limpo da série
+          url: item.url,
+          image: item.image,
+          group: item.group,
+          type: 'series',
+          isSeries: true, // Garante flag de série
+          rating: item.rating,
+          year: item.year,
+          quality: item.quality,
+          audioType: item.audioType,
+          description: item.description,
+          genre: item.genre,
+        ));
       }
     }
     
     // Buscar em canais
+    i = 0;
     for (final item in (_channelCache ?? [])) {
       if (results.length >= maxResults) break;
+      if (++i % 500 == 0) await Future.delayed(Duration.zero); // Yield
+      
       if (item.title.toLowerCase().contains(q) || item.group.toLowerCase().contains(q)) {
         results.add(item);
       }
@@ -1718,23 +1911,104 @@ class M3uService {
   }
 
   /// Busca detalhes de uma série agrupando episódios por temporada
-  static Future<SeriesDetails?> fetchSeriesDetailsFromM3u(String seriesTitle, String category, {String? audioType, int maxItems = 999999}) async {
+  static Future<SeriesDetails?> fetchSeriesDetailsFromM3u(String seriesTitle, String category, {String? audioType, int maxItems = 500, String? originalTitle}) async {
     final source = Config.playlistRuntime;
     if (source == null || source.isEmpty) return null;
 
-    await _ensureMovieCache(source: source, maxItems: maxItems);
+    // CRÍTICO: Carrega TODO o cache (999k itens) se necessário, não apenas 'maxItems' (que é para o retorno)
+    // Se passarmos maxItems aqui (ex: 150), ele carrega só 150 linhas do arquivo M3U!
+    await _ensureMovieCache(source: source, maxItems: 999999);
 
     // Normaliza e usa o título base para evitar misturar séries diferentes
     final targetBase = extractSeriesBaseTitle(seriesTitle).toLowerCase();
+    // Título original como alternativa de busca (ex: "House of Cards" vs "House of Cards - EUA")
+    final originalBase = originalTitle != null && originalTitle.isNotEmpty 
+        ? extractSeriesBaseTitle(originalTitle).toLowerCase() 
+        : null;
     final normalizedCat = category.trim().toLowerCase();
+    final isTmdbSource = category.contains('TMDB');
 
-    var allEpisodes = (_seriesCache ?? [])
-        .where((item) =>
-            item.group.trim().toLowerCase() == normalizedCat &&
-            extractSeriesBaseTitle(item.title).toLowerCase() == targetBase)
-        .toList();
+    // OTIMIZAÇÃO MAXIMA: Varredura única na lista gigante (pode ter 200k+ itens)
+    // Em vez de percorrer a lista 3 vezes (Exata, Título, Fuzzy), percorremos 1 vez e separamos.
+    
+    final exactMatches = <ContentItem>[];
+    final titleMatches = <ContentItem>[];
+    final fuzzyMatches = <ContentItem>[];
+    
+    final cacheList = _seriesCache ?? [];
+    print('🔍 fetchSeriesDetailsFromM3u: Buscando "$seriesTitle"${originalBase != null ? " (original: $originalTitle)" : ""} em ${cacheList.length} itens...');
+    
+    final stopwatch = Stopwatch()..start();
+
+    // Loop otimizado
+    for (var i = 0; i < cacheList.length; i++) {
+        final item = cacheList[i];
+        
+        // Extração de base title pode ser custosa, fazemos sob demanda
+        final itemTitleBase = extractSeriesBaseTitle(item.title).toLowerCase();
+        
+        // 1. Verifica Título Base (Comum a todas as estratégias) - filtro rápido primeiro
+        // Compara com targetBase E originalBase (se disponível)
+        
+        // Estratégia de prioridade:
+        
+        // Match exato por categoria + título (ou título original)
+        if (!isTmdbSource && item.group.trim().toLowerCase() == normalizedCat) {
+           if (itemTitleBase == targetBase || (originalBase != null && itemTitleBase == originalBase)) {
+              exactMatches.add(item);
+              continue;
+           }
+        }
+        
+        // Match por título exato (ignora categoria)
+        if (itemTitleBase == targetBase || (originalBase != null && itemTitleBase == originalBase)) {
+           titleMatches.add(item);
+           continue;
+        }
+        
+        // Fuzzy: Verifica se título contém ou é contido (apenas se targetBase for grande o suficiente)
+        if (targetBase.length > 3) {
+           if (itemTitleBase.contains(targetBase) || targetBase.contains(itemTitleBase)) {
+              fuzzyMatches.add(item);
+              continue;
+           }
+           // Tenta fuzzy com título original também
+           if (originalBase != null && originalBase.length > 3) {
+              if (itemTitleBase.contains(originalBase) || originalBase.contains(itemTitleBase)) {
+                 fuzzyMatches.add(item);
+              }
+           }
+        }
+        
+        // Limite de segurança para não estourar memória se houver MILHARES de matches
+        if (exactMatches.length + titleMatches.length + fuzzyMatches.length > 2000) {
+            break; 
+        }
+    }
+    
+    stopwatch.stop();
+    print('⏱️ Varredura concluída em ${stopwatch.elapsedMilliseconds}ms');
+
+    // Decide qual lista usar (pela ordem de qualidade)
+    var allEpisodes = <ContentItem>[];
+    
+    if (exactMatches.isNotEmpty) {
+       print('✅ Usando Match Exato (${exactMatches.length} eps)');
+       allEpisodes = exactMatches;
+    } else if (titleMatches.isNotEmpty) {
+       print('✅ Usando Match por Título (${titleMatches.length} eps)');
+       allEpisodes = titleMatches;
+    } else if (fuzzyMatches.isNotEmpty) {
+       print('✅ Usando Match Fuzzy (${fuzzyMatches.length} eps)');
+       allEpisodes = fuzzyMatches;
+    }
 
     if (allEpisodes.isEmpty) return null;
+
+    // Limita após escolher o melhor grupo
+    if (allEpisodes.length > maxItems) {
+       allEpisodes = allEpisodes.sublist(0, maxItems);
+    }
 
     // Filtrar por audioType se especificado
     if (audioType != null && audioType.isNotEmpty) {
@@ -1751,6 +2025,12 @@ class M3uService {
       final seasonLabel = 'Temporada ${seasonNum.padLeft(2, '0')}';
       seasonMap.putIfAbsent(seasonLabel, () => <ContentItem>[]).add(ep);
     }
+    
+    // Se não encontrou temporadas organizadas, retorna null
+    if (seasonMap.isEmpty) {
+      print('⚠️ fetchSeriesDetailsFromM3u: Nenhuma temporada encontrada para "$seriesTitle"');
+      return null;
+    }
 
     // Ordenar episódios dentro de cada temporada (por número, senão por título)
     seasonMap.forEach((label, episodes) {
@@ -1763,6 +2043,8 @@ class M3uService {
         return a.title.toLowerCase().compareTo(b.title.toLowerCase());
       });
     });
+
+    print('✅ fetchSeriesDetailsFromM3u: "$seriesTitle" - ${seasonMap.length} temporadas, ${allEpisodes.length} episódios');
 
     return SeriesDetails(seasons: seasonMap, selectedAudioType: audioType);
   }
@@ -1817,93 +2099,100 @@ class M3uPagedResult {
   });
 }
 
-/// Função top-level para usar com `compute` e evitar travar a main isolate.
-List<Map<String, String>> _parseLinesIsolate(Map<String, dynamic> args) {
-  final lines = (args['lines'] as List<dynamic>).cast<String>();
-  final limit = args['limit'] as int? ?? 2000;
+/// Isolate para parsear o arquivo M3U diretamente do disco usando Streams.
+/// Isso é FUNDAMENTAL para não estourar a memória (OOM) no Fire Stick/TVs.
+Future<List<Map<String, String>>> _parseFileIsolate(Map<String, dynamic> args) async {
+  final String path = args['path'];
+  final int limit = args['limit'] as int? ?? 500000;
 
   final results = <Map<String, String>>[];
-  String? pendingExtInf;
   
-  int movieCount = 0, seriesCount = 0, channelCount = 0;
+  try {
+    final file = File(path);
+    if (!await file.exists()) return [];
 
-  for (final line in lines) {
-    final trimmed = line.trim();
-    if (trimmed.isEmpty) continue;
+    String? pendingExtInf;
+    String? lastExtGrp;
+    int movieCount = 0, seriesCount = 0, channelCount = 0;
 
-    if (trimmed.startsWith('#EXTINF')) {
-      pendingExtInf = trimmed;
-      continue;
-    }
+    final stream = file.openRead()
+      .transform(utf8.decoder)
+      .transform(const LineSplitter());
 
-    if (pendingExtInf != null && !trimmed.startsWith('#')) {
-      final meta = M3uService._parseExtInf(pendingExtInf);
-      final groupTitle = meta['group-title'] ?? 'Geral';
-      final title = meta['title'] ?? meta['tvg-name'] ?? '';
-      final type = M3uService._inferType(groupTitle, title);
-      final quality = M3uService._inferQuality(title, groupTitle);
-      final audioType = M3uService._inferAudioType(title);
-      
-      // Debug primeiros itens
-      if (results.length < 5) {
-        print('🔍 Parse[${ results.length}] group="${meta['group-title']}" title="${meta['title']}" → type=$type');
+    await for (final line in stream) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+
+      if (trimmed.startsWith('#EXTINF')) {
+        pendingExtInf = trimmed;
+        lastExtGrp = null; 
+        continue;
       }
-      
-      if (type == 'movie') movieCount++;
-      else if (type == 'series') seriesCount++;
-      else channelCount++;
-      
-      // Tenta múltiplos campos para imagem (ordem de prioridade)
-      // Verifica todas as variações possíveis do M3U
-      var image = meta['tvg-logo'] ?? 
-                  meta['tvg_logo'] ??
-                  meta['logo'] ?? 
-                  meta['Logo'] ?? 
-                  meta['cover'] ?? 
-                  meta['Cover'] ?? 
-                  meta['image'] ?? 
-                  meta['Image'] ?? 
-                  meta['poster'] ??
-                  meta['Poster'] ??
-                  meta['thumbnail'] ??
-                  meta['Thumbnail'] ??
-                  '';
-      
-      // Limpa espaços e valida URL básica
-      image = image.trim();
-      
-      // Debug: log primeiros itens para verificar se imagem está sendo capturada
-      if (results.length < 10) {
-        if (image.isNotEmpty) {
-          print('🖼️ Parse[${results.length}] Imagem encontrada: ${image.substring(0, image.length > 60 ? 60 : image.length)}');
-          print('   Título: ${title.substring(0, title.length > 40 ? 40 : title.length)}');
-          print('   Grupo: ${groupTitle.substring(0, groupTitle.length > 30 ? 30 : groupTitle.length)}');
-        } else {
-          print('⚠️ Parse[${results.length}] SEM IMAGEM');
-          print('   Título: ${title.substring(0, title.length > 40 ? 40 : title.length)}');
-          print('   Grupo: ${groupTitle.substring(0, groupTitle.length > 30 ? 30 : groupTitle.length)}');
-          print('   Meta keys disponíveis: ${meta.keys.join(", ")}');
+
+      if (trimmed.startsWith('#EXTGRP:')) {
+        lastExtGrp = trimmed.substring(8).trim();
+        continue;
+      }
+
+      if (pendingExtInf != null && !trimmed.startsWith('#')) {
+        final meta = M3uService._parseExtInf(pendingExtInf);
+        
+        // PRIORIDADE 1: Atributo group-title dentro do EXTINF
+        // PRIORIDADE 2: Tag #EXTGRP separada
+        // PRIORIDADE 3: Fallback 'Geral'
+        var groupTitle = meta['group-title'] ?? lastExtGrp ?? 'Geral';
+        
+        // Sanitização agressiva do nome do grupo (remove espaços extras e normaliza)
+        groupTitle = groupTitle.trim();
+        if (groupTitle.isEmpty) groupTitle = 'Geral';
+
+        final title = (meta['title'] ?? meta['tvg-name'] ?? '').trim();
+        
+        if (title.isEmpty) {
+          pendingExtInf = null;
+          lastExtGrp = null;
+          continue;
         }
+
+        final type = M3uService._inferType(groupTitle, title);
+        final quality = M3uService._inferQuality(title, groupTitle);
+        final audioType = M3uService._inferAudioType(title);
+        final year = M3uService._extractYear(title);
+        
+        if (type == 'movie') movieCount++;
+        else if (type == 'series') seriesCount++;
+        else channelCount++;
+        
+        final image = meta['tvg-logo'] ?? 
+                      meta['tvg_logo'] ??
+                      meta['logo'] ?? 
+                      meta['cover'] ?? 
+                      meta['image'] ?? 
+                      meta['poster'] ??
+                      meta['thumbnail'] ??
+                      '';
+        
+        results.add({
+          'title': title,
+          'url': trimmed,
+          'image': image.trim(),
+          'group': groupTitle,
+          'type': type,
+          'quality': quality,
+          'audioType': audioType,
+          'year': year,
+        });
+
+        pendingExtInf = null;
+        lastExtGrp = null;
+        if (results.length >= limit) break;
       }
-      
-      final year = M3uService._extractYear(title);
-      
-      results.add({
-        'title': meta['title'] ?? meta['tvg-name'] ?? 'Sem título',
-        'url': trimmed,
-        'image': image,
-        'group': meta['group-title'] ?? 'Geral',
-        'type': type,
-        'quality': quality,
-        'audioType': audioType,
-        'year': year,
-      });
-      pendingExtInf = null;
-      if (results.length >= limit) break;
     }
+    
+    print('📊 Isolate Final: $movieCount filmes, $seriesCount séries, $channelCount canais (Suporte EXTGRP ativo)');
+  } catch (e) {
+    print('❌ Isolate Fatal Error: $e');
   }
-  
-  print('📊 Parse total: $movieCount filmes, $seriesCount séries, $channelCount canais (de ${results.length} itens)');
 
   return results;
 }

@@ -8,6 +8,7 @@ import '../core/utils/logger.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
 import '../data/tmdb_service.dart';
+import '../data/jellyfin_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
 
@@ -49,6 +50,110 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _tmdbSaveFocusNode = FocusNode();
     _tmdbTestFocusNode = FocusNode();
     _tmdbClearFocusNode = FocusNode();
+    
+    // Listeners para atualizar borda de foco Jellyfin
+    void update() { if(mounted) setState((){}); }
+    _jfUrlFocusNode.addListener(update);
+    _jfUserFocusNode.addListener(update);
+    _jfPassFocusNode.addListener(update);
+    _jfSaveFocusNode.addListener(update);
+    _jfTestFocusNode.addListener(update);
+
+    _loadJellyfinConfig();
+  }
+
+  // Jellyfin Controllers & FocusNodes
+  final _jfUrlController = TextEditingController();
+  final _jfUserController = TextEditingController();
+  final _jfPassController = TextEditingController();
+  
+  final _jfUrlFocusNode = FocusNode();
+  final _jfUserFocusNode = FocusNode();
+  final _jfPassFocusNode = FocusNode();
+  final _jfSaveFocusNode = FocusNode();
+  final _jfTestFocusNode = FocusNode();
+  
+  Future<void> _loadJellyfinConfig() async {
+    final creds = await JellyfinService.getCredentials();
+    if (mounted) {
+      setState(() {
+        _jfUrlController.text = creds['url'] ?? '';
+        _jfUserController.text = creds['username'] ?? '';
+        _jfPassController.text = creds['password'] ?? '';
+      });
+    }
+  }
+
+  Future<void> _saveJellyfinConfig() async {
+    var url = _jfUrlController.text.trim();
+    final user = _jfUserController.text.trim();
+    final pass = _jfPassController.text.trim();
+    
+    if (url.isEmpty) {
+      await JellyfinService.clearConfig();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração Jellyfin removida')));
+      return;
+    }
+
+    // Normalização de URL
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'http://$url'; // Assume HTTP por padrão (comum em LAN)
+    }
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    _jfUrlController.text = url; // Atualiza UI
+
+    await JellyfinService.saveConfig(url: url, username: user, password: pass);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração Jellyfin salva!')));
+    }
+  }
+
+  Future<void> _testJellyfinConfig() async {
+    // Salva temporariamente para testar (já com a URL normalizada pelo _saveJellyfinConfig)
+    await _saveJellyfinConfig();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⏳ Testando conexão...')));
+    }
+
+    try {
+      // Tenta conectar
+      final connected = await JellyfinService.testConnection();
+      if (!connected) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('❌ Falha ao conectar. Verifique URL e se o servidor está online.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ));
+        }
+        return;
+      }
+
+      // Tenta autenticar
+      final auth = await JellyfinService.authenticate();
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(auth ? '✅ Conexão e Login OK!' : '⚠️ Servidor achado, mas senha incorreta.'),
+            backgroundColor: auth ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 3),
+          )
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+         ScaffoldMessenger.of(context).hideCurrentSnackBar();
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+           content: Text('❌ Erro: $e'),
+           backgroundColor: Colors.red,
+         )); 
+      }
+    }
   }
 
   Future<void> _saveTmdbKey() async {
@@ -103,6 +208,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _tmdbSaveFocusNode.dispose();
     _tmdbTestFocusNode.dispose();
     _tmdbClearFocusNode.dispose();
+    _jfUrlController.dispose();
+    _jfUserController.dispose();
+    _jfPassController.dispose();
+    _jfUrlFocusNode.dispose();
+    _jfUserFocusNode.dispose();
+    _jfPassFocusNode.dispose();
+    _jfSaveFocusNode.dispose();
+    _jfTestFocusNode.dispose();
     super.dispose();
   }
 
@@ -629,6 +742,175 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                             ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Jellyfin Integration
+                    const Text(
+                      'Jellyfin Integration',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GlassPanel(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Manual Focus Chain for TV Remote
+                            // URL -> User -> Pass -> Save Button -> Test Button
+                            Column(
+                              children: [
+                                // URL
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _jfUrlFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
+                                      width: 3
+                                    ),
+                                  ),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(), // Dummy node for listener
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfUserFocusNode.requestFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                           // Voltar para o botão de download ou campo anterior
+                                           _buttonFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfUrlController,
+                                      focusNode: _jfUrlFocusNode,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.next,
+                                      onSubmitted: (_) => _jfUserFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Server URL',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        hintText: 'http://192.168.1.100:8096',
+                                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                
+                                // User
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _jfUserFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
+                                      width: 3
+                                    ),
+                                  ),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(),
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfPassFocusNode.requestFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                          _jfUrlFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfUserController,
+                                      focusNode: _jfUserFocusNode,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.next,
+                                      onSubmitted: (_) => _jfPassFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Username',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                
+                                // Pass
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _jfPassFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
+                                      width: 3
+                                    ),
+                                  ),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(),
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfSaveFocusNode.requestFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                          _jfUserFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfPassController,
+                                      focusNode: _jfPassFocusNode,
+                                      obscureText: true,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.done,
+                                      onSubmitted: (_) => _jfSaveFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Password',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    ElevatedButton(
+                                      focusNode: _jfSaveFocusNode,
+                                      onPressed: _saveJellyfinConfig,
+                                      style: ElevatedButton.styleFrom(
+                                        side: _jfSaveFocusNode.hasFocus ? const BorderSide(color: Colors.white, width: 2) : null
+                                      ),
+                                      child: const Text('Salvar'),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ElevatedButton(
+                                      focusNode: _jfTestFocusNode,
+                                      onPressed: _testJellyfinConfig,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.orange,
+                                        side: _jfTestFocusNode.hasFocus ? const BorderSide(color: Colors.white, width: 2) : null
+                                      ),
+                                      child: const Text('Testar Conexão'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            )
                           ],
                         ),
                       ),

@@ -12,15 +12,25 @@ import '../data/tmdb_service.dart';
 import '../models/epg_program.dart';
 import '../core/config.dart';
 import '../core/utils/logger.dart';
+import '../data/jellyfin_service.dart';
 import '../utils/content_enricher.dart'; // Para ContentSorter
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
+import '../widgets/hero_carousel.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
   final String type;
+  final bool isJellyfin;
+  final String? libraryId;
 
-  const CategoryScreen({super.key, required this.categoryName, required this.type});
+  const CategoryScreen({
+    super.key, 
+    required this.categoryName, 
+    required this.type,
+    this.isJellyfin = false,
+    this.libraryId,
+  });
 
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
@@ -28,6 +38,7 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   List<ContentItem> items = [];
+  List<ContentItem> featuredItems = [];
   List<ContentItem> filteredItems = [];
   int visibleCount = 0;
   final int pageSize = 240;
@@ -49,7 +60,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
   void initState() {
     super.initState();
     _loadItems();
-    _loadEpg();
+    if (!widget.isJellyfin) {
+      _loadEpg();
+    }
   }
 
   @override
@@ -75,47 +88,103 @@ class _CategoryScreenState extends State<CategoryScreen> {
     }
   }
 
+  /// Agrega episódios em séries (rápido - só processa items já filtrados)
+  List<ContentItem> _aggregateSeries(List<ContentItem> episodes) {
+    // ... MANTER LÓGICA EXISTENTE ...
+    final Map<String, List<ContentItem>> groupedByTitle = {};
+    for (final episode in episodes) {
+      final baseTitle = M3uService.extractSeriesBaseTitle(episode.title);
+      groupedByTitle.putIfAbsent(baseTitle, () => []).add(episode);
+    }
+    
+    final List<ContentItem> aggregated = [];
+    for (final entry in groupedByTitle.entries) {
+      final baseTitle = entry.key;
+      final allEpisodes = entry.value;
+      
+      String bestImage = '';
+      ContentItem referenceEpisode = allEpisodes.first;
+      
+      for (final ep in allEpisodes) {
+        if (ep.image.isNotEmpty) {
+          bestImage = ep.image;
+          break;
+        }
+      }
+      
+      aggregated.add(ContentItem(
+        title: baseTitle,
+        url: referenceEpisode.url,
+        image: bestImage,
+        group: referenceEpisode.group,
+        type: 'series',
+        isSeries: true,
+        quality: referenceEpisode.quality,
+        audioType: referenceEpisode.audioType,
+      ));
+    }
+    
+    aggregated.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    return aggregated;
+  }
+
   Future<void> _loadItems() async {
     List<ContentItem> data = [];
     bool usedTmdbFallback = false;
     
     try {
-      final source = Config.playlistRuntime;
-      if (source == null || source.isEmpty) {
-        print('⚠️ CategoryScreen: Sem playlist configurada - tentando TMDB');
-        data = await _loadFromTmdb();
-        usedTmdbFallback = true;
-      } else {
-        if (widget.type.toLowerCase() == 'series') {
-          data = await M3uService.fetchSeriesAggregatedForCategory(
-            category: widget.categoryName,
-            maxItems: 1000,
+      if (widget.isJellyfin) {
+        // Lógica Jellyfin
+        await JellyfinService.initialize();
+        if (JellyfinService.isConfigured) {
+          // Se tiver ID da biblioteca, usa ele. Se não, tenta buscar todos ou filtrar
+          data = await JellyfinService.getItems(
+            libraryId: widget.libraryId,
+            itemType: widget.type == 'series' ? 'Series' : 'Movie',
+            limit: 500
           );
+          AppLogger.info('🐙 Jellyfin: Carregados ${data.length} itens para "${widget.categoryName}"');
         } else {
-          data = await M3uService.fetchCategoryItemsFromEnv(
-            category: widget.categoryName,
-            typeFilter: widget.type,
-            maxItems: 1000,
-          );
+           AppLogger.info('⚠️ Jellyfin não configurado, retornando vazio');
         }
-        
-        if (data.isEmpty) {
-          AppLogger.info('⚠️ M3U: Categoria "${widget.categoryName}" retornou vazio - tentando TMDB');
+      } else {
+        // Lógica M3U existente
+        final source = Config.playlistRuntime;
+        if (source == null || source.isEmpty) {
+          print('⚠️ CategoryScreen: Sem playlist configurada - tentando TMDB');
           data = await _loadFromTmdb();
           usedTmdbFallback = true;
         } else {
-          final allAreChannels = data.every((item) => item.type.toLowerCase() == 'channel');
-          if (allAreChannels && widget.type.toLowerCase() != 'channel') {
-            AppLogger.info('⚠️ M3U: "${widget.categoryName}" retornou ${data.length} canais quando esperava ${widget.type} - usando TMDB');
-            data = await _loadFromTmdb();
-            usedTmdbFallback = true;
+          // Busca items da playlist
+          final rawData = await M3uService.fetchCategoryItemsFromEnv(
+            category: widget.categoryName,
+            typeFilter: widget.type,
+            maxItems: 500,
+          );
+          
+          if (widget.type.toLowerCase() == 'series' && rawData.isNotEmpty) {
+            data = _aggregateSeries(rawData);
+          } else {
+            data = rawData;
           }
+        }
+        
+        // Retry logic para M3U apenas
+        if (data.isEmpty && Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
+           final isReady = M3uService.isPreloaded(Config.playlistRuntime!); 
+           if (!isReady) {
+             print('⏳ CategoryScreen: Cache M3U ainda não pronto para "${widget.categoryName}". Aguardando...');
+             if (mounted) {
+               Future.delayed(const Duration(seconds: 2), () {
+                 if (mounted && items.isEmpty) _loadItems();
+               });
+             }
+             return;
+           }
         }
       }
     } catch (e) {
-      AppLogger.error('❌ CategoryScreen: Erro ao carregar itens', error: e);
-      data = await _loadFromTmdb();
-      usedTmdbFallback = true;
+      AppLogger.error('❌ CategoryScreen: Erro ao carregar itens de "${widget.categoryName}"', error: e);
     }
     
     if (usedTmdbFallback && data.isNotEmpty) {
@@ -125,6 +194,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     if (mounted) {
       setState(() {
         items = data;
+        featuredItems = ContentSorter.sortByLatest(items).take(5).toList();
         filteredItems = _applyFilters(data);
         visibleCount = filteredItems.length > pageSize ? pageSize : filteredItems.length;
         AppLogger.info('📂 CategoryScreen "${widget.categoryName}" (${widget.type}) carregou ${items.length} itens');
@@ -210,7 +280,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       }).toList();
     }
     
-    // 3. Aplicar ordenação
+    // 3. Aplicar ordenação usando o ContentSorter unificado
     switch (_sortBy) {
       case 'alphabetical':
       case 'name':
@@ -220,14 +290,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
         result = ContentSorter.sortByRating(result);
         break;
       case 'latest':
-        // Ordena por mais recente (ano + título)
-        result.sort((a, b) {
-          // Primeiro por ano (mais recente primeiro)
-          final yearCompare = b.year.compareTo(a.year);
-          if (yearCompare != 0) return yearCompare;
-          // Se mesmo ano, ordena por título
-          return a.title.compareTo(b.title);
-        });
+        result = ContentSorter.sortByLatest(result);
+        break;
+      case 'popularity':
+        result = ContentSorter.sortByPopularity(result);
         break;
       case 'quality':
         result.sort((a, b) {
@@ -241,12 +307,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
           return qScore(b.quality).compareTo(qScore(a.quality));
         });
         break;
-      case 'popularity':
-        result = ContentSorter.sortByPopularity(result);
-        break;
       case 'default':
       default:
-        // Mantém ordem original do M3U
+        // Mantém ordem original
         break;
     }
     
@@ -501,9 +564,33 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         : Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: OptimizedGridView(
-                              items: filteredItems.take(visibleCount).toList(),
+                                items: filteredItems.take(visibleCount).toList(),
                               epgChannels: _epgChannels,
                               onItemUpdated: _onItemUpdated, // Callback para atualizar dados em background
+                              headerWidget: featuredItems.isNotEmpty 
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(bottom: 24),
+                                      child: HeroCarousel(
+                                          items: featuredItems, 
+                                          onPlay: (item) {
+                                            if (item.isSeries || item.type == 'series') {
+                                              Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
+                                            } else if (item.type == 'channel') {
+                                              Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+                                            } else {
+                                              Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
+                                            }
+                                          }
+                                      ),
+                                    )
+                                  : null,
+                              onEndReached: () {
+                                if (visibleCount < filteredItems.length) {
+                                  setState(() {
+                                    visibleCount = min(visibleCount + pageSize, filteredItems.length);
+                                  });
+                                }
+                              },
                               onTap: (item) {
                                 if (item.isSeries || item.type == 'series') {
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
