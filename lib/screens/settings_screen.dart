@@ -7,6 +7,8 @@ import '../core/utils/validators.dart';
 import '../core/utils/logger.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
+import '../data/tmdb_service.dart';
+import '../data/jellyfin_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
 
@@ -24,58 +26,196 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoplay = true;
   bool _notifications = true;
   late TextEditingController _playlistController;
-  late TextEditingController _epgController;
   final FocusNode _urlFocusNode = FocusNode();
   final FocusNode _buttonFocusNode = FocusNode();
-  final FocusNode _epgUrlFocusNode = FocusNode();
-  final FocusNode _epgButtonFocusNode = FocusNode();
   bool _urlHasFocus = false;
   bool _buttonHasFocus = false;
-  bool _epgUrlHasFocus = false;
-  bool _epgButtonHasFocus = false;
-
-  // Subtitle Preferences
-  double _subtitleSize = 28.0;
-  String _subtitleColor = 'white'; // white, yellow, cyan
-  String _subtitleLanguage = 'por'; // por, eng, spa
 
   @override
   void initState() {
     super.initState();
     _playlistController = TextEditingController(text: Config.playlistRuntime ?? '');
-    _epgController = TextEditingController(text: EpgService.epgUrl ?? '');
     _urlFocusNode.addListener(() {
       if (mounted) setState(() => _urlHasFocus = _urlFocusNode.hasFocus);
     });
     _buttonFocusNode.addListener(() {
       if (mounted) setState(() => _buttonHasFocus = _buttonFocusNode.hasFocus);
     });
-    _epgUrlFocusNode.addListener(() {
-      if (mounted) setState(() => _epgUrlHasFocus = _epgUrlFocusNode.hasFocus);
+    // TMDB key controller (load from Prefs if set)
+    _tmdbController = TextEditingController(text: Prefs.getTmdbApiKey() ?? '');
+    _tmdbFocusNode.addListener(() {
+      if (mounted) setState(() => _tmdbHasFocus = _tmdbFocusNode.hasFocus);
     });
-    _epgButtonFocusNode.addListener(() {
-      if (mounted) setState(() => _epgButtonHasFocus = _epgButtonFocusNode.hasFocus);
-    });
-    _loadSubtitlePrefs();
+    // Focus nodes para botões TMDB (TV / Firestick navigation)
+    _tmdbSaveFocusNode = FocusNode();
+    _tmdbTestFocusNode = FocusNode();
+    _tmdbClearFocusNode = FocusNode();
+    
+    // Listeners para atualizar borda de foco Jellyfin
+    void update() { if(mounted) setState((){}); }
+    _jfUrlFocusNode.addListener(update);
+    _jfUserFocusNode.addListener(update);
+    _jfPassFocusNode.addListener(update);
+    _jfSaveFocusNode.addListener(update);
+    _jfTestFocusNode.addListener(update);
+
+    _loadJellyfinConfig();
   }
 
-  Future<void> _loadSubtitlePrefs() async {
-    await Prefs.init();
-    setState(() {
-      _subtitleSize = Prefs.getSubtitleSize();
-      _subtitleColor = Prefs.getSubtitleColor();
-      _subtitleLanguage = Prefs.getSubtitleLanguage();
-    });
+  // Jellyfin Controllers & FocusNodes
+  final _jfUrlController = TextEditingController();
+  final _jfUserController = TextEditingController();
+  final _jfPassController = TextEditingController();
+  
+  final _jfUrlFocusNode = FocusNode();
+  final _jfUserFocusNode = FocusNode();
+  final _jfPassFocusNode = FocusNode();
+  final _jfSaveFocusNode = FocusNode();
+  final _jfTestFocusNode = FocusNode();
+  
+  Future<void> _loadJellyfinConfig() async {
+    final creds = await JellyfinService.getCredentials();
+    if (mounted) {
+      setState(() {
+        _jfUrlController.text = creds['url'] ?? '';
+        _jfUserController.text = creds['username'] ?? '';
+        _jfPassController.text = creds['password'] ?? '';
+      });
+    }
+  }
+
+  Future<void> _saveJellyfinConfig() async {
+    var url = _jfUrlController.text.trim();
+    final user = _jfUserController.text.trim();
+    final pass = _jfPassController.text.trim();
+    
+    if (url.isEmpty) {
+      await JellyfinService.clearConfig();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração Jellyfin removida')));
+      return;
+    }
+
+    // Normalização de URL
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'http://$url'; // Assume HTTP por padrão (comum em LAN)
+    }
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    _jfUrlController.text = url; // Atualiza UI
+
+    await JellyfinService.saveConfig(url: url, username: user, password: pass);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração Jellyfin salva!')));
+    }
+  }
+
+  Future<void> _testJellyfinConfig() async {
+    // Salva temporariamente para testar (já com a URL normalizada pelo _saveJellyfinConfig)
+    await _saveJellyfinConfig();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⏳ Testando conexão...')));
+    }
+
+    try {
+      // Tenta conectar
+      final connected = await JellyfinService.testConnection();
+      if (!connected) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('❌ Falha ao conectar. Verifique URL e se o servidor está online.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ));
+        }
+        return;
+      }
+
+      // Tenta autenticar
+      final auth = await JellyfinService.authenticate();
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(auth ? '✅ Conexão e Login OK!' : '⚠️ Servidor achado, mas senha incorreta.'),
+            backgroundColor: auth ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 3),
+          )
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+         ScaffoldMessenger.of(context).hideCurrentSnackBar();
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+           content: Text('❌ Erro: $e'),
+           backgroundColor: Colors.red,
+         )); 
+      }
+    }
+  }
+
+  Future<void> _saveTmdbKey() async {
+    final key = _tmdbController.text.trim();
+    try {
+      await Prefs.setTmdbApiKey(key.isEmpty ? null : key);
+      // Re-init service so it picks up runtime key
+      TmdbService.init();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chave TMDB salva')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar chave TMDB: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _testTmdbKey() async {
+    final key = _tmdbController.text.trim();
+    if (key.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insira a chave TMDB antes de testar')));
+      return;
+    }
+    try {
+      // Persiste temporariamente to ensure TmdbService reads the updated key
+      await Prefs.setTmdbApiKey(key);
+      // Force reload
+      TmdbService.init();
+      final ok = await TmdbService.testApiKeyNow();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ok ? '✅ Chave TMDB válida' : '❌ Chave inválida ou erro (veja logs)')),
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao testar chave: $e')));
+    }
   }
 
   @override
   void dispose() {
     _playlistController.dispose();
-    _epgController.dispose();
     _urlFocusNode.dispose();
     _buttonFocusNode.dispose();
-    _epgUrlFocusNode.dispose();
-    _epgButtonFocusNode.dispose();
+    _tmdbController.dispose();
+    _tmdbFocusNode.dispose();
+    _tmdbSaveFocusNode.dispose();
+    _tmdbTestFocusNode.dispose();
+    _tmdbClearFocusNode.dispose();
+    _jfUrlController.dispose();
+    _jfUserController.dispose();
+    _jfPassController.dispose();
+    _jfUrlFocusNode.dispose();
+    _jfUserFocusNode.dispose();
+    _jfPassFocusNode.dispose();
+    _jfSaveFocusNode.dispose();
+    _jfTestFocusNode.dispose();
     super.dispose();
   }
 
@@ -83,8 +223,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _downloadProgress = 0.0;
   String _downloadStatus = '';
   
-  bool _isDownloadingEpg = false;
-  String _epgDownloadStatus = '';
+  late TextEditingController _tmdbController;
+  final FocusNode _tmdbFocusNode = FocusNode();
+  bool _tmdbHasFocus = false;
+  // Focus nodes para botões TMDB (suporte Fire TV / DPAD)
+  late FocusNode _tmdbSaveFocusNode;
+  late FocusNode _tmdbTestFocusNode;
+  late FocusNode _tmdbClearFocusNode;
+  bool _tmdbSaveHasFocus = false;
+  bool _tmdbTestHasFocus = false;
+  bool _tmdbClearHasFocus = false;
 
   Future<void> _applyPlaylist() async {
     final value = _playlistController.text.trim();
@@ -258,66 +406,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
   }
-
-  Future<void> _applyEpg() async {
-    final value = _epgController.text.trim();
-    
-    if (value.isEmpty) {
-      await EpgService.clearCache();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('EPG removido'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-      return;
-    }
-
-    setState(() {
-      _isDownloadingEpg = true;
-      _epgDownloadStatus = 'Baixando EPG...';
-    });
-
-    try {
-      print('🔧 [Settings] Baixando EPG: $value');
-      
-      await EpgService.loadEpg(value);
-      
-      setState(() {
-        _isDownloadingEpg = false;
-        _epgDownloadStatus = '';
-      });
-      
-      final channelCount = EpgService.getAllChannels().length;
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ EPG carregado! $channelCount canais'),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ [Settings] Erro ao baixar EPG: $e');
-      setState(() {
-        _isDownloadingEpg = false;
-        _epgDownloadStatus = '';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Erro ao baixar EPG: $e'),
-            duration: const Duration(seconds: 5),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
   final List<HeaderNav> _navItems = [
     HeaderNav(label: 'Início'),
     HeaderNav(label: 'Filmes'),
@@ -367,6 +455,108 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Colors.white,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // TMDB API Key (runtime) - moved to top for visibility
+                    const Text(
+                      'TMDB (enriquecimento de metadados)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GlassPanel(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'TMDB API Key',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _tmdbHasFocus ? AppColors.primary : Colors.transparent,
+                                  width: 3,
+                                ),
+                              ),
+                              child: RawKeyboardListener(
+                                focusNode: FocusNode(),
+                                onKey: (event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).previousFocus();
+                                    } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      // Move focus to the Save button for TV remotes
+                                      _tmdbSaveFocusNode.requestFocus();
+                                    }
+                                  }
+                                },
+                                child: TextField(
+                                  controller: _tmdbController,
+                                  focusNode: _tmdbFocusNode,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: 'Insira a TMDB API key (opcional)',
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                    filled: true,
+                                    fillColor: Colors.white.withOpacity(0.03),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                  onSubmitted: (_) => _tmdbSaveFocusNode.requestFocus(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                ElevatedButton(
+                                  focusNode: _tmdbSaveFocusNode,
+                                  onPressed: _saveTmdbKey,
+                                  child: const Text('Salvar chave'),
+                                ),
+                                const SizedBox(width: 12),
+                                ElevatedButton(
+                                  focusNode: _tmdbTestFocusNode,
+                                  onPressed: _testTmdbKey,
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                                  child: const Text('Testar chave'),
+                                ),
+                                const SizedBox(width: 12),
+                                TextButton(
+                                  focusNode: _tmdbClearFocusNode,
+                                  onPressed: () async {
+                                    _tmdbController.text = '';
+                                    await Prefs.setTmdbApiKey(null);
+                                    TmdbService.init();
+                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chave TMDB removida')));
+                                  },
+                                  child: const Text('Limpar'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'A chave permite enriquecer capas e descrições. Se não configurada, o app não mostrará metadados TMDB.',
+                              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -464,10 +654,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         // Reset
                                         await Prefs.setPlaylistOverride(null);
                                         await Prefs.setPlaylistReady(false);
+                                        // Clear both memory and disk caches to ensure no stale data
+                                        M3uService.clearMemoryCache();
                                         await M3uService.clearAllCache(null);
                                         await EpgService.clearCache();
+                                        Config.setPlaylistOverride(null);
+                                        // Recreate install marker to leave the app in a clean configured state
+                                        await M3uService.writeInstallMarker();
                                         if (mounted) {
                                           messenger.showSnackBar(const SnackBar(content: Text('Reset realizado: playlist e cache limpos')));
+                                          // Restart initialization to ensure UI reflects cleared state
+                                          Navigator.pushReplacementNamed(context, '/splash', arguments: {'nextRoute': '/settings'});
                                         }
                                       }
                                     },
@@ -550,9 +747,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // EPG (Electronic Program Guide) Input
+                    // Jellyfin Integration
                     const Text(
-                      'Guia de Programação (EPG)',
+                      'Jellyfin Integration',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -566,210 +763,154 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            // Manual Focus Chain for TV Remote
+                            // URL -> User -> Pass -> Save Button -> Test Button
+                            Column(
                               children: [
-                                const Icon(Icons.calendar_month, color: AppColors.primary, size: 20),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'URL do EPG (XMLTV)',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
+                                // URL
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _jfUrlFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
+                                      width: 3
+                                    ),
+                                  ),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(), // Dummy node for listener
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfUserFocusNode.requestFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                           // Voltar para o botão de download ou campo anterior
+                                           _buttonFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfUrlController,
+                                      focusNode: _jfUrlFocusNode,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.next,
+                                      onSubmitted: (_) => _jfUserFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Server URL',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        hintText: 'http://192.168.1.100:8096',
+                                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                const Spacer(),
-                                TextButton.icon(
-                                  icon: const Icon(Icons.tv_outlined, size: 16),
-                                  label: const Text('Ver Guia'),
-                                  style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-                                  onPressed: () => Navigator.pushNamed(context, '/epg'),
+                                const SizedBox(height: 12),
+                                
+                                // User
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _jfUserFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
+                                      width: 3
+                                    ),
+                                  ),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(),
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfPassFocusNode.requestFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                          _jfUrlFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfUserController,
+                                      focusNode: _jfUserFocusNode,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.next,
+                                      onSubmitted: (_) => _jfPassFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Username',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                
+                                // Pass
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _jfPassFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
+                                      width: 3
+                                    ),
+                                  ),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(),
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfSaveFocusNode.requestFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                          _jfUserFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfPassController,
+                                      focusNode: _jfPassFocusNode,
+                                      obscureText: true,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.done,
+                                      onSubmitted: (_) => _jfSaveFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Password',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    ElevatedButton(
+                                      focusNode: _jfSaveFocusNode,
+                                      onPressed: _saveJellyfinConfig,
+                                      style: ElevatedButton.styleFrom(
+                                        side: _jfSaveFocusNode.hasFocus ? const BorderSide(color: Colors.white, width: 2) : null
+                                      ),
+                                      child: const Text('Salvar'),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ElevatedButton(
+                                      focusNode: _jfTestFocusNode,
+                                      onPressed: _testJellyfinConfig,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.orange,
+                                        side: _jfTestFocusNode.hasFocus ? const BorderSide(color: Colors.white, width: 2) : null
+                                      ),
+                                      child: const Text('Testar Conexão'),
+                                    ),
+                                  ],
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 8),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _epgUrlHasFocus ? AppColors.primary : Colors.transparent,
-                                  width: 3,
-                                ),
-                                boxShadow: _epgUrlHasFocus ? [
-                                  BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.4),
-                                    blurRadius: 12,
-                                    spreadRadius: 2,
-                                  ),
-                                ] : [],
-                              ),
-                              child: TextField(
-                                controller: _epgController,
-                                focusNode: _epgUrlFocusNode,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: 'https://exemplo.com/epg.xml',
-                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                  filled: true,
-                                  fillColor: Colors.white.withOpacity(0.05),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
-                                onSubmitted: (_) => _epgButtonFocusNode.requestFocus(),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            if (_isDownloadingEpg) ...[
-                              Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    _epgDownloadStatus,
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.7),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ] else ...[
-                              Row(
-                                children: [
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 150),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: _epgButtonHasFocus ? Colors.white : Colors.transparent,
-                                        width: 3,
-                                      ),
-                                      boxShadow: _epgButtonHasFocus ? [
-                                        BoxShadow(
-                                          color: AppColors.primary.withOpacity(0.6),
-                                          blurRadius: 16,
-                                          spreadRadius: 2,
-                                        ),
-                                      ] : [],
-                                    ),
-                                    child: ElevatedButton.icon(
-                                      focusNode: _epgButtonFocusNode,
-                                      onPressed: _applyEpg,
-                                      icon: const Icon(Icons.download, size: 20),
-                                      label: Text(
-                                        _epgButtonHasFocus ? '▶ BAIXAR EPG ◀' : 'Baixar EPG',
-                                        style: TextStyle(
-                                          fontSize: _epgButtonHasFocus ? 14 : 12,
-                                          fontWeight: _epgButtonHasFocus ? FontWeight.bold : FontWeight.normal,
-                                        ),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: _epgButtonHasFocus 
-                                            ? Colors.green
-                                            : Colors.green.withOpacity(0.8),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  if (EpgService.isLoaded)
-                                    AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: _epgButtonHasFocus ? Colors.amber : Colors.transparent,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: ElevatedButton.icon(
-                                        onPressed: () async {
-                                          final epgUrl = EpgService.epgUrl;
-                                          if (epgUrl != null && epgUrl.isNotEmpty) {
-                                            setState(() {
-                                              _isDownloadingEpg = true;
-                                              _epgDownloadStatus = 'Atualizando EPG...';
-                                            });
-                                            try {
-                                              await EpgService.loadEpg(epgUrl);
-                                              final channelCount = EpgService.getAllChannels().length;
-                                              setState(() {
-                                                _isDownloadingEpg = false;
-                                                _epgDownloadStatus = '';
-                                              });
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('✅ EPG atualizado! $channelCount canais'),
-                                                    duration: const Duration(seconds: 3),
-                                                    backgroundColor: Colors.green,
-                                                  ),
-                                                );
-                                              }
-                                            } catch (e) {
-                                              setState(() {
-                                                _isDownloadingEpg = false;
-                                                _epgDownloadStatus = '';
-                                              });
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('❌ Erro ao atualizar EPG: $e'),
-                                                    duration: const Duration(seconds: 3),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                              }
-                                            }
-                                          }
-                                        },
-                                        icon: const Icon(Icons.refresh, size: 18),
-                                        label: const Text('Atualizar EPG'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue.withOpacity(0.8),
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                        ),
-                                      ),
-                                    ),
-                                  if (EpgService.isLoaded)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        '${EpgService.getAllChannels().length} canais',
-                                        style: const TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'O EPG mostra a programação dos canais ao vivo',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.6),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                            )
                           ],
                         ),
                       ),
@@ -839,128 +980,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Divider(
                             color: Colors.white.withOpacity(0.1),
                           ),
-                          // --- Subtitle Language ---
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Language', style: TextStyle(color: Colors.white)),
-                                DropdownButton<String>(
-                                  value: _subtitleLanguage,
-                                  dropdownColor: Colors.grey[900],
-                                  style: const TextStyle(color: Colors.white),
-                                  underline: Container(),
-                                  items: const [
-                                    DropdownMenuItem(value: 'por', child: Text('Português')),
-                                    DropdownMenuItem(value: 'eng', child: Text('English')),
-                                    DropdownMenuItem(value: 'spa', child: Text('Español')),
-                                    DropdownMenuItem(value: 'off', child: Text('Desativado')),
-                                  ],
-                                  onChanged: (v) {
-                                    if (v != null) {
-                                      setState(() => _subtitleLanguage = v);
-                                      Prefs.setSubtitleLanguage(v);
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          Divider(color: Colors.white.withOpacity(0.1)),
-                          
-                          // --- Subtitle Size ---
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Size', style: TextStyle(color: Colors.white)),
-                                    Row(
-                                      children: [
-                                        _buildSizeBtn(Icons.remove, () {
-                                          setState(() {
-                                            if (_subtitleSize > 12) _subtitleSize -= 2;
-                                            Prefs.setSubtitleSize(_subtitleSize);
-                                          });
-                                        }),
-                                        SizedBox(
-                                          width: 60,
-                                          child: Center(
-                                            child: Text(
-                                              '${_subtitleSize.toInt()}px',
-                                              style: const TextStyle(color: Colors.white),
-                                            ),
-                                          ),
-                                        ),
-                                        _buildSizeBtn(Icons.add, () {
-                                          setState(() {
-                                            if (_subtitleSize < 64) _subtitleSize += 2;
-                                            Prefs.setSubtitleSize(_subtitleSize);
-                                          });
-                                        }),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Divider(color: Colors.white.withOpacity(0.1)),
-
-                          // --- Subtitle Color ---
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Color', style: TextStyle(color: Colors.white)),
-                                Row(
-                                  children: [
-                                    _buildColorBtn('white', Colors.white),
-                                    const SizedBox(width: 8),
-                                    _buildColorBtn('yellow', Colors.yellow),
-                                    const SizedBox(width: 8),
-                                    _buildColorBtn('cyan', Colors.cyanAccent),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // --- Preview ---
-                          Container(
-                            margin: const EdgeInsets.only(top: 16),
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(8),
-                              image: const DecorationImage(
-                                image: AssetImage('assets/images/logo.png'), // Placeholder bg
-                                fit: BoxFit.cover,
-                                opacity: 0.3,
-                              ),
-                            ),
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                'Exemplo de Legenda\nSubtitle Preview',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: _subtitleSize,
-                                  color: _subtitleColor == 'yellow' 
-                                      ? Colors.yellow 
-                                      : _subtitleColor == 'cyan' 
-                                          ? Colors.cyanAccent 
-                                          : Colors.white,
-                                  shadows: const [
-                                    Shadow(offset: Offset(1, 1), blurRadius: 2, color: Colors.black),
-                                  ],
-                                ),
+                          _buildSettingRow(
+                            'Subtitle Size',
+                            'Large',
+                            false,
+                            null,
+                            trailing: const Text(
+                              'Large',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
@@ -1171,57 +1201,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: onChanged,
             ),
         ],
-      ),
-    );
-  }
-
-
-
-
-  Widget _buildSizeBtn(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white24),
-        ),
-        child: Icon(icon, color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildColorBtn(String colorName, Color color) {
-    bool isSelected = _subtitleColor == colorName;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _subtitleColor = colorName);
-        Prefs.setSubtitleColor(colorName);
-      },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.white24,
-            width: isSelected ? 2 : 1,
-          ),
-          shape: BoxShape.circle,
-        ),
-        child: Center(
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
       ),
     );
   }

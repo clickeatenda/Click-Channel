@@ -1,0 +1,200 @@
+--------- beginning of system
+12-27 00:31:43.727  7320  7355 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 00:31:43.773   618 24696 I chatty  : uid=1000(system) Binder:618_1F expire 7 lines
+12-27 00:36:10.966  8021  8021 I FrameworkJumpTable: Successfully loaded all classes
+12-27 00:36:10.979  8021  8021 I FrameworkJumpTable: Successfully loaded all methods
+12-27 00:36:10.980  8021  8021 I FrameworkJumpTable: Successfully loaded all fields
+12-27 00:36:10.980  8021  8021 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 00:40:38.743  8390  8390 I FrameworkJumpTable: Successfully loaded all classes
+12-27 00:40:38.755  8390  8390 I FrameworkJumpTable: Successfully loaded all methods
+12-27 00:40:38.757  8390  8390 I FrameworkJumpTable: Successfully loaded all fields
+12-27 00:40:38.757  8390  8390 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 00:55:36.679  9576  9576 I FrameworkJumpTable: Successfully loaded all classes
+12-27 00:55:36.692  9576  9576 I FrameworkJumpTable: Successfully loaded all methods
+12-27 00:55:36.694  9576  9576 I FrameworkJumpTable: Successfully loaded all fields
+12-27 00:55:36.695  9576  9576 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 00:58:57.319  9988  9988 I FrameworkJumpTable: Successfully loaded all classes
+12-27 00:58:57.337  9988  9988 I FrameworkJumpTable: Successfully loaded all methods
+12-27 00:58:57.339  9988  9988 I FrameworkJumpTable: Successfully loaded all fields
+12-27 00:58:57.339  9988  9988 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 01:03:00.307 10409 10409 I FrameworkJumpTable: Successfully loaded all classes
+12-27 01:03:00.319 10409 10409 I FrameworkJumpTable: Successfully loaded all methods
+12-27 01:03:00.321 10409 10409 I FrameworkJumpTable: Successfully loaded all fields
+12-27 01:03:00.321 10409 10409 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 01:04:33.701   618   634 I chatty  : uid=1000(system) batterystats-sy expire 11 lines
+12-27 01:06:17.612   618   618 I chatty  : uid=1000 system_server expire 10 lines
+12-27 01:06:17.726   618   678 I chatty  : uid=1000(system) ConnectivitySer expire 10 lines
+12-27 01:09:52.096   618 11852 I chatty  : uid=1000(system) Binder:618_20 expire 3 lines
+12-27 01:11:49.210   618   654 I chatty  : uid=1000(system) AlarmManager expire 11 lines
+12-27 01:11:49.456   618  1224 I chatty  : uid=1000(system) Binder:618_9 expire 2 lines
+12-27 01:11:49.746 11118 11141 I FrameworkJumpTable: Successfully loaded all classes
+12-27 01:11:49.764 11118 11141 I FrameworkJumpTable: Successfully loaded all methods
+12-27 01:11:49.765 11118 11141 I FrameworkJumpTable: Successfully loaded all fields
+12-27 01:11:49.765 11118 11141 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 01:14:05.791 11331 11331 I FrameworkJumpTable: Successfully loaded all classes
+12-27 01:14:05.809 11331 11331 I FrameworkJumpTable: Successfully loaded all methods
+12-27 01:14:05.811 11331 11331 I FrameworkJumpTable: Successfully loaded all fields
+12-27 01:14:05.811 11331 11331 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 01:14:06.310 11331 11331 I AmazonHdmiServiceManager: AmazonHdmiServiceManager created
+12-27 01:14:08.592   618 12039 I chatty  : uid=1000(system) Binder:618_1B expire 3 lines
+12-27 01:20:02.817   618   631 I chatty  : uid=1000(system) ActivityManager expire 10 lines
+12-27 01:35:11.030   618 15353 I chatty  : uid=1000(system) Binder:618_1C expire 2 lines
+12-27 01:35:44.024   618   635 I chatty  : uid=1000(system) FileObserver expire 4 lines
+12-27 01:40:39.531 13667 13667 I FrameworkJumpTable: Successfully loaded all classes
+12-27 01:40:39.550 13667 13667 I FrameworkJumpTable: Successfully loaded all methods
+12-27 01:40:39.552 13667 13667 I FrameworkJumpTable: Successfully loaded all fields
+12-27 01:40:39.552 13667 13667 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 01:40:39.614   618   628 I chatty  : uid=1000(system) Binder:618_1 expire 2 lines
+12-27 01:45:27.885   618  5676 I chatty  : uid=1000(system) Binder:618_13 expire 4 lines
+12-27 01:50:18.597   618   630 I chatty  : uid=1000(system) android.bg expire 8 lines
+12-27 02:01:36.154   618   618 I chatty  : uid=1000 system_server expire 13 lines
+12-27 02:01:36.327 15285 15285 I FrameworkJumpTable: Successfully loaded all classes
+12-27 02:01:36.345 15285 15285 I FrameworkJumpTable: Successfully loaded all methods
+12-27 02:01:36.347 15285 15285 I FrameworkJumpTable: Successfully loaded all fields
+12-27 02:01:36.347 15285 15285 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 02:03:00.897 15522 15522 I FrameworkJumpTable: Successfully loaded all classes
+12-27 02:03:00.910 15522 15522 I FrameworkJumpTable: Successfully loaded all methods
+12-27 02:03:00.915 15522 15522 I FrameworkJumpTable: Successfully loaded all fields
+12-27 02:03:00.915 15522 15522 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 02:06:45.477 15796 15796 I FrameworkJumpTable: Successfully loaded all classes
+12-27 02:06:45.490 15796 15796 I FrameworkJumpTable: Successfully loaded all methods
+12-27 02:06:45.491 15796 15796 I FrameworkJumpTable: Successfully loaded all fields
+12-27 02:06:45.491 15796 15796 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 02:06:45.735   618   856 I chatty  : uid=1000(system) Binder:618_3 expire 9 lines
+12-27 02:06:45.770   618  1226 I chatty  : uid=1000(system) Binder:618_A expire 8 lines
+12-27 02:06:45.996 15859 15898 I FrameworkJumpTable: Successfully loaded all classes
+12-27 02:06:46.020 15859 15898 I FrameworkJumpTable: Successfully loaded all methods
+12-27 02:06:46.022 15859 15898 I FrameworkJumpTable: Successfully loaded all fields
+12-27 02:06:46.022 15859 15898 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 02:06:46.769 15796 15826 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 02:06:46.770 15796 15826 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 02:06:46.770 15796 15826 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 02:06:46.791   618  3780 I chatty  : uid=1000(system) Binder:618_10 expire 1 line
+12-27 02:34:31.253   618   629 I chatty  : uid=1000(system) Binder:618_2 expire 2 lines
+12-27 02:34:31.359 18054 18054 I FrameworkJumpTable: Successfully loaded all classes
+12-27 02:34:31.372 18054 18054 I FrameworkJumpTable: Successfully loaded all methods
+12-27 02:34:31.374 18054 18054 I FrameworkJumpTable: Successfully loaded all fields
+12-27 02:34:31.374 18054 18054 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 02:34:31.425 18054 18054 I AmazonHdmiServiceManager: AmazonHdmiServiceManager created
+12-27 02:35:23.512   618  1087 I chatty  : uid=1000(system) Binder:618_6 expire 6 lines
+12-27 02:49:56.311   618  1099 I chatty  : uid=1000(system) pool-5-thread-1 expire 8 lines
+12-27 02:51:02.385 19591 19591 I FrameworkJumpTable: Successfully loaded all classes
+12-27 02:51:02.404 19591 19591 I FrameworkJumpTable: Successfully loaded all methods
+12-27 02:51:02.405 19591 19591 I FrameworkJumpTable: Successfully loaded all fields
+12-27 02:51:02.405 19591 19591 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 03:00:01.001   618   618 I chatty  : uid=1000 system_server expire 11 lines
+12-27 03:00:01.003   618   663 I chatty  : uid=1000(system) MountService expire 2 lines
+12-27 03:00:01.019   199 20406 I vold    : Trimmed 0 bytes on /data in 3ms
+12-27 03:00:01.020   199 20406 I vold    : Trimmed 0 bytes on /cache in 0ms
+12-27 03:00:01.020   199 20406 W vold    : Failed to open /swap_zram0: No such file or directory
+12-27 03:00:01.139   618   636 I chatty  : uid=1000(system) android.fg expire 3 lines
+12-27 03:03:54.966 20701 20701 I FrameworkJumpTable: Successfully loaded all classes
+12-27 03:03:54.982 20701 20701 I FrameworkJumpTable: Successfully loaded all methods
+12-27 03:03:54.985 20701 20701 I FrameworkJumpTable: Successfully loaded all fields
+12-27 03:03:54.985 20701 20701 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 03:03:55.290   618  6182 I chatty  : uid=1000(system) Binder:618_15 expire 4 lines
+12-27 03:11:50.127 21311 21329 I FrameworkJumpTable: Successfully loaded all classes
+12-27 03:11:50.177 21311 21329 I FrameworkJumpTable: Successfully loaded all methods
+12-27 03:11:50.179 21311 21329 I FrameworkJumpTable: Successfully loaded all fields
+12-27 03:11:50.179 21311 21329 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 03:31:27.150 22688 22688 I FrameworkJumpTable: Successfully loaded all classes
+12-27 03:31:27.164 22688 22688 I FrameworkJumpTable: Successfully loaded all methods
+12-27 03:31:27.165 22688 22688 I FrameworkJumpTable: Successfully loaded all fields
+12-27 03:31:27.166 22688 22688 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 03:31:32.477   618  1188 I chatty  : uid=1000(system) Binder:618_8 expire 1 line
+12-27 03:40:40.260 23665 23665 I FrameworkJumpTable: Successfully loaded all classes
+12-27 03:40:40.273 23665 23665 I FrameworkJumpTable: Successfully loaded all methods
+12-27 03:40:40.275 23665 23665 I FrameworkJumpTable: Successfully loaded all fields
+12-27 03:40:40.275 23665 23665 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 03:41:48.322   618   618 I chatty  : uid=1000 system_server expire 15 lines
+12-27 03:41:48.482 23750 23750 I FrameworkJumpTable: Successfully loaded all classes
+12-27 03:41:48.495 23750 23750 I FrameworkJumpTable: Successfully loaded all methods
+12-27 03:41:48.497 23750 23750 I FrameworkJumpTable: Successfully loaded all fields
+12-27 03:41:48.497 23750 23750 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 03:41:48.756   618  6179 I chatty  : uid=1000(system) Binder:618_14 expire 4 lines
+12-27 03:41:48.772   618  1323 I chatty  : uid=1000(system) Binder:618_D expire 3 lines
+12-27 03:41:48.990 23812 23853 I FrameworkJumpTable: Successfully loaded all classes
+12-27 03:41:49.006 23812 23853 I FrameworkJumpTable: Successfully loaded all methods
+12-27 03:41:49.008 23812 23853 I FrameworkJumpTable: Successfully loaded all fields
+12-27 03:41:49.008 23812 23853 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 03:41:49.175 23750 23780 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 03:41:49.175 23750 23780 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 03:41:49.176 23750 23780 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 03:59:15.045 25215 25215 I FrameworkJumpTable: Successfully loaded all classes
+12-27 03:59:15.063 25215 25215 I FrameworkJumpTable: Successfully loaded all methods
+12-27 03:59:15.065 25215 25215 I FrameworkJumpTable: Successfully loaded all fields
+12-27 03:59:15.065 25215 25215 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 04:01:40.824 25497 25497 I FrameworkJumpTable: Successfully loaded all classes
+12-27 04:01:40.841 25497 25497 I FrameworkJumpTable: Successfully loaded all methods
+12-27 04:01:40.843 25497 25497 I FrameworkJumpTable: Successfully loaded all fields
+12-27 04:01:40.843 25497 25497 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 04:01:46.143   827   827 W ContextImpl: Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcast:921 android.content.ContextWrapper.sendBroadcast:426 com.amazon.tifobserver.LiveTvObserver.broadcastChannelListChange:157 com.amazon.tifobserver.LiveTvObserver.-wrap0:-1 com.amazon.tifobserver.LiveTvObserver$1.run:111 
+12-27 04:01:46.147   827   827 W ContextImpl: Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcast:921 android.content.ContextWrapper.sendBroadcast:426 com.amazon.tifobserver.LiveTvObserver.broadcastChannelListChange:161 com.amazon.tifobserver.LiveTvObserver.-wrap0:-1 com.amazon.tifobserver.LiveTvObserver$1.run:111 
+12-27 04:03:55.614 25819 25819 I FrameworkJumpTable: Successfully loaded all classes
+12-27 04:03:55.627 25819 25819 I FrameworkJumpTable: Successfully loaded all methods
+12-27 04:03:55.629 25819 25819 I FrameworkJumpTable: Successfully loaded all fields
+12-27 04:03:55.630 25819 25819 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 04:04:33.804   618   634 I chatty  : uid=1000(system) batterystats-sy expire 10 lines
+12-27 04:06:08.094  1148 26089 E ActivityThread: Failed to find provider info for com.amazon.dcp.ota.pendingupdates.internal
+12-27 04:10:50.642   618   631 I chatty  : uid=1000(system) ActivityManager expire 10 lines
+12-27 04:32:35.665   618  1324 I chatty  : uid=1000(system) Binder:618_E expire 4 lines
+12-27 04:35:50.719   618 11165 I chatty  : uid=1000(system) Binder:618_19 expire 3 lines
+12-27 04:35:51.102 28361 28465 I FrameworkJumpTable: Successfully loaded all classes
+12-27 04:35:51.197 28361 28465 I FrameworkJumpTable: Successfully loaded all methods
+12-27 04:35:51.198 28361 28465 I FrameworkJumpTable: Successfully loaded all fields
+12-27 04:35:51.199 28361 28465 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 04:35:51.429   618   864 I chatty  : uid=1000(system) Binder:618_4 expire 2 lines
+12-27 04:35:58.584   618   618 I chatty  : uid=1000 system_server expire 12 lines
+12-27 05:01:37.777 30564 30564 I FrameworkJumpTable: Successfully loaded all classes
+12-27 05:01:37.795 30564 30564 I FrameworkJumpTable: Successfully loaded all methods
+12-27 05:01:37.797 30564 30564 I FrameworkJumpTable: Successfully loaded all fields
+12-27 05:01:37.797 30564 30564 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 05:03:56.222 30864 30864 I FrameworkJumpTable: Successfully loaded all classes
+12-27 05:03:56.235 30864 30864 I FrameworkJumpTable: Successfully loaded all methods
+12-27 05:03:56.237 30864 30864 I FrameworkJumpTable: Successfully loaded all fields
+12-27 05:03:56.238 30864 30864 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 05:16:50.865 31872 31872 I FrameworkJumpTable: Successfully loaded all classes
+12-27 05:16:50.878 31872 31872 I FrameworkJumpTable: Successfully loaded all methods
+12-27 05:16:50.880 31872 31872 I FrameworkJumpTable: Successfully loaded all fields
+12-27 05:16:50.880 31872 31872 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 05:16:51.421 31934 31975 I FrameworkJumpTable: Successfully loaded all classes
+12-27 05:16:51.437 31934 31975 I FrameworkJumpTable: Successfully loaded all methods
+12-27 05:16:51.438 31934 31975 I FrameworkJumpTable: Successfully loaded all fields
+12-27 05:16:51.439 31934 31975 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 05:16:51.711   618 32015 I chatty  : uid=1000 system_server expire 1 line
+12-27 05:16:51.753 31872 31901 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 05:16:51.754 31872 31901 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 05:16:51.767 31872 31901 E ActivityThread: Failed to find provider info for com.amazon.tv.channelscan
+12-27 05:20:57.738   618   631 I chatty  : uid=1000(system) ActivityManager expire 6 lines
+12-27 05:28:43.953   618   654 I chatty  : uid=1000(system) AlarmManager expire 6 lines
+12-27 05:28:45.307   459   459 I FrameworkJumpTable: Successfully loaded all classes
+12-27 05:28:45.321   459   459 I FrameworkJumpTable: Successfully loaded all methods
+12-27 05:28:45.323   459   459 I FrameworkJumpTable: Successfully loaded all fields
+12-27 05:28:45.323   459   459 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 05:28:50.758   618 22065 I chatty  : uid=1000(system) Binder:618_1D expire 3 lines
+12-27 05:34:13.206   618   678 I chatty  : uid=1000(system) ConnectivitySer expire 4 lines
+12-27 05:39:47.968  2117  2117 I FrameworkJumpTable: Successfully loaded all classes
+12-27 05:39:47.985  2117  2117 I FrameworkJumpTable: Successfully loaded all methods
+12-27 05:39:47.987  2117  2117 I FrameworkJumpTable: Successfully loaded all fields
+12-27 05:39:47.987  2117  2117 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 05:39:49.439  2156  2156 I FrameworkJumpTable: Successfully loaded all classes
+12-27 05:39:49.452  2156  2156 I FrameworkJumpTable: Successfully loaded all methods
+12-27 05:39:49.454  2156  2156 I FrameworkJumpTable: Successfully loaded all fields
+12-27 05:39:49.454  2156  2156 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 05:39:49.482  2156  2156 I AmazonHdmiServiceManager: AmazonHdmiServiceManager created
+12-27 06:01:38.991  4222  4222 I FrameworkJumpTable: Successfully loaded all classes
+12-27 06:01:39.010  4222  4222 I FrameworkJumpTable: Successfully loaded all methods
+12-27 06:01:39.011  4222  4222 I FrameworkJumpTable: Successfully loaded all fields
+12-27 06:01:39.012  4222  4222 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 06:04:55.296   618   618 I chatty  : uid=1000 system_server expire 10 lines
+12-27 06:04:55.577  4503  4503 I FrameworkJumpTable: Successfully loaded all classes
+12-27 06:04:55.589  4503  4503 I FrameworkJumpTable: Successfully loaded all methods
+12-27 06:04:55.592  4503  4503 I FrameworkJumpTable: Successfully loaded all fields
+12-27 06:04:55.592  4503  4503 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 06:29:47.751  6570  6570 I FrameworkJumpTable: Successfully loaded all classes
+12-27 06:29:47.763  6570  6570 I FrameworkJumpTable: Successfully loaded all methods
+12-27 06:29:47.765  6570  6570 I FrameworkJumpTable: Successfully loaded all fields
+12-27 06:29:47.765  6570  6570 I FrameworkJumpTable: Successfully loaded all constructors
+12-27 06:29:47.796  6570  6570 I AmazonHdmiServiceManager: AmazonHdmiServiceManager created
+12-27 06:29:48.212  6613  6637 I FrameworkJumpTable: Successfully loaded all classes
+12-27 06:29:48.234  6613  6637 I FrameworkJumpTable: Successfully loaded all methods

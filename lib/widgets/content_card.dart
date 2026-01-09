@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
@@ -17,7 +18,22 @@ class ContentCard extends StatefulWidget {
 }
 
 class _ContentCardState extends State<ContentCard> {
-  final bool _isFocused = false;
+  bool _isFocused = false;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      setState(() => _isFocused = _focusNode.hasFocus);
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   Color _getColor(String text) {
     final colors = [
@@ -28,24 +44,53 @@ class _ContentCardState extends State<ContentCard> {
     return colors[text.codeUnits.fold(0, (p, c) => p + c) % colors.length];
   }
 
+  void _handleActivate() {
+    widget.onTap(widget.item.url);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        widget.onTap(widget.item.url);
+    return Focus(
+      focusNode: _focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            _handleActivate();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
       },
-      child: Container(
-        width: ContentCard.cardWidth,
-        height: ContentCard.cardHeight,
-        margin: const EdgeInsets.only(right: 12, bottom: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: AppColors.card,
-        ),
-        child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      child: GestureDetector(
+        onTap: _handleActivate,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: ContentCard.cardWidth,
+          height: ContentCard.cardHeight,
+          margin: const EdgeInsets.only(right: 12, bottom: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: AppColors.card,
+            border: _isFocused 
+                ? Border.all(color: AppColors.primary, width: 3)
+                : null,
+            boxShadow: _isFocused 
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.5),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
+          ),
+          transform: _isFocused ? Matrix4.translationValues(0, -4, 0) : Matrix4.identity(),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               // 1. IMAGEM (Poster)
               Expanded(
                 flex: 6,
@@ -85,6 +130,7 @@ class _ContentCardState extends State<ContentCard> {
               )
             ],
         ),
+      ),
       ),
     );
   }

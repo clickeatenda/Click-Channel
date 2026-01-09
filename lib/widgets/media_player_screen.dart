@@ -7,6 +7,10 @@ import '../data/watch_history_service.dart';
 import '../data/epg_service.dart';
 import '../models/epg_program.dart';
 
+import '../data/favorites_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // NOVO import para bypassar erro de build
+import '../data/jellyfin_service.dart'; // Garantir import do service
+
 /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
 class MediaPlayerScreen extends StatefulWidget {
   final String url;
@@ -18,13 +22,19 @@ class MediaPlayerScreen extends StatefulWidget {
     required this.url,
     this.item,
     this.title,
+    this.playlist,
+    this.playlistIndex = 0,
   });
+
+  final List<ContentItem>? playlist;
+  final int playlistIndex;
 
   @override
   State<MediaPlayerScreen> createState() => _MediaPlayerScreenState();
 }
 
 class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+  // ... (campos existentes)
   late final Player _player;
   late final VideoController _controller;
   
@@ -36,9 +46,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   bool _showAudioOptions = false;
   bool _showSubtitleOptions = false;
   bool _showFitOptions = false;
+  bool isFavorite = false; // Novo estado
   
   // Informações de mídia
   String _videoQuality = 'Carregando...';
+  // ... (restante dos campos)
   String _videoCodec = '';
   String _audioCodec = '';
   String _currentAudio = 'Padrão';
@@ -53,9 +65,15 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   EpgProgram? _currentEpgProgram;
   EpgProgram? _nextEpgProgram;
   
+  // Playlist Autoplay
+  List<ContentItem> _playlist = [];
+  int _currentIndex = 0;
+  
   // Opções de ajuste de tela
   BoxFit _videoFit = BoxFit.contain;
   int _fitIndex = 0;
+  // ... (resto dos campos)
+
   final List<Map<String, dynamic>> _fitOptions = [
     {'fit': BoxFit.contain, 'label': 'Ajustar', 'icon': Icons.fit_screen},
     {'fit': BoxFit.cover, 'label': 'Preencher', 'icon': Icons.crop_free},
@@ -69,18 +87,223 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   bool _isPlaying = false;
   bool _isBuffering = false;
   
+  // FocusNodes
+  final FocusNode _playPauseFocusNode = FocusNode();
+  final FocusNode _rootFocusNode = FocusNode(); // Root for keyboard listener
+  final FocusNode _rewindFocusNode = FocusNode();
+  final FocusNode _forwardFocusNode = FocusNode();
+  final FocusNode _audioFocusNode = FocusNode();
+  final FocusNode _subtitleFocusNode = FocusNode();
+  final FocusNode _fitFocusNode = FocusNode();
+  final FocusNode _infoFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
-    _initPlayer();
+    
+    try {
+      if (widget.item != null) {
+        isFavorite = FavoritesService.isFavorite(widget.item!);
+      }
+      _playlist = widget.playlist ?? (widget.item != null ? [widget.item!] : []);
+      _currentIndex = widget.playlistIndex;
+      
+      // Delay init para dar tempo ao widget tree estabilizar (importante no Firestick)
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _initPlayer().catchError((e) {
+            print('❌ Erro crítico ao inicializar player: $e');
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+                _errorMessage = 'Falha ao inicializar player: $e';
+              });
+            }
+          });
+        }
+      });
+    } catch (e) {
+      print('❌ Erro no initState: $e');
+      _hasError = true;
+      _errorMessage = 'Erro ao inicializar tela: $e';
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (widget.item == null) return;
+    await FavoritesService.toggleFavorite(widget.item!);
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+    // Feedback é mostrado via ícone preenchido
+  }
+  
+  // ... (método _initPlayer original inalterado) ...
+
+  // ... (dentro de _buildTopBar) ...
+  
+  /// CAMADA SUPERIOR: Voltar | Favoritos | Info
+  Widget _buildTopBar() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 8,
+          left: 16,
+          right: 16,
+          bottom: 8,
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+          ),
+        ),
+        child: Row(
+          children: [
+            // Título
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title ?? widget.item?.title ?? 'Reproduzindo',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    _videoQuality,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(width: 16),
+            
+            // Botões da camada superior
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // VOLTAR
+                _buildTopButton(
+                  icon: Icons.arrow_back,
+                  label: 'Voltar',
+                  onPressed: () => Navigator.pop(context),
+                  onDownPressed: () => _rewindFocusNode.requestFocus(),
+                ),
+                const SizedBox(width: 12),
+                
+                // FAVORITOS
+                if (widget.item != null)
+                  _buildTopButton(
+                    icon: isFavorite ? Icons.favorite : Icons.favorite_border,
+                    label: 'Favorito',
+                    color: isFavorite ? Colors.red : Colors.white,
+                    onPressed: _toggleFavorite,
+                    onDownPressed: () => _playPauseFocusNode.requestFocus(),
+                  ),
+                const SizedBox(width: 12),
+                
+                // INFORMAÇÃO
+                _buildTopButton(
+                  icon: Icons.info_outline,
+                  label: 'Info',
+                  color: _showInfo ? Colors.blueAccent : Colors.white,
+                  onPressed: () => setState(() {
+                    _showInfo = !_showInfo;
+                    _showAudioOptions = false;
+                    _showSubtitleOptions = false;
+                    _showFitOptions = false;
+                  }),
+                  onDownPressed: () => _forwardFocusNode.requestFocus(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildTopButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    required VoidCallback onDownPressed,
+    Color color = Colors.white,
+  }) {
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          // Enter/Select - ativa o botão
+          if (event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onPressed();
+            return KeyEventResult.handled;
+          }
+          // Seta para baixo - vai para camada do meio
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            onDownPressed();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(builder: (ctx) {
+        final hasFocus = Focus.of(ctx).hasFocus;
+        return GestureDetector(
+          onTap: onPressed,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: hasFocus ? Colors.blueAccent.withOpacity(0.7) : Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: hasFocus ? Colors.blueAccent : Colors.transparent,
+                width: hasFocus ? 2 : 0,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: hasFocus ? Colors.white : color, size: 22),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: hasFocus ? Colors.white : color,
+                    fontSize: 12,
+                    fontWeight: hasFocus ? FontWeight.bold : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    );
   }
   
   Future<void> _initPlayer() async {
     try {
-      // Criar player com configurações otimizadas para 4K/HDR
+      print('🎬 Iniciando player para: ${widget.url}');
+      
+      // Criar player com configurações otimizadas (buffer reduzido para Firestick)
       _player = Player(
         configuration: const PlayerConfiguration(
-          bufferSize: 64 * 1024 * 1024, // 64MB buffer para 4K
+          bufferSize: 32 * 1024 * 1024, // 32MB buffer (reduzido para Firestick)
         ),
       );
       
@@ -108,10 +331,18 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       
       _player.stream.error.listen((error) {
         if (mounted && error.isNotEmpty) {
+          print('❌ Player error: $error');
           setState(() {
             _hasError = true;
             _errorMessage = error;
           });
+        }
+      });
+      
+      // Auto-Play Listener
+      _player.stream.completed.listen((completed) {
+        if (completed && mounted) {
+           _onVideoCompleted();
         }
       });
       
@@ -173,62 +404,173 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       _player.stream.height.listen((height) => _updateVideoInfo());
       
       // Verificar posição salva
-      final savedPosition = await WatchHistoryService.getSavedPosition(widget.url);
+      final savedPosition = await WatchHistoryService.getSavedPosition(widget.url).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => null,
+      );
       
       // Carregar EPG se for canal
       if (widget.item != null && widget.item!.type == 'channel') {
-        // CRÍTICO: Garante que EPG está carregado antes de buscar
-        final epgUrl = EpgService.epgUrl;
-        if (epgUrl != null && !EpgService.isLoaded) {
-          try {
-            await EpgService.loadEpg(epgUrl);
-          } catch (e) {
-            print('⚠️ Erro ao carregar EPG no player: $e');
+        try {
+          // CRÍTICO: Garante que EPG está carregado antes de buscar
+          final epgUrl = EpgService.epgUrl;
+          if (epgUrl != null && !EpgService.isLoaded) {
+            await EpgService.loadEpg(epgUrl).timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                print('⏱️ Timeout ao carregar EPG');
+              },
+            );
           }
+          
+          _epgChannel = EpgService.findChannelByName(widget.item!.title);
+          if (_epgChannel != null) {
+            _currentEpgProgram = _epgChannel!.currentProgram;
+            _nextEpgProgram = _epgChannel!.nextProgram;
+            print('✅ EPG carregado para canal "${widget.item!.title}": ${_currentEpgProgram?.title ?? "Sem programa"}');
+          } else {
+            print('⚠️ EPG não encontrado para canal "${widget.item!.title}"');
+          }
+          if (mounted) setState(() {});
+        } catch (e) {
+          print('⚠️ Erro ao carregar EPG no player: $e');
         }
-        
-        _epgChannel = EpgService.findChannelByName(widget.item!.title);
-        if (_epgChannel != null) {
-          _currentEpgProgram = _epgChannel!.currentProgram;
-          _nextEpgProgram = _epgChannel!.nextProgram;
-          print('✅ EPG carregado para canal "${widget.item!.title}": ${_currentEpgProgram?.title ?? "Sem programa"}');
-        } else {
-          print('⚠️ EPG não encontrado para canal "${widget.item!.title}"');
-        }
-        if (mounted) setState(() {});
       }
       
-      // Abrir mídia
-      await _player.open(
-        Media(
-          widget.url,
-          httpHeaders: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          },
-        ),
+      // Abrir mídia com timeout
+      print('🎬 Abrindo mídia: ${_playlist[_currentIndex].url}');
+      
+      // Mídia Principal
+      final media = Media(
+        _playlist[_currentIndex].url,
+        httpHeaders: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
       );
+      
+      await _player.open(media, play: false).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('⏱️ Timeout ao abrir mídia');
+          throw Exception('Timeout ao carregar vídeo. Verifique sua conexão.');
+        },
+      );
+      
+      // Carregar Legendas do Jellyfin (se for item do Jellyfin)
+      if (widget.item != null && widget.item!.group == 'Jellyfin') {
+        try {
+          final mediaInfo = await JellyfinService.getMediaInfo(widget.item!.id);
+          if (mediaInfo != null && mediaInfo['MediaSources'] != null) {
+            final source = mediaInfo['MediaSources'][0]; // Assume primeira fonte
+            if (source['MediaStreams'] != null) {
+              final streams = source['MediaStreams'] as List;
+              final subtitles = streams.where((s) => s['Type'] == 'Subtitle').toList();
+              
+              print('📝 Encontradas ${subtitles.length} legendas externas no Jellyfin');
+              
+              for (var sub in subtitles) {
+                final index = (sub['Index'] as num?)?.toInt() ?? 0;
+                final title = sub['Title'] ?? sub['Language'] ?? 'Legenda $index';
+                final codec = sub['Codec'] ?? 'vtt';
+                
+                // Prioriza VTT e SRT
+                String format = 'vtt';
+                if (codec == 'srt' || codec == 'subrip') format = 'srt';
+                
+                // BYPASS: Ler credenciais direto do storage para evitar erro de build
+                const storage = FlutterSecureStorage();
+                final baseUrl = await storage.read(key: 'jellyfin_url') ?? '';
+                final token = await storage.read(key: 'jellyfin_access_token') ?? '';
+                
+                if (baseUrl.isNotEmpty && token.isNotEmpty) {
+                    final subUrl = '$baseUrl/Videos/${widget.item!.id}/$index/Subtitles.$format?api_key=$token';
+                    
+                    print('➕ Adicionando legenda externa: $title ($format) -> $subUrl');
+                    
+                    // Adiciona como track externa
+                    await _player.setSubtitleTrack(
+                      SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
+                    );
+                }
+              }
+            }
+          }
+        } catch (e) {
+          print('⚠️ Erro ao carregar legendas do Jellyfin: $e');
+        }
+      }
+      
+      print('✅ Mídia pronta. Iniciando playback...');
+      await _player.play();
       
       // Seek para posição salva
       if (savedPosition != null && savedPosition.inSeconds > 0) {
-        await _player.seek(savedPosition);
+        await _player.seek(savedPosition).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => print('⏱️ Timeout ao fazer seek'),
+        );
       }
       
       if (mounted) {
         setState(() => _isInitialized = true);
+        print('✅ Player inicializado');
       }
       
       // Auto-hide controls após 5 segundos
       _startControlsTimer();
       
-    } catch (e) {
-      print('Erro ao inicializar player: $e');
+    } catch (e, stackTrace) {
+      print('❌ Erro ao inicializar player: $e');
+      print('Stack: $stackTrace');
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = 'Falha ao carregar o vídeo: $e';
+          _errorMessage = 'Falha ao carregar o vídeo: ${e.toString()}';
         });
       }
     }
+  }
+
+  void _onVideoCompleted() {
+    _markAsWatched();
+    if (_playlist.isNotEmpty && _currentIndex < _playlist.length - 1) {
+       _playNext();
+    } else {
+       if (widget.item != null && widget.item!.isSeries) {
+          Navigator.pop(context);
+       }
+    }
+  }
+
+  void _markAsWatched() {
+     if (_currentIndex < _playlist.length) {
+       final item = _playlist[_currentIndex];
+       WatchHistoryService.addToWatched(item);
+     }
+  }
+
+  void _playNext() {
+      if (!mounted) return;
+      setState(() {
+         _currentIndex++;
+         _hasError = false;
+         _errorMessage = '';
+         _position = Duration.zero;
+      });
+      
+      final nextItem = _playlist[_currentIndex];
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+           content: Text('Reproduzindo: ${nextItem.title} - ${nextItem.group}'), 
+           duration: const Duration(seconds: 3),
+           behavior: SnackBarBehavior.floating,
+        )
+      );
+      
+      _player.open(Media(nextItem.url, httpHeaders: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      }));
   }
   
   void _updateVideoInfo() {
@@ -347,6 +689,14 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    _playPauseFocusNode.dispose();
+    _rootFocusNode.dispose();
+    _rewindFocusNode.dispose();
+    _forwardFocusNode.dispose();
+    _audioFocusNode.dispose();
+    _subtitleFocusNode.dispose();
+    _fitFocusNode.dispose();
+    _infoFocusNode.dispose();
     super.dispose();
   }
 
@@ -393,197 +743,163 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
   
   Widget _buildPlayerView() {
-    return KeyboardListener(
-      focusNode: FocusNode()..requestFocus(),
-      onKeyEvent: (event) {
-        if (event is KeyDownEvent) {
-          final key = event.logicalKey;
+    return Focus(
+      focusNode: _rootFocusNode,
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        
+        // Mapeia teclas
+        final key = event.logicalKey;
+        
+        // Atalho global: Voltar
+        if (key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.backspace) {
+          Navigator.pop(context);
+          return KeyEventResult.handled;
+        }
+
+        // Se controles ocultos
+        if (!_showControls) {
+          // Qualquer tecla acorda a UI
+          setState(() => _showControls = true);
+          _startControlsTimer();
           
-          // CRÍTICO: Se painéis de opções estão abertos, NÃO intercepta teclas de navegação
-          // Deixa o Focus Widget lidar com a navegação entre opções
-          final hasOpenPanel = _showInfo || _showAudioOptions || _showSubtitleOptions || _showFitOptions;
-          
-          if (hasOpenPanel) {
-            // Com painel aberto, só intercepta teclas específicas (não navegação)
-            if (key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.backspace) {
-              // Fecha painel ou sai do player
-              if (_showInfo || _showAudioOptions || _showSubtitleOptions || _showFitOptions) {
-                setState(() {
-                  _showInfo = false;
-                  _showAudioOptions = false;
-                  _showSubtitleOptions = false;
-                  _showFitOptions = false;
-                });
-              } else {
-                Navigator.pop(context);
-              }
-            } else if (key == LogicalKeyboardKey.keyI) {
-              // Tecla 'I' para toggle de informações
-              setState(() {
-                _showInfo = !_showInfo;
-                _showAudioOptions = false;
-                _showSubtitleOptions = false;
-                _showFitOptions = false;
-              });
+          // Solicita foco para o botão principal (Play/Pause)
+          // Isso permite que a navegação comece imediatamente
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_playPauseFocusNode.canRequestFocus) {
+              _playPauseFocusNode.requestFocus();
             }
-            // Para outras teclas com painel aberto, não intercepta (deixa Focus lidar)
-            return;
-          }
+          });
           
-          // SEM painéis abertos: intercepta teclas para controles do player
-          // Mostra controles quando qualquer tecla é pressionada
-          if (!_showControls) {
-            setState(() => _showControls = true);
-            _startControlsTimer();
-          }
-          
-          // Mapeia teclas do controle remoto para ações do player
-          if (key == LogicalKeyboardKey.select || 
-              key == LogicalKeyboardKey.enter ||
-              key == LogicalKeyboardKey.space) {
-            _togglePlayPause();
-          } else if (key == LogicalKeyboardKey.arrowLeft) {
+          // Se for setas, executamos a ação E mostramos a UI?
+          // Padrão TV: Setas enquanto oculto = Seek direto (sem mostrar UI focável, talvez info overlay)
+          // Mas aqui decidimos mostrar a UI.
+          // Vamos permitir que o primeiro clique apenas mostre a UI para não causar ação acidental.
+          // EXCETO setas, que usuário espera seek imediato.
+          if (key == LogicalKeyboardKey.arrowLeft) {
             _seekBackward();
-          } else if (key == LogicalKeyboardKey.arrowRight) {
-            _seekForward();
-          } else if (key == LogicalKeyboardKey.escape || 
-                     key == LogicalKeyboardKey.backspace) {
-            Navigator.pop(context);
-          } else if (key == LogicalKeyboardKey.keyI) {
-            // Tecla 'I' para informações
-            setState(() {
+            return KeyEventResult.handled;
+          } 
+          if (key == LogicalKeyboardKey.arrowRight) {
+             _seekForward();
+             return KeyEventResult.handled;
+          }
+          if (key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.space) {
+             // Apenas mostra controles, não pausa ainda.
+             return KeyEventResult.handled;
+          }
+          
+          // Outras teclas: apenas mostrou UI
+          return KeyEventResult.handled;
+        }
+        
+        // Se controles VISÍVEIS:
+        // Deixamos o sistema de Foco nativo lidar com navegação (Setas) e ativação (Enter)
+        // A menos que sejam atalhos específicos
+        
+        if (key == LogicalKeyboardKey.keyI) {
+           setState(() {
               _showInfo = !_showInfo;
               _showAudioOptions = false;
               _showSubtitleOptions = false;
               _showFitOptions = false;
-            });
-          }
-          // Para outras teclas, apenas mostra controles (já feito acima)
+           });
+           return KeyEventResult.handled;
         }
+        
+        // Ignora setas e enter para que os botões focados os recebam
+        return KeyEventResult.ignored;
       },
       child: GestureDetector(
         onTap: _toggleControls,
         child: Stack(
-        children: [
-          // Vídeo
-          Center(
-            child: _isInitialized
-                ? Video(
-                    controller: _controller,
-                    controls: NoVideoControls,
-                    fit: _videoFit,
-                  )
-                : const CircularProgressIndicator(color: Colors.blueAccent),
-          ),
-          
-          // Buffering indicator
-          if (_isBuffering)
-            const Center(
-              child: CircularProgressIndicator(color: Colors.white),
+          children: [
+            // Vídeo
+            Center(
+              child: _isInitialized
+                  ? Video(
+                      controller: _controller,
+                      controls: NoVideoControls,
+                      fit: _videoFit,
+                    )
+                  : const CircularProgressIndicator(color: Colors.blueAccent),
             ),
-          
-          // Controles customizados
-          if (_showControls) ...[
-            _buildTopBar(),
-            _buildCenterControls(),
-            _buildBottomBar(),
+            
+            // Buffering indicator
+            if (_isBuffering)
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            
+            // Controles customizados
+            if (_showControls) ...[
+              _buildTopBar(),
+              _buildCenterControls(),
+              _buildBottomBar(),
+            ],
+            
+            // Painel de informações
+            if (_showInfo) _buildInfoPanel(),
+            
+            // Opções de áudio
+            if (_showAudioOptions) _buildAudioOptionsPanel(),
+            
+            // Opções de legenda
+            if (_showSubtitleOptions) _buildSubtitleOptionsPanel(),
+            
+            // Opções de ajuste de tela
+            if (_showFitOptions) _buildFitOptionsPanel(),
           ],
-          
-          // Painel de informações
-          if (_showInfo) _buildInfoPanel(),
-          
-          // Opções de áudio
-          if (_showAudioOptions) _buildAudioOptionsPanel(),
-          
-          // Opções de legenda
-          if (_showSubtitleOptions) _buildSubtitleOptionsPanel(),
-          
-          // Opções de ajuste de tela
-          if (_showFitOptions) _buildFitOptionsPanel(),
-        ],
-      ),
+        ),
       ),
     );
   }
   
-  Widget _buildTopBar() {
+
+  
+  /// CAMADA DO MEIO: Retroceder | Play/Pause | Avançar
+  Widget _buildCenterControls() {
     return Positioned(
-      top: 0,
+      top: 100,
       left: 0,
       right: 0,
-      child: Container(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 8,
-          left: 16,
-          right: 16,
-          bottom: 8,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
-          ),
-        ),
+      bottom: 140,
+      child: Center(
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+            // RETROCEDER 10s
+            _buildCenterButton(
+              focusNode: _rewindFocusNode,
+              icon: Icons.replay_10,
+              size: 44,
+              onPressed: _seekBackward,
+              // Navegação vertical
+              onUpPressed: () {}, // Vai para TopBar - deixar vazio por enquanto, navegação natural
+              onDownPressed: () => _audioFocusNode.requestFocus(),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.title ?? widget.item?.title ?? 'Reproduzindo',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    _videoQuality,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-              ),
+            const SizedBox(width: 48),
+            // PLAY/PAUSE (principal)
+            _buildCenterButton(
+              focusNode: _playPauseFocusNode,
+              icon: _isPlaying ? Icons.pause : Icons.play_arrow,
+              size: 64,
+              onPressed: _togglePlayPause,
+              isPrimary: true,
+              onUpPressed: () {}, // Navegação natural para cima
+              onDownPressed: () => _subtitleFocusNode.requestFocus(),
             ),
-            // Botão de informações
-            Focus(
-              onKeyEvent: (node, event) {
-                if (event is KeyDownEvent &&
-                    (event.logicalKey == LogicalKeyboardKey.select ||
-                     event.logicalKey == LogicalKeyboardKey.enter ||
-                     event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-                  setState(() {
-                    _showInfo = !_showInfo;
-                    _showAudioOptions = false;
-                    _showSubtitleOptions = false;
-                    _showFitOptions = false;
-                  });
-                  return KeyEventResult.handled;
-                }
-                return KeyEventResult.ignored;
-              },
-              child: IconButton(
-                icon: Icon(
-                  Icons.info_outline,
-                  color: _showInfo ? Colors.blueAccent : Colors.white,
-                ),
-                onPressed: () => setState(() {
-                  _showInfo = !_showInfo;
-                  _showAudioOptions = false;
-                  _showSubtitleOptions = false;
-                  _showFitOptions = false;
-                }),
-                focusColor: Colors.blueAccent,
-              ),
+            const SizedBox(width: 48),
+            // AVANÇAR 10s
+            _buildCenterButton(
+              focusNode: _forwardFocusNode,
+              icon: Icons.forward_10,
+              size: 44,
+              onPressed: _seekForward,
+              onUpPressed: () {}, // Navegação natural para cima
+              onDownPressed: () => _fitFocusNode.requestFocus(),
             ),
           ],
         ),
@@ -591,84 +907,73 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     );
   }
   
-  Widget _buildCenterControls() {
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Retroceder 10s
-          Focus(
-            onKeyEvent: (node, event) {
-              if (event is KeyDownEvent &&
-                  (event.logicalKey == LogicalKeyboardKey.select ||
-                   event.logicalKey == LogicalKeyboardKey.enter ||
-                   event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-                _seekBackward();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: IconButton(
-              icon: const Icon(Icons.replay_10, color: Colors.white, size: 40),
-              onPressed: _seekBackward,
-              focusColor: Colors.blueAccent,
-            ),
-          ),
-          const SizedBox(width: 32),
-          // Play/Pause
-          Focus(
-            autofocus: true,
-            onKeyEvent: (node, event) {
-              if (event is KeyDownEvent &&
-                  (event.logicalKey == LogicalKeyboardKey.select ||
-                   event.logicalKey == LogicalKeyboardKey.enter ||
-                   event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-                _togglePlayPause();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+  Widget _buildCenterButton({
+    required FocusNode focusNode,
+    required IconData icon,
+    required double size,
+    required VoidCallback onPressed,
+    required VoidCallback onUpPressed,
+    required VoidCallback onDownPressed,
+    bool isPrimary = false,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          // Enter/Select - ativa o botão
+          if (event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onPressed();
+            return KeyEventResult.handled;
+          }
+          // Seta para baixo - vai para camada inferior (BottomBar)
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            onDownPressed();
+            return KeyEventResult.handled;
+          }
+          // Setas esquerda/direita fazem seek
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            _seekBackward();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            _seekForward();
+            return KeyEventResult.handled;
+          }
+          // Seta para cima - volta para camada superior (natural focus traversal)
+          // Deixamos o sistema lidar com isso
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(builder: (ctx) {
+        final hasFocus = Focus.of(ctx).hasFocus;
+        return GestureDetector(
+          onTap: onPressed,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: EdgeInsets.all(isPrimary ? 20 : 14),
+            decoration: BoxDecoration(
+              color: hasFocus 
+                  ? Colors.blueAccent.withOpacity(0.7) 
+                  : (isPrimary ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.1)),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: hasFocus ? Colors.blueAccent : Colors.white.withOpacity(isPrimary ? 0.5 : 0.3), 
+                width: hasFocus ? 3 : (isPrimary ? 2 : 1),
               ),
-              child: IconButton(
-                icon: Icon(
-                  _isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 56,
-                ),
-                onPressed: _togglePlayPause,
-                focusColor: Colors.blueAccent,
-              ),
+              boxShadow: hasFocus ? [
+                const BoxShadow(color: Colors.blueAccent, blurRadius: 20, spreadRadius: 3)
+              ] : null,
             ),
+            child: Icon(icon, color: Colors.white, size: size),
           ),
-          const SizedBox(width: 32),
-          // Avançar 10s
-          Focus(
-            onKeyEvent: (node, event) {
-              if (event is KeyDownEvent &&
-                  (event.logicalKey == LogicalKeyboardKey.select ||
-                   event.logicalKey == LogicalKeyboardKey.enter ||
-                   event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-                _seekForward();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: IconButton(
-              icon: const Icon(Icons.forward_10, color: Colors.white, size: 40),
-              onPressed: _seekForward,
-              focusColor: Colors.blueAccent,
-            ),
-          ),
-        ],
-      ),
+        );
+      }),
     );
   }
   
+  /// CAMADA INFERIOR: Áudio | Legenda | Ajuste | Info
   Widget _buildBottomBar() {
     return Positioned(
       bottom: 0,
@@ -680,7 +985,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           gradient: LinearGradient(
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
-            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+            colors: [Colors.black.withOpacity(0.8), Colors.transparent],
           ),
         ),
         child: Column(
@@ -712,13 +1017,14 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             // Botões de opções
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Áudio
-                _buildOptionButton(
+                // ÁUDIO (primeiro - não tem esquerda)
+                _buildBottomButton(
+                  focusNode: _audioFocusNode,
                   icon: Icons.audiotrack,
                   label: _currentAudio,
                   onTap: () => setState(() {
@@ -728,9 +1034,12 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                     _showInfo = false;
                   }),
                   isActive: _showAudioOptions,
+                  onUpPressed: () => _rewindFocusNode.requestFocus(),
+                  onRightPressed: () => _subtitleFocusNode.requestFocus(),
                 ),
-                // Legenda
-                _buildOptionButton(
+                // LEGENDA
+                _buildBottomButton(
+                  focusNode: _subtitleFocusNode,
                   icon: Icons.subtitles,
                   label: _currentSubtitle,
                   onTap: () => setState(() {
@@ -740,9 +1049,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                     _showInfo = false;
                   }),
                   isActive: _showSubtitleOptions,
+                  onUpPressed: () => _playPauseFocusNode.requestFocus(),
+                  onLeftPressed: () => _audioFocusNode.requestFocus(),
+                  onRightPressed: () => _fitFocusNode.requestFocus(),
                 ),
-                // Ajuste de tela
-                _buildOptionButton(
+                // AJUSTE DE TELA
+                _buildBottomButton(
+                  focusNode: _fitFocusNode,
                   icon: _fitOptions[_fitIndex]['icon'] as IconData,
                   label: _fitOptions[_fitIndex]['label'] as String,
                   onTap: () => setState(() {
@@ -752,9 +1065,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                     _showInfo = false;
                   }),
                   isActive: _showFitOptions,
+                  onUpPressed: () => _forwardFocusNode.requestFocus(),
+                  onLeftPressed: () => _subtitleFocusNode.requestFocus(),
+                  onRightPressed: () => _infoFocusNode.requestFocus(),
                 ),
-                // Qualidade (info)
-                _buildOptionButton(
+                // QUALIDADE/INFO (último - não tem direita)
+                _buildBottomButton(
+                  focusNode: _infoFocusNode,
                   icon: Icons.high_quality,
                   label: _videoQuality.split(' ').first,
                   onTap: () => setState(() {
@@ -764,11 +1081,99 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                     _showFitOptions = false;
                   }),
                   isActive: _showInfo,
+                  onUpPressed: () => _forwardFocusNode.requestFocus(),
+                  onLeftPressed: () => _fitFocusNode.requestFocus(),
                 ),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+  
+  /// Botão da camada inferior com navegação vertical e horizontal
+  Widget _buildBottomButton({
+    required FocusNode focusNode,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required VoidCallback onUpPressed,
+    VoidCallback? onLeftPressed,
+    VoidCallback? onRightPressed,
+    bool isActive = false,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          // Enter/Select - ativa o botão
+          if (event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.space || 
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onTap();
+            return KeyEventResult.handled;
+          }
+          // Seta para cima - volta para camada do meio
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            onUpPressed();
+            return KeyEventResult.handled;
+          }
+          // Seta para esquerda - navega para botão anterior
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft && onLeftPressed != null) {
+            onLeftPressed();
+            return KeyEventResult.handled;
+          }
+          // Seta para direita - navega para próximo botão
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight && onRightPressed != null) {
+            onRightPressed();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final hasFocus = Focus.of(context).hasFocus;
+          return GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: hasFocus 
+                    ? Colors.blueAccent.withOpacity(0.7) 
+                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: hasFocus 
+                      ? Colors.blueAccent 
+                      : (isActive ? Colors.blueAccent : Colors.white24),
+                  width: hasFocus ? 3 : 1,
+                ),
+                boxShadow: hasFocus ? [
+                   const BoxShadow(color: Colors.blueAccent, blurRadius: 10, spreadRadius: 2)
+                ] : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70), size: 24),
+                  const SizedBox(width: 10),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70),
+                      fontSize: 14,
+                      fontWeight: hasFocus ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
       ),
     );
   }
@@ -784,39 +1189,194 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.select ||
              event.logicalKey == LogicalKeyboardKey.enter ||
-             event.logicalKey == LogicalKeyboardKey.space)) {
+             event.logicalKey == LogicalKeyboardKey.space || 
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
           onTap();
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
       },
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isActive ? Colors.blueAccent : Colors.transparent,
-              width: 2,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: isActive ? Colors.blueAccent : Colors.white, size: 20),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isActive ? Colors.blueAccent : Colors.white,
-                  fontSize: 12,
+      child: Builder(
+        builder: (context) {
+          final hasFocus = Focus.of(context).hasFocus;
+          return GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: hasFocus 
+                    ? Colors.white.withOpacity(0.3) 
+                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: hasFocus 
+                      ? Colors.white 
+                      : (isActive ? Colors.blueAccent : Colors.transparent),
+                  width: hasFocus ? 2 : 2,
                 ),
+                boxShadow: hasFocus ? [
+                   BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 4, spreadRadius: 1)
+                ] : null,
               ),
-            ],
-          ),
-        ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white), size: 20),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      ),
+    );
+  }
+  
+  /// Botão de opção simples com FocusNode dedicado
+  Widget _buildSimpleOptionButton({
+    required FocusNode focusNode,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.space || 
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final hasFocus = Focus.of(context).hasFocus;
+          return GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: hasFocus 
+                    ? Colors.white.withOpacity(0.35) 
+                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: hasFocus 
+                      ? Colors.white 
+                      : (isActive ? Colors.blueAccent : Colors.white24),
+                  width: hasFocus ? 3 : 1,
+                ),
+                boxShadow: hasFocus ? [
+                   const BoxShadow(color: Colors.white24, blurRadius: 8, spreadRadius: 2)
+                ] : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70), size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70),
+                      fontSize: 13,
+                      fontWeight: hasFocus ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      ),
+    );
+  }
+  
+  /// Option button with explicit FocusNode and up navigation support
+  Widget _buildOptionButtonWithFocus({
+    required FocusNode focusNode,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required VoidCallback onUpPressed,
+    bool isActive = false,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          // Enter/Select - ativa o botão
+          if (event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.space || 
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onTap();
+            return KeyEventResult.handled;
+          }
+          // Seta para cima - volta aos controles centrais
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            onUpPressed();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final hasFocus = Focus.of(context).hasFocus;
+          return GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: hasFocus 
+                    ? Colors.white.withOpacity(0.4) 
+                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: hasFocus 
+                      ? Colors.white 
+                      : (isActive ? Colors.blueAccent : Colors.white24),
+                  width: hasFocus ? 3 : 1,
+                ),
+                boxShadow: hasFocus ? [
+                   const BoxShadow(color: Colors.white30, blurRadius: 8, spreadRadius: 2)
+                ] : null,
+              ),
+              transform: hasFocus ? Matrix4.identity().scaled(1.1) : Matrix4.identity(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70), size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70),
+                      fontSize: 13,
+                      fontWeight: hasFocus ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
       ),
     );
   }

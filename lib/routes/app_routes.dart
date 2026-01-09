@@ -32,7 +32,6 @@ class AppRoutes {
   static const String category = '/category';
   static const String epg = '/epg';
   static const String splash = '/splash';
-  static const String debugTmdb = '/debug-tmdb';
 
   // Route generator
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
@@ -104,6 +103,8 @@ class AppRoutes {
           final args = routeSettings.arguments;
           String categoryName = 'Ação';
           String type = 'movie';
+          bool isJellyfin = false;
+          String? libraryId;
 
           if (args is Map) {
             if (args['categoryName'] is String) {
@@ -112,12 +113,20 @@ class AppRoutes {
             if (args['type'] is String) {
               type = args['type'] as String;
             }
+            if (args['isJellyfin'] is bool) {
+              isJellyfin = args['isJellyfin'] as bool;
+            }
+            if (args['libraryId'] is String) {
+              libraryId = args['libraryId'] as String;
+            }
           }
 
           return MaterialPageRoute(
             builder: (_) => CategoryScreen(
               categoryName: categoryName,
               type: type,
+              isJellyfin: isJellyfin,
+              libraryId: libraryId,
             ),
           );
 

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async'; // Para Timer debounce
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 import '../data/m3u_service.dart';
 import '../widgets/media_player_screen.dart';
 import 'series_detail_screen.dart';
+import 'movie_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -18,9 +20,11 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
-  List<ContentItem> _results = [];
+  List<ContentItem> _rawResults = []; // Resultados SEM filtro
+  List<ContentItem> _results = [];    // Resultados FILTRADOS (exibidos)
   bool _loading = false;
   String _lastQuery = '';
+  Timer? _debounce;
   
   // Filtros
   String _typeFilter = 'all'; // all, movie, series, channel
@@ -40,21 +44,38 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _searchFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _performSearch(String query) async {
-    if (query.isEmpty || query.length < 2) {
-      setState(() {
-        _results = [];
-        _lastQuery = '';
-      });
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    if (query.length < 2) {
+      if (_results.isNotEmpty) {
+        setState(() {
+          _rawResults = [];
+          _results = [];
+          _loading = false;
+          _lastQuery = '';
+        });
+      }
       return;
     }
-    
-    if (query == _lastQuery) return;
+
+    // Debounce de 800ms
+    _debounce = Timer(const Duration(milliseconds: 800), () {
+      _performSearch(query);
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty || query.length < 2) return;
+    // Removemos a verificação rigida de _lastQuery aqui para permitir retry, 
+    // mas idealmente só buscamos se mudar.
+    if (query == _lastQuery && _rawResults.isNotEmpty) return; 
     
     setState(() {
       _loading = true;
@@ -62,18 +83,19 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      // Buscar em todas as categorias
-      final allItems = await M3uService.searchAllContent(query, maxResults: 200);
+      final allItems = await M3uService.searchAllContent(query, maxResults: 300);
       
       if (mounted) {
         setState(() {
-          _results = _applyFilters(allItems);
+          _rawResults = allItems; // Salva o resultado bruto
+          _results = _applyFilters(allItems); // Aplica filtros
           _loading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          _rawResults = [];
           _results = [];
           _loading = false;
         });
@@ -89,28 +111,18 @@ class _SearchScreenState extends State<SearchScreen> {
         if (_typeFilter == 'series' && !item.isSeries && item.type != 'series') return false;
         if (_typeFilter == 'channel' && item.type != 'channel') return false;
       }
-      
-      // Filtro por qualidade
-      if (_qualityFilter != 'all') {
-        final q = item.quality.toLowerCase();
-        if (_qualityFilter == '4k') {
-          // Só mostra 4K/UHD
-          if (!q.contains('4k') && !q.contains('uhd')) return false;
-        } else if (_qualityFilter == 'fhd') {
-          // Só mostra FHD/FullHD (exclui 4K)
-          if (!q.contains('fhd') && !q.contains('fullhd')) return false;
-        } else if (_qualityFilter == 'hd') {
-          // Mostra HD (inclui FHD e 4K também, pois são HD)
-          if (!q.contains('hd') && !q.contains('4k') && !q.contains('uhd')) return false;
-        }
-      }
-      
       return true;
     }).toList();
   }
 
   void _updateFilters() {
-    if (_lastQuery.isNotEmpty) {
+    // Reaplica os filtros usando a lista bruta JÁ carregada
+    if (_rawResults.isNotEmpty) {
+      setState(() {
+        _results = _applyFilters(_rawResults);
+      });
+    } else if (_lastQuery.isNotEmpty) {
+      // Se por acaso não tiver rawResults mas tiver query (raro), busca de novo
       _performSearch(_lastQuery);
     }
   }
@@ -160,25 +172,16 @@ class _SearchScreenState extends State<SearchScreen> {
                                     icon: const Icon(Icons.clear, color: Colors.white54),
                                     onPressed: () {
                                       _searchController.clear();
-                                      setState(() {
-                                        _results = [];
-                                        _lastQuery = '';
-                                      });
+                                      _onSearchChanged('');
                                     },
                                   )
                                 : null,
                           ),
-                          onChanged: (value) {
-                            if (value.length >= 2) {
-                              _performSearch(value);
-                            } else if (value.isEmpty) {
-                              setState(() {
-                                _results = [];
-                                _lastQuery = '';
-                              });
-                            }
+                          onChanged: _onSearchChanged,
+                          onSubmitted: (val) {
+                            if (_debounce?.isActive ?? false) _debounce!.cancel();
+                            _performSearch(val);
                           },
-                          onSubmitted: _performSearch,
                         ),
                       ),
                     ],
@@ -218,33 +221,6 @@ class _SearchScreenState extends State<SearchScreen> {
                           selected: _typeFilter == 'channel',
                           onTap: () {
                             setState(() => _typeFilter = 'channel');
-                            _updateFilters();
-                          },
-                        ),
-                        const SizedBox(width: 16),
-                        Container(width: 1, height: 24, color: Colors.white24),
-                        const SizedBox(width: 16),
-                        _FilterChip(
-                          label: '4K',
-                          selected: _qualityFilter == '4k',
-                          onTap: () {
-                            setState(() => _qualityFilter = _qualityFilter == '4k' ? 'all' : '4k');
-                            _updateFilters();
-                          },
-                        ),
-                        _FilterChip(
-                          label: 'FHD',
-                          selected: _qualityFilter == 'fhd',
-                          onTap: () {
-                            setState(() => _qualityFilter = _qualityFilter == 'fhd' ? 'all' : 'fhd');
-                            _updateFilters();
-                          },
-                        ),
-                        _FilterChip(
-                          label: 'HD',
-                          selected: _qualityFilter == 'hd',
-                          onTap: () {
-                            setState(() => _qualityFilter = _qualityFilter == 'hd' ? 'all' : 'hd');
                             _updateFilters();
                           },
                         ),
@@ -307,6 +283,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                       if (item.isSeries) {
                                         Navigator.push(context, MaterialPageRoute(
                                           builder: (_) => SeriesDetailScreen(item: item),
+                                        ));
+                                      } else if (item.type == 'movie') {
+                                        // CRÍTICO: Rota correta para filmes
+                                        Navigator.push(context, MaterialPageRoute(
+                                          builder: (_) => MovieDetailScreen(item: item),
                                         ));
                                       } else {
                                         Navigator.push(context, MaterialPageRoute(

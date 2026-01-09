@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../models/content_item.dart';
@@ -7,18 +8,29 @@ import '../widgets/optimized_gridview.dart';
 import '../widgets/media_player_screen.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
+import '../data/tmdb_service.dart';
 import '../models/epg_program.dart';
 import '../core/config.dart';
 import '../core/utils/logger.dart';
-import '../utils/content_enricher.dart';
+import '../data/jellyfin_service.dart';
+import '../utils/content_enricher.dart'; // Para ContentSorter
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
+import '../widgets/hero_carousel.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
   final String type;
+  final bool isJellyfin;
+  final String? libraryId;
 
-  const CategoryScreen({super.key, required this.categoryName, required this.type});
+  const CategoryScreen({
+    super.key, 
+    required this.categoryName, 
+    required this.type,
+    this.isJellyfin = false,
+    this.libraryId,
+  });
 
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
@@ -26,6 +38,7 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   List<ContentItem> items = [];
+  List<ContentItem> featuredItems = [];
   List<ContentItem> filteredItems = [];
   int visibleCount = 0;
   final int pageSize = 240;
@@ -36,13 +49,26 @@ class _CategoryScreenState extends State<CategoryScreen> {
   
   // Filtros
   String _qualityFilter = 'all'; // all, 4k, fhd, hd
-  String _sortBy = 'default'; // default, name, quality, alphabetical, rating, latest
+  String _sortBy = 'latest'; // PADRÃO: mais recentes primeiro
+  
+  // Busca
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _showSearch = false;
 
   @override
   void initState() {
     super.initState();
     _loadItems();
-    _loadEpg();
+    if (!widget.isJellyfin) {
+      _loadEpg();
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadEpg() async {
@@ -62,49 +88,115 @@ class _CategoryScreenState extends State<CategoryScreen> {
     }
   }
 
-  Future<void> _loadItems() async {
-    // CRÍTICO: Só carrega dados se houver playlist configurada
-    // SEM fallback para backend - app deve estar limpo sem playlist
-    List<ContentItem> data = [];
-    try {
-      final source = Config.playlistRuntime;
-      if (source == null || source.isEmpty) {
-        print('⚠️ CategoryScreen: Sem playlist configurada - retornando lista vazia');
-        if (mounted) {
-          setState(() {
-            items = [];
-            filteredItems = [];
-            loading = false;
-          });
+  /// Agrega episódios em séries (rápido - só processa items já filtrados)
+  List<ContentItem> _aggregateSeries(List<ContentItem> episodes) {
+    // ... MANTER LÓGICA EXISTENTE ...
+    final Map<String, List<ContentItem>> groupedByTitle = {};
+    for (final episode in episodes) {
+      final baseTitle = M3uService.extractSeriesBaseTitle(episode.title);
+      groupedByTitle.putIfAbsent(baseTitle, () => []).add(episode);
+    }
+    
+    final List<ContentItem> aggregated = [];
+    for (final entry in groupedByTitle.entries) {
+      final baseTitle = entry.key;
+      final allEpisodes = entry.value;
+      
+      String bestImage = '';
+      ContentItem referenceEpisode = allEpisodes.first;
+      
+      for (final ep in allEpisodes) {
+        if (ep.image.isNotEmpty) {
+          bestImage = ep.image;
+          break;
         }
-        return;
       }
       
-      // Usa cache completo para evitar lista vazia em categorias grandes (Netflix/Prime)
-      if (widget.type.toLowerCase() == 'series') {
-        data = await M3uService.fetchSeriesAggregatedForCategory(
-          category: widget.categoryName,
-          maxItems: 1000,
-        );
+      aggregated.add(ContentItem(
+        title: baseTitle,
+        url: referenceEpisode.url,
+        image: bestImage,
+        group: referenceEpisode.group,
+        type: 'series',
+        isSeries: true,
+        quality: referenceEpisode.quality,
+        audioType: referenceEpisode.audioType,
+      ));
+    }
+    
+    aggregated.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    return aggregated;
+  }
+
+  Future<void> _loadItems() async {
+    List<ContentItem> data = [];
+    bool usedTmdbFallback = false;
+    
+    try {
+      if (widget.isJellyfin) {
+        // Lógica Jellyfin
+        await JellyfinService.initialize();
+        if (JellyfinService.isConfigured) {
+          // Se tiver ID da biblioteca, usa ele. Se não, tenta buscar todos ou filtrar
+          data = await JellyfinService.getItems(
+            libraryId: widget.libraryId,
+            itemType: widget.type == 'series' ? 'Series' : 'Movie',
+            limit: 500
+          );
+          AppLogger.info('🐙 Jellyfin: Carregados ${data.length} itens para "${widget.categoryName}"');
+        } else {
+           AppLogger.info('⚠️ Jellyfin não configurado, retornando vazio');
+        }
       } else {
-        data = await M3uService.fetchCategoryItemsFromEnv(
-          category: widget.categoryName,
-          typeFilter: widget.type,
-          maxItems: 1000,
-        );
+        // Lógica M3U existente
+        final source = Config.playlistRuntime;
+        if (source == null || source.isEmpty) {
+          print('⚠️ CategoryScreen: Sem playlist configurada - tentando TMDB');
+          data = await _loadFromTmdb();
+          usedTmdbFallback = true;
+        } else {
+          // Busca items da playlist
+          final rawData = await M3uService.fetchCategoryItemsFromEnv(
+            category: widget.categoryName,
+            typeFilter: widget.type,
+            maxItems: 500,
+          );
+          
+          if (widget.type.toLowerCase() == 'series' && rawData.isNotEmpty) {
+            data = _aggregateSeries(rawData);
+          } else {
+            data = rawData;
+          }
+        }
+        
+        // Retry logic para M3U apenas
+        if (data.isEmpty && Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
+           final isReady = M3uService.isPreloaded(Config.playlistRuntime!); 
+           if (!isReady) {
+             print('⏳ CategoryScreen: Cache M3U ainda não pronto para "${widget.categoryName}". Aguardando...');
+             if (mounted) {
+               Future.delayed(const Duration(seconds: 2), () {
+                 if (mounted && items.isEmpty) _loadItems();
+               });
+             }
+             return;
+           }
+        }
       }
     } catch (e) {
-      AppLogger.error('❌ CategoryScreen: Erro ao carregar itens', error: e);
-      data = [];
+      AppLogger.error('❌ CategoryScreen: Erro ao carregar itens de "${widget.categoryName}"', error: e);
+    }
+    
+    if (usedTmdbFallback && data.isNotEmpty) {
+      AppLogger.info('✅ Usando fallback TMDB para categoria "${widget.categoryName}" (${widget.type}) - ${data.length} itens');
     }
 
-    // CRÍTICO: Mostra UI primeiro, depois enriquece com TMDB em background
     if (mounted) {
       setState(() {
         items = data;
+        featuredItems = ContentSorter.sortByLatest(items).take(5).toList();
         filteredItems = _applyFilters(data);
         visibleCount = filteredItems.length > pageSize ? pageSize : filteredItems.length;
-        // Log útil para depuração em device
         AppLogger.info('📂 CategoryScreen "${widget.categoryName}" (${widget.type}) carregou ${items.length} itens');
         if (items.isNotEmpty) {
           final withImage = items.where((i) => i.image.isNotEmpty).toList();
@@ -113,124 +205,82 @@ class _CategoryScreenState extends State<CategoryScreen> {
         loading = false;
       });
     }
-    
-    // Enriquece com TMDB em background (não bloqueia UI)
-    // CRÍTICO: Enriquece TODOS os itens visíveis (até pageSize = 240) de uma só vez
-    // Isso garante consistência entre banner e grid (sem duplicação)
-    if (data.isNotEmpty) {
-      AppLogger.info('🔍 TMDB: Enriquecendo itens da categoria "${widget.categoryName}" (${widget.type})...');
+  }
+
+  Future<List<ContentItem>> _loadFromTmdb() async {
+    try {
+      final isMovie = widget.type.toLowerCase() == 'movie';
+      final isSeries = widget.type.toLowerCase() == 'series';
       
-      // CRÍTICO: Enriquece TODOS os itens visíveis (não separa banner do grid)
-      // Isso evita que o mesmo item seja enriquecido múltiplas vezes de forma inconsistente
-      final itemsToEnrich = data.take(pageSize).toList();
-      
-      AppLogger.info('🔍 TMDB: Enriquecendo ${itemsToEnrich.length} itens da categoria...');
-      AppLogger.debug('🔍 TMDB: Primeiros 3 itens para enriquecer:');
-      for (int i = 0; i < itemsToEnrich.length && i < 3; i++) {
-        AppLogger.debug('  [$i] "${itemsToEnrich[i].title}" - Rating atual: ${itemsToEnrich[i].rating}');
+      if (!isMovie && !isSeries) {
+        AppLogger.info('⚠️ TMDB: Tipo "${widget.type}" não suportado, retornando vazio');
+        return [];
       }
       
-      final enriched = await ContentEnricher.enrichItems(itemsToEnrich);
-      final enrichedWithRating = enriched.where((e) => e.rating > 0).length;
-      AppLogger.info('✅ TMDB: ${enriched.length} itens processados, $enrichedWithRating com rating');
+      late List<dynamic> tmdbItems;
       
-      // Debug: mostra primeiros 3 itens enriquecidos
-      AppLogger.debug('🔍 TMDB: Primeiros 3 itens após enriquecimento:');
-      for (int i = 0; i < enriched.length && i < 3; i++) {
-        AppLogger.debug('  [$i] "${enriched[i].title}" - Rating: ${enriched[i].rating}');
+      final categoryLower = widget.categoryName.toLowerCase();
+      if (categoryLower.contains('top') || categoryLower.contains('melhor') || categoryLower.contains('avaliado')) {
+        tmdbItems = isMovie 
+          ? await TmdbService.getTopRatedMovies(page: 1)
+          : await TmdbService.getTopRatedSeries(page: 1);
+      } else if (categoryLower.contains('recente') || categoryLower.contains('novo') || categoryLower.contains('latest')) {
+        tmdbItems = isMovie 
+          ? await TmdbService.getLatestMovies(page: 1)
+          : await TmdbService.getLatestMovies(page: 1);
+      } else {
+        tmdbItems = isMovie 
+          ? await TmdbService.getPopularMovies(page: 1)
+          : await TmdbService.getPopularSeries(page: 1);
       }
       
-      // CRÍTICO: Reconstrói a lista completa usando os itens enriquecidos
-      // Preserva ordem e garante que todos os itens visíveis tenham TMDB
-      final updatedItems = <ContentItem>[];
-      for (int i = 0; i < data.length; i++) {
-        if (i < enriched.length) {
-          // Item foi enriquecido
-          updatedItems.add(enriched[i]);
-          
-          // Debug: mostra primeiros 5 itens enriquecidos
-          if (i < 5) {
-            final ratingChanged = enriched[i].rating != data[i].rating;
-            AppLogger.info('✅ TMDB: Item[$i] "${enriched[i].title}" - Rating: ${enriched[i].rating} (original: ${data[i].rating}) ${ratingChanged ? "✅ MUDOU" : "❌ IGUAL"}');
-          }
-        } else {
-          // Item não foi enriquecido (além do pageSize), mantém original
-          updatedItems.add(data[i]);
-        }
-      }
+      final items = tmdbItems
+        .map((m) => ContentItem(
+          title: m.title ?? 'Sem título',
+          url: '',
+          image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+          group: 'TMDB ${widget.categoryName}',
+          type: isMovie ? 'movie' : 'series',
+          id: m.id.toString(),
+          rating: m.rating ?? 0,
+          year: m.releaseDate?.substring(0, 4) ?? '',
+          description: m.overview ?? '',
+        ))
+        .toList();
       
-      final finalItemsWithRating = updatedItems.where((e) => e.rating > 0).length;
-      AppLogger.info('✅ TMDB: ${finalItemsWithRating}/${updatedItems.length} itens com rating após atualização');
-      
-      // CRÍTICO: Atualiza banner DEPOIS de enriquecer (usa item enriquecido)
-      // Isso garante que o banner tenha os mesmos dados TMDB que o grid
-      ContentItem? updatedBanner = bannerItem;
-      if (bannerItem != null && updatedItems.isNotEmpty) {
-        // Procura o banner enriquecido na lista atualizada
-        final bannerIndex = data.indexWhere((item) => 
-          item.url == bannerItem!.url && item.title == bannerItem!.title
-        );
-        if (bannerIndex >= 0 && bannerIndex < updatedItems.length) {
-          updatedBanner = updatedItems[bannerIndex];
-          AppLogger.info('✅ TMDB: Banner "${updatedBanner.title}" - Rating: ${updatedBanner.rating} (índice: $bannerIndex)');
-        } else {
-          AppLogger.warning('⚠️ TMDB: Banner não encontrado na lista enriquecida, mantendo original');
-        }
-      }
-      
-      // CRÍTICO: Força atualização do estado
-      if (mounted) {
-        setState(() {
-          // Força nova lista para garantir que o Flutter detecte mudanças
-          items = List.from(updatedItems);
-          filteredItems = _applyFilters(items);
-          if (updatedBanner != null) {
-            bannerItem = updatedBanner;
-          }
-        });
-        
-        // Verifica se os dados foram realmente aplicados
-        final finalFilteredItemsWithRating = filteredItems.where((e) => e.rating > 0).length;
-        AppLogger.info('✅ TMDB: Estado atualizado - ${finalFilteredItemsWithRating} itens filtrados com rating');
-        
-        // Debug: mostra primeiros 3 itens filtrados para verificar
-        for (int i = 0; i < filteredItems.length && i < 3; i++) {
-          final item = filteredItems[i];
-          AppLogger.debug('📋 Item filtrado[$i]: "${item.title}" - Rating: ${item.rating}, Type: ${item.type}');
-        }
-        
-        // Debug: verifica se banner e grid têm dados consistentes
-        if (bannerItem != null) {
-          final bannerInGrid = filteredItems.firstWhere(
-            (item) => item.url == bannerItem!.url && item.title == bannerItem!.title,
-            orElse: () => ContentItem(
-              title: '', 
-              url: '', 
-              type: '', 
-              image: '', 
-              group: '',
-            ),
-          );
-          if (bannerInGrid.url.isNotEmpty) {
-            final consistent = bannerInGrid.rating == bannerItem!.rating;
-            AppLogger.debug('🔍 Consistência banner/grid: ${consistent ? "✅ OK" : "❌ INCONSISTENTE"} - Banner rating: ${bannerItem!.rating}, Grid rating: ${bannerInGrid.rating}');
-          }
-        }
-      }
+      AppLogger.info('✅ TMDB Fallback: Carregados ${items.length} itens para "${widget.categoryName}" (${widget.type})');
+      return items;
+    } catch (e) {
+      AppLogger.error('❌ TMDB Fallback: Erro ao carregar', error: e);
+      return [];
     }
   }
 
   List<ContentItem> _applyFilters(List<ContentItem> source) {
-    var result = source.where((item) {
-      if (_qualityFilter == 'all') return true;
-      final q = item.quality.toLowerCase();
-      if (_qualityFilter == '4k') return q.contains('4k') || q.contains('uhd');
-      if (_qualityFilter == 'fhd') return q.contains('fhd') || q.contains('fullhd');
-      if (_qualityFilter == 'hd') return q.contains('hd');
-      return true;
-    }).toList();
+    var result = source.toList();
     
-    // Aplicar ordenação usando ContentSorter
+    // 1. Aplicar busca por texto
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      result = result.where((item) {
+        return item.title.toLowerCase().contains(query) ||
+               item.description.toLowerCase().contains(query) ||
+               item.genre.toLowerCase().contains(query);
+      }).toList();
+    }
+    
+    // 2. Aplicar filtro de qualidade
+    if (_qualityFilter != 'all') {
+      result = result.where((item) {
+        final q = item.quality.toLowerCase();
+        if (_qualityFilter == '4k') return q.contains('4k') || q.contains('uhd');
+        if (_qualityFilter == 'fhd') return q.contains('fhd') || q.contains('fullhd');
+        if (_qualityFilter == 'hd') return q.contains('hd');
+        return true;
+      }).toList();
+    }
+    
+    // 3. Aplicar ordenação usando o ContentSorter unificado
     switch (_sortBy) {
       case 'alphabetical':
       case 'name':
@@ -241,6 +291,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
         break;
       case 'latest':
         result = ContentSorter.sortByLatest(result);
+        break;
+      case 'popularity':
+        result = ContentSorter.sortByPopularity(result);
         break;
       case 'quality':
         result.sort((a, b) {
@@ -253,9 +306,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
           }
           return qScore(b.quality).compareTo(qScore(a.quality));
         });
-        break;
-      case 'popularity':
-        result = ContentSorter.sortByPopularity(result);
         break;
       case 'default':
       default:
@@ -273,6 +323,23 @@ class _CategoryScreenState extends State<CategoryScreen> {
     });
   }
 
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+    _updateFilters();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _showSearch = !_showSearch;
+      if (!_showSearch) {
+        _searchController.clear();
+        _searchQuery = '';
+        _updateFilters();
+      }
+    });
+  }
 
   Widget _buildFilterChip(String label, bool selected, VoidCallback onTap) {
     return Padding(
@@ -300,6 +367,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
+  void _onItemUpdated(ContentItem enriched) {
+    // Atualiza na lista principal em memória (sem setState para evitar rebuild total)
+    // Isso garante que próximas ordenações usem os dados enriquecidos (data, rating)
+    final index = items.indexWhere((i) => i.title == enriched.title); // Usa título como chave primária para séries agrupadas
+    if (index != -1) {
+      items[index] = enriched;
+    }
+    
+    // Atualiza na lista filtrada também
+    final fIndex = filteredItems.indexWhere((i) => i.title == enriched.title);
+    if (fIndex != -1) {
+      filteredItems[fIndex] = enriched;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -308,7 +390,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Column(
               children: [
-                // Header compacto com título e botão voltar
+                // Header com título, busca e botão voltar
                 Container(
                   padding: EdgeInsets.only(
                     top: MediaQuery.of(context).padding.top + 8,
@@ -323,32 +405,57 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       end: Alignment.bottomCenter,
                     ),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.categoryName,
-                              style: AppTypography.headlineMedium,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _showSearch
+                              ? TextField(
+                                  controller: _searchController,
+                                  autofocus: true,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: 'Buscar em ${widget.categoryName}...',
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                  onChanged: _onSearchChanged,
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.categoryName,
+                                      style: AppTypography.headlineMedium,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      '${widget.type == 'series' ? 'SÉRIES' : widget.type == 'movie' ? 'FILMES' : 'CANAIS'} • ${filteredItems.length} itens${visibleCount < filteredItems.length ? " (Exibindo $visibleCount)" : ""}',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.6),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                          ),
+                          // Botão de busca
+                          IconButton(
+                            icon: Icon(
+                              _showSearch ? Icons.close : Icons.search,
+                              color: Colors.white,
                             ),
-                            Text(
-                              '${widget.type.toUpperCase()} • ${filteredItems.length} itens',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
+                            onPressed: _toggleSearch,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -360,6 +467,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
+                        // Filtros de qualidade
                         _buildFilterChip('Todos', _qualityFilter == 'all', () {
                           setState(() => _qualityFilter = 'all');
                           _updateFilters();
@@ -379,31 +487,36 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         const SizedBox(width: 16),
                         Container(width: 1, height: 20, color: Colors.white24),
                         const SizedBox(width: 16),
-                        _buildFilterChip('Padrão', _sortBy == 'default', () {
-                          setState(() => _sortBy = 'default');
+                        // Ordenação
+                        _buildFilterChip('📅 Recentes', _sortBy == 'latest', () {
+                          setState(() => _sortBy = 'latest');
+                          _updateFilters();
+                        }),
+                        _buildFilterChip('⭐ Avaliação', _sortBy == 'rating', () {
+                          setState(() => _sortBy = 'rating');
+                          _updateFilters();
+                        }),
+                        _buildFilterChip('🔥 Popular', _sortBy == 'popularity', () {
+                          setState(() => _sortBy = 'popularity');
                           _updateFilters();
                         }),
                         _buildFilterChip('A-Z', _sortBy == 'alphabetical', () {
                           setState(() => _sortBy = 'alphabetical');
                           _updateFilters();
                         }),
-                        _buildFilterChip('Avaliação', _sortBy == 'rating', () {
-                          setState(() => _sortBy = 'rating');
-                          _updateFilters();
-                        }),
-                        _buildFilterChip('Data', _sortBy == 'latest', () {
-                          setState(() => _sortBy = 'latest');
-                          _updateFilters();
-                        }),
-                        _buildFilterChip('Qualidade', _sortBy == 'quality', () {
+                        _buildFilterChip('📊 Qualidade', _sortBy == 'quality', () {
                           setState(() => _sortBy = 'quality');
+                          _updateFilters();
+                        }),
+                        _buildFilterChip('Padrão', _sortBy == 'default', () {
+                          setState(() => _sortBy = 'default');
                           _updateFilters();
                         }),
                       ],
                     ),
                   ),
                 ),
-                // Grid content principal - MESMO VISUAL PARA TODOS
+                // Grid content principal
                 Expanded(
                   child: items.isEmpty
                       ? Center(
@@ -425,31 +538,78 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             ],
                           ),
                         )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: OptimizedGridView(
-                            items: filteredItems.take(visibleCount).toList(),
-                            epgChannels: _epgChannels,
-                                onTap: (item) {
-                                  if (item.isSeries || item.type == 'series') {
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
-                                  } else if (item.type == 'channel') {
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
-                                  } else {
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
-                                  }
-                                },
-                            crossAxisCount: 6,
-                            childAspectRatio: 0.55,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            showMetaChips: true,
-                            metaFontSize: 9,
-                            metaIconSize: 11,
+                      : filteredItems.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.search_off, color: Colors.white30, size: 48),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Nenhum resultado para "$_searchQuery"',
+                                  style: const TextStyle(color: Colors.white54),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.clear),
+                                  label: const Text('Limpar busca'),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _onSearchChanged('');
+                                  },
+                                ),
+                              ],
+                            ),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: OptimizedGridView(
+                                items: filteredItems.take(visibleCount).toList(),
+                              epgChannels: _epgChannels,
+                              onItemUpdated: _onItemUpdated, // Callback para atualizar dados em background
+                              headerWidget: featuredItems.isNotEmpty 
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(bottom: 24),
+                                      child: HeroCarousel(
+                                          items: featuredItems, 
+                                          onPlay: (item) {
+                                            if (item.isSeries || item.type == 'series') {
+                                              Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
+                                            } else if (item.type == 'channel') {
+                                              Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+                                            } else {
+                                              Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
+                                            }
+                                          }
+                                      ),
+                                    )
+                                  : null,
+                              onEndReached: () {
+                                if (visibleCount < filteredItems.length) {
+                                  setState(() {
+                                    visibleCount = min(visibleCount + pageSize, filteredItems.length);
+                                  });
+                                }
+                              },
+                              onTap: (item) {
+                                if (item.isSeries || item.type == 'series') {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
+                                } else if (item.type == 'channel') {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
+                                } else {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
+                                }
+                              },
+                              crossAxisCount: 6,
+                              childAspectRatio: 0.55,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              showMetaChips: true,
+                              metaFontSize: 9,
+                              metaIconSize: 11,
+                            ),
                           ),
-                        ),
                 ),
-                // Botão "Carregar mais" removido conforme solicitado
               ],
             ),
     );

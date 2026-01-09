@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'detail_screens.dart';
-import 'series_detail_screen.dart' as sdetail;
+import 'detail_screens.dart' hide SeriesDetailScreen;
+import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
 import 'search_screen.dart';
 import '../data/watch_history_service.dart';
 import '../data/m3u_service.dart';
+import '../data/jellyfin_service.dart';
 import '../data/epg_service.dart';
+import '../data/tmdb_service.dart';
 import '../utils/content_enricher.dart';
 import '../core/config.dart';
 import '../core/theme/app_colors.dart';
@@ -17,6 +19,7 @@ import '../models/epg_program.dart';
 import '../widgets/media_player_screen.dart';
 import '../widgets/adaptive_cached_image.dart';
 import '../widgets/meta_chips_widget.dart';
+import '../data/favorites_service.dart'; // NOVO import
 import '../routes/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -38,12 +41,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
 
+  Future<bool> _onWillPop() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Sair do Aplicativo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text('Deseja realmente sair?', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sair', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    
+    if (shouldExit == true) {
+      SystemNavigator.pop();
+      return true;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     const bg = Color(0xFF111318);  // --bg-dark
     const bg2 = Color(0xFF0F1620); // --bg-darker
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
       backgroundColor: bg,
       body: SafeArea(
         child: Column(
@@ -146,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -548,56 +582,101 @@ class _HomeBodyState extends State<_HomeBody> {
         });
       }
       
-      // CRÍTICO: Só carrega dados se houver playlist configurada
-      // SEM fallback para backend - app deve estar limpo sem playlist
-      final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
-      if (hasM3u) {
-        // CRÍTICO: Carrega destaques SEM aguardar TMDB (UI rápida)
-        final results = await Future.wait([
-          M3uService.getCuratedFeaturedPrefer('movie', count: 6, pool: 30, maxItems: 600),
-          M3uService.getCuratedFeaturedPrefer('series', count: 6, pool: 30, maxItems: 600),
-          M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600),
+      // CRÍTICO: Carrega destaques TMDB (Popular Movies/Series) + Canais M3U se houver playlist
+      // Destaques TMDB não dependem de playlist, sempre disponíveis se TMDB configurado
+      try {
+        // Buscar destaques do TMDB em paralelo
+        final tmdbResults = await Future.wait([
+          TmdbService.getPopularMovies(page: 1),
+          TmdbService.getPopularSeries(page: 1),
         ]);
         
-        // CRÍTICO: Atualiza UI IMEDIATAMENTE (sem aguardar TMDB)
-        if (!mounted) return;
-        setState(() {
-          featuredMovies = results[0];
-          featuredSeries = results[1];
-          featuredChannels = results[2];
-          loading = false; // UI mostra conteúdo AGORA
-        });
+        // Converter TmdbMetadata para ContentItem
+        List<ContentItem> tmdbMovies = tmdbResults[0]
+          .take(10)
+          .map((m) => ContentItem(
+            title: m.title,
+            url: '', // TMDB items não têm URL de streaming
+            image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+            group: 'TMDB Popular',
+            type: 'movie',
+            id: m.id.toString(),
+            rating: m.rating,
+            year: m.releaseDate?.substring(0, 4) ?? '',
+            description: m.overview ?? '',
+          ))
+          .toList();
+          
+        List<ContentItem> tmdbSeries = tmdbResults[1]
+          .take(10)
+          .map((s) => ContentItem(
+            title: s.title,
+            url: '', // TMDB items não têm URL de streaming
+            image: s.posterPath != null ? 'https://image.tmdb.org/t/p/w342${s.posterPath}' : '',
+            group: 'TMDB Popular',
+            type: 'series',
+            id: s.id.toString(),
+            rating: s.rating,
+            year: s.releaseDate?.substring(0, 4) ?? '',
+            description: s.overview ?? '',
+          ))
+          .toList();
         
-        // CRÍTICO: Enriquece com TMDB em BACKGROUND (usuário já vê conteúdo)
-        if (results[0].isNotEmpty) {
-          print('🔍 TMDB: Enriquecendo filmes em destaque (${results[0].length} itens) em background...');
-          ContentEnricher.enrichItems(results[0]).then((enriched) {
-            if (mounted) {
-              setState(() => featuredMovies = enriched);
-              print('✅ TMDB: Filmes em destaque enriquecidos');
-            }
-          });
+        print('✅ TMDB: Carregados ${tmdbMovies.length} filmes + ${tmdbSeries.length} séries em destaque');
+        
+        // Carrega canais M3U se houver playlist
+        List<ContentItem> channels = [];
+        final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+        if (hasM3u) {
+          channels = await M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600);
+          print('✅ M3U: Carregados ${channels.length} canais em destaque');
         }
         
-        if (results[1].isNotEmpty) {
-          print('🔍 TMDB: Enriquecendo séries em destaque (${results[1].length} itens) em background...');
-          ContentEnricher.enrichItems(results[1]).then((enriched) {
-            if (mounted) {
-              setState(() => featuredSeries = enriched);
-              print('✅ TMDB: Séries em destaque enriquecidas');
-            }
-          });
-        }
-      } else {
-        // Sem playlist configurada - retorna listas vazias
-        print('⚠️ HomeScreen: Sem playlist configurada - retornando listas vazias');
         if (!mounted) return;
         setState(() {
-          featuredMovies = [];
-          featuredSeries = [];
-          featuredChannels = [];
+          featuredMovies = tmdbMovies;
+          featuredSeries = tmdbSeries;
+          featuredChannels = channels;
           loading = false;
         });
+      } catch (e) {
+        print('⚠️ Erro ao carregar destaques TMDB: $e');
+        // Se TMDB falhar, tenta M3U como fallback
+        final hasM3u = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
+        if (hasM3u) {
+          try {
+            final results = await Future.wait([
+              M3uService.getCuratedFeaturedPrefer('movie', count: 6, pool: 30, maxItems: 600),
+              M3uService.getCuratedFeaturedPrefer('series', count: 6, pool: 30, maxItems: 600),
+              M3uService.getCuratedFeaturedPrefer('channel', count: 6, pool: 50, maxItems: 600),
+            ]);
+            
+            print('⚠️ Usando fallback M3U para destaques');
+            if (!mounted) return;
+            setState(() {
+              featuredMovies = results[0];
+              featuredSeries = results[1];
+              featuredChannels = results[2];
+              loading = false;
+            });
+          } catch (_) {
+            if (!mounted) return;
+            setState(() {
+              featuredMovies = [];
+              featuredSeries = [];
+              featuredChannels = [];
+              loading = false;
+            });
+          }
+        } else {
+          if (!mounted) return;
+          setState(() {
+            featuredMovies = [];
+            featuredSeries = [];
+            featuredChannels = [];
+            loading = false;
+          });
+        }
       }
     } catch (_) {
       if (!mounted) return;
@@ -623,6 +702,21 @@ class _HomeBodyState extends State<_HomeBody> {
             _WatchedCarousel(items: watchedItems),
             const SizedBox(height: 16),
           ],
+          
+          // Carrossel "Minha Lista" (Favoritos) - Atualização em tempo real
+          ValueListenableBuilder<List<ContentItem>>(
+            valueListenable: FavoritesService.favoritesNotifier,
+            builder: (context, favorites, _) {
+              if (favorites.isEmpty) return const SizedBox.shrink();
+              return Column(
+                children: [
+                   // Reusa _FeaturedCarousel que já funciona bem
+                  _FeaturedCarousel(items: favorites, title: 'Minha Lista'),
+                  const SizedBox(height: 20),
+                ],
+              );
+            },
+          ),
           
           // Destaques
           if (loading) const Center(child: CircularProgressIndicator()),
@@ -758,165 +852,176 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
   Future<void> _loadMovies({bool reset = false}) async {
     print('🎬 MoviesLibraryBody: Carregando categorias de filmes...');
     try {
-      if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
-        print('🎬 MoviesLibraryBody: via M3U (paginado)');
-        
-        // CRÍTICO: Usa cache já pré-carregado (não força reload)
-        // Se cache já existe, usa diretamente sem reprocessar tudo
-        // Isso torna o carregamento muito mais rápido
-        const maxItems = 999999; // Usa cache completo já pré-carregado
-        
-        final result = await M3uService.fetchPagedFromEnv(
-          page: _currentPage,
-          pageSize: _pageSize,
-          maxItems: maxItems, // Usa cache completo (já processado)
-          typeFilter: 'movie',
-        );
+      // Melhor fluxo: buscar TMDB em paralelo para mostrar destaques imediatamente
+      // e buscar M3U (lista de filmes) separadamente. Evita mostrar canais como
+      // filmes recomendados quando TMDB ainda não carregou.
+      final hasPlaylist = Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty;
 
-        // Carrega meta apenas se reset (primeira vez) e não tem categorias ainda
-        // CRÍTICO: Usa cache completo já pré-carregado (não força reprocessamento)
-        Map<String, String> metaThumbs = categoryThumbs;
-        if (reset && movieCategories.isEmpty) {
-          final meta = await M3uService.fetchCategoryMetaFromEnv(
-            typeFilter: 'movie',
-            maxItems: 999999, // Usa cache completo
-          );
-          metaThumbs = meta.thumbs;
+      // Iniciar fetchs TMDB (não aguardamos aqui, atualizaremos quando retornarem)
+      Future<List<dynamic>>? tmdbPopularFuture;
+      Future<List<dynamic>>? tmdbTopRatedFuture;
+      if (reset) {
+        try {
+          tmdbPopularFuture = TmdbService.getPopularMovies(page: 1);
+          tmdbTopRatedFuture = TmdbService.getTopRatedMovies(page: 1);
+        } catch (e) {
+          print('❌ Erro ao iniciar TMDB: $e');
         }
-        
-        // Featured e latest com limites menores (usa cache já processado)
-        final featured = reset ? await M3uService.getDailyFeaturedMovies(count: 5, pool: 20, maxItems: 999999) : featuredItems;
-        final latest = reset ? await M3uService.getLatestMovies(count: 10, maxItems: 999999) : latestItems;
-        
-        // CRÍTICO: Enriquece featuredItems e latestItems com TMDB (banners e últimos adicionados)
-        List<ContentItem> enrichedFeatured = featured;
-        List<ContentItem> enrichedLatest = latest;
-        if (reset && (featured.isNotEmpty || latest.isNotEmpty)) {
-          print('🔍 TMDB: Enriquecendo ${featured.length} filmes em destaque + ${latest.length} últimos adicionados...');
-          final allToEnrich = <ContentItem>[];
-          if (featured.isNotEmpty) allToEnrich.addAll(featured);
-          if (latest.isNotEmpty) allToEnrich.addAll(latest);
-          
-          final enriched = await ContentEnricher.enrichItems(allToEnrich);
-          
-          // Separa novamente
-          if (featured.isNotEmpty) {
-            enrichedFeatured = enriched.take(featured.length).toList();
-          }
-          if (latest.isNotEmpty) {
-            enrichedLatest = enriched.skip(featured.length).take(latest.length).toList();
-          }
-          print('✅ TMDB: Filmes enriquecidos com sucesso (${enrichedFeatured.length} featured, ${enrichedLatest.length} latest)');
-        }
+      }
 
-        // Preparar lista para enriquecimento e ordenação
-        List<ContentItem> allItems = [];
-        if (reset || movies.isEmpty) {
-          allItems = result.items;
-        } else {
-          allItems = [...movies, ...result.items];
-        }
-
-        // CRÍTICO: Mostra UI primeiro, depois enriquece em background
-        // Isso torna o carregamento muito mais rápido
-        if (mounted) {
-          setState(() {
-            movieCategories = result.categories;
-            categoryCounts = result.categoryCounts;
-            categoryThumbs = metaThumbs;
-            featuredItems = enrichedFeatured;
-            latestItems = enrichedLatest;
-            // Removido: popularItems e topRatedItems não são mais exibidos
-            popularItems = [];
-            topRatedItems = [];
-            if (reset || movies.isEmpty) {
-              movies = allItems;
-            } else {
-              movies = allItems;
-            }
-            hasMore = movies.length < result.total;
-            loading = false;
-            loadingMore = false;
-            _applyFilters();
-          });
-        }
-        
-        // Enriquecer com dados do TMDB (em background, não bloqueia UI)
-        if (reset && allItems.isNotEmpty) {
-          setState(() => enriching = true);
-          // Enriquece mais itens (primeiros 200 para melhor cobertura)
-          final sample = allItems.take(200).toList();
-          print('🔍 TMDB: Enriquecendo ${sample.length} itens em background...');
-          final enriched = await ContentEnricher.enrichItems(sample);
-          // Atualiza os itens enriquecidos na lista completa
-          int enrichedCount = 0;
-          for (var i = 0; i < enriched.length && i < allItems.length; i++) {
-            if (enriched[i].rating > 0 || enriched[i].description.isNotEmpty) {
-              allItems[i] = enriched[i];
-              enrichedCount++;
-            }
-          }
-          print('✅ TMDB: ${enrichedCount} itens enriquecidos com sucesso');
-          
-          // Atualiza UI com dados enriquecidos
-          if (mounted) {
-            setState(() {
-              movies = allItems;
-              featuredItems = enrichedFeatured;
-              latestItems = ContentSorter.sortByLatest(enrichedLatest);
-              popularItems = ContentSorter.sortByPopularity(allItems.take(20).toList());
-              topRatedItems = ContentSorter.sortByRating(allItems.take(20).toList());
-              enriching = false;
-            });
-          }
-        }
-
-        // Criar listas ordenadas
-        final popular = ContentSorter.sortByPopularity(allItems.take(20).toList());
-        final topRated = ContentSorter.sortByRating(allItems.take(20).toList());
-        final latestSorted = ContentSorter.sortByLatest(enrichedLatest);
-
-        if (mounted) {
-          setState(() {
-            movieCategories = result.categories;
-            categoryCounts = result.categoryCounts;
-            // categoryThumbs já foi carregado acima se reset
-            featuredItems = enrichedFeatured;
-            latestItems = latestSorted;
-            popularItems = popular;
-            topRatedItems = topRated;
-            if (reset || movies.isEmpty) {
-              movies = allItems;
-            } else {
-              movies = allItems;
-            }
-            hasMore = movies.length < result.total;
-            loading = false;
-            loadingMore = false;
-            enriching = false;
-            _applyFilters();
-          });
-        }
-      } else {
-        // CRÍTICO: Sem playlist configurada - retorna listas vazias
-        // SEM fallback para backend - app deve estar limpo sem playlist
-        print('⚠️ MoviesLibraryBody: Sem playlist configurada - retornando listas vazias');
+      // Se não há playlist, ainda queremos mostrar destaques TMDB (app não deve depender de M3U)
+      if (!hasPlaylist) {
+        print('🎬 MoviesLibraryBody: sem playlist - exibindo apenas destaques TMDB');
+        // Apply immediately placeholders enquanto TMDB carrega
         if (mounted) {
           setState(() {
             movieCategories = [];
             categoryCounts = {};
             categoryThumbs = {};
             movies = [];
-            featuredItems = [];
-            latestItems = [];
-            popularItems = [];
-            topRatedItems = [];
+            hasMore = false;
             loading = false;
             loadingMore = false;
-            hasMore = false;
             _applyFilters();
           });
         }
+        // Atualiza destaques quando TMDB terminar
+        tmdbPopularFuture?.then((tmdbPopular) {
+          final featured = tmdbPopular.take(5).map((m) => ContentItem(
+            title: m.title,
+            url: '',
+            image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+            group: 'TMDB Popular',
+            type: 'movie',
+            id: m.id.toString(),
+            rating: m.rating,
+            year: m.releaseDate?.substring(0, 4) ?? '',
+            description: m.overview ?? '',
+          )).toList();
+          if (mounted) setState(() => featuredItems = featured);
+        }).catchError((e) { print('❌ TMDB popular falhou: $e'); return Future.value(null); });
+
+        tmdbTopRatedFuture?.then((tmdbTopRated) {
+          final latest = tmdbTopRated.take(10).map((m) => ContentItem(
+            title: m.title,
+            url: '',
+            image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+            group: 'TMDB TopRated',
+            type: 'movie',
+            id: m.id.toString(),
+            rating: m.rating,
+            year: m.releaseDate?.substring(0, 4) ?? '',
+            description: m.overview ?? '',
+          )).toList();
+          if (mounted) setState(() => latestItems = latest);
+        }).catchError((e) { print('❌ TMDB toprated falhou: $e'); return Future.value(null); });
+
+        return;
+      }
+
+      // Se houver playlist, carregamos M3U (paginado) para a lista principal, mas
+      // não usamos M3U para os destaques — os destaques virão do TMDB quando disponíveis.
+      print('🎬 MoviesLibraryBody: via M3U (paginado) - carregando lista enquanto TMDB carrega em paralelo');
+      const maxItems = 999999;
+      final result = await M3uService.fetchPagedFromEnv(
+        page: _currentPage,
+        pageSize: _pageSize,
+        maxItems: maxItems,
+        typeFilter: 'movie',
+      );
+
+      // Carrega meta apenas se reset (primeira vez) e não tem categorias ainda
+      Map<String, String> metaThumbs = categoryThumbs;
+      if (reset && movieCategories.isEmpty) {
+        final meta = await M3uService.fetchCategoryMetaFromEnv(
+          typeFilter: 'movie',
+          maxItems: 999999,
+        );
+        metaThumbs = meta.thumbs;
+      }
+
+      // UI inicial com lista M3U (rápido) e destaques vazios enquanto TMDB responde
+      if (mounted) {
+        setState(() {
+          movieCategories = result.categories;
+          categoryCounts = result.categoryCounts;
+          categoryThumbs = metaThumbs;
+          featuredItems = featuredItems; // mantém o que já existe (possivelmente vazio)
+          latestItems = latestItems;
+          popularItems = [];
+          topRatedItems = [];
+          movies = (reset || movies.isEmpty) ? result.items : [...movies, ...result.items];
+          hasMore = movies.length < result.total;
+          loading = false;
+          loadingMore = false;
+          _applyFilters();
+        });
+      }
+
+      // Quando TMDB terminar, atualiza os destaques — isso evita mostrar canais como filmes
+      tmdbPopularFuture?.then((tmdbPopular) {
+        final featured = tmdbPopular.take(5).map((m) => ContentItem(
+          title: m.title,
+          url: '',
+          image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+          group: 'TMDB Popular',
+          type: 'movie',
+          id: m.id.toString(),
+          rating: m.rating,
+          year: m.releaseDate?.substring(0, 4) ?? '',
+          description: m.overview ?? '',
+        )).toList();
+        if (mounted) setState(() => featuredItems = featured);
+      }).catchError((e) { print('❌ TMDB popular falhou: $e'); return Future.value(null); });
+
+      tmdbTopRatedFuture?.then((tmdbTopRated) {
+        final latest = tmdbTopRated.take(10).map((m) => ContentItem(
+          title: m.title,
+          url: '',
+          image: m.posterPath != null ? 'https://image.tmdb.org/t/p/w342${m.posterPath}' : '',
+          group: 'TMDB TopRated',
+          type: 'movie',
+          id: m.id.toString(),
+          rating: m.rating,
+          year: m.releaseDate?.substring(0, 4) ?? '',
+          description: m.overview ?? '',
+        )).toList();
+        if (mounted) setState(() => latestItems = latest);
+      }).catchError((e) { print('❌ TMDB toprated falhou: $e'); return Future.value(null); });
+
+      // Enriquecer com dados do TMDB (em background, não bloqueia UI)
+      if (reset && movies.isNotEmpty) {
+        setState(() => enriching = true);
+        final sample = movies.take(200).toList();
+        print('🔍 TMDB: Enriquecendo ${sample.length} itens em background...');
+        final enriched = await ContentEnricher.enrichItems(sample);
+        int enrichedCount = 0;
+        for (var i = 0; i < enriched.length && i < movies.length; i++) {
+          if (enriched[i].rating > 0 || enriched[i].description.isNotEmpty) {
+            movies[i] = enriched[i];
+            enrichedCount++;
+          }
+        }
+        print('✅ TMDB: ${enrichedCount} itens enriquecidos com sucesso');
+        if (mounted) {
+          final sorted = List<ContentItem>.from(latestItems)..sort((a, b) => b.rating.compareTo(a.rating));
+          setState(() {
+            movies = movies;
+            featuredItems = featuredItems;
+            latestItems = latestItems;
+            popularItems = movies.take(20).toList();
+            topRatedItems = sorted.take(20).toList();
+            enriching = false;
+          });
+        }
+      }
+      
+      // Se carregou listas vazias mas temos playlist, tenta um refresh em 5 segundos
+      // para pegar os dados do background parse se ele terminar.
+      if (movies.isEmpty && hasPlaylist && mounted) {
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted && movies.isEmpty) _loadMovies(reset: true);
+        });
       }
     } catch (e) {
       print('❌ MoviesLibraryBody: Erro ao carregar categorias: $e');
@@ -1022,7 +1127,7 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
                         final thumb = categoryThumbs[cat] ?? '';
                         return _CategoryImageCard(
                           label: cat,
-                          info: count != null ? '$count títulos' : 'Categoria',
+                          info: '',
                           image: thumb,
                           onTap: () {
                             Navigator.pushNamed(
@@ -1121,22 +1226,51 @@ class _SeriesBodyState extends State<_SeriesBody> {
         return;
       }
 
-      final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'series', maxItems: 400);
-      final f = await M3uService.getCuratedFeaturedPrefer('series', count: 5, pool: 20, maxItems: 400);
-      final l = await M3uService.getLatestByType('series', count: 10, maxItems: 400);
+      final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'series', maxItems: 999999);
       
-      // CRÍTICO: Enriquece séries com TMDB (em background, não bloqueia UI)
+      // Featured e latest - SEMPRE TMDB (ignora M3U para destaques)
+      List<ContentItem> f = [];
+      List<ContentItem> l = [];
+      
+      if (true) { // Sempre carrega do TMDB
+        try {
+          print('🔍 TMDB: Carregando séries em destaque...');
+          final tmdbPopular = await TmdbService.getPopularSeries(page: 1);
+          final tmdbTopRated = await TmdbService.getTopRatedSeries(page: 1);
+          
+          f = tmdbPopular.take(5).map((s) => ContentItem(
+            title: s.title,
+            url: '',
+            image: s.posterPath != null ? 'https://image.tmdb.org/t/p/w342${s.posterPath}' : '',
+            group: 'TMDB Popular',
+            type: 'series',
+            id: s.id.toString(),
+            rating: s.rating,
+            year: s.releaseDate?.substring(0, 4) ?? '',
+            description: s.overview ?? '',
+          )).toList();
+          
+          l = tmdbTopRated.take(10).map((s) => ContentItem(
+            title: s.title,
+            url: '',
+            image: s.posterPath != null ? 'https://image.tmdb.org/t/p/w342${s.posterPath}' : '',
+            group: 'TMDB TopRated',
+            type: 'series',
+            id: s.id.toString(),
+            rating: s.rating,
+            year: s.releaseDate?.substring(0, 4) ?? '',
+            description: s.overview ?? '',
+          )).toList();
+          
+          print('✅ TMDB: ${f.length} séries em destaque + ${l.length} top rated');
+        } catch (e) {
+          print('❌ Erro ao carregar séries TMDB: $e');
+        }
+      }
+      
+      // CRÍTICO: Não enriquece TMDB (já tem dados)
       List<ContentItem> enrichedFeatured = f;
       List<ContentItem> enrichedLatest = l;
-      if (f.isNotEmpty || l.isNotEmpty) {
-        print('🔍 TMDB: Enriquecendo séries (${f.length + l.length} itens)...');
-        final allSeries = [...f, ...l];
-        final enriched = await ContentEnricher.enrichItems(allSeries);
-        // Separa novamente
-        enrichedFeatured = enriched.take(f.length).toList();
-        enrichedLatest = enriched.skip(f.length).take(l.length).toList();
-        print('✅ TMDB: Séries enriquecidas com sucesso');
-      }
       
       if (!mounted) return;
       setState(() {
@@ -1148,6 +1282,14 @@ class _SeriesBodyState extends State<_SeriesBody> {
         loading = false;
         _applyFilters();
       });
+
+      // Se carregou categorias vazias mas temos playlist, tenta um refresh em 5 segundos
+      // para pegar os dados do background parse se ele terminar.
+      if (categories.isEmpty && hasM3u && mounted) {
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted && categories.isEmpty) _load();
+        });
+      }
     } catch (e) {
       print('❌ SeriesLibraryBody: Erro ao carregar: $e');
       if (!mounted) return;
@@ -1221,7 +1363,7 @@ class _SeriesBodyState extends State<_SeriesBody> {
           children: filteredCategories
               .map((cat) => _CategoryImageCard(
                     label: cat,
-                    info: '${counts[cat] ?? 0} títulos',
+                    info: '',
                     image: thumbs[cat] ?? '',
                     onTap: () {
                       Navigator.pushNamed(context, '/category', arguments: {'categoryName': cat, 'type': 'series'});
@@ -1324,9 +1466,9 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
         return;
       }
 
-      final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'channel', maxItems: 400);
-      final f = await M3uService.getCuratedFeaturedPrefer('channel', count: 5, pool: 20, maxItems: 400);
-      final l = await M3uService.getLatestByType('channel', count: 10, maxItems: 400);
+      final meta = await M3uService.fetchCategoryMetaFromEnv(typeFilter: 'channel', maxItems: 999999);
+      final f = await M3uService.getCuratedFeaturedPrefer('channel', count: 5, pool: 999999, maxItems: 999999);
+      final l = await M3uService.getLatestByType('channel', count: 10, maxItems: 999999);
       if (!mounted) return;
       setState(() {
         categories = meta.categories;
@@ -1402,7 +1544,7 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
           children: filteredCategories
               .map((cat) => _CategoryImageCard(
                     label: cat,
-                    info: '${counts[cat] ?? 0} canais',
+                    info: '',
                     image: thumbs[cat] ?? '',
                     onTap: () {
                       Navigator.pushNamed(context, '/category', arguments: {'categoryName': cat, 'type': 'channel'});
@@ -1685,63 +1827,204 @@ class _SharkflixBody extends StatefulWidget {
 class _SharkflixBodyState extends State<_SharkflixBody> {
   List<ContentItem> featured = [];
   List<ContentItem> latest = [];
-  List<String> categories = [];
+  // Use a proper model or map for categories to store ID and Type
+  List<Map<String, dynamic>> categories = [];
   Map<String, int> counts = {};
   Map<String, String> thumbs = {};
   bool loading = true;
-
-  bool _isShark(ContentItem it) {
-    final g = it.group.toLowerCase();
-    final t = it.title.toLowerCase();
-    return g.contains('shark') || g.contains('sharkflix') || t.contains('sharkflix');
-  }
+  
+  // Jellyfin specific state
+  bool jellyfinAuthenticated = false;
+  bool jellyfinConfigured = false;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _checkJellyfinConfig();
   }
 
-  Future<void> _load() async {
+  Future<void> _checkJellyfinConfig() async {
+    await JellyfinService.initialize();
+    if (mounted) {
+      setState(() {
+        jellyfinConfigured = JellyfinService.isConfigured;
+        jellyfinAuthenticated = JellyfinService.isAuthenticated;
+      });
+      
+      if (jellyfinConfigured) {
+        _loadFromJellyfin();
+      } else {
+        setState(() => loading = false);
+      }
+    }
+  }
+
+  Future<void> _loadFromJellyfin() async {
+    if (!mounted) return;
+    setState(() => loading = true);
+    
+    // Authenticate if needed
+    if (!jellyfinAuthenticated) {
+      try {
+        final success = await JellyfinService.authenticate().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            print('⏱️ SharkFlix: Timeout na autenticação Jellyfin');
+            return false;
+          },
+        );
+        if (mounted) setState(() => jellyfinAuthenticated = success);
+        if (!success) {
+          if (mounted) setState(() => loading = false);
+          return;
+        }
+      } catch (e) {
+        print('❌ SharkFlix: Erro na autenticação: $e');
+        if (mounted) setState(() => loading = false);
+        return;
+      }
+    }
+
     try {
-      // Use movies cache as base and filter by group
-      final latestMovies = await M3uService.getLatestByType('movie', count: 100, maxItems: 600);
-      final shark = latestMovies.where(_isShark).toList();
-      final f = shark.take(6).toList();
-      final l = shark.skip(6).take(20).toList();
-      // Categories for shark subset
-      final setCats = <String>{};
+      // Carrega dados com timeout para evitar travamento
+      final results = await Future.wait([
+        JellyfinService.getFeaturedItems(count: 6).timeout(const Duration(seconds: 15)),
+        JellyfinService.getLatestItems(count: 20).timeout(const Duration(seconds: 15)),
+        JellyfinService.getLibraries().timeout(const Duration(seconds: 10)),
+      ]).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('⏱️ SharkFlix: Timeout ao carregar dados do Jellyfin');
+          return [<ContentItem>[], <ContentItem>[], <Map<String, dynamic>>[]];
+        },
+      );
+      
+      if (!mounted) return;
+      
+      final f = results[0] as List<ContentItem>;
+      final l = results[1] as List<ContentItem>;
+      final libs = results[2] as List<Map<String, dynamic>>;
+      
+      final catList = <Map<String, dynamic>>[];
       final mapCounts = <String, int>{};
       final mapThumbs = <String, String>{};
-      for (final it in shark) {
-        setCats.add(it.group);
-        mapCounts[it.group] = (mapCounts[it.group] ?? 0) + 1;
-        mapThumbs.putIfAbsent(it.group, () => it.image);
+
+      for (final lib in libs) {
+        try {
+          final name = lib['Name'] as String;
+          final id = lib['Id'] as String;
+          final type = lib['CollectionType'] ?? 'movies';
+
+          catList.add({
+            'name': name,
+            'id': id,
+            'type': type == 'tvshows' ? 'series' : 'movie',
+          });
+          
+          mapCounts[name] = 0;
+        } catch (e) {
+          print('⚠️ SharkFlix: Erro ao processar biblioteca: $e');
+        }
       }
+
       if (!mounted) return;
       setState(() {
         featured = f;
         latest = l;
-        categories = setCats.toList()..sort((a,b)=>a.toLowerCase().compareTo(b.toLowerCase()));
+        categories = catList..sort((a,b) => (a['name'] as String).compareTo(b['name'] as String));
         counts = mapCounts;
         thumbs = mapThumbs;
         loading = false;
       });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => loading = false);
+      
+      print('✅ SharkFlix: Dados carregados - ${f.length} destaques, ${l.length} recentes, ${catList.length} bibliotecas');
+    } catch (e, stackTrace) {
+      print('❌ SharkFlix Jellyfin Error: $e');
+      print('Stack: $stackTrace');
+      if (mounted) {
+        setState(() {
+          loading = false;
+          // Mantém listas vazias para evitar null errors
+          featured = [];
+          latest = [];
+          categories = [];
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (loading) return const Center(child: CircularProgressIndicator());
+    
+    // Check if configured
+    if (!jellyfinConfigured) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.dns, size: 64, color: Colors.white24),
+            const SizedBox(height: 16),
+            const Text('Configure o servidor Jellyfin', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('Vá em Settings > Jellyfin Integration', style: TextStyle(color: Colors.white54)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/settings'),
+              child: const Text('Ir para Configurações'),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _checkJellyfinConfig,
+              child: const Text('Recarregar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Check auth failure
+    if (!jellyfinAuthenticated) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.orange),
+            const SizedBox(height: 16),
+            const Text('Falha na autenticação Jellyfin', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('Verifique seu usuário e senha nas configurações', style: TextStyle(color: Colors.white54)),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/settings'),
+              child: const Text('Verificar Configurações'),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _checkJellyfinConfig,
+              child: const Text('Tentar Novamente'),
+            ),
+          ],
+        ),
+      );
+    }
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('SharkFlix', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('SharkFlix', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+            // Removed toggle button
+          ],
+        ),
+        
         const SizedBox(height: 16),
-        if (featured.isNotEmpty) _FeaturedCarousel(items: featured),
+        
+        if (featured.isNotEmpty) 
+          _FeaturedCarousel(items: featured),
+          
         const SizedBox(height: 16),
         const _SectionTitle(title: 'Últimos adicionados'),
         const SizedBox(height: 12),
@@ -1754,9 +2037,15 @@ class _SharkflixBodyState extends State<_SharkflixBody> {
               separatorBuilder: (_, __) => const SizedBox(width: 14),
               itemBuilder: (_, i) => SizedBox(width: 150, child: _MovieThumb(item: latest[i])),
             ),
+          )
+        else
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Text('Nenhum conteúdo encontrado.', style: TextStyle(color: Colors.white54)),
           ),
+          
         const SizedBox(height: 24),
-        const Text('Coleções', style: TextStyle(color: Colors.white70, fontSize: 13)),
+        const Text('Bibliotecas', style: TextStyle(color: Colors.white70, fontSize: 13)), // Changed from "Coleções"
         const SizedBox(height: 12),
         GridView.count(
           crossAxisCount: 3,
@@ -1766,14 +2055,22 @@ class _SharkflixBodyState extends State<_SharkflixBody> {
           physics: const NeverScrollableScrollPhysics(),
           childAspectRatio: 3.8,
           children: categories
-              .map((cat) => _CategoryImageCard(
-                    label: cat,
-                    info: '${counts[cat] ?? 0} títulos',
-                    image: thumbs[cat] ?? '',
+              .map((cat) {
+                 final name = cat['name'] as String;
+                 return _CategoryImageCard(
+                    label: name,
+                    info: 'Biblioteca',
+                    image: thumbs[name] ?? '',
                     onTap: () {
-                      Navigator.pushNamed(context, '/category', arguments: {'categoryName': cat, 'type': 'movie'});
+                      Navigator.pushNamed(context, '/category', arguments: {
+                        'categoryName': name, 
+                        'type': cat['type'] ?? 'movie',
+                        'isJellyfin': true, // Always true for SharkFlix
+                        'libraryId': cat['id'],
+                      });
                     },
-                  ))
+                  );
+              })
               .toList(),
         ),
       ]),
@@ -1819,96 +2116,9 @@ class _WatchingCarousel extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final watching = items[index];
-              final item = watching.item;
-              return GestureDetector(
-                onTap: () {
-                  if (item.isSeries) {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => sdetail.SeriesDetailScreen(item: item),
-                    ));
-                  } else if (item.type == 'channel') {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => MediaPlayerScreen(url: item.url, item: item),
-                    )).then((_) => onRefresh?.call());
-                  } else {
-                    // Filmes: abre tela de detalhes
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => MovieDetailScreen(item: item),
-                    )).then((_) => onRefresh?.call());
-                  }
-                },
-                child: Container(
-                  width: 200,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: CachedNetworkImage(
-                                imageUrl: item.image,
-                                fit: BoxFit.cover,
-                                placeholder: (c, u) => Container(color: const Color(0xFF333333)),
-                                errorWidget: (c, u, e) => Container(
-                                  color: const Color(0xFF333333),
-                                  child: const Icon(Icons.movie, color: Colors.white30, size: 40),
-                                ),
-                              ),
-                            ),
-                            // Overlay escuro
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
-                                ),
-                              ),
-                            ),
-                            // Botão play
-                            const Center(
-                              child: Icon(Icons.play_circle_filled, color: Colors.white, size: 40),
-                            ),
-                            // Barra de progresso
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(8),
-                                  bottomRight: Radius.circular(8),
-                                ),
-                                child: LinearProgressIndicator(
-                                  value: watching.progress,
-                                  backgroundColor: Colors.white24,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
-                                  minHeight: 4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                      ),
-                      Text(
-                        watching.remainingTime,
-                        style: const TextStyle(color: Colors.white54, fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ),
+              return _WatchingCard(
+                watching: watching,
+                onRefresh: onRefresh,
               );
             },
           ),
@@ -1955,48 +2165,12 @@ class _WatchedCarousel extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return GestureDetector(
-                onTap: () {
-                  if (item.isSeries) {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => sdetail.SeriesDetailScreen(item: item),
-                    ));
-                  } else {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => MediaPlayerScreen(url: item.url, item: item),
-                    ));
-                  }
-                },
-                child: Container(
-                  width: 110,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CachedNetworkImage(
-                            imageUrl: item.image,
-                            fit: BoxFit.cover,
-                            width: 110,
-                            placeholder: (c, u) => Container(color: const Color(0xFF333333)),
-                            errorWidget: (c, u, e) => Container(
-                              color: const Color(0xFF333333),
-                              child: const Icon(Icons.movie, color: Colors.white30, size: 32),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
+              // Usando _MovieThumb que já suporta foco (TV)
+              return SizedBox(
+                width: 110,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: _MovieThumb(item: item),
                 ),
               );
             },
@@ -2078,7 +2252,7 @@ class _FeaturedCard extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (item.isSeries || item.type == 'series') {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => sdetail.SeriesDetailScreen(item: item)));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
           return;
         }
         if (item.type == 'channel') {
@@ -2216,7 +2390,7 @@ class _SeriesThumbState extends State<_SeriesThumb> {
   bool _focused = false;
 
   void _handleTap() {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => sdetail.SeriesDetailScreen(item: widget.item)));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: widget.item)));
   }
 
   @override
@@ -2561,13 +2735,15 @@ class _CategoryImageCardState extends State<_CategoryImageCard> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.info,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
+                        if (widget.info.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.info,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -2665,4 +2841,143 @@ class _QualityFilterChip extends StatelessWidget {
 }
 
 
-// Card de destaque para filmes, séries e canais (com EPG opcional)
+// Card para 'Continuar Assistindo' com foco
+class _WatchingCard extends StatefulWidget {
+  final WatchingItem watching;
+  final VoidCallback? onRefresh;
+
+  const _WatchingCard({required this.watching, this.onRefresh});
+
+  @override
+  State<_WatchingCard> createState() => _WatchingCardState();
+}
+
+class _WatchingCardState extends State<_WatchingCard> {
+  bool _focused = false;
+
+  void _handleTap() {
+    final item = widget.watching.item;
+    if (item.isSeries) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => SeriesDetailScreen(item: item),
+      ));
+    } else if (item.type == 'channel') {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => MediaPlayerScreen(url: item.url, item: item),
+      )).then((_) => widget.onRefresh?.call());
+    } else {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => MovieDetailScreen(item: item),
+      )).then((_) => widget.onRefresh?.call());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.watching.item;
+    final progress = widget.watching.progress;
+    final remaining = widget.watching.remainingTime;
+
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _handleTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 200,
+          margin: const EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+          ),
+          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: item.image,
+                        fit: BoxFit.cover,
+                        placeholder: (c, u) => Container(color: const Color(0xFF333333)),
+                        errorWidget: (c, u, e) => Container(
+                          color: const Color(0xFF333333),
+                          child: const Icon(Icons.movie, color: Colors.white30, size: 40),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                        ),
+                      ),
+                    ),
+                    const Center(
+                      child: Icon(Icons.play_circle_filled, color: Colors.white, size: 40),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
+                        ),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.white24,
+                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+                          minHeight: 4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                    Text(
+                      remaining,
+                      style: const TextStyle(color: Colors.white54, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -5,8 +5,9 @@ import '../models/content_item.dart';
 import '../models/epg_program.dart';
 import '../data/epg_service.dart';
 import 'meta_chips_widget.dart';
+import 'lazy_tmdb_loader.dart';
 
-/// GridView otimizado com lazy loading e suporte a TV remoto
+/// GridView otimizado com lazy loading, suporte a TV remoto e Header opcional
 class OptimizedGridView extends StatefulWidget {
   final List<ContentItem> items;
   final ValueChanged<ContentItem> onTap;
@@ -18,12 +19,16 @@ class OptimizedGridView extends StatefulWidget {
   final bool showMetaChips;
   final double metaFontSize;
   final double metaIconSize;
+  final ValueChanged<ContentItem>? onItemUpdated;
   final Map<String, EpgChannel>? epgChannels;
+  final VoidCallback? onEndReached;
+  final Widget? headerWidget; // Novo Banner
 
   const OptimizedGridView({
     super.key,
     required this.items,
     required this.onTap,
+    this.onItemUpdated,
     this.crossAxisCount = 5,
     this.childAspectRatio = 0.6,
     this.crossAxisSpacing = 16,
@@ -33,6 +38,8 @@ class OptimizedGridView extends StatefulWidget {
     this.metaFontSize = 10,
     this.metaIconSize = 12,
     this.epgChannels,
+    this.onEndReached,
+    this.headerWidget,
   });
 
   @override
@@ -46,6 +53,12 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      if (!mounted) return;
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 600) {
+        widget.onEndReached?.call();
+      }
+    });
   }
 
   @override
@@ -56,32 +69,61 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
+    return CustomScrollView(
       controller: _scrollController,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: widget.crossAxisCount,
-        childAspectRatio: widget.childAspectRatio,
-        crossAxisSpacing: widget.crossAxisSpacing,
-        mainAxisSpacing: widget.mainAxisSpacing,
-      ),
       physics: widget.physics ?? const BouncingScrollPhysics(),
-      itemCount: widget.items.length,
-      itemBuilder: (context, index) {
-        return _OptimizedGridCard(
-          item: widget.items[index],
-          showMetaChips: widget.showMetaChips,
-          metaFontSize: widget.metaFontSize,
-          metaIconSize: widget.metaIconSize,
-          epgChannels: widget.epgChannels,
-          onTap: () => widget.onTap(widget.items[index]),
-        );
-      },
+      slivers: [
+        // Header (Banner)
+        if (widget.headerWidget != null)
+          SliverToBoxAdapter(
+            child: widget.headerWidget!,
+          ),
+
+        // Grid com Padding
+        SliverPadding(
+          padding: EdgeInsets.zero, // Padding externo é controlado pelo pai ou aqui se precisar
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: widget.crossAxisCount,
+              childAspectRatio: widget.childAspectRatio,
+              crossAxisSpacing: widget.crossAxisSpacing,
+              mainAxisSpacing: widget.mainAxisSpacing,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final item = widget.items[index];
+                
+                return LazyTmdbLoader(
+                  item: item,
+                  onItemEnriched: widget.onItemUpdated,
+                  builder: (enrichedItem, isLoading) {
+                    return _OptimizedGridCard(
+                      item: enrichedItem,
+                      isLoadingTmdb: isLoading,
+                      showMetaChips: widget.showMetaChips,
+                      metaFontSize: widget.metaFontSize,
+                      metaIconSize: widget.metaIconSize,
+                      epgChannels: widget.epgChannels,
+                      onTap: () => widget.onTap(enrichedItem),
+                    );
+                  },
+                );
+              },
+              childCount: widget.items.length,
+            ),
+          ),
+        ),
+        
+        // Espaço extra no final
+        const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
+      ],
     );
   }
 }
 
 class _OptimizedGridCard extends StatefulWidget {
   final ContentItem item;
+  final bool isLoadingTmdb;
   final VoidCallback onTap;
   final bool showMetaChips;
   final double metaFontSize;
@@ -94,6 +136,7 @@ class _OptimizedGridCard extends StatefulWidget {
     required this.showMetaChips,
     required this.metaFontSize,
     required this.metaIconSize,
+    this.isLoadingTmdb = false,
     this.epgChannels,
   });
 
@@ -106,24 +149,20 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
 
   EpgChannel? _findEpgForChannel(ContentItem channel) {
     if (widget.epgChannels == null || widget.epgChannels!.isEmpty) {
-      // Tenta usar EpgService.findChannelByName se não tem mapa
       return EpgService.findChannelByName(channel.title);
     }
     
     final name = channel.title.trim().toLowerCase();
-    // Remove sufixos comuns que podem atrapalhar o match
     final cleanName = name
         .replaceAll(RegExp(r'\s*(fhd|hd|sd|4k|uhd)\s*$'), '')
         .replaceAll(RegExp(r'\s*\[.*?\]'), '')
         .replaceAll(RegExp(r'\s*\(.*?\)'), '')
         .trim();
     
-    // Tenta match exato primeiro
     if (widget.epgChannels!.containsKey(name) || widget.epgChannels!.containsKey(cleanName)) {
       return widget.epgChannels![name] ?? widget.epgChannels![cleanName];
     }
     
-    // Fuzzy match melhorado
     for (final entry in widget.epgChannels!.entries) {
       final epgKey = entry.key.trim().toLowerCase();
       final cleanEpgKey = epgKey
@@ -132,14 +171,12 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
           .replaceAll(RegExp(r'\s*\(.*?\)'), '')
           .trim();
       
-      // Match se um contém o outro (após limpeza)
       if (cleanName.contains(cleanEpgKey) || cleanEpgKey.contains(cleanName) ||
           name.contains(epgKey) || epgKey.contains(name)) {
         return entry.value;
       }
     }
     
-    // Fallback: usa EpgService
     return EpgService.findChannelByName(channel.title);
   }
 
@@ -148,14 +185,12 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Focus(
-        onKey: (node, event) {
-          // Suporte completo para TV remote: Enter, Select, Space, GameButtonA
-          if (event is RawKeyDownEvent &&
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
               (event.logicalKey == LogicalKeyboardKey.enter ||
                event.logicalKey == LogicalKeyboardKey.select ||
                event.logicalKey == LogicalKeyboardKey.space ||
                event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-            print('▶️ Item selecionado: ${widget.item.title}');
             widget.onTap();
             return KeyEventResult.handled;
           }
@@ -163,9 +198,6 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
         },
         onFocusChange: (focused) {
           setState(() => _isFocused = focused);
-          if (focused) {
-            print('🔍 Item focado: ${widget.item.title}');
-          }
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -201,6 +233,25 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                         width: double.infinity,
                         height: double.infinity,
                       ),
+                      // Indicador de loading do TMDB (sutil)
+                      if (widget.isLoadingTmdb)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -223,8 +274,7 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                           height: 1.2,
                         ),
                       ),
-                      // CRÍTICO: Sempre mostra MetaChipsWidget para filmes e séries (qualidade + rating)
-                      // Para canais, não mostra (mostra EPG em vez disso)
+                      // MetaChips para filmes e séries
                       if (widget.item.type != 'channel')
                         Padding(
                           padding: const EdgeInsets.only(top: 4),

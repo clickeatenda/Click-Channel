@@ -14,6 +14,13 @@ class ContentItem {
   final String genre; // Gênero
   final double popularity; // Popularidade (para ordenação)
   final String? releaseDate; // Data de lançamento (para ordenação)
+  // TMDB metadata (optional, loaded on demand)
+  final String? director;
+  final int? budget;
+  final int? revenue;
+  final int? runtime;
+  final List<Map<String, String>>? cast; // [{name, character}, ...]
+  final String? originalTitle; // Título original (para busca alternativa)
 
   ContentItem({
     required this.title,
@@ -31,6 +38,12 @@ class ContentItem {
     this.genre = '',
     this.popularity = 0.0,
     this.releaseDate,
+    this.director,
+    this.budget,
+    this.revenue,
+    this.runtime,
+    this.cast,
+    this.originalTitle,
   });
 
   factory ContentItem.fromJson(Map<String, dynamic> json) {
@@ -60,15 +73,30 @@ class ContentItem {
     String? genre,
     double? popularity,
     String? releaseDate,
+    String? director,
+    int? budget,
+    int? revenue,
+    int? runtime,
+    List<Map<String, String>>? cast,
+    String? image, // NOVO: permite atualizar imagem com poster TMDB
   }) {
     // CRÍTICO: Se rating foi fornecido (mesmo que seja 0), usa ele
     // Isso garante que ratings do TMDB sejam aplicados corretamente
     final finalRating = rating ?? this.rating;
     
+    // CRÍTICO: Só usa imagem TMDB se a original estiver vazia ou inválida
+    // OU se a nova imagem for válida (não vazia)
+    String finalImage = this.image;
+    if (image != null && image.isNotEmpty) {
+      // Prioriza SEMPRE a imagem do TMDB (qualidade superior)
+      // A menos que não tenha, aí mantém original
+      finalImage = image;
+    }
+    
     return ContentItem(
       title: title,
       url: url,
-      image: image,
+      image: finalImage,
       group: group,
       type: type,
       isSeries: isSeries,
@@ -81,25 +109,12 @@ class ContentItem {
       genre: genre ?? this.genre,
       popularity: popularity ?? this.popularity,
       releaseDate: releaseDate ?? this.releaseDate,
+      director: director ?? this.director,
+      budget: budget ?? this.budget,
+      revenue: revenue ?? this.revenue,
+      runtime: runtime ?? this.runtime,
+      cast: cast ?? this.cast,
+      originalTitle: originalTitle,
     );
-  }
-  Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'url': url,
-      'logo': image, // Compatível com fromJson
-      'group': group,
-      'type': type,
-      'isSeries': isSeries,
-      'id': id,
-      'rating': rating,
-      'year': year,
-      'quality': quality,
-      'audioType': audioType,
-      'description': description,
-      'genre': genre,
-      'popularity': popularity,
-      'releaseDate': releaseDate,
-    };
   }
 }
