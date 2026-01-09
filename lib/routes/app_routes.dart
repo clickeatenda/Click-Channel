@@ -13,7 +13,6 @@ import '../screens/setup_screen.dart';
 import '../screens/player_dashboard_screen.dart';
 import '../screens/category_screen.dart';
 import '../screens/epg_screen.dart';
-import '../screens/debug_tmdb_screen.dart';
 import '../models/content_item.dart';
 
 

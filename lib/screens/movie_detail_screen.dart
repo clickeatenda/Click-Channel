@@ -6,6 +6,7 @@ import '../widgets/media_player_screen.dart';
 import '../data/m3u_service.dart';
 import '../utils/content_enricher.dart';
 import '../core/config.dart';
+import '../data/favorites_service.dart';
 
 /// Tela de detalhes completa de filme/série com todas as informações
 class MovieDetailScreen extends StatefulWidget {
@@ -22,12 +23,34 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   bool loadingSimilar = true;
   ContentItem? enrichedItem;
   bool loadingMetadata = true;
+  bool isFavorite = false;
 
   @override
   void initState() {
     super.initState();
     _loadMetadata();
     _loadSimilarItems();
+    _checkFavorite();
+  }
+
+  Future<void> _checkFavorite() async {
+    final fav = await FavoritesService.isFavorite(widget.item);
+    if (mounted) setState(() => isFavorite = fav);
+  }
+
+  Future<void> _toggleFavorite() async {
+    await FavoritesService.toggleFavorite(widget.item);
+    _checkFavorite();
+    
+    if (mounted) {
+       ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isFavorite ? 'Adicionado aos Favoritos' : 'Removido dos Favoritos'),
+            duration: const Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+          )
+       );
+    }
   }
 
   Future<void> _loadMetadata() async {
@@ -103,6 +126,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 fit: BoxFit.cover,
                 color: Colors.black.withOpacity(0.7),
                 colorBlendMode: BlendMode.darken,
+                errorWidget: (_, __, ___) => Container(color: Colors.black),
               ),
             ),
           // Overlay escuro
@@ -173,22 +197,18 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 style: const TextStyle(color: Colors.white70, fontSize: 14),
                               ),
                               const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[800],
-                                  borderRadius: BorderRadius.circular(4),
+                              if (_displayItem.quality.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[800],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    _displayItem.quality.toUpperCase(),
+                                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                  ),
                                 ),
-                                child: const Text(
-                                  'PG-13',
-                                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                '2H 28M',
-                                style: TextStyle(color: Colors.white70, fontSize: 14),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -208,7 +228,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           // Rating e Match Score
                           Row(
                             children: [
-                              // Rating com estrela (do TMDB)
+                              // Rating OMDB/TMDB
                               if (_displayItem.rating > 0)
                                 Row(
                                   children: [
@@ -225,14 +245,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   ],
                                 ),
                               if (_displayItem.rating > 0) const SizedBox(width: 24),
-                              // Match Score (baseado em popularidade)
+                              
                               if (_displayItem.popularity > 0)
                                 Row(
                                   children: [
                                     const Icon(Icons.trending_up, color: Colors.green, size: 20),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '${(_displayItem.popularity.clamp(0, 100)).toInt()}% Match',
+                                      '${(_displayItem.popularity.clamp(0, 100)).toInt()}% Relevância',
                                       style: const TextStyle(
                                         color: Colors.green,
                                         fontSize: 16,
@@ -248,7 +268,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           // Botões de ação
                           Row(
                             children: [
-                              // Watch Now
+                              // Assistir
                               ElevatedButton.icon(
                                 onPressed: () {
                                   Navigator.push(
@@ -262,7 +282,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   );
                                 },
                                 icon: const Icon(Icons.play_arrow, size: 24),
-                                label: const Text('Watch Now', style: TextStyle(fontSize: 16)),
+                                label: const Text('Assistir', style: TextStyle(fontSize: 16)),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.white,
@@ -273,51 +293,43 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              // My List
+                              // Favoritos
                               OutlinedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.add, size: 20),
-                                label: const Text('My List'),
+                                onPressed: _toggleFavorite,
+                                icon: Icon(
+                                  isFavorite ? Icons.check : Icons.add,
+                                  size: 20,
+                                  color: isFavorite ? AppColors.accent : Colors.white,
+                                ),
+                                label: Text(
+                                  isFavorite ? 'Favorito' : 'Favoritos',
+                                  style: TextStyle(
+                                     color: isFavorite ? AppColors.accent : Colors.white
+                                  ),
+                                ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
-                                  side: const BorderSide(color: Colors.white38),
+                                  side: BorderSide(
+                                    color: isFavorite ? AppColors.accent : Colors.white38
+                                  ),
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              // Trailer
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.videocam, color: Colors.white70),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.white10,
-                                  padding: const EdgeInsets.all(12),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              // Share
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.share, color: Colors.white70),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.white10,
-                                  padding: const EdgeInsets.all(12),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 40),
                           
-                          // Synopsis
+                          // Sinopse
                           const Text(
-                            'Synopsis',
+                            'Sinopse',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
+                              shadows: [Shadow(color: Colors.black, blurRadius: 2)],
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -333,52 +345,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           ),
                           const SizedBox(height: 40),
                           
-                          // Top Cast
-                          const Text(
-                            'TOP CAST',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              _buildCastMember('Leonardo DiCaprio', 'Cobb'),
-                              const SizedBox(width: 16),
-                              _buildCastMember('Joseph Gordon-Levitt', 'Arthur'),
-                              const SizedBox(width: 16),
-                              _buildCastMember('Elliot Page', 'Ariadne'),
-                              const SizedBox(width: 16),
-                              _buildCastMember('Tom Hardy', 'Eames'),
-                            ],
-                          ),
-                          const SizedBox(height: 40),
-                          
-                          // More Like This
+                          // Relacionados
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'More Like This',
+                                'Relacionados',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.chevron_left, color: Colors.white70),
-                                    onPressed: () {},
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.chevron_right, color: Colors.white70),
-                                    onPressed: () {},
-                                  ),
-                                ],
                               ),
                             ],
                           ),
@@ -459,7 +436,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     ),
                     const SizedBox(width: 48),
                     
-                    // COLUNA DIREITA - Poster e Info Panel
+                    // COLUNA DIREITA - Poster
                     SizedBox(
                       width: 320,
                       child: Column(
@@ -474,13 +451,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               width: double.infinity,
                               height: 480,
                               fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(
-                                color: Colors.grey[900]!,
-                                height: 480,
-                                child: const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
                               errorWidget: (_, __, ___) => Container(
                                 color: Colors.grey[900]!,
                                 height: 480,
@@ -490,33 +460,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   size: 64,
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          
-                          // Info Panel
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[900]!.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white10),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildInfoRow('Director', 'Christopher Nolan'),
-                                const SizedBox(height: 12),
-                                _buildInfoRow('Budget', '\$160M'),
-                                const SizedBox(height: 12),
-                                _buildInfoRow('Box Office', '\$836.8M'),
-                                const SizedBox(height: 12),
-                                _buildInfoRow('Languages', 'EN, FR, JA'),
-                                if (widget.item.quality.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  _buildInfoRow('Quality', widget.item.quality.toUpperCase()),
-                                ],
-                              ],
                             ),
                           ),
                         ],
@@ -529,69 +472,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCastMember(String name, String role) {
-    return Column(
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.grey[800],
-            border: Border.all(color: Colors.white24, width: 2),
-          ),
-          child: const Icon(Icons.person, color: Colors.white54, size: 40),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          name,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        Text(
-          role,
-          style: const TextStyle(
-            color: Colors.white54,
-            fontSize: 10,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 100,
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 13,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

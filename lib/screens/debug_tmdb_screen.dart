@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../utils/tmdb_test_helper.dart';
-import '../core/utils/logger.dart';
 
 /// Tela de debug para testar enriquecimento TMDB
 class DebugTmdbScreen extends StatefulWidget {

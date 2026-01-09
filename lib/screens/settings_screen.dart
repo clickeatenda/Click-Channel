@@ -34,6 +34,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _epgUrlHasFocus = false;
   bool _epgButtonHasFocus = false;
 
+  // Subtitle Preferences
+  double _subtitleSize = 28.0;
+  String _subtitleColor = 'white'; // white, yellow, cyan
+  String _subtitleLanguage = 'por'; // por, eng, spa
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +55,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     _epgButtonFocusNode.addListener(() {
       if (mounted) setState(() => _epgButtonHasFocus = _epgButtonFocusNode.hasFocus);
+    });
+    _loadSubtitlePrefs();
+  }
+
+  Future<void> _loadSubtitlePrefs() async {
+    await Prefs.init();
+    setState(() {
+      _subtitleSize = Prefs.getSubtitleSize();
+      _subtitleColor = Prefs.getSubtitleColor();
+      _subtitleLanguage = Prefs.getSubtitleLanguage();
     });
   }
 
@@ -824,17 +839,128 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Divider(
                             color: Colors.white.withOpacity(0.1),
                           ),
-                          _buildSettingRow(
-                            'Subtitle Size',
-                            'Large',
-                            false,
-                            null,
-                            trailing: const Text(
-                              'Large',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                          // --- Subtitle Language ---
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Language', style: TextStyle(color: Colors.white)),
+                                DropdownButton<String>(
+                                  value: _subtitleLanguage,
+                                  dropdownColor: Colors.grey[900],
+                                  style: const TextStyle(color: Colors.white),
+                                  underline: Container(),
+                                  items: const [
+                                    DropdownMenuItem(value: 'por', child: Text('Português')),
+                                    DropdownMenuItem(value: 'eng', child: Text('English')),
+                                    DropdownMenuItem(value: 'spa', child: Text('Español')),
+                                    DropdownMenuItem(value: 'off', child: Text('Desativado')),
+                                  ],
+                                  onChanged: (v) {
+                                    if (v != null) {
+                                      setState(() => _subtitleLanguage = v);
+                                      Prefs.setSubtitleLanguage(v);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          Divider(color: Colors.white.withOpacity(0.1)),
+                          
+                          // --- Subtitle Size ---
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Size', style: TextStyle(color: Colors.white)),
+                                    Row(
+                                      children: [
+                                        _buildSizeBtn(Icons.remove, () {
+                                          setState(() {
+                                            if (_subtitleSize > 12) _subtitleSize -= 2;
+                                            Prefs.setSubtitleSize(_subtitleSize);
+                                          });
+                                        }),
+                                        SizedBox(
+                                          width: 60,
+                                          child: Center(
+                                            child: Text(
+                                              '${_subtitleSize.toInt()}px',
+                                              style: const TextStyle(color: Colors.white),
+                                            ),
+                                          ),
+                                        ),
+                                        _buildSizeBtn(Icons.add, () {
+                                          setState(() {
+                                            if (_subtitleSize < 64) _subtitleSize += 2;
+                                            Prefs.setSubtitleSize(_subtitleSize);
+                                          });
+                                        }),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Divider(color: Colors.white.withOpacity(0.1)),
+
+                          // --- Subtitle Color ---
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Color', style: TextStyle(color: Colors.white)),
+                                Row(
+                                  children: [
+                                    _buildColorBtn('white', Colors.white),
+                                    const SizedBox(width: 8),
+                                    _buildColorBtn('yellow', Colors.yellow),
+                                    const SizedBox(width: 8),
+                                    _buildColorBtn('cyan', Colors.cyanAccent),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // --- Preview ---
+                          Container(
+                            margin: const EdgeInsets.only(top: 16),
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(8),
+                              image: const DecorationImage(
+                                image: AssetImage('assets/images/logo.png'), // Placeholder bg
+                                fit: BoxFit.cover,
+                                opacity: 0.3,
+                              ),
+                            ),
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                'Exemplo de Legenda\nSubtitle Preview',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: _subtitleSize,
+                                  color: _subtitleColor == 'yellow' 
+                                      ? Colors.yellow 
+                                      : _subtitleColor == 'cyan' 
+                                          ? Colors.cyanAccent 
+                                          : Colors.white,
+                                  shadows: const [
+                                    Shadow(offset: Offset(1, 1), blurRadius: 2, color: Colors.black),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -1045,6 +1171,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: onChanged,
             ),
         ],
+      ),
+    );
+  }
+
+
+
+
+  Widget _buildSizeBtn(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Icon(icon, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildColorBtn(String colorName, Color color) {
+    bool isSelected = _subtitleColor == colorName;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _subtitleColor = colorName);
+        Prefs.setSubtitleColor(colorName);
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.white24,
+            width: isSelected ? 2 : 1,
+          ),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
       ),
     );
   }

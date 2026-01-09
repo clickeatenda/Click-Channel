@@ -52,7 +52,7 @@ void main() async {
   print('🔍 main: Verificando estado inicial...');
   print('   - Playlist salva: ${hasPlaylist ? "SIM" : "NÃO"}');
   if (hasPlaylist) {
-    print('   - URL: ${savedPlaylistUrl!.substring(0, savedPlaylistUrl.length > 60 ? 60 : savedPlaylistUrl.length)}...');
+    print('   - URL: ${savedPlaylistUrl.substring(0, savedPlaylistUrl.length > 60 ? 60 : savedPlaylistUrl.length)}...');
   }
   
   // CRÍTICO: Verifica install marker ANTES de decidir se limpa dados
@@ -141,15 +141,10 @@ void main() async {
     if (hasCache) {
       print('✅ main: Cache encontrado para playlist salva. Usando cache permanente.');
       
-      // CRÍTICO: Pré-carrega categorias EM BACKGROUND (não bloqueia inicialização)
-      // Isso melhora o tempo de abertura do app (não aguarda conclusão)
-      print('📦 main: Iniciando pré-carregamento de categorias em background...');
-      M3uService.preloadCategories(savedPlaylistUrl).then((_) {
-        print('✅ main: Categorias pré-carregadas com sucesso do cache');
-      }).catchError((e) {
-        print('⚠️ main: Erro ao pré-carregar categorias: $e');
-        // Continua mesmo se preload falhar (não bloqueia app)
-      });
+      // CRÍTICO/FIX: NÃO INICIA PRELOAD AQUI EM BACKGROUND para evitar race condition
+      // O preload será feito na SplashScreen com await, garantindo dados prontos na Home
+      print('📦 main: Preload de categorias será delegado para SplashScreen (foreground wait).');
+      
     } else {
       // CRÍTICO: Não limpa a playlist salva! Apenas avisa que precisa redownload
       print('⚠️ main: Cache não encontrado para playlist salva.');
@@ -210,6 +205,7 @@ void main() async {
     authProvider: authProvider,
     apiClient: apiClient,
     hasPlaylist: hasPlaylist,
+    savedPlaylistUrl: savedPlaylistUrl, // Passando URL para app
   ));
 }
 
@@ -217,11 +213,13 @@ class ClickChannelApp extends StatelessWidget {
   final AuthProvider authProvider;
   final ApiClient apiClient;
   final bool hasPlaylist;
+  final String? savedPlaylistUrl;
   
   const ClickChannelApp({
     required this.authProvider,
     required this.apiClient,
     required this.hasPlaylist,
+    this.savedPlaylistUrl,
     super.key,
   });
 
@@ -319,8 +317,19 @@ class ClickChannelApp extends StatelessWidget {
           home: SplashScreen(
             nextRoute: initialRoute,
             onInit: () async {
-              // Aqui pode adicionar qualquer inicialização adicional se necessário
-              await Future.delayed(const Duration(milliseconds: 500));
+              // Preload com await para garantir dados na Home ao reiniciar
+              // Isso garante que Filmes e Séries estejam prontos na memória
+              if (hasPlaylist && savedPlaylistUrl != null) {
+                print('📦 SplashScreen: Iniciando preload de categorias (Aguardando)...');
+                try {
+                  await M3uService.preloadCategories(savedPlaylistUrl!);
+                  print('✅ SplashScreen: Preload concluído!');
+                } catch (e) {
+                  print('⚠️ SplashScreen: Erro no preload: $e');
+                }
+              } else {
+                await Future.delayed(const Duration(milliseconds: 500));
+              }
             },
           ),
           onGenerateRoute: AppRoutes.generateRoute,

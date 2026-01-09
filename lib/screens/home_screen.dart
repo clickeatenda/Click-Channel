@@ -764,7 +764,7 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
         // CRÍTICO: Usa cache já pré-carregado (não força reload)
         // Se cache já existe, usa diretamente sem reprocessar tudo
         // Isso torna o carregamento muito mais rápido
-        final maxItems = 999999; // Usa cache completo já pré-carregado
+        const maxItems = 999999; // Usa cache completo já pré-carregado
         
         final result = await M3uService.fetchPagedFromEnv(
           page: _currentPage,

@@ -168,6 +168,34 @@ class _SetupScreenState extends State<SetupScreen> {
     // Se não está pronto, o usuário precisa configurar
   }
 
+  Future<void> _showDebugInfo() async {
+     final savedUrl = Prefs.getPlaylistOverride();
+     final configUrl = Config.playlistRuntime;
+     // final items = M3uService.getPlaylistItems(); // Metodo nao existe
+     final hasCache = savedUrl != null && await M3uService.hasCachedPlaylist(savedUrl);
+     
+     if (!mounted) return;
+     showDialog(
+       context: context,
+       builder: (ctx) => AlertDialog(
+          title: const Text("Debug Info"),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Prefs URL: ${savedUrl ?? 'NULO/VAZIO'}"),
+                Text("Config URL: ${configUrl ?? 'NULO/VAZIO'}"),
+                const Text("Memória Items: (Não disponível)"),
+                Text("Has Cache for Prefs URL: $hasCache"), 
+              ],
+            ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK"))]
+       )
+     );
+  }
+
   /// Inicia download da playlist com feedback visual
   Future<void> _downloadPlaylist(String url) async {
     if (url.trim().isEmpty) {
@@ -346,101 +374,135 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo
-              ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 100,
-                  height: 100,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: const Icon(Icons.live_tv, color: Colors.white, size: 56),
-                    );
-                  },
-                ),
+      body: Stack(
+        children: [
+          // Background Logo (Marca d'água)
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.05, // Bem sutil para não brigar com contraste
+              child: Image.asset(
+                'assets/images/logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox(),
               ),
-              
-              const SizedBox(height: 32),
-              
-              // Título
-              const Text(
-                'Click Channel',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
-              ),
-              
-              const SizedBox(height: 8),
-              
-              Text(
-                'Configure sua playlist IPTV',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 16,
-                ),
-              ),
-              
-              const SizedBox(height: 48),
-              
-              if (_isLoading) ...[
-                // Loading com progresso
-                _buildLoadingState(),
-              ] else ...[
-                // Campo de URL
-                _buildUrlInput(),
-              ],
-              
-              // Mensagem de erro
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
+          
+          // Conteúdo Central
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo Principal (Aumentada)
+                  Container(
+                    width: 200, // Aumentado de 100 para 200
+                    height: 200,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(40),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.3),
+                          blurRadius: 40,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(40), // Aumentado raio
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primary.withOpacity(0.7),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(40),
+                            ),
+                            child: const Icon(Icons.live_tv, color: Colors.white, size: 100), // Aumentado icone
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Título
+                  const Text(
+                    'Click Channel',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                      shadows: [
+                        Shadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4))
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  Text(
+                    'Configure sua playlist IPTV',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 18,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 48),
+                  
+                  if (_isLoading) ...[
+                    // Loading com progresso
+                    _buildLoadingState(),
+                  ] else ...[
+                    // Campo de URL
+                    _buildUrlInput(),
+                  ],
+                  
+                  // Mensagem de erro
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.red, fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -619,6 +681,26 @@ class _SetupScreenState extends State<SetupScreen> {
                 elevation: _buttonHasFocus ? 12 : 4,
               ),
             ),
+          ),
+          
+          const SizedBox(height: 32),
+          // Debug Tools
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+               TextButton(
+                 onPressed: _showDebugInfo,
+                 child: const Text("VERIFICAR CACHE", style: TextStyle(color: Colors.white24, fontSize: 10)),
+               ),
+               const SizedBox(width: 20),
+               TextButton(
+                 onPressed: () {
+                    // Bypass para Home
+                    Navigator.pushReplacementNamed(context, '/home');
+                 },
+                 child: const Text("FORCE HOME (Bypass)", style: TextStyle(color: Colors.white24, fontSize: 10)),
+               ),
+            ],
           ),
         ],
       ),

@@ -4,6 +4,9 @@ import '../widgets/glass_panel.dart';
 import '../widgets/custom_app_header.dart';
 import '../models/content_item.dart';
 import '../widgets/optimized_gridview.dart';
+import '../data/favorites_service.dart';
+import 'movie_detail_screen.dart';
+import 'series_detail_screen.dart';
 
 class MyFavoritesScreen extends StatefulWidget {
   const MyFavoritesScreen({super.key});
@@ -13,7 +16,30 @@ class MyFavoritesScreen extends StatefulWidget {
 }
 
 class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
-  int _selectedNavIndex = -1; // fora da Home, nenhum selecionado
+  int _selectedNavIndex = -1; 
+  List<ContentItem> _favorites = []; // Lista real
+  bool _isLoading = true;
+  String _filter = 'Todos'; // 'Todos', 'Filmes', 'Séries'
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+  
+  // Recarrega sempre que a tela ganha foco (se voltar de um detalhe onde desfavoritou)
+  // Mas no Flutter 'focus' de rota é diferente. Vou usar then() na navegação.
+  
+  Future<void> _loadFavorites() async {
+    setState(() => _isLoading = true);
+    final favs = await FavoritesService.getFavorites();
+    if (mounted) {
+      setState(() {
+        _favorites = favs;
+        _isLoading = false;
+      });
+    }
+  }
 
   final List<HeaderNav> _navItems = [
     HeaderNav(label: 'Início'),
@@ -29,17 +55,15 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
     }
   }
 
+  List<ContentItem> get _filteredFavorites {
+    if (_filter == 'Todos') return _favorites;
+    if (_filter == 'Filmes') return _favorites.where((i) => !i.isSeries).toList();
+    if (_filter == 'Séries') return _favorites.where((i) => i.isSeries).toList();
+    return _favorites;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final demoFavorites = List.generate(8, (i) => ContentItem(
-      title: 'Favorite ${i + 1}',
-      url: 'https://example.com/fav/${i + 1}',
-      image: '',
-      group: 'Favorites',
-      type: i.isEven ? 'movie' : 'series',
-      isSeries: !i.isEven,
-    ));
-
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       body: Column(
@@ -49,9 +73,8 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
             navItems: _navItems,
             selectedNavIndex: _selectedNavIndex,
             onNavSelected: (index) => _navigateByIndex(index),
-            userAvatarUrl:
-                'https://via.placeholder.com/32x32?text=User',
-            userName: 'Sarah J',
+            userAvatarUrl: 'https://via.placeholder.com/32x32?text=User',
+            userName: 'Usuário',
             onNotificationTap: () {},
             onProfileTap: () {
               Navigator.pushNamed(context, '/profile');
@@ -61,14 +84,16 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
             },
           ),
           Expanded(
-            child: SingleChildScrollView(
+            child: _isLoading 
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'My Favorites',
+                      'Meus Favoritos',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 28,
@@ -77,7 +102,7 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Your saved favorites across movies and series',
+                      'Seus filmes e séries salvos',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.6),
                         fontSize: 14,
@@ -89,23 +114,41 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          _buildFilterChip('All'),
-                          _buildFilterChip('Movies'),
-                          _buildFilterChip('Series'),
+                          _buildFilterChip('Todos'),
+                          _buildFilterChip('Filmes'),
+                          _buildFilterChip('Séries'),
                         ],
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // Favorites Grid com navegação por controle
-                    OptimizedGridView(
-                      items: demoFavorites,
-                      crossAxisCount: 4,
-                      mainAxisSpacing: 24,
-                      crossAxisSpacing: 24,
-                      childAspectRatio: 0.7,
-                      physics: const NeverScrollableScrollPhysics(),
-                      onTap: (item) => _handleFavoriteTap(item),
-                    ),
+                    
+                    if (_filteredFavorites.isEmpty)
+                       Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(48.0),
+                            child: Column(
+                              children: [
+                                Icon(Icons.favorite_border, size: 60, color: Colors.white24),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Nenhum favorito encontrado',
+                                  style: TextStyle(color: Colors.white54),
+                                )
+                              ],
+                            ),
+                          )
+                       )
+                    else
+                      // Favorites Grid
+                      OptimizedGridView(
+                        items: _filteredFavorites,
+                        crossAxisCount: 6, // Mais denso
+                        mainAxisSpacing: 24,
+                        crossAxisSpacing: 24,
+                        childAspectRatio: 0.65,
+                        physics: const NeverScrollableScrollPhysics(),
+                        onTap: (item) => _handleFavoriteTap(item),
+                      ),
                   ],
                 ),
               ),
@@ -117,17 +160,22 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
   }
 
   Widget _buildFilterChip(String label) {
+    final isSelected = _filter == label;
     return Padding(
       padding: const EdgeInsets.only(right: 12),
-      child: GlassPanel(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        borderRadius: BorderRadius.circular(20),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+      child: GestureDetector(
+        onTap: () => setState(() => _filter = label),
+        child: GlassPanel(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          borderRadius: BorderRadius.circular(20),
+          backgroundColor: isSelected ? AppColors.primary.withOpacity(0.5) : null,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),
@@ -135,7 +183,16 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
   }
 
   void _handleFavoriteTap(ContentItem item) {
-    // TODO: integrar com detalhe/player conforme tipo
-    debugPrint('Abrir favorito: ${item.title} (${item.type})');
+    if (item.isSeries) {
+         Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)),
+        ).then((_) => _loadFavorites()); // Recarrega ao voltar
+    } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)),
+        ).then((_) => _loadFavorites()); // Recarrega ao voltar
+    }
   }
 }
