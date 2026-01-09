@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../core/config.dart';
+import '../core/prefs.dart';
 import '../core/utils/logger.dart';
 
 /// Serviço para buscar metadados de filmes e séries do TMDB
@@ -8,46 +10,58 @@ class TmdbService {
   static const String _baseUrl = 'https://api.themoviedb.org/3';
   static String? _apiKey;
 
-  /// Inicializa a API key do TMDB (lê de .env via Config)
+  /// Inicializa a API key do TMDB
   static void init() {
-    // Lê a chave do arquivo .env através de Config
+    // A chave agora é hardcoded via Config.tmdbApiKey para máxima estabilidade
     _apiKey = Config.tmdbApiKey;
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      AppLogger.warning('⚠️ TMDB_API_KEY não configurada (ver .env)');
-    } else {
-      AppLogger.info('✅ TMDB API key carregada (via .env)');
-    }
-
-    // Testa a API key imediatamente após inicialização
-    _testApiKey();
-  }
-  
-  /// Testa se a API key está funcionando
-  static Future<void> _testApiKey() async {
-    if (_apiKey == null || _apiKey!.isEmpty) return;
     
+    // Se o usuário configurou uma chave manual nas Settings, ela ainda pode ser usada,
+    // mas o padrão hardcoded garante que o app nunca fique sem chave.
     try {
-      // Testa com um filme conhecido (ID 550 = Fight Club)
-      final testUrl = '$_baseUrl/movie/550?api_key=$_apiKey';
-      final res = await http.get(Uri.parse(testUrl)).timeout(const Duration(seconds: 5));
-      
-      if (res.statusCode == 200) {
-        AppLogger.info('✅ TMDB: API key válida e funcionando');
-      } else if (res.statusCode == 401) {
-        AppLogger.error('❌ TMDB: API key INVÁLIDA ou EXPIRADA! Status 401');
-        AppLogger.error('❌ TMDB: Verifique se a API key está correta e ativa');
-      } else if (res.statusCode == 429) {
-        AppLogger.warning('⚠️ TMDB: Rate limit atingido no teste inicial');
+      final prefKey = Prefs.getTmdbApiKey();
+      if (prefKey != null && prefKey.isNotEmpty) {
+        _apiKey = prefKey.trim();
+        AppLogger.info('✅ TMDB API key carregada (via Settings personalizada)');
       } else {
-        AppLogger.warning('⚠️ TMDB: Status ${res.statusCode} no teste da API key');
+        AppLogger.info('✅ TMDB API key carregada (via hardcode estável)');
       }
     } catch (e) {
-      AppLogger.warning('⚠️ TMDB: Erro ao testar API key: $e');
+      AppLogger.warning('⚠️ TMDB: Erro ao ler Prefs, usando hardcode');
     }
+
+    testApiKeyNow();
   }
+  
+  
 
   /// Verifica se a API key está configurada
   static bool get isConfigured => _apiKey != null && _apiKey!.isNotEmpty;
+
+  /// Testa a API key atual de forma síncrona (awaitable) e retorna true se válida
+  static Future<bool> testApiKeyNow() async {
+    if (_apiKey == null || _apiKey!.isEmpty) return false;
+
+    try {
+      final testUrl = '$_baseUrl/movie/550?api_key=$_apiKey';
+      final res = await http.get(Uri.parse(testUrl)).timeout(const Duration(seconds: 5));
+      if (res.statusCode == 200) {
+        AppLogger.info('✅ TMDB: API key válida e funcionando (teste)');
+        return true;
+      } else if (res.statusCode == 401) {
+        AppLogger.error('❌ TMDB: API key INVÁLIDA ou EXPIRADA! Status 401 (teste)');
+        return false;
+      } else if (res.statusCode == 429) {
+        AppLogger.warning('⚠️ TMDB: Rate limit atingido no teste inicial');
+        return false;
+      } else {
+        AppLogger.warning('⚠️ TMDB: Status ${res.statusCode} no teste da API key');
+        return false;
+      }
+    } catch (e) {
+      AppLogger.warning('⚠️ TMDB: Erro ao testar API key: $e');
+      return false;
+    }
+  }
 
   /// Busca informações completas de um filme/série pelo título
   static Future<TmdbMetadata?> searchContent(String title, {String? year, String type = 'movie'}) async {
@@ -73,7 +87,7 @@ class TmdbService {
       if (year != null && year.isNotEmpty && year.length == 4) {
         try {
           final searchUrlWithYear = '$searchUrl&year=$year';
-          final searchRes = await http.get(Uri.parse(searchUrlWithYear)).timeout(const Duration(seconds: 15));
+          final searchRes = await _getWithRetry(Uri.parse(searchUrlWithYear), timeout: const Duration(seconds: 8));
           AppLogger.info('📡 TMDB: Status ${searchRes.statusCode} (com ano $year)');
           
           if (searchRes.statusCode == 200) {
@@ -102,7 +116,7 @@ class TmdbService {
 
       // Se não encontrou com ano, tenta sem
       try {
-        final searchRes = await http.get(Uri.parse(searchUrl)).timeout(const Duration(seconds: 15));
+        final searchRes = await _getWithRetry(Uri.parse(searchUrl), timeout: const Duration(seconds: 8));
         AppLogger.info('📡 TMDB: Status ${searchRes.statusCode} (sem ano)');
         
         if (searchRes.statusCode == 200) {
@@ -155,8 +169,8 @@ class TmdbService {
   static Future<TmdbMetadata?> _fetchDetails(int id, String type) async {
     try {
       final url = '$_baseUrl/$type/$id?api_key=$_apiKey&language=pt-BR&append_to_response=credits';
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-      
+      final res = await _getWithRetry(Uri.parse(url), timeout: const Duration(seconds: 8));
+
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         final metadata = TmdbMetadata.fromJson(data, type);
@@ -172,13 +186,33 @@ class TmdbService {
     return null;
   }
 
+  /// Helper que realiza requisições GET com retries exponenciais para falhas transitórias
+  static Future<http.Response> _getWithRetry(Uri uri, {Duration timeout = const Duration(seconds: 8), int maxRetries = 2}) async {
+    int attempt = 0;
+    while (true) {
+      attempt++;
+      try {
+        final res = await http.get(uri).timeout(timeout);
+        return res;
+      } catch (e) {
+        // Se atingiu o máximo de tentativas, rethrow para que o chamador trate
+        if (attempt > maxRetries) rethrow;
+
+        // Apenas loga e aguarda backoff para tentativas seguintes
+        final backoffMs = 250 * (1 << (attempt - 1)); // 250ms, 500ms, 1000ms...
+        AppLogger.warning('⚠️ TMDB: Request falhou (tentativa $attempt/$maxRetries). Retentando em ${backoffMs}ms — erro: $e');
+        await Future.delayed(Duration(milliseconds: backoffMs));
+      }
+    }
+  }
+
   /// Busca lista de filmes populares
   static Future<List<TmdbMetadata>> getPopularMovies({int page = 1}) async {
     if (!isConfigured) return [];
     
     try {
-      final url = '$_baseUrl/movie/popular?api_key=$_apiKey&language=pt-BR&page=$page';
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final url = '$_baseUrl/movie/popular?api_key=$_apiKey&language=pt-BR&page=$page&append_to_response=credits';
+      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
       
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
@@ -234,8 +268,8 @@ class TmdbService {
     if (!isConfigured) return [];
     
     try {
-      final url = '$_baseUrl/tv/popular?api_key=$_apiKey&language=pt-BR&page=$page';
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final url = '$_baseUrl/tv/popular?api_key=$_apiKey&language=pt-BR&page=$page&append_to_response=credits';
+      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
       
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
@@ -286,6 +320,7 @@ class TmdbMetadata {
   final List<CastMember> cast;
   final String? director;
   final String type; // 'movie' ou 'tv'
+  final String? originalTitle;
 
   TmdbMetadata({
     required this.id,
@@ -304,7 +339,47 @@ class TmdbMetadata {
     this.cast = const [],
     this.director,
     required this.type,
-  });
+    this.originalTitle,
+    });
+
+    /// Serializa metadados para cache local
+    Map<String, dynamic> toCacheJson() {
+      return {
+        'id': id,
+        'title': title,
+        'overview': overview,
+        'rating': rating,
+        'popularity': popularity,
+        'releaseDate': releaseDate,
+        'posterPath': posterPath,
+        'backdropPath': backdropPath,
+        'genres': genres,
+        'runtime': runtime,
+        'type': type,
+      };
+    }
+
+    /// Reconstrói metadados a partir do formato de cache
+    factory TmdbMetadata.fromCacheJson(Map<String, dynamic> json) {
+      return TmdbMetadata(
+        id: json['id'] ?? 0,
+        title: json['title'] ?? '',
+        overview: json['overview'],
+        rating: (json['rating'] ?? 0.0).toDouble(),
+        popularity: (json['popularity'] ?? 0.0).toDouble(),
+        releaseDate: json['releaseDate'],
+        posterPath: json['posterPath'],
+        backdropPath: json['backdropPath'],
+        genres: (json['genres'] as List?)?.map((e) => e.toString()).toList() ?? [],
+        runtime: json['runtime'],
+        budget: null,
+        revenue: null,
+        languages: const [],
+        cast: const [],
+        director: null,
+        type: json['type'] ?? 'movie',
+      );
+    }
 
   factory TmdbMetadata.fromJson(Map<String, dynamic> json, String type) {
     // Extrair gêneros
@@ -371,6 +446,7 @@ class TmdbMetadata {
       cast: castList,
       director: director,
       type: type,
+      originalTitle: json['original_title'] ?? json['original_name'],
     );
   }
 

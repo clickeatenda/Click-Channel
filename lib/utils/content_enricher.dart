@@ -100,21 +100,9 @@ class ContentEnricher {
           }
         }
         
-        // CRÍTICO: Log detalhado de todas as variações que serão tentadas
-        AppLogger.info('🔍 TMDB: Tentando ${searchVariations.length} variações para "${item.title}":');
-        for (int i = 0; i < searchVariations.length; i++) {
-          AppLogger.info('   Variação ${i + 1}: "${searchVariations[i]}"');
-        }
-        
         // Tenta cada variação até encontrar
-        for (int i = 0; i < searchVariations.length; i++) {
-          final variation = searchVariations[i];
-          if (variation.length < 3) {
-            AppLogger.debug('   ⏭️ Variação ${i + 1} muito curta, pulando');
-            continue;
-          }
-          
-          AppLogger.info('   🔎 Tentando variação ${i + 1}/${searchVariations.length}: "$variation"');
+        for (final variation in searchVariations) {
+          if (variation.length < 3) continue;
           
           metadata = await TmdbService.searchContent(
             variation,
@@ -123,16 +111,12 @@ class ContentEnricher {
           );
           
           if (metadata != null) {
-            AppLogger.info('   ✅ SUCESSO com variação ${i + 1}: "$variation" - Rating: ${metadata.rating}');
+            AppLogger.debug('✅ TMDB: Encontrado com variação "$variation"');
             break; // Encontrou, para de tentar
-          } else {
-            AppLogger.debug('   ❌ Variação ${i + 1} não encontrou resultados');
           }
           
           // Pequeno delay entre tentativas para evitar rate limit
-          if (i < searchVariations.length - 1) {
-            await Future.delayed(const Duration(milliseconds: 150));
-          }
+          await Future.delayed(const Duration(milliseconds: 100));
         }
 
         if (metadata != null) {
@@ -144,6 +128,7 @@ class ContentEnricher {
             genre: metadata.genres.isNotEmpty ? metadata.genres.join(', ') : item.genre,
             popularity: metadata.popularity,
             releaseDate: metadata.releaseDate,
+            image: metadata.posterUrl, // NOVO: usa imagem do TMDB se disponível
           );
           
           // Debug: verifica se rating foi aplicado corretamente
@@ -189,6 +174,7 @@ class ContentEnricher {
           genre: metadata.genres.isNotEmpty ? metadata.genres.join(', ') : item.genre,
           popularity: metadata.popularity,
           releaseDate: metadata.releaseDate,
+          image: metadata.posterUrl, // NOVO: usa imagem do TMDB se disponível
         );
       }
     } catch (e) {

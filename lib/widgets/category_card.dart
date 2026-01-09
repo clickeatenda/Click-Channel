@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 
@@ -14,6 +15,21 @@ class CategoryCard extends StatefulWidget {
 
 class _CategoryCardState extends State<CategoryCard> {
   bool _isFocused = false;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      setState(() => _isFocused = _focusNode.hasFocus);
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   // Gera uma cor consistente baseada no nome da categoria
   Color _getDynamicColor(String text) {
@@ -26,45 +42,58 @@ class _CategoryCardState extends State<CategoryCard> {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: widget.onTap,
-      onFocusChange: (val) => setState(() => _isFocused = val),
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        transform: _isFocused ? Matrix4.identity().scaled(1.05) : Matrix4.identity(),
-        decoration: BoxDecoration(
-          color: _isFocused ? AppColors.primary : _getDynamicColor(widget.name).withOpacity(0.4),
-          borderRadius: BorderRadius.circular(12),
-          border: _isFocused ? Border.all(color: Colors.white, width: 2) : Border.all(color: Colors.white10),
-          boxShadow: _isFocused 
-              ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 15)] 
-              : [],
-        ),
-        child: Stack(
-          children: [
-            // Ícone de fundo decorativo
-            Positioned(
-              right: -10,
-              bottom: -10,
-              child: Icon(Icons.folder, size: 80, color: Colors.white.withOpacity(0.1)),
-            ),
-            // Nome da Categoria
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Text(
-                  widget.name,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.titleLarge.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [const Shadow(blurRadius: 2, color: Colors.black)],
+    return Focus(
+      focusNode: _focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            widget.onTap();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          transform: _isFocused ? Matrix4.identity().scaled(1.05) : Matrix4.identity(),
+          decoration: BoxDecoration(
+            color: _isFocused ? AppColors.primary : _getDynamicColor(widget.name).withOpacity(0.4),
+            borderRadius: BorderRadius.circular(12),
+            border: _isFocused ? Border.all(color: Colors.white, width: 2) : Border.all(color: Colors.white10),
+            boxShadow: _isFocused 
+                ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 15)] 
+                : [],
+          ),
+          child: Stack(
+            children: [
+              // Ícone de fundo decorativo
+              Positioned(
+                right: -10,
+                bottom: -10,
+                child: Icon(Icons.folder, size: 80, color: Colors.white.withOpacity(0.1)),
+              ),
+              // Nome da Categoria
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Text(
+                    widget.name,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.titleLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [const Shadow(blurRadius: 2, color: Colors.black)],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
