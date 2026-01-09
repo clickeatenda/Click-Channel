@@ -63,7 +63,7 @@ class ContentItem {
   }) {
     // CRÍTICO: Se rating foi fornecido (mesmo que seja 0), usa ele
     // Isso garante que ratings do TMDB sejam aplicados corretamente
-    final finalRating = rating != null ? rating : this.rating;
+    final finalRating = rating ?? this.rating;
     
     return ContentItem(
       title: title,
@@ -82,5 +82,24 @@ class ContentItem {
       popularity: popularity ?? this.popularity,
       releaseDate: releaseDate ?? this.releaseDate,
     );
+  }
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'url': url,
+      'logo': image, // Compatível com fromJson
+      'group': group,
+      'type': type,
+      'isSeries': isSeries,
+      'id': id,
+      'rating': rating,
+      'year': year,
+      'quality': quality,
+      'audioType': audioType,
+      'description': description,
+      'genre': genre,
+      'popularity': popularity,
+      'releaseDate': releaseDate,
+    };
   }
 }

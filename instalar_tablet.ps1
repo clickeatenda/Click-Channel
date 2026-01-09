@@ -12,7 +12,8 @@ Write-Host "╚═════════════════════�
 Write-Host ""
 
 # IPs comuns para tentar
-$possibleIPs = @("192.168.3.159", "192.168.3.129", "192.168.1.159", "192.168.0.159")
+$possibleIPs = @("192.168.3.155")
+$customPorts = @{ "192.168.3.155" = "45487" }
 
 Write-Host "🔍 Tentando conectar em IPs comuns..." -ForegroundColor Yellow
 Write-Host ""
@@ -21,19 +22,22 @@ $connected = $false
 $connectedIP = ""
 
 foreach ($ip in $possibleIPs) {
-    Write-Host "   Tentando: $ip..." -ForegroundColor Gray -NoNewline
+    $currentPort = if ($customPorts.ContainsKey($ip)) { $customPorts[$ip] } else { $PORT }
+    Write-Host "   Tentando: $ip:$currentPort..." -ForegroundColor Gray -NoNewline
     
-    $result = adb connect "$($ip):$PORT" 2>&1
+    $result = adb connect "$($ip):$currentPort" 2>&1
     Start-Sleep -Seconds 1
     
-    $devices = adb devices | Select-String "$($ip):$PORT.*device$"
+    $devices = adb devices | Select-String "$($ip):$currentPort.*device$"
     
     if ($devices) {
         Write-Host " ✅ CONECTADO!" -ForegroundColor Green
         $connected = $true
         $connectedIP = $ip
+        $PORT = $currentPort # Update global port for installation
         break
-    } else {
+    }
+    else {
         Write-Host " ❌ Falhou" -ForegroundColor Red
     }
 }
@@ -42,7 +46,7 @@ Write-Host ""
 
 if ($connected) {
     Write-Host "══════════════════════════════════════════════════════════" -ForegroundColor Green
-    Write-Host "   ✅ TABLET CONECTADO: $connectedIP" -ForegroundColor Green
+    Write-Host "   ✅ TABLET CONECTADO: $connectedIP:$PORT" -ForegroundColor Green
     Write-Host "══════════════════════════════════════════════════════════" -ForegroundColor Green
     Write-Host ""
     
@@ -62,13 +66,15 @@ if ($connected) {
         Write-Host "   Abra o app no tablet" -ForegroundColor White
         Write-Host "   Deve mostrar Setup Screen (limpo!)" -ForegroundColor White
         Write-Host ""
-    } else {
+    }
+    else {
         Write-Host ""
         Write-Host "❌ Erro na instalação" -ForegroundColor Red
         Write-Host ""
     }
     
-} else {
+}
+else {
     Write-Host "══════════════════════════════════════════════════════════" -ForegroundColor Red
     Write-Host "   ❌ NÃO FOI POSSÍVEL CONECTAR AO TABLET" -ForegroundColor Red
     Write-Host "══════════════════════════════════════════════════════════" -ForegroundColor Red

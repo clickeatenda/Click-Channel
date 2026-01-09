@@ -115,4 +115,37 @@ class Prefs {
     if (lastDownload == null) return true;
     return DateTime.now().difference(lastDownload) > maxAge;
   }
+
+
+  // --- SUBTITLE PREFS ---
+  static const String keySubtitleSize = 'subtitle_size';
+  static const String keySubtitleColor = 'subtitle_color';
+  static const String keySubtitleLanguage = 'subtitle_language'; 
+  
+  static Future<void> setSubtitleSize(double size) async {
+    if (_prefs == null) await init();
+    await _prefs!.setDouble(keySubtitleSize, size);
+  }
+
+  static double getSubtitleSize() {
+    return _prefs?.getDouble(keySubtitleSize) ?? 28.0;
+  }
+  
+  static Future<void> setSubtitleColor(String colorName) async {
+    if (_prefs == null) await init();
+    await _prefs!.setString(keySubtitleColor, colorName);
+  }
+  
+  static String getSubtitleColor() {
+    return _prefs?.getString(keySubtitleColor) ?? 'white';
+  }
+
+  static Future<void> setSubtitleLanguage(String lang) async {
+    if (_prefs == null) await init();
+    await _prefs!.setString(keySubtitleLanguage, lang);
+  }
+
+  static String getSubtitleLanguage() {
+    return _prefs?.getString(keySubtitleLanguage) ?? 'por';
+  }
 }

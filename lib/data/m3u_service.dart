@@ -1046,13 +1046,22 @@ class M3uService {
   /// Ex: "The Office S05E12" -> "The Office"
   static String extractSeriesBaseTitle(String title) {
     var base = title;
-    // Remove padrões S##E## ou S## E## (case-insensitive)
-    base = base.replaceAll(RegExp(r'S\d{1,2}\s*E\d{1,2}', caseSensitive: false), '');
+    // Remove S##E##, S## E##, s##e## etc
+    base = base.replaceAll(RegExp(r's\d{1,2}\s*e\d{1,2}', caseSensitive: false), '');
+    // Remove ##x##
+    base = base.replaceAll(RegExp(r'\d{1,2}[x\.]\d{1,2}'), '');
+    // Remove T##E##
+    base = base.replaceAll(RegExp(r't\d{1,2}\s*e\d{1,2}', caseSensitive: false), '');
+    // Remove "Temporada X Episódio Y"
+    base = base.replaceAll(RegExp(r'temporada\s+\d+\s+episódio\s+\d+', caseSensitive: false), '');
+    // Remove "Episódio X" ou "Episode X"
+    base = base.replaceAll(RegExp(r'(episódio|episode)\s*\d+', caseSensitive: false), '');
+    
     // Remove (YYYY)
     base = base.replaceAll(RegExp(r'\(\d{4}\)'), '');
     // Remove espaçamentos e separadores redundantes
     base = base.replaceAll(RegExp(r'\s+'), ' ').trim();
-    // Remove traços/pipe no fim
+    // Remove traços/pipe no fim (ex: "Name - ")
     base = base.replaceAll(RegExp(r'[\-\|]+\s*$'), '').trim();
     return base.isEmpty ? title : base;
   }
