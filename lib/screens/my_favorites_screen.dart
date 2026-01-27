@@ -32,7 +32,7 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
   
   Future<void> _loadFavorites() async {
     setState(() => _isLoading = true);
-    final favs = await FavoritesService.getFavorites();
+    final favs = FavoritesService.getAll();
     if (mounted) {
       setState(() {
         _favorites = favs;

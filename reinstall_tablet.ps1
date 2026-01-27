@@ -3,7 +3,7 @@
 
 $env:Path += ";C:\Users\joaov\AppData\Local\Android\Sdk\platform-tools"
 $APK_PATH = "build\app\outputs\flutter-apk\app-release.apk"
-$PACKAGE_NAME = "com.click_channel"
+$PACKAGE_NAME = "com.example.clickflix"
 $PORT = "5555"
 
 Write-Host ""
@@ -13,7 +13,7 @@ Write-Host "╚═════════════════════�
 Write-Host ""
 
 # IPs comuns para tentar
-$possibleIPs = @("192.168.3.159", "192.168.3.129", "192.168.1.159", "192.168.0.159")
+$possibleIPs = @("192.168.3.155", "192.168.3.159", "192.168.3.129", "192.168.1.159", "192.168.0.159")
 
 Write-Host "🔍 Conectando ao tablet..." -ForegroundColor Yellow
 

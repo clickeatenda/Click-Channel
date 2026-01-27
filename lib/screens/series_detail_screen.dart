@@ -13,6 +13,7 @@ import '../utils/content_enricher.dart';
 import '../data/favorites_service.dart'; // NOVO import
 import '../data/jellyfin_service.dart';
 
+import 'season_details_screen.dart';
 
 /// Tela de detalhes completa de série com todas as informações
 /// Layout similar ao MovieDetailScreen
@@ -49,18 +50,27 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     super.initState();
     isFavorite = FavoritesService.isFavorite(widget.item);
     
-    // DELAY CRÍTICO: Evita travamento na transição de tela
-    // Carregamento IMEDIATO (sem delay artificial)
-    // 1. Carrega detalhes básicos (crítico para UI)
+    // Carrega detalhes básicos (crítico para UI)
     _loadDetails();
     
-    // 2. Metadados e Similares podem carregar em background logo depois
+    // TMDB DESATIVADO TEMPORARIAMENTE PARA TESTE DE PERFORMANCE
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (mounted) {
+    //     _loadMetadata();
+    //      Future.delayed(const Duration(milliseconds: 500), () {
+    //        if(mounted) _loadSimilarItems();
+    //      });
+    //   }
+    // });
+    
+    // Marca como carregado imediatamente (sem esperar TMDB)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _loadMetadata();
-         Future.delayed(const Duration(milliseconds: 500), () {
-           if(mounted) _loadSimilarItems();
-         });
+        setState(() {
+          enrichedItem = widget.item;
+          loadingMetadata = false;
+          loadingSimilar = false;
+        });
       }
     });
   }
@@ -115,30 +125,42 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   }
 
   Future<void> _loadDetails() async {
-    // Carrega detalhes da série (temporadas/episódios)
+    // Carrega detalhes da série (temporadas/episódios) com proteção contra crash
     SeriesDetails? d;
-    if (widget.item.group == 'Jellyfin' || widget.item.id.length > 30) {
-      // Lógica JELLYFIN (Prioritária)
-      try {
-        final seasons = await JellyfinService.getSeasons(widget.item.id);
-        final Map<String, List<ContentItem>> seasonsMap = {};
-        
-        for (final s in seasons) {
-           final seasonName = s.title;
-           final episodes = await JellyfinService.getEpisodes(widget.item.id, s.id);
-           seasonsMap[seasonName] = episodes;
+    
+    try {
+      if (widget.item.group == 'Jellyfin' || widget.item.id.length > 30) {
+        // Lógica JELLYFIN (Prioritária)
+        try {
+          final seasons = await JellyfinService.getSeasons(widget.item.id);
+          final Map<String, List<ContentItem>> seasonsMap = {};
+          
+          for (final s in seasons) {
+             final seasonName = s.title;
+             final episodes = await JellyfinService.getEpisodes(widget.item.id, s.id);
+             seasonsMap[seasonName] = episodes;
+          }
+          
+          d = SeriesDetails(seasons: seasonsMap);
+        } catch (e) {
+          print('❌ Erro ao carregar detalhes Jellyfin: $e');
         }
-        
-        d = SeriesDetails(seasons: seasonsMap);
-      } catch (e) {
-        print('❌ Erro ao carregar detalhes Jellyfin: $e');
+      } else if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
+        // Lógica M3U (Fallback) - com timeout para evitar travamento
+        try {
+          availableAudioTypes = await M3uService.getAvailableAudioTypesForSeries(widget.item.title, widget.item.group)
+              .timeout(const Duration(seconds: 10), onTimeout: () => []);
+          d = await M3uService.fetchSeriesDetailsFromM3u(widget.item.title, widget.item.group)
+              .timeout(const Duration(seconds: 15), onTimeout: () => null);
+        } catch (e) {
+          print('❌ Erro ao carregar detalhes M3U: $e');
+        }
+      } else {
+        d = await ApiService.fetchSeriesDetails(widget.item.id);
       }
-    } else if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
-      // Lógica M3U (Fallback)
-      availableAudioTypes = await M3uService.getAvailableAudioTypesForSeries(widget.item.title, widget.item.group);
-      d = await M3uService.fetchSeriesDetailsFromM3u(widget.item.title, widget.item.group);
-    } else {
-      d = await ApiService.fetchSeriesDetails(widget.item.id);
+    } catch (e, st) {
+      print('❌ Erro CRÍTICO ao carregar detalhes da série: $e');
+      print(st);
     }
     
     if (mounted) {
@@ -353,16 +375,35 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                                 return _SeasonChip(
                                   label: '$season',
                                   isActive: season == selectedSeason,
-                                  onPressed: () => setState(() => selectedSeason = season),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SeasonDetailsScreen(
+                                          seasonName: '$season',
+                                          episodes: details!.seasons[season]!,
+                                          seriesTitle: widget.item.title,
+                                          posterUrl: widget.item.image,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 );
                               },
                             ),
                           ),
                           
-                          const SizedBox(height: 24),
-                          
-                          // Lista de Episódios
-                          if (selectedSeason != null && details != null && details!.seasons.containsKey(selectedSeason))
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 20, bottom: 20),
+                              child: Text(
+                                'Clique na temporada acima para ver os episódios',
+                                style: TextStyle(color: Colors.white54, fontStyle: FontStyle.italic),
+                              ),
+                            ),
+                          ),
+                          // Lista de episodios desativada em favor da nova tela
+                          if (false && selectedSeason != null && details != null && details!.seasons.containsKey(selectedSeason))
                              Builder(
                                builder: (context) {
                                  final episodes = details!.seasons[selectedSeason]!;

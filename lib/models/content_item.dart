@@ -117,4 +117,31 @@ class ContentItem {
       originalTitle: originalTitle,
     );
   }
+
+  /// Serializa para JSON (para cache)
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'url': url,
+      'logo': image,
+      'group': group,
+      'type': type,
+      'isSeries': isSeries,
+      'id': id,
+      'rating': rating,
+      'year': year,
+      'quality': quality,
+      'audioType': audioType,
+      'description': description,
+      'genre': genre,
+      'popularity': popularity,
+      'releaseDate': releaseDate,
+      'director': director,
+      'budget': budget,
+      'revenue': revenue,
+      'runtime': runtime,
+      'cast': cast,
+      'originalTitle': originalTitle,
+    };
+  }
 }
