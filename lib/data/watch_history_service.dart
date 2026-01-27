@@ -61,6 +61,13 @@ class WatchHistoryService {
     }
   }
 
+  /// Verifica se um item já foi marcado como assistido
+  static Future<bool> isWatched(String url) async {
+    final history = await getWatchedHistory();
+    return history.any((h) => h['url'] == url);
+  }
+
+
   /// Converte histórico para lista de ContentItem
   static Future<List<ContentItem>> getWatchedItems({int limit = 20}) async {
     final history = await getWatchedHistory();

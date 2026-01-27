@@ -34,6 +34,13 @@ class M3uService {
   static Map<String, List<String>>? _curatedFeaturedCache;
   static DateTime? _curatedFeaturedFetchedAt;
   static final Map<String, Future<void>> _pendingCacheEnsures = {};
+  
+  // INDEXAÇÃO: Mapas para acesso instantâneo aos itens de cada categoria
+  // Elimina a necessidade de varredura linear (filtro) a cada clique
+  static Map<String, List<ContentItem>> _movieItemsByCategory = {};
+  static Map<String, List<ContentItem>> _seriesItemsByCategory = {};
+  static Map<String, List<ContentItem>> _channelItemsByCategory = {};
+
   // Cache permanente - não expira automaticamente
   // O cache só é atualizado quando o usuário solicita explicitamente
   static const Duration _cacheTtl = Duration(days: 365); // 1 ano (efetivamente permanente)
@@ -66,6 +73,12 @@ class M3uService {
     _channelCategories.clear();
     _channelCategoryCounts.clear();
     _channelCategoryThumb.clear();
+    
+    // Limpa índices
+    _movieItemsByCategory.clear();
+    _seriesItemsByCategory.clear();
+    _channelItemsByCategory.clear();
+    
     _preloadDone = false;
     _preloadSource = null;
     _curatedFeaturedCache = null;
@@ -159,6 +172,85 @@ class M3uService {
     final dir = await getApplicationSupportDirectory();
     final hash = source.hashCode;
     return File('${dir.path}/m3u_meta_$hash.json');
+  }
+
+  /// Retorna arquivo de cache de itens parseados (JSON mais rápido que M3U)
+  static Future<File> _getParsedCacheFile(String source) async {
+    final dir = await getApplicationSupportDirectory();
+    final normalizedSource = source.trim().replaceAll(RegExp(r'/+$'), '');
+    final hash = normalizedSource.hashCode;
+    return File('${dir.path}/m3u_parsed_$hash.json');
+  }
+
+
+
+  /// Reconstrói listas de categorias a partir dos caches carregados
+  static void _rebuildCategoriesFromCache() {
+    final movieCats = <String>{};
+    final movieCounts = <String, int>{};
+    final movieThumbs = <String, String>{};
+    final movieIndex = <String, List<ContentItem>>{};
+    
+    for (final item in _movieCache ?? []) {
+      final group = item.group;
+      movieCats.add(group);
+      movieCounts[group] = (movieCounts[group] ?? 0) + 1;
+      // Popula índice
+      movieIndex.putIfAbsent(group, () => []).add(item);
+      
+      if (item.image.isNotEmpty && !movieThumbs.containsKey(group)) {
+        movieThumbs[group] = item.image;
+      }
+    }
+    
+    final seriesCats = <String>{};
+    final seriesCounts = <String, int>{};
+    final seriesThumbs = <String, String>{};
+    final seriesIndex = <String, List<ContentItem>>{};
+    
+    for (final item in _seriesCache ?? []) {
+      final group = item.group;
+      seriesCats.add(group);
+      seriesCounts[group] = (seriesCounts[group] ?? 0) + 1;
+      // Popula índice
+      seriesIndex.putIfAbsent(group, () => []).add(item);
+      
+      if (item.image.isNotEmpty && !seriesThumbs.containsKey(group)) {
+        seriesThumbs[group] = item.image;
+      }
+    }
+    
+    final channelCats = <String>{};
+    final channelCounts = <String, int>{};
+    final channelThumbs = <String, String>{};
+    final channelIndex = <String, List<ContentItem>>{};
+    
+    for (final item in _channelCache ?? []) {
+      final group = item.group;
+      channelCats.add(group);
+      channelCounts[group] = (channelCounts[group] ?? 0) + 1;
+      // Popula índice
+      channelIndex.putIfAbsent(group, () => []).add(item);
+      
+      if (item.image.isNotEmpty && !channelThumbs.containsKey(group)) {
+        channelThumbs[group] = item.image;
+      }
+    }
+    
+    _movieCategories = movieCats.toList()..sort();
+    _movieCategoryCounts = movieCounts;
+    _movieCategoryThumb = movieThumbs;
+    _movieItemsByCategory = movieIndex;
+    
+    _seriesCategories = seriesCats.toList()..sort();
+    _seriesCategoryCounts = seriesCounts;
+    _seriesCategoryThumb = seriesThumbs;
+    _seriesItemsByCategory = seriesIndex;
+    
+    _channelCategories = channelCats.toList()..sort();
+    _channelCategoryCounts = channelCounts;
+    _channelCategoryThumb = channelThumbs;
+    _channelItemsByCategory = channelIndex;
   }
 
   /// Salva os nomes das categorias e contagens em um arquivo JSON leve.
@@ -487,10 +579,10 @@ class M3uService {
     _movieCacheSource = source;
     _movieCacheMaxItems = 999999;
 
-    // Extrai categorias
-    _extractCategories(movieItems, _movieCategories, _movieCategoryCounts, _movieCategoryThumb);
-    _extractCategories(seriesItems, _seriesCategories, _seriesCategoryCounts, _seriesCategoryThumb);
-    _extractCategories(channelItems, _channelCategories, _channelCategoryCounts, _channelCategoryThumb);
+    // Extrai categorias E POPULA ÍNDICES
+    _extractCategories(movieItems, _movieCategories, _movieCategoryCounts, _movieCategoryThumb, _movieItemsByCategory);
+    _extractCategories(seriesItems, _seriesCategories, _seriesCategoryCounts, _seriesCategoryThumb, _seriesItemsByCategory);
+    _extractCategories(channelItems, _channelCategories, _channelCategoryCounts, _channelCategoryThumb, _channelItemsByCategory);
 
     // Marca preload como feito
     _preloadDone = true;
@@ -536,14 +628,20 @@ class M3uService {
     List<String> categories,
     Map<String, int> counts,
     Map<String, String> thumbs,
+    Map<String, List<ContentItem>> indexMap, // Novo parâmetro para índice
   ) {
     categories.clear();
     counts.clear();
     thumbs.clear();
+    indexMap.clear();
     
     final seen = <String>{};
     for (final item in items) {
       final group = item.group;
+      
+      // Popula índice
+      indexMap.putIfAbsent(group, () => []).add(item);
+      
       if (group.isNotEmpty && !seen.contains(group)) {
         seen.add(group);
         categories.add(group);
@@ -1136,9 +1234,34 @@ class M3uService {
       result['season'] = match.group(1) ?? '1';
       result['episode'] = match.group(2) ?? '0';
     } else {
-      // Fallback: assumir temporada 1 se não conseguir extrair
-      result['season'] = '1';
-      result['episode'] = '0';
+      // === ANIME-SPECIFIC PATTERNS ===
+      // Padrão 5: "Nome - Episódio 01" ou "Nome - Ep 01"
+      var animeMatch = RegExp(r'[-–]\s*(?:episódio|episodio|episode|ep\.?)\s*(\d{1,4})', caseSensitive: false).firstMatch(t);
+      
+      if (animeMatch == null) {
+        // Padrão 6: "Nome - 01" (hífen seguido de número)
+        animeMatch = RegExp(r'[-–]\s*(\d{1,4})\s*(?:$|[\[\(]|\bdub|\bleg|\bfhd|\bhd|\b4k)').firstMatch(t);
+      }
+      
+      if (animeMatch == null) {
+        // Padrão 7: "Nome E01" ou "Nome Ep01" (sem espaço)
+        animeMatch = RegExp(r'\be(?:p\.?)?\s*(\d{1,4})\b', caseSensitive: false).firstMatch(t);
+      }
+      
+      if (animeMatch == null) {
+        // Padrão 8: Número solto no final (ex: "Naruto 143", "One Piece 1089")
+        animeMatch = RegExp(r'\s(\d{1,4})\s*$').firstMatch(t);
+      }
+      
+      if (animeMatch != null) {
+        // Animes geralmente não têm temporadas explícitas - usamos temporada 1
+        result['season'] = '1';
+        result['episode'] = animeMatch.group(1) ?? '0';
+      } else {
+        // Fallback: assumir temporada 1 se não conseguir extrair
+        result['season'] = '1';
+        result['episode'] = '0';
+      }
     }
     
     // Padrão: (Ano)
@@ -1153,6 +1276,8 @@ class M3uService {
 
   /// Extrai um título base de série removendo padrões de temporada/episódio e ano.
   /// Ex: "The Office S05E12" -> "The Office"
+  /// Ex: "Naruto - Episódio 01" -> "Naruto"
+  /// Ex: "Dragon Ball Super - 01" -> "Dragon Ball Super"
   static String extractSeriesBaseTitle(String title) {
     var base = title;
 
@@ -1169,8 +1294,25 @@ class M3uService {
     base = base.replaceAll(RegExp(r'\b\d{1,2}x\d{1,2}\b'), ' ');
     // Season 1, Temporada 1
     base = base.replaceAll(RegExp(r'\b(season|temporada)\s*\d+', caseSensitive: false), ' ');
-    // Ep 01, Episodio 01
-    base = base.replaceAll(RegExp(r'\b(ep|epis[oó]dio)\s*\d+', caseSensitive: false), ' ');
+    // Ep 01, Episodio 01, Episode 01, Ep. 01
+    base = base.replaceAll(RegExp(r'\b(ep\.?|epis[oó]dio|episode)\s*\d+', caseSensitive: false), ' ');
+    
+    // 2.5 ANIME-SPECIFIC: Padrões comuns de animes
+    // "Nome - Episódio 01", "Nome - Ep 01"
+    base = base.replaceAll(RegExp(r'\s*-\s*(episódio|episodio|episode|ep\.?)\s*\d+', caseSensitive: false), '');
+    // "Nome - 01" ou "Nome -01" (hífen seguido de número no final ou antes de qualidade/idioma)
+    base = base.replaceAll(RegExp(r'\s*-\s*\d{1,4}\s*$'), '');
+    base = base.replaceAll(RegExp(r'\s*-\s*\d{1,4}(?=\s+(?:dub|leg|dublado|legendado|fhd|hd|4k))', caseSensitive: false), '');
+    // "Nome E01" ou "Nome Ep01" sem espaço
+    base = base.replaceAll(RegExp(r'\bE\d{1,4}\b', caseSensitive: false), ' ');
+    // Número solto no final após espaço (ex: "Naruto 143")
+    base = base.replaceAll(RegExp(r'\s+\d{1,4}\s*$'), '');
+    // "(TV)" comum em animes
+    base = base.replaceAll(RegExp(r'\(TV\)', caseSensitive: false), '');
+    // "OVA", "OAD", "Special" como marcadores
+    base = base.replaceAll(RegExp(r'\b(OVA|OAD|Special|Especial)\s*\d*\b', caseSensitive: false), ' ');
+    // "Parte X", "Part X", "Arc X"
+    base = base.replaceAll(RegExp(r'\b(parte|part|arc|arco)\s*\d+', caseSensitive: false), ' ');
     
     // 3. Remove (Ano) - ex: (2023)
     base = base.replaceAll(RegExp(r'\(\d{4}\)'), ' ');
@@ -1267,16 +1409,27 @@ class M3uService {
       return;
     }
 
+
+
     // Sem limite artificial - carrega tudo se for para categorias
     final safeLimit = maxItems;
 
     final future = () async {
+    // OTIMIZAÇÃO: Tenta carregar do parsed cache JSON primeiro (muito mais rápido!)
+    if (await _loadParsedCache(source)) {
+      print('🚀 M3uService: Usando parsed cache - skip parse!');
+      _preloadDone = true;
+      _preloadSource = source;
+      return;
+    }
+
     final file = await _getCacheFile(source); // Get the cache file for the source
     if (!await file.exists()) {
       print('⚠️ M3uService: Cache não encontrado para _ensureMovieCache');
       return;
     }
 
+    print('📖 M3uService: Parsed cache não encontrado, parseando M3U...');
     final parsedMaps = await compute(_parseFileIsolate, {
       'path': file.path, // Pass the file path to the isolate
       'limit': safeLimit,
@@ -1288,12 +1441,17 @@ class M3uService {
       final counts = <String, int>{};
       final cats = <String>{};
       final thumbs = <String, String>{};
+      final indexM = <String, List<ContentItem>>{};
+      
       final sCounts = <String, int>{};
       final sCats = <String>{};
       final sThumbs = <String, String>{};
+      final indexS = <String, List<ContentItem>>{};
+      
       final cCounts = <String, int>{};
       final cCats = <String>{};
       final cThumbs = <String, String>{};
+      final indexC = <String, List<ContentItem>>{};
 
       for (final m in parsedMaps) {
         final item = ContentItem(
@@ -1311,6 +1469,7 @@ class M3uService {
           movies.add(item);
           cats.add(item.group);
           counts[item.group] = (counts[item.group] ?? 0) + 1;
+          indexM.putIfAbsent(item.group, () => []).add(item); // Índice
           if (thumbs[item.group] == null || thumbs[item.group]!.isEmpty) {
             if (item.image.isNotEmpty) {
               thumbs[item.group] = item.image;
@@ -1320,6 +1479,7 @@ class M3uService {
           series.add(item);
           sCats.add(item.group);
           sCounts[item.group] = (sCounts[item.group] ?? 0) + 1;
+          indexS.putIfAbsent(item.group, () => []).add(item); // Índice
           if (sThumbs[item.group] == null || sThumbs[item.group]!.isEmpty) {
             if (item.image.isNotEmpty) sThumbs[item.group] = item.image;
           }
@@ -1327,6 +1487,7 @@ class M3uService {
           channels.add(item);
           cCats.add(item.group);
           cCounts[item.group] = (cCounts[item.group] ?? 0) + 1;
+          indexC.putIfAbsent(item.group, () => []).add(item); // Índice
           if (cThumbs[item.group] == null || cThumbs[item.group]!.isEmpty) {
             if (item.image.isNotEmpty) cThumbs[item.group] = item.image;
           }
@@ -1343,13 +1504,7 @@ class M3uService {
           series.length >= currentSeriesCount && 
           channels.length >= currentChannelCount) {
         
-        _movieCache = movies;
-        _seriesCache = series;
-        _channelCache = channels;
-        _movieCacheSource = source;
-        _movieCacheMaxItems = safeLimit;
-        
-        print('✅ DEBUG: Cache ATUALIZADO - movies=${movies.length} (era $currentMovieCount), series=${series.length} (era $currentSeriesCount), channels=${channels.length} (era $currentChannelCount)');
+      print('✅ DEBUG: Cache ATUALIZADO - movies=${movies.length} (era $currentMovieCount), series=${series.length} (era $currentSeriesCount), channels=${channels.length} (era $currentChannelCount)');
       } else {
         print('⚠️ DEBUG: Cache NÃO atualizado - tentativa de sobrescrever cache maior com menor! movies=${movies.length} vs $currentMovieCount, series=${series.length} vs $currentSeriesCount');
         return; // NÃO sobrescreve
@@ -1358,17 +1513,26 @@ class M3uService {
       _movieCategoryCounts = counts;
       _movieCategories = cats.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       _movieCategoryThumb = thumbs;
+      _movieItemsByCategory = indexM;
       
       _seriesCategoryCounts = sCounts;
       _seriesCategories = sCats.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       _seriesCategoryThumb = sThumbs;
+      _seriesItemsByCategory = indexS;
       
       _channelCategoryCounts = cCounts;
       _channelCategories = cCats.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       _channelCategoryThumb = cThumbs;
+      _channelItemsByCategory = indexC;
       
       // CRÍTICO: Salva meta-cache no disco após parse bem sucedido para persistir categorias
       await _saveMetaCache(source);
+      
+      // NOVO: Salva parsed cache OTIMIZADO em background
+      // Usa compute para JSON encode que é pesadíssimo
+      _saveParsedCacheOptimized(source, movies, series, channels).catchError((e) {
+         print('⚠️ M3uService: Erro ignorado ao salvar cache otimizado: $e');
+      });
       
       print('📊 M3uService Cache Atualizado: ${movies.length} filmes, ${series.length} séries, ${channels.length} canais');
       print('📊 Categorias: ${cats.length} filmes, ${sCats.length} séries, ${cCats.length} canais');
@@ -1464,32 +1628,49 @@ class M3uService {
       return [];
     }
 
-    final normalized = category.trim().toLowerCase();
-    
-    // Busca no cache correto
-    final base = (typeFilter == 'series')
-        ? (_seriesCache ?? [])
+    // Busca no mapa indexado (Instantâneo O(1))
+    final itemsMap = (typeFilter == 'series')
+        ? _seriesItemsByCategory
         : (typeFilter == 'channel')
-            ? (_channelCache ?? [])
-            : (_movieCache ?? []);
+            ? _channelItemsByCategory
+            : _movieItemsByCategory;
+
+    // Se a categoria foi encontrada no índice, retorna a lista
+    // Obs: A chave no mapa é exatamente o group, que já deve estar normalizado no parse
+    // Mas para segurança, tentamos acesso direto primeiro.
     
-    if (base.isEmpty && !isPreloaded(source)) {
-       print('⏳ fetchCategoryItemsFromEnv: Cache de $typeFilter vazio, mas preload em curso...');
+    // Tenta encontrar a chave correta no mapa (porque o 'category' passado pode ter casing diferente)
+    // Para performance, assumimos que se o clique veio da UI, o nome está correto.
+    // Mas fazemos um fallback de busca insensível a caixa se falhar.
+    
+    List<ContentItem>? filtered;
+    
+    // 1. Tenta match exato (Rápido)
+    if (itemsMap.containsKey(category)) {
+       filtered = itemsMap[category];
+    } else {
+       // 2. Tenta match normalizado
+       // Varre chaves apenas se não achou (Raro)
+       final norm = category.trim().toLowerCase();
+       for (final key in itemsMap.keys) {
+         if (key.trim().toLowerCase() == norm) {
+           filtered = itemsMap[key];
+           break;
+         }
+       }
     }
     
-    final filtered = base
-      .where((e) => e.group.trim().toLowerCase() == normalized)
-      .toList();
+    final result = filtered ?? [];
     
     // Debug: verifica quantos itens têm imagem
-    final withImage = filtered.where((e) => e.image.isNotEmpty).length;
-    print('📂 fetchCategoryItemsFromEnv($category, $typeFilter): ${filtered.length} itens, ${withImage} com imagem');
+    final withImage = result.where((e) => e.image.isNotEmpty).length;
+    print('📂 fetchCategoryItemsFromEnv($category, $typeFilter): ${result.length} itens (via Índices), ${withImage} com imagem');
     
-    if (withImage == 0 && filtered.isNotEmpty) {
-      print('⚠️ fetchCategoryItemsFromEnv: Nenhum item tem imagem! Primeiro item: ${filtered.first.title}, image: "${filtered.first.image}"');
+    if (withImage == 0 && result.isNotEmpty) {
+      print('⚠️ fetchCategoryItemsFromEnv: Nenhum item tem imagem! Primeiro item: ${result.first.title}, image: "${result.first.image}"');
     }
     
-    return filtered;
+    return result;
   }
 
   /// Retorna um mapa categoria -> thumb (primeira imagem encontrada) e contagens.
@@ -1940,17 +2121,32 @@ class M3uService {
     
     final stopwatch = Stopwatch()..start();
 
-    // Loop otimizado
+    // Loop otimizado com filtro rápido
+    final targetLower = seriesTitle.toLowerCase();
+    final targetWords = targetBase.split(' ').where((w) => w.length > 2).toList();
+    
     for (var i = 0; i < cacheList.length; i++) {
+        // YIELD TO UI THREAD: Evita congelamento em dispositivos fracos (Firestick) durante loops grandes
+        if (i % 200 == 0) await Future.delayed(Duration.zero);
+        
         final item = cacheList[i];
+        final itemTitleLower = item.title.toLowerCase();
         
-        // Extração de base title pode ser custosa, fazemos sob demanda
+        // FILTRO RÁPIDO: Pula itens que claramente não são da série
+        // Verifica se pelo menos uma palavra significativa do título está presente
+        bool maybeMatch = false;
+        for (final word in targetWords) {
+          if (itemTitleLower.contains(word)) {
+            maybeMatch = true;
+            break;
+          }
+        }
+        if (!maybeMatch && !itemTitleLower.contains(targetLower.substring(0, (targetLower.length * 0.5).toInt().clamp(3, 10)))) {
+          continue; // Skip - claramente não é a série
+        }
+        
+        // Extração de base title (custosa) - só para itens que passaram no filtro rápido
         final itemTitleBase = extractSeriesBaseTitle(item.title).toLowerCase();
-        
-        // 1. Verifica Título Base (Comum a todas as estratégias) - filtro rápido primeiro
-        // Compara com targetBase E originalBase (se disponível)
-        
-        // Estratégia de prioridade:
         
         // Match exato por categoria + título (ou título original)
         if (!isTmdbSource && item.group.trim().toLowerCase() == normalizedCat) {
@@ -1980,8 +2176,9 @@ class M3uService {
            }
         }
         
-        // Limite de segurança para não estourar memória se houver MILHARES de matches
-        if (exactMatches.length + titleMatches.length + fuzzyMatches.length > 2000) {
+        // Limite AGRESSIVO para evitar estouro de memória em dispositivos fracos (Firestick)
+        if (exactMatches.length + titleMatches.length + fuzzyMatches.length > 300) {
+            print('⚠️ Limite de segurança atingido (300 matches). Parando busca.');
             break; 
         }
     }
@@ -2017,6 +2214,19 @@ class M3uService {
 
     if (allEpisodes.isEmpty) return null;
 
+    // DEDUPLICAÇÃO: Remove episódios com URL repetida (mantém primeiro encontrado)
+    // Isso evita duplicatas quando há múltiplas versões (DUB/LEG/4K) do mesmo episódio
+    final seenUrls = <String>{};
+    final uniqueEpisodes = <ContentItem>[];
+    for (final ep in allEpisodes) {
+      if (!seenUrls.contains(ep.url)) {
+        seenUrls.add(ep.url);
+        uniqueEpisodes.add(ep);
+      }
+    }
+    allEpisodes = uniqueEpisodes;
+    print('📋 Após deduplicação: ${allEpisodes.length} episódios únicos');
+
     // Agrupar por temporada com rótulos legíveis
     final Map<String, List<ContentItem>> seasonMap = {};
     for (final ep in allEpisodes) {
@@ -2033,7 +2243,9 @@ class M3uService {
     }
 
     // Ordenar episódios dentro de cada temporada (por número, senão por título)
+    // e REMOVER DUPLICATAS por número de episódio (mantém primeiro encontrado)
     seasonMap.forEach((label, episodes) {
+      // Primeiro ordena
       episodes.sort((a, b) {
         final ia = extractSeriesInfo(a.title);
         final ib = extractSeriesInfo(b.title);
@@ -2041,6 +2253,19 @@ class M3uService {
         final eb = int.tryParse(ib['episode'] ?? '0') ?? 0;
         if (ea != eb) return ea.compareTo(eb);
         return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      });
+      
+      // Remove duplicatas por número de episódio
+      final seenEpisodes = <int>{};
+      episodes.removeWhere((ep) {
+        final info = extractSeriesInfo(ep.title);
+        final epNum = int.tryParse(info['episode'] ?? '0') ?? 0;
+        if (epNum == 0) return false; // Mantém episódios sem número
+        if (seenEpisodes.contains(epNum)) {
+          return true; // Remove duplicata
+        }
+        seenEpisodes.add(epNum);
+        return false;
       });
     });
 
@@ -2075,6 +2300,100 @@ class M3uService {
 
     return audioTypes.toList();
   }
+  // OTIMIZAÇÃO: Encode em Isolate separado para não travar UI
+  static Future<void> _saveParsedCacheOptimized(String source, List<ContentItem> movies, List<ContentItem> series, List<ContentItem> channels) async {
+    try {
+      final file = await _getParsedCacheFile(source);
+      
+      print('💾 Iniciando save OTIMIZADO do cache...');
+      final stopwatch = Stopwatch()..start();
+      
+      // 1. Converter objetos para Maps (rápido, na thread principal)
+      final Map<String, dynamic> data = {
+        'version': 1,
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': source,
+        'movies': movies.map((e) => e.toJson()).toList(),
+        'series': series.map((e) => e.toJson()).toList(),
+        'channels': channels.map((e) => e.toJson()).toList(),
+      };
+      
+      print('💾 Convertido para Map em ${stopwatch.elapsedMilliseconds}ms. Iniciando Encode JSON em ISOLATE...');
+      
+      // 2. Encode JSON pesado em outra thread/isolate
+      final jsonString = await compute(_jsonEncodeIsolate, data);
+      
+      print('💾 JSON Encoded em ${stopwatch.elapsedMilliseconds}ms. Gravando em disco...');
+      
+      // 3. Gravar em disco
+      await file.writeAsString(jsonString);
+      
+      print('✅ Cache parsed OTIMIZADO salvo em ${stopwatch.elapsedMilliseconds}ms! (${(jsonString.length / 1024 / 1024).toStringAsFixed(2)} MB)');
+      
+    } catch (e) {
+      print('❌ Erro ao salvar cache otimizado: $e');
+    }
+  }
+
+  static String _jsonEncodeIsolate(Map<String, dynamic> data) {
+    return jsonEncode(data);
+  }
+
+  static Map<String, dynamic> _jsonDecodeIsolate(String jsonString) {
+    return jsonDecode(jsonString);
+  }
+  
+  // OTIMIZAÇÃO: Carrega cache parseado usando ISOLATE para decode JSON
+  static Future<bool> _loadParsedCache(String source) async {
+    try {
+      final file = await _getParsedCacheFile(source);
+      if (!await file.exists()) return false;
+      
+      print('🚀 Carregando parsed cache OTIMIZADO...');
+      final stopwatch = Stopwatch()..start();
+      
+      // 1. Ler string do arquivo (rápido, IO async)
+      final jsonString = await file.readAsString();
+      
+      // 2. Decode JSON em ISOLATE (pesado, evita travar UI)
+      final data = await compute(_jsonDecodeIsolate, jsonString);
+      
+      if (data['version'] != 1) {
+        print('⚠️ Versão do cache incompatível');
+        return false;
+      }
+      
+      // 3. Serializar objetos (na thread principal, mas rápido pois já é Map)
+      final moviesList = (data['movies'] as List).map((e) => ContentItem.fromJson(e)).toList();
+      final seriesList = (data['series'] as List).map((e) => ContentItem.fromJson(e)).toList();
+      final channelsList = (data['channels'] as List).map((e) => ContentItem.fromJson(e)).toList();
+      
+      print('🚀 JSON Decoded e Objetos criados em ${stopwatch.elapsedMilliseconds}ms');
+      
+      // 4. Popula Caches e Índices
+      _movieCache = moviesList;
+      _seriesCache = seriesList;
+      _channelCache = channelsList;
+      _movieCacheSource = source;
+      _movieCacheMaxItems = 999999;
+      
+      // Reconstrói índices (rápido, ~50-100ms para 20k itens)
+      _rebuildCategoriesFromCache();
+      
+      print('✅ Preload via CACHE OTIMIZADO concluído em ${stopwatch.elapsedMilliseconds}ms total');
+      return true;
+      
+    } catch (e) {
+      print('⚠️ Erro ao carregar parsed cache otimizado: $e');
+      // Se der erro, deleta para forçar re-parse limpo
+      try {
+        final file = await _getParsedCacheFile(source);
+        if (await file.exists()) await file.delete();
+      } catch (_) {}
+      return false;
+    }
+  }
+
 }
 
 class M3uCategoryMeta {
@@ -2197,6 +2516,10 @@ Future<List<Map<String, String>>> _parseFileIsolate(Map<String, dynamic> args) a
   return results;
 }
 
+
+
+
+
 class M3uBuckets {
   final List<ContentItem> channels;
   final List<ContentItem> movies;
@@ -2205,3 +2528,7 @@ class M3uBuckets {
 
   M3uBuckets({required this.channels, required this.movies, required this.series, required this.byGroup});
 }
+
+
+
+

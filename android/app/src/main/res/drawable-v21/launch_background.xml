@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Splash screen for Android 5+ (API 21+) -->
+<!-- Launch screen - apenas fundo preto para transição suave para o vídeo -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Fundo escuro para combinar com o tema do app -->
-    <item android:drawable="@color/launch_background" />
-
-    <!-- Logo centralizada -->
-    <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/ic_launcher" />
-    </item>
+    <!-- Fundo preto -->
+    <item android:drawable="@android:color/black" />
 </layer-list>

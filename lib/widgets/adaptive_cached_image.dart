@@ -73,46 +73,28 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> with SingleTi
       );
     }
 
-    // CRÍTICO: Valida width/height para evitar Infinity ou NaN
-    // Usa MediaQuery para obter devicePixelRatio de forma segura
-    int? targetWidth;
-    if (widget.width != null) {
-      final width = widget.width!;
-      // Valida se não é Infinity ou NaN
-      if (width.isFinite && !width.isNaN && width > 0 && width < 10000) {
-        try {
-          final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-          if (devicePixelRatio.isFinite && !devicePixelRatio.isNaN && devicePixelRatio > 0) {
-            final calculated = (width * devicePixelRatio).toInt();
-            // Valida se o resultado é válido
-            if (calculated > 0 && calculated.isFinite && calculated < 100000) {
-              targetWidth = calculated;
-            }
-          }
-        } catch (e) {
-          // Se MediaQuery falhar, não usa resize (usa imagem original)
-          print('⚠️ AdaptiveCachedImage: Erro ao calcular targetWidth: $e');
-        }
-      }
-    }
+    // OTIMIZAÇÃO DE MEMÓRIA CRÍTICA PARA FIRESTICK:
+    // Força decode da imagem em tamanho reduzido (thumbnail)
+    // Isso evita OOM (Out Of Memory) ao carregar listas grandes com posters 4K
+    const int optimizeMemCacheHeight = 400; // Altura suficiente para cards na TV (Grid tem ~200-300px)
 
-    // Debug: log URL para verificar se está sendo passada corretamente
-    if (widget.url.isNotEmpty && widget.url.length < 100) {
-      print('🖼️ AdaptiveCachedImage: Tentando carregar: ${widget.url.substring(0, widget.url.length > 50 ? 50 : widget.url.length)}...');
-    }
-    
     return CachedNetworkImage(
       imageUrl: widget.url,
       cacheManager: AppImageCacheManager.instance,
+      // Parâmetros de otimização de memória
+      memCacheHeight: optimizeMemCacheHeight,
+      memCacheWidth: 300, // Limita largura também
+      maxWidthDiskCache: 600, // Limita tamanho no disco
+      maxHeightDiskCache: 800,
+      
       imageBuilder: (context, imageProvider) {
-        final provider = targetWidth != null ? ResizeImage(imageProvider, width: targetWidth) : imageProvider;
         // Trigger fade-in animation quando imagem é carregada
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _fadeController.forward();
         });
         return FadeTransition(
           opacity: _fadeAnimation,
-          child: Image(image: provider, width: widget.width, height: widget.height, fit: widget.fit),
+          child: Image(image: imageProvider, width: widget.width, height: widget.height, fit: widget.fit),
         );
       },
       placeholder: (context, url) => Shimmer.fromColors(

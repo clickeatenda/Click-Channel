@@ -14,6 +14,7 @@ import 'data/epg_service.dart';
 import 'data/m3u_service.dart';
 import 'data/tmdb_service.dart';
 import 'data/favorites_service.dart';
+import 'screens/splash_screen.dart';
 
 /// Variáveis globais para compartilhar estado entre main e app
 bool _hasPlaylist = false;
@@ -131,6 +132,10 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
       
       await _authProvider.initialize();
       
+      // CRÍTICO: Espera no mínimo 5 segundos na splash para o vídeo de abertura
+      // O vídeo tem 8 segundos, então 5 segundos é um bom mínimo
+      await Future.delayed(const Duration(seconds: 5));
+      
       if (mounted) {
         setState(() => _initialized = true);
       }
@@ -145,11 +150,18 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
   @override
   Widget build(BuildContext context) {
     if (!_initialized) {
-      // Mostra splash screen enquanto inicializa
+      // Mostra nossa splash screen com vídeo enquanto inicializa
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(),
-        home: const _BootstrapSplash(),
+        home: SplashScreen(
+          onInit: () async {
+            // Espera a inicialização terminar
+            while (!_initialized && mounted) {
+              await Future.delayed(const Duration(milliseconds: 100));
+            }
+          },
+        ),
       );
     }
 

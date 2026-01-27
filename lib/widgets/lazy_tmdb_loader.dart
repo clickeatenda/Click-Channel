@@ -122,6 +122,12 @@ class _LazyTmdbLoaderState extends State<LazyTmdbLoader> {
   }
 
   Future<void> _loadTmdb() async {
+    // THROTTLE / DEBOUNCE: Aguarda user parar de rolar rápido
+    if (mounted) {
+       await Future.delayed(const Duration(milliseconds: 600));
+       if (!mounted) return; // Se saiu da tela, cancela
+    }
+
     // Não busca para canais (mas reporta carregado para callback se precisar)
     if (widget.item.type == 'channel') {
       return;

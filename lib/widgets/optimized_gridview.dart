@@ -72,6 +72,7 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
     return CustomScrollView(
       controller: _scrollController,
       physics: widget.physics ?? const BouncingScrollPhysics(),
+      cacheExtent: 200.0, // Reduz área de renderização fora da tela para economizar memória no Firestick
       slivers: [
         // Header (Banner)
         if (widget.headerWidget != null)

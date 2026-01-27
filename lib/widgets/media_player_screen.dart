@@ -35,12 +35,13 @@ class MediaPlayerScreen extends StatefulWidget {
 
 class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   // ... (campos existentes)
-  late final Player _player;
-  late final VideoController _controller;
+  Player? _player;
+  VideoController? _controller;
   
   bool _isInitialized = false;
   bool _hasError = false;
   String _errorMessage = '';
+  int _retryCount = 0; // Contador para tentativas de recuperação de erro
   bool _showControls = true;
   bool _showInfo = false;
   bool _showAudioOptions = false;
@@ -300,54 +301,91 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     try {
       print('🎬 Iniciando player para: ${widget.url}');
       
-      // Criar player com configurações otimizadas (buffer reduzido para Firestick)
+      // Cleanup anterior se houver (retry)
+      await _player?.dispose();
+      
+      // Criar player com configurações otimizadas (buffer aumentado e Hardware Acceleration)
       _player = Player(
         configuration: const PlayerConfiguration(
-          bufferSize: 32 * 1024 * 1024, // 32MB buffer (reduzido para Firestick)
+          bufferSize: 64 * 1024 * 1024, // 64MB buffer para estabilidade
+          vo: 'gpu', // Hardware Acceleration (Vital para performance no Firestick)
         ),
       );
       
-      _controller = VideoController(_player);
+      _controller = VideoController(_player!);
       
       // Listeners
-      _player.stream.playing.listen((playing) {
+      _player!.stream.playing.listen((playing) {
         if (mounted) setState(() => _isPlaying = playing);
       });
       
-      _player.stream.position.listen((position) {
+      _player!.stream.position.listen((position) {
         if (mounted) {
           setState(() => _position = position);
           _saveProgress();
         }
       });
       
-      _player.stream.duration.listen((duration) {
+      _player!.stream.duration.listen((duration) {
         if (mounted) setState(() => _duration = duration);
       });
       
-      _player.stream.buffering.listen((buffering) {
+      _player!.stream.buffering.listen((buffering) {
         if (mounted) setState(() => _isBuffering = buffering);
       });
       
-      _player.stream.error.listen((error) {
+      _player!.stream.error.listen((error) {
         if (mounted && error.isNotEmpty) {
+          // IGNORAR ERROS NÃO 
+          if (error.toLowerCase().contains('seek') || 
+              error.toLowerCase().contains('force') ||
+              error.toLowerCase().contains('codec') || // Ignora erros de codec (pode ser áudio não suportado mas video ok)
+              error.toLowerCase().contains('decoder') ||
+              error.contains('--')) {
+             print('⚠️ Ignorando aviso de player: $error');
+             
+             // Se o erro for de seek/codec, garantimos que o player pelo menos tente tocar
+             if (!_isPlaying) _player!.play();
+             return;
+          }
+           
           print('❌ Player error: $error');
-          setState(() {
-            _hasError = true;
-            _errorMessage = error;
-          });
+          // Auto-Retry logic for decoding errors
+          if (_retryCount < 3 && _position.inSeconds > 1) {
+            _retryCount++;
+            print('🔄 Tentando recuperar playback (Tentativa $_retryCount/3)...');
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+               const SnackBar(
+                 content: Text('Erro de reprodução. Reconectando...'),
+                 duration: Duration(seconds: 2),
+               )
+            );
+            
+            // Reabre o vídeo na posição atual
+            final currentPos = _position;
+            Future.delayed(const Duration(seconds: 1), () {
+               if (mounted) _initPlayer(); // Re-inicia o fluxo completo
+            });
+            
+          } else {
+            setState(() {
+              _hasError = true;
+              _errorMessage = error;
+            });
+          }
         }
       });
       
       // Auto-Play Listener
-      _player.stream.completed.listen((completed) {
+      _player!.stream.completed.listen((completed) {
         if (completed && mounted) {
            _onVideoCompleted();
         }
       });
       
       // Listener para tracks de áudio
-      _player.stream.tracks.listen((tracks) {
+      _player!.stream.tracks.listen((tracks) {
         if (mounted) {
           setState(() {
             // Filtrar tracks vazias (a primeira geralmente é "no" track)
@@ -368,7 +406,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       });
       
       // Listener para track de áudio atual
-      _player.stream.track.listen((track) {
+      _player!.stream.track.listen((track) {
         if (mounted) {
           final audioTrack = track.audio;
           if (audioTrack.id != 'no' && audioTrack.id != 'auto') {
@@ -400,8 +438,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       });
       
       // Listener para informações de vídeo
-      _player.stream.width.listen((width) => _updateVideoInfo());
-      _player.stream.height.listen((height) => _updateVideoInfo());
+      _player!.stream.width.listen((width) => _updateVideoInfo());
+      _player!.stream.height.listen((height) => _updateVideoInfo());
       
       // Verificar posição salva
       final savedPosition = await WatchHistoryService.getSavedPosition(widget.url).timeout(
@@ -444,12 +482,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       final media = Media(
         _playlist[_currentIndex].url,
         httpHeaders: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18', // User-Agent universal para evitar bloqueios
         },
       );
       
-      await _player.open(media, play: false).timeout(
-        const Duration(seconds: 30),
+      // CRÍTICO: Abre sem dar play imediatamente para configurar buffer e seek com segurança
+      await _player!.open(media, play: false).timeout(
+        const Duration(seconds: 45), // Aumentado timeout para conexões lentas
         onTimeout: () {
           print('⏱️ Timeout ao abrir mídia');
           throw Exception('Timeout ao carregar vídeo. Verifique sua conexão.');
@@ -488,7 +527,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                     print('➕ Adicionando legenda externa: $title ($format) -> $subUrl');
                     
                     // Adiciona como track externa
-                    await _player.setSubtitleTrack(
+                    await _player!.setSubtitleTrack(
                       SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
                     );
                 }
@@ -500,16 +539,21 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         }
       }
       
-      print('✅ Mídia pronta. Iniciando playback...');
-      await _player.play();
-      
-      // Seek para posição salva
-      if (savedPosition != null && savedPosition.inSeconds > 0) {
-        await _player.seek(savedPosition).timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => print('⏱️ Timeout ao fazer seek'),
-        );
+      // Seek seguro antes de tocar (evita que o player toque do início e pule depois)
+      if (savedPosition != null && savedPosition.inSeconds > 5) { // Só resume se > 5s
+        print('⏩ Retomando de ${_formatDuration(savedPosition)}');
+        try {
+           await _player!.seek(savedPosition).timeout(
+             const Duration(seconds: 5),
+             onTimeout: () => print('⏱️ Timeout ao fazer seek inicial'),
+           );
+        } catch(e) {
+           print('⚠️ Erro não-fatal no seek: $e');
+        }
       }
+      
+      print('✅ Mídia pronta. Iniciando playback...');
+      await _player!.play();
       
       if (mounted) {
         setState(() => _isInitialized = true);
@@ -568,14 +612,14 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         )
       );
       
-      _player.open(Media(nextItem.url, httpHeaders: {
+      _player?.open(Media(nextItem.url, httpHeaders: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       }));
   }
   
   void _updateVideoInfo() {
-    final width = _player.state.width;
-    final height = _player.state.height;
+    final width = _player?.state.width;
+    final height = _player?.state.height;
     
     if (width != null && height != null && width > 0 && height > 0) {
       String quality;
@@ -618,17 +662,17 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
   
   void _togglePlayPause() {
-    _player.playOrPause();
+    _player?.playOrPause();
   }
   
   void _seekForward() {
     final newPosition = _position + const Duration(seconds: 10);
-    _player.seek(newPosition);
+    _player?.seek(newPosition);
   }
   
   void _seekBackward() {
     final newPosition = _position - const Duration(seconds: 10);
-    _player.seek(newPosition.isNegative ? Duration.zero : newPosition);
+    _player?.seek(newPosition.isNegative ? Duration.zero : newPosition);
   }
   
   void _setFit(int index) {
@@ -643,7 +687,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     if (index >= 0 && index < _audioTracks.length) {
       final track = _audioTracks[index];
       print('🎵 Selecionando áudio: ${track.id} - ${track.title ?? track.language}');
-      _player.setAudioTrack(track);
+      _player?.setAudioTrack(track);
       setState(() => _showAudioOptions = false);
       // O listener de track vai atualizar o estado
     }
@@ -652,7 +696,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   void _setSubtitleTrack(int index) {
     if (index == -1) {
       print('📝 Desativando legendas');
-      _player.setSubtitleTrack(SubtitleTrack.no());
+      _player?.setSubtitleTrack(SubtitleTrack.no());
       setState(() {
         _selectedSubtitleIndex = -1;
         _currentSubtitle = 'Desativado';
@@ -661,7 +705,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     } else if (index >= 0 && index < _subtitleTracks.length) {
       final track = _subtitleTracks[index];
       print('📝 Selecionando legenda: ${track.id} - ${track.title ?? track.language}');
-      _player.setSubtitleTrack(track);
+      _player?.setSubtitleTrack(track);
       // O listener de track vai atualizar o estado
       setState(() => _showSubtitleOptions = false);
     }
@@ -684,7 +728,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     if (widget.item != null && _duration.inSeconds > 0) {
       WatchHistoryService.saveProgress(widget.item!, _position, _duration);
     }
-    _player.dispose();
+    _player?.dispose();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -819,7 +863,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             Center(
               child: _isInitialized
                   ? Video(
-                      controller: _controller,
+                      controller: _controller!,
                       controls: NoVideoControls,
                       fit: _videoFit,
                     )
@@ -1007,7 +1051,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                     activeColor: Colors.blueAccent,
                     inactiveColor: Colors.white30,
                     onChanged: (value) {
-                      _player.seek(Duration(seconds: value.toInt()));
+                      _player?.seek(Duration(seconds: value.toInt()));
                     },
                   ),
                 ),

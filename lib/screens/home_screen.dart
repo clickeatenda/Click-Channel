@@ -15,6 +15,9 @@ import '../core/config.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 import '../models/epg_program.dart';
+import 'dart:convert'; // For jsonEncode/Decode
+import 'package:shared_preferences/shared_preferences.dart'; // For caching
+
 
 import '../widgets/media_player_screen.dart';
 import '../widgets/adaptive_cached_image.dart';
@@ -563,15 +566,77 @@ class _HomeBodyState extends State<_HomeBody> {
   List<WatchingItem> watchingItems = [];
   bool loading = true;
 
+  // Keys for caching
+  static const String _keyMovies = 'home_featured_movies';
+  static const String _keySeries = 'home_featured_series';
+  static const String _keyChannels = 'home_featured_channels';
+
   @override
   void initState() {
     super.initState();
     _load();
   }
 
+  Future<void> _loadCachedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      final moviesJson = prefs.getString(_keyMovies);
+      final seriesJson = prefs.getString(_keySeries);
+      final channelsJson = prefs.getString(_keyChannels);
+
+      bool hasData = false;
+      
+      if (moviesJson != null) {
+        final List list = jsonDecode(moviesJson);
+        featuredMovies = list.map((x) => ContentItem.fromJson(x)).toList();
+        hasData = true;
+      }
+      
+      if (seriesJson != null) {
+        final List list = jsonDecode(seriesJson);
+        featuredSeries = list.map((x) => ContentItem.fromJson(x)).toList();
+        hasData = true;
+      }
+
+      if (channelsJson != null) {
+        final List list = jsonDecode(channelsJson);
+        featuredChannels = list.map((x) => ContentItem.fromJson(x)).toList();
+        hasData = true;
+      }
+
+      if (hasData && mounted) {
+        print('✅ Home: Dados carregados do cache (Instant Load)');
+        setState(() {
+          loading = false;
+        });
+      }
+    } catch (e) {
+      print('⚠️ Home: Erro ao carregar cache: $e');
+    }
+  }
+
+  Future<void> _saveToCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (featuredMovies.isNotEmpty) {
+        prefs.setString(_keyMovies, jsonEncode(featuredMovies.map((x) => x.toJson()).toList()));
+      }
+      if (featuredSeries.isNotEmpty) {
+        prefs.setString(_keySeries, jsonEncode(featuredSeries.map((x) => x.toJson()).toList()));
+      }
+      if (featuredChannels.isNotEmpty) {
+        prefs.setString(_keyChannels, jsonEncode(featuredChannels.map((x) => x.toJson()).toList()));
+      }
+      print('✅ Home: Dados salvos no cache');
+    } catch (e) {
+       print('⚠️ Home: Erro ao salvar cache: $e');
+    }
+  }
+
   Future<void> _load() async {
     try {
-      // Carregar histórico
+      // 1. Carregar histórico (Rápido)
       final watched = await WatchHistoryService.getWatchedItems(limit: 15);
       final watching = await WatchHistoryService.getWatchingItems(limit: 15);
       
@@ -581,9 +646,11 @@ class _HomeBodyState extends State<_HomeBody> {
           watchingItems = watching;
         });
       }
+
+      // 2. Carregar Cache (Instantâneo)
+      await _loadCachedData();
       
-      // CRÍTICO: Carrega destaques TMDB (Popular Movies/Series) + Canais M3U se houver playlist
-      // Destaques TMDB não dependem de playlist, sempre disponíveis se TMDB configurado
+      // 3. Buscar destaques do TMDB em paralelo (Lento - Rede)
       try {
         // Buscar destaques do TMDB em paralelo
         final tmdbResults = await Future.wait([
@@ -639,6 +706,10 @@ class _HomeBodyState extends State<_HomeBody> {
           featuredChannels = channels;
           loading = false;
         });
+        
+        // 4. Salvar atualização no cache
+        _saveToCache();
+
       } catch (e) {
         print('⚠️ Erro ao carregar destaques TMDB: $e');
         // Se TMDB falhar, tenta M3U como fallback
@@ -659,27 +730,24 @@ class _HomeBodyState extends State<_HomeBody> {
               featuredChannels = results[2];
               loading = false;
             });
+            _saveToCache(); // Salva fallback também
           } catch (_) {
             if (!mounted) return;
+             // Se falhar tudo, mantém o cache (apenas remove loading se não tiver dados)
             setState(() {
-              featuredMovies = [];
-              featuredSeries = [];
-              featuredChannels = [];
               loading = false;
             });
           }
         } else {
           if (!mounted) return;
+           // Sem M3U e sem TMDB (erro), mantém cache
           setState(() {
-            featuredMovies = [];
-            featuredSeries = [];
-            featuredChannels = [];
             loading = false;
           });
         }
       }
     } catch (_) {
-      if (!mounted) return;
+      if (mounted) return;
       setState(() => loading = false);
     }
   }
