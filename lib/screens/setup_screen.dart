@@ -4,6 +4,8 @@ import '../core/config.dart';
 import '../core/prefs.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
+import '../widgets/glass_button.dart';
+import '../routes/app_routes.dart';
 
 /// Tela de configuração inicial.
 /// Se não houver playlist configurada, exibe campo para inserir URL.
@@ -680,6 +682,21 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
                 elevation: _buttonHasFocus ? 12 : 4,
               ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+
+          // Botão Xtream Codes
+          SizedBox(
+            width: double.infinity,
+            height: 60,
+            child: GlassButton(
+              label: 'ENTRAR COM XTREAM CODES',
+              icon: Icons.dns,
+              onPressed: () => AppRoutes.goToXtreamLogin(context),
+              backgroundColor: Colors.white.withOpacity(0.05),
+              height: 60,
             ),
           ),
           

@@ -16,11 +16,14 @@ import '../screens/epg_screen.dart';
 import '../models/content_item.dart';
 
 
+import '../screens/xtream_login_screen.dart';
+
 class AppRoutes {
   // Route names
   static const String login = '/login';
   static const String home = '/home';
   static const String setup = '/setup';
+  static const String xtreamLogin = '/xtream-login';
   static const String liveChannels = '/live-channels';
   static const String moviesLibrary = '/movies';
   static const String seriesLibrary = '/series';
@@ -42,6 +45,9 @@ class AppRoutes {
 
         case setup:
           return MaterialPageRoute(builder: (_) => const SetupScreen());
+
+        case xtreamLogin:
+          return MaterialPageRoute(builder: (_) => const XtreamLoginScreen());
 
         case home:
           // Permite navegar para Home em uma aba específica via argumento inteiro (0..4)
@@ -211,6 +217,10 @@ class AppRoutes {
 
   static void goToSetup(BuildContext context) {
     Navigator.of(context).pushNamedAndRemoveUntil(setup, (route) => false);
+  }
+
+  static void goToXtreamLogin(BuildContext context) {
+    Navigator.of(context).pushNamed(xtreamLogin);
   }
 
   static void goToLiveChannels(BuildContext context) {

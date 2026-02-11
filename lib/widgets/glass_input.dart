@@ -12,7 +12,9 @@ class GlassInput extends StatefulWidget {
   final bool obscureText;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
   final int maxLines;
+  final FocusNode? focusNode;
 
   const GlassInput({
     super.key,
@@ -25,7 +27,9 @@ class GlassInput extends StatefulWidget {
     this.obscureText = false,
     this.validator,
     this.onChanged,
+    this.onSubmitted,
     this.maxLines = 1,
+    this.focusNode,
   });
 
   @override
@@ -39,14 +43,17 @@ class _GlassInputState extends State<GlassInput> {
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
+    _focusNode = widget.focusNode ?? FocusNode();
     _focusNode.addListener(_handleFocusChange);
   }
 
   @override
   void dispose() {
     _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
+    // Only dispose if we created it
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
     super.dispose();
   }
 
@@ -88,6 +95,7 @@ class _GlassInputState extends State<GlassInput> {
             maxLines: widget.obscureText ? 1 : widget.maxLines,
             validator: widget.validator,
             onChanged: widget.onChanged,
+            onFieldSubmitted: widget.onSubmitted,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,

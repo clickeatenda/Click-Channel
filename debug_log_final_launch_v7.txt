@@ -1388,3 +1388,7 @@ VideoOutput.Resize
 ­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Back to the Beginning part 1 (2025)" (tentou: Back to the Beginning part 1)
 Ôä╣´©Å  [INFO] Ô£à ContentEnricher: 91/120 itens enriquecidos com sucesso
 Ô£à TMDB: 64 itens enriquecidos com sucesso
+­ƒôì Nav focado: In├¡cio
+media_kit: VideoOutput: Free Texture: 1426562872384
+VideoOutput::~VideoOutput: 1426048766272
+­ƒôì Nav focado: In├¡cio

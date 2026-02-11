@@ -717,3 +717,34 @@ if (tags['Primary'] != null) {
 **Próximos Passos:**
 - Sideload do APK no Firestick.
 - Validação visual final das legendas na TV.
+
+---
+
+## 📅 Planejamento (11/02/2026)
+
+### PENDING #024: Personalização de Legendas
+**Status:** ⏳ PENDENTE
+**Prioridade:** MÉDIA
+**Tipo:** FEATURE
+
+**Descrição:**
+Implementar opções de personalização para legendas.
+1.  **Remover/Alterar Background:** O usuário relatou que o fundo preto semitransparente atual incomoda. Permitir fundo transparente ou customizável.
+2.  **Opções de Estilo:** Tamanho da fonte, cor do texto, cor da borda/fundo.
+
+**Estimativa:** 1-2 dias
+
+---
+
+### PENDING #025: Análise de Reprodução - Rick and Morty
+**Status:** ⏳ PENDENTE
+**Prioridade:** ALTA
+**Tipo:** BUG
+
+**Descrição:**
+Investigar por que o conteúdo "Rick and Morty" não está reproduzindo.
+**Ações Iniciadas:**
+- Criada issue para rastreamento.
+- Necessário análise de logs para identificar se é erro de codec, URL inválida ou timeout.
+
+**Estimativa:** A investigar
