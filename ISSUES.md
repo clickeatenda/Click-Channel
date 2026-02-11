@@ -722,7 +722,7 @@ if (tags['Primary'] != null) {
 
 ## 📅 Planejamento (11/02/2026)
 
-### PENDING #024: Personalização de Legendas
+### PENDING #024: Personalização de Legendas (GitHub #175)
 **Status:** ⏳ PENDENTE
 **Prioridade:** MÉDIA
 **Tipo:** FEATURE
@@ -737,14 +737,37 @@ Implementar opções de personalização para legendas.
 ---
 
 ### PENDING #025: Análise de Reprodução - Rick and Morty
-**Status:** ⏳ PENDENTE
+**Status:** ✅ RESOLVIDO
 **Prioridade:** ALTA
 **Tipo:** BUG
+**Data de Resolução:** 11/02/2026
 
 **Descrição:**
 Investigar por que o conteúdo "Rick and Morty" não está reproduzindo.
-**Ações Iniciadas:**
-- Criada issue para rastreamento.
-- Necessário análise de logs para identificar se é erro de codec, URL inválida ou timeout.
 
-**Estimativa:** A investigar
+**Resolução:**
+Implementado safeguard no `SeriesDetailScreen` para prevenir loop de reprodução quando o ID do episódio colide com o ID da série. Adicionado diálogo de alerta explicativo para falhas de dados.
+- Commit: "Fix: Rick and Morty Playback (Series ID check + Dialog)"
+- Status: Fix preventivo deployado e validado em Tablet (1ec5e936).
+
+---
+
+##  FEATURE #026: Login Xtream Codes
+**Status:** ✅ IMPLEMENTADO
+**Prioridade:** ALTA
+**Data de Implementação:** 11/02/2026
+
+**Descrição:**
+Implementação de tela de login dedicada para serviços Xtream Codes, permitindo acesso via Username/Password e geração automática de URL M3U.
+
+**Funcionalidades:**
+- Autenticação via API Xtream Codes (`player_api.php`)
+- Geração de playlist M3U Plus
+- Persistência de credenciais
+- Integração com Setup Screen
+
+**Status de Deploy:**
+- ✅ Tablet (1ec5e936): Instalado e Testado
+- ⚠️ Firestick (192.168.3.100): Bloqueio de Rede (ADB Refused). APK Release disponível para instalação manual.
+
+
