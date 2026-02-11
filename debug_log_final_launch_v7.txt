@@ -1392,3 +1392,31 @@ VideoOutput.Resize
 media_kit: VideoOutput: Free Texture: 1426562872384
 VideoOutput::~VideoOutput: 1426048766272
 ­ƒôì Nav focado: In├¡cio
+­ƒôì Nav focado: In├¡cio
+­ƒôì Nav focado: In├¡cio
+­ƒÄ¼ MoviesLibraryBody: initState chamado!
+­ƒÄ¼ MoviesLibraryBody: Carregando categorias de filmes...
+­ƒÄ¼ MoviesLibraryBody: via M3U (paginado) - carregando lista enquanto TMDB carrega em paralelo
+ÔÜí M3uService: Usando cache existente (18730 itens) - carregamento instant├óneo!
+ÔÜí M3uService: fetchCategoryMetaFromEnv - Retornando categorias de cache instantaneamente
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+ÔÜí M3uService: fetchCategoryMetaFromEnv - Retornando categorias de cache instantaneamente
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+­ƒôì Nav focado: In├¡cio
+ÔÜí M3uService: fetchCategoryMetaFromEnv - Retornando categorias de cache instantaneamente
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+­ƒöì TMDB: Carregando s├®ries em destaque...
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+­ƒÉÖ JellyfinService: Buscando itens em destaque...
+­ƒÉÖ JellyfinService: Buscando ├║ltimos itens...
+­ƒöì TMDB: Enriquecendo 120 itens em background...
+Ôä╣´©Å  [INFO] ­ƒöä ContentEnricher: Enriquecendo 120 itens com TMDB...
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A&E" (original: "A&E FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A&E" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%26E&language=pt-BR&...
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+Ô£à Home: Dados carregados do cache (Instant Load)
+­ƒô║ getDailyFeaturedByType(channel): base tem 22736 items
+­ƒô║ getDailyFeaturedByType(channel): 22736 candidates ap├│s filtro
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+Lost connection to device.
