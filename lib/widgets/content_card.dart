@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'adaptive_cached_image.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 
@@ -96,15 +96,11 @@ class _ContentCardState extends State<ContentCard> {
                 flex: 6,
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                  child: widget.item.image.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: widget.item.image, 
-                          fit: BoxFit.cover, 
-                          memCacheHeight: 280,
-                          placeholder: (context, url) => Container(color: AppColors.card),
-                          errorWidget: (c, u, e) => _placeholder(),
-                        )
-                      : _placeholder(),
+                  child: AdaptiveCachedImage(
+                    url: widget.item.image,
+                    fit: BoxFit.cover,
+                    errorWidget: _placeholder(),
+                  ),
                 ),
               ),
               

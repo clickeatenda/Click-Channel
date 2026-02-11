@@ -1,0 +1,53 @@
+Analyzing lib...                                                
+
+warning - The declaration '_UserAgentClient' isn't referenced - lib\core\image_cache_manager.dart:25:7 - unused_element
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\data\m3u_service.dart:1263:7 - prefer_conditional_assignment
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\data\m3u_service.dart:1268:7 - prefer_conditional_assignment
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\data\m3u_service.dart:1273:7 - prefer_conditional_assignment
+   info - Unnecessary escape in string literal - lib\data\m3u_service.dart:1753:68 - unnecessary_string_escapes
+   info - Unnecessary escape in string literal - lib\data\m3u_service.dart:1753:79 - unnecessary_string_escapes
+warning - The value of the local variable 'normalized' isn't used - lib\data\m3u_service.dart:1765:11 - unused_local_variable
+warning - This 'onError' handler must return a value assignable to 'bool', but ends without returning a value - lib\main.dart:135:51 - body_might_complete_normally_catch_error
+warning - The declaration '_BootstrapSplash' isn't referenced - lib\main.dart:267:7 - unused_element
+   info - The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\screens\category_screen.dart:3:8 - unnecessary_import
+warning - The value of the local variable 'count' isn't used - lib\screens\home_screen.dart:1199:31 - unused_local_variable
+warning - Unused import: '../core/utils/logger.dart' - lib\screens\movie_detail_screen.dart:11:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - lib\screens\my_favorites_screen.dart:126:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\my_favorites_screen.dart:127:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\my_favorites_screen.dart:129:36 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\my_favorites_screen.dart:130:41 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\screens\my_favorites_screen.dart:131:33 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\my_favorites_screen.dart:132:33 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\my_favorites_screen.dart:133:33 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\my_favorites_screen.dart:135:42 - prefer_const_constructors
+warning - The declaration '_loadMetadata' isn't referenced - lib\screens\series_detail_screen.dart:107:16 - unused_element
+warning - The declaration '_loadSimilarItems' isn't referenced - lib\screens\series_detail_screen.dart:188:16 - unused_element
+   info - Unnecessary use of string interpolation - lib\screens\series_detail_screen.dart:380:42 - unnecessary_string_interpolations
+   info - Unnecessary use of string interpolation - lib\screens\series_detail_screen.dart:387:55 - unnecessary_string_interpolations
+   info - Use 'const' with the constructor to improve performance - lib\screens\series_detail_screen.dart:400:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\series_detail_screen.dart:401:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\series_detail_screen.dart:403:38 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\series_detail_screen.dart:405:40 - prefer_const_constructors
+warning - Dead code - lib\screens\series_detail_screen.dart:410:37 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:410:63 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:410:82 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:411:30 - dead_code
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\series_detail_screen.dart:414:34 - prefer_const_declarations
+   info - The variable name 'series_item' isn't a lowerCamelCase identifier - lib\screens\series_library_screen.dart:43:18 - non_constant_identifier_names
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:547:71 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:667:74 - use_build_context_synchronously
+warning - Unused import: 'dart:io' - lib\widgets\adaptive_cached_image.dart:2:8 - unused_import
+   info - Use 'const' for final variables initialized to a constant value - lib\widgets\hero_carousel.dart:32:7 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\widgets\hero_carousel.dart:51:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\widgets\hero_carousel.dart:81:5 - prefer_const_declarations
+warning - The value of the local variable 'currentPos' isn't used - lib\widgets\media_player_screen.dart:432:19 - unused_local_variable
+  error - Undefined name 'mediaInfo' - lib\widgets\media_player_screen.dart:596:16 - undefined_identifier
+  error - Undefined name 'mediaInfo' - lib\widgets\media_player_screen.dart:596:37 - undefined_identifier
+  error - Undefined name 'mediaInfo' - lib\widgets\media_player_screen.dart:597:30 - undefined_identifier
+   info - Use interpolation to compose strings and values - lib\widgets\media_player_screen.dart:604:31 - prefer_interpolation_to_compose_strings
+warning - The declaration '_buildVideoError' isn't referenced - lib\widgets\media_player_screen.dart:961:10 - unused_element
+warning - The declaration '_buildOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1471:10 - unused_element
+warning - The declaration '_buildOptionButtonWithFocus' isn't referenced - lib\widgets\media_player_screen.dart:1536:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\widgets\media_player_screen.dart:1959:37 - prefer_const_constructors
+
+49 issues found. (ran in 24.6s)

@@ -46,6 +46,19 @@ class WatchHistoryService {
     await _prefs!.setString(_watchedKey, jsonEncode(history));
   }
 
+  /// Marca um item como assistido (alias para addToWatched)
+  static Future<void> markItemAsWatched(ContentItem item) async {
+    await addToWatched(item);
+  }
+
+  /// Remove um item do histórico de assistidos
+  static Future<void> removeFromWatched(String url) async {
+    await _ensureInit();
+    final history = await getWatchedHistory();
+    history.removeWhere((h) => h['url'] == url);
+    await _prefs!.setString(_watchedKey, jsonEncode(history));
+  }
+
   /// Retorna o histórico de assistidos
   static Future<List<Map<String, dynamic>>> getWatchedHistory() async {
     await _ensureInit();

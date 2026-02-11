@@ -439,7 +439,7 @@ class TmdbMetadata {
       posterPath: json['poster_path'],
       backdropPath: json['backdrop_path'],
       genres: genresList,
-      runtime: json['runtime'] ?? json['episode_run_time']?.first,
+      runtime: json['runtime'] ?? (json['episode_run_time'] is List && (json['episode_run_time'] as List).isNotEmpty ? json['episode_run_time'].first : null),
       budget: json['budget'],
       revenue: json['revenue'],
       languages: languagesList,

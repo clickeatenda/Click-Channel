@@ -1,0 +1,1390 @@
+Launching lib\main.dart on Windows in debug mode...
+Building Windows application...                                    68,7s
+ÔêÜ Built build\windows\x64\runner\Debug\clickchannel.exe
+package:media_kit_libs_windows_video registered.
+Erro no v├¡deo: UnimplementedError: init() has not been implemented.
+Ô£à Prefs: URL configurada pelo usu├írio detectada - mantendo: http://e.playfacil.net/p/JV20251121/JV21112025/m3u...
+Ô£à Prefs: URL configurada pelo usu├írio detectada - mantendo: http://e.playfacil.net/p/JV20251121/JV21112025/m3u...
+Ôä╣´©Å  [INFO] Ô£à TMDB API key carregada (via hardcode est├ível)
+media_kit: NativeReferenceHolder: Allocated 1427932635184
+Ô£à M3uService: Meta-dados carregados do disco (29 filmes, 26 s├®ries)
+Ô£à M3uService: Meta-dados carregados do disco (29 filmes, 26 s├®ries)
+­ƒº╣ M3uService: Limpando caches de itens pesados antes de preload...
+­ƒÆ¥ M3uService: Cache file para "http://e.playfacil.net/p/JV20251121/JV21112025/m3u...": C:\Users\joaov\AppData\Roaming\com.example\clickchannel/m3u_cache_218885036.m3u
+­ƒôª M3uService: Iniciando preload via isolate (Arquivo: C:\Users\joaov\AppData\Roaming\com.example\clickchannel/m3u_cache_218885036.m3u)...
+Ôä╣´©Å  [INFO] Ô£à TMDB: API key v├ílida e funcionando (teste)
+Syncing files to device Windows...                                 446ms
+
+Flutter run key commands.
+r Hot reload. 
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on Windows is available at: http://127.0.0.1:56569/l01KIGmfhuw=/
+The Flutter DevTools debugger and profiler on Windows is available at: http://127.0.0.1:56569/l01KIGmfhuw=/devtools/?uri=ws://127.0.0.1:56569/l01KIGmfhuw=/ws
+­ƒÄ¼ MoviesLibraryBody: initState chamado!
+­ƒÄ¼ MoviesLibraryBody: Carregando categorias de filmes...
+­ƒÄ¼ MoviesLibraryBody: via M3U (paginado) - carregando lista enquanto TMDB carrega em paralelo
+­ƒôª M3uService: Cache n├úo existe ou n├úo corresponde - carregando...
+ÔÅ│ M3uService: fetch solicitou itens, mas parse ainda em curso. Aguardando...
+ÔÜí M3uService: fetchCategoryMetaFromEnv - Retornando categorias de cache instantaneamente
+ÔÅ│ M3uService: fetch solicitou itens, mas parse ainda em curso. Aguardando...
+ÔÜí M3uService: fetchCategoryMetaFromEnv - Retornando categorias de cache instantaneamente
+ÔÅ│ M3uService: fetch solicitou itens, mas parse ainda em curso. Aguardando...
+­ƒôì Nav focado: In├¡cio
+­ƒöì TMDB: Carregando s├®ries em destaque...
+ÔÅ│ M3uService: fetch solicitou itens, mas parse ainda em curso. Aguardando...
+Ô£à Home: Dados carregados do cache (Instant Load)
+­ƒÉÖ JellyfinService: Configurado para https://jellyfin.shark.assistant.nom.br
+­ƒÉÖ JellyfinService: Token recuperado do storage
+­ƒÉÖ JellyfinService: Buscando itens em destaque...
+­ƒÉÖ JellyfinService: Buscando ├║ltimos itens...
+Ô£à TMDB: Carregados 10 filmes + 10 s├®ries em destaque
+ÔÅ│ M3uService: fetch solicitou itens, mas parse ainda em curso. Aguardando...
+Ô£à JellyfinService: 3 bibliotecas encontradas
+Ô£à JellyfinService: 7 itens recentes encontrados
+Ô£à JellyfinService: 6 itens em destaque encontrados
+Ô£à SharkFlix: Dados carregados - 6 destaques, 7 recentes, 3 bibliotecas
+Ô£à TMDB: 5 s├®ries em destaque + 10 top rated
+­ƒôè Isolate Final: 18730 filmes, 338557 s├®ries, 22736 canais (Suporte EXTGRP ativo)
+­ƒôª M3uService: Isolate retornou 380023 itens
+­ƒÆ¥ M3uService: Meta-dados de categorias salvos em disco
+Ô£à M3uService: Preload conclu├¡do - 18730 filmes, 338557 s├®ries, 22736 canais
+Ô£à M3uService: 29 cat filmes, 26 cat s├®ries
+­ƒÜÇ Carregando parsed cache OTIMIZADO...
+­ƒÜÇ Carregando parsed cache OTIMIZADO...
+­ƒÜÇ JSON Decoded e Objetos criados em 7854ms
+Ô£à Preload via CACHE OTIMIZADO conclu├¡do em 8013ms total
+­ƒÜÇ M3uService: Usando parsed cache - skip parse!
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+­ƒô║ getDailyFeaturedByType(channel): base tem 22736 items
+­ƒô║ getDailyFeaturedByType(channel): 50 candidates ap├│s filtro
+Ô£à M3U: Carregados 6 canais em destaque
+Ô£à Home: Dados salvos no cache
+­ƒÜÇ JSON Decoded e Objetos criados em 9123ms
+Ô£à Preload via CACHE OTIMIZADO conclu├¡do em 9260ms total
+­ƒÜÇ M3uService: Usando parsed cache - skip parse!
+ÔÜí M3uService: fetchCategoryMetaFromEnv - Retornando categorias de cache instantaneamente
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+­ƒöì TMDB: Enriquecendo 120 itens em background...
+Ôä╣´©Å  [INFO] ­ƒöä ContentEnricher: Enriquecendo 120 itens com TMDB...
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A&E" (original: "A&E FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A&E" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%26E&language=pt-BR&...
+­ƒô║ getDailyFeaturedByType(channel): base tem 22736 items
+­ƒô║ getDailyFeaturedByType(channel): 22736 candidates ap├│s filtro
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "A Empregada" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "A Empregada" - Rating: 7.2
+­ƒÉø [DEBUG]    Resultado 1: "A Empregada" (2025) - Rating: 7.2
+­ƒÉø [DEBUG]    Resultado 2: "A Perfect Ending" (2012) - Rating: 6.212
+­ƒÉø [DEBUG]    Resultado 3: "Nancy Drew e a Escada Secreta" (2019) - Rating: 6.383
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.176, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "A&E"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "A&E FHD" - Rating: 7.176 -> Item.rating: 7.176
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A&E┬▓" (original: "A&E FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A&E┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%26E%C2%B2&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Nancy Drew e a Escada Secreta" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Nancy Drew e a Escada Secreta" - Rating: 6.383
+­ƒÉø [DEBUG]    Resultado 1: "Nancy Drew e a Escada Secreta" (2019) - Rating: 6.383
+­ƒÉø [DEBUG]    Resultado 2: "A Hora e a Vez de Augusto Matraga" (2011) - Rating: 7.818
+­ƒÉø [DEBUG]    Resultado 3: "O Santo e a Vedete" (1982) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.383, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "A&E┬▓"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "A&E FHD┬▓" - Rating: 6.383 -> Item.rating: 6.383
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A&E" (original: "A&E HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A&E" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%26E&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "A Empregada" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "A Empregada" - Rating: 7.2
+­ƒÉø [DEBUG]    Resultado 1: "A Empregada" (2025) - Rating: 7.2
+­ƒÉø [DEBUG]    Resultado 2: "A Perfect Ending" (2012) - Rating: 6.212
+­ƒÉø [DEBUG]    Resultado 3: "Nancy Drew e a Escada Secreta" (2019) - Rating: 6.383
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.176, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "A&E"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "A&E HD" - Rating: 7.176 -> Item.rating: 7.176
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A&E" (original: "A&E SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A&E" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%26E&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "A Empregada" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "A Empregada" - Rating: 7.2
+­ƒÉø [DEBUG]    Resultado 1: "A Empregada" (2025) - Rating: 7.2
+­ƒÉø [DEBUG]    Resultado 2: "A Perfect Ending" (2012) - Rating: 6.212
+­ƒÉø [DEBUG]    Resultado 3: "Nancy Drew e a Escada Secreta" (2019) - Rating: 6.383
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.176, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "A&E"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "A&E SD" - Rating: 7.176 -> Item.rating: 7.176
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "AMC" (original: "AMC FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "AMC" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=AMC&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Ta┼ƒral─▒ Amca" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Ta┼ƒral─▒ Amca" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Ta┼ƒral─▒ Amca" (1965) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Bakkal Amca: Mahmut Tuncer" (2024) - Rating: 2.0
+­ƒÉø [DEBUG]    Resultado 3: "Amca" (2019) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "AMC"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "AMC FHD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "AMC" (original: "AMC HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "AMC" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=AMC&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Ta┼ƒral─▒ Amca" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Ta┼ƒral─▒ Amca" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Ta┼ƒral─▒ Amca" (1965) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Bakkal Amca: Mahmut Tuncer" (2024) - Rating: 2.0
+­ƒÉø [DEBUG]    Resultado 3: "Amca" (2019) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "AMC"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "AMC HD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "AMC" (original: "AMC SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "AMC" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=AMC&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Ta┼ƒral─▒ Amca" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Ta┼ƒral─▒ Amca" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Ta┼ƒral─▒ Amca" (1965) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Bakkal Amca: Mahmut Tuncer" (2024) - Rating: 2.0
+­ƒÉø [DEBUG]    Resultado 3: "Amca" (2019) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "AMC"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "AMC SD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "AXN" (original: "AXN FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "AXN" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=AXN&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Axn" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 1
+­ƒÉø [DEBUG]    Melhor match: "Axn" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Axn" (2015) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "AXN"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "AXN FHD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "AXN┬▓" (original: "AXN FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "AXN┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=AXN%C2%B2&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Axn" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 1
+­ƒÉø [DEBUG]    Melhor match: "Axn" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Axn" (2015) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "AXN┬▓"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "AXN FHD┬▓" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "AXN" (original: "AXN HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "AXN" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=AXN&language=pt-BR&...
+­ƒöì fetchCategoryItemsFromEnv: category="CANAIS 4K", typeFilter="channel"
+ÔÜí _ensureMovieCache: Cache j├í pronto (338557 s├®ries). Skip!
+­ƒöì Cache state: _movieCache=18730, _seriesCache=338557, _channelCache=22736
+­ƒôé fetchCategoryItemsFromEnv(CANAIS 4K, channel): 24 itens (via ├ìndices), 24 com imagem
+­ƒöì CategoryScreen 'CANAIS 4K' carregou 24 itens. Primeiros 5:
+   ­ƒôä 'A&E [UHD]'
+      Image: https://img.slim.re/imagens/canais/AandE.png...
+   ­ƒôä 'Animal Planet [4K] (h265)'
+      Image: https://img.slim.re/imagens/canais/Animal-Planet.png...
+   ­ƒôä 'AXN [4K] (h265)'
+      Image: https://img.slim.re/imagens/canais/AXN.png...
+   ­ƒôä 'AXN [UHD]'
+      Image: http://playfacil.net:80/images/042dba4d2faaa29cd2fa4c0125416d25.png...
+   ­ƒôä 'Band SP [4K] (h265)'
+      Image: https://img.slim.re/imagens/canais/Band.png...
+Ôä╣´©Å  [INFO] ­ƒôé CategoryScreen "CANAIS 4K" (channel) carregou 24 itens
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Axn" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 1
+­ƒÉø [DEBUG]    Melhor match: "Axn" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Axn" (2015) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "AXN"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "AXN HD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "AXN" (original: "AXN SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "AXN" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=AXN&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Axn" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 1
+­ƒÉø [DEBUG]    Melhor match: "Axn" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Axn" (2015) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "AXN"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "AXN SD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Canal Brasil" (original: "Canal Brasil FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Canal Brasil" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Canal%20Brasil&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Canal Brasil"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Canal Brasil FHD" (tentou: Canal Brasil)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Canal Brasil" (original: "Canal Brasil HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Canal Brasil" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Canal%20Brasil&language=pt-BR&...
+­ƒÄ¼ Iniciando player para: http://playfacil.net:80/JV20251121/JV21112025/1473910
+media_kit: ANGLESurfaceManager: Direct3D Feature Level: 11_0
+1 1
+media_kit: VideoOutput: Create Texture: 1426060076640
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Canal Brasil"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Canal Brasil HD" (tentou: Canal Brasil)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Canal Brasil" (original: "Canal Brasil SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Canal Brasil" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Canal%20Brasil&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Canal Brasil"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Canal Brasil SD" (tentou: Canal Brasil)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Canal Sony" (original: "Canal Sony FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Canal Sony" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Canal%20Sony&language=pt-BR&...
+media_kit: VideoOutput: Using H/W rendering.
+VideoOutput.Resize
+{handle: 1426062658032, id: 1426060076640, rect: {height: 0, left: 0, top: 0, width: 0}}
+NativeVideoController: Texture ID: 1426060076640
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Canal Sony"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Canal Sony FHD" (tentou: Canal Sony)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Canal Sony┬▓" (original: "Canal Sony FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Canal Sony┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Canal%20Sony%C2%B2&language=pt-BR&...
+­ƒô║ EPG Parser: 357 canais, 35711 programas
+­ƒÆ¥ EPG: Cache salvo em disco
+Ô£à EPG: Carregados 357 canais
+Ô£à EPG carregado para canal "Animal Planet [4K] (h265)": Veterin├â┬írios do Texas
+ÔÜÖ´©Å Player Config: Decoder=auto (auto), Buffer=medium (100M), HLS=true
+­ƒÄ¼ [Player] Iniciando setup para item: Animal Planet [4K] (h265)
+­ƒÄ¼ Abrindo m├¡dia final: http://playfacil.net:80/JV20251121/JV21112025/1473910
+­ƒÄÁ Audio tracks: 0
+­ƒôØ Subtitle tracks: 0
+Ô£à M├¡dia pronta. Iniciando playback...
+Ô£à Player inicializado
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Canal Sony┬▓"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Canal Sony" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Canal%20Sony&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Canal Sony"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Canal Sony FHD┬▓" (tentou: Canal Sony┬▓, Canal Sony)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Canal Sony" (original: "Canal Sony HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Canal Sony" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Canal%20Sony&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Canal Sony"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Canal Sony HD" (tentou: Canal Sony)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Canal Sony" (original: "Canal Sony SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Canal Sony" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Canal%20Sony&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Canal Sony"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Canal Sony SD" (tentou: Canal Sony)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Cinemax" (original: "Cinemax FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Cinemax" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Cinemax&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "The History of White People in America" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 5
+­ƒÉø [DEBUG]    Melhor match: "The History of White People in America" - Rating: 6.0
+­ƒÉø [DEBUG]    Resultado 1: "The History of White People in America" (1985) - Rating: 6.0
+­ƒÉø [DEBUG]    Resultado 2: "Shadoevision" (1986) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Chris Elliott's FDR -- A One-Man Show" (1987) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Cinemax"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Cinemax FHD" - Rating: 6.0 -> Item.rating: 6.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Cinemax┬▓" (original: "Cinemax FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Cinemax┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Cinemax%C2%B2&language=pt-BR&...
+­ƒÄÁ Audio tracks: 1
+   - 1: unknown
+­ƒôØ Subtitle tracks: 0
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Shadoevision" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 5
+­ƒÉø [DEBUG]    Melhor match: "Shadoevision" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Shadoevision" (1986) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "The History of White People in America" (1985) - Rating: 6.0
+­ƒÉø [DEBUG]    Resultado 3: "Action Family" (1987) - Rating: 7.0
+1920 1080
+media_kit: VideoOutput: Free Texture: 1426060076640
+media_kit: ANGLESurfaceManager: Direct3D Feature Level: 11_0
+media_kit: VideoOutput: Create Texture: 1427937857600
+­ƒÄÁ Audio tracks: 1
+   - 1: unknown
+­ƒôØ Subtitle tracks: 1
+   - 1: unknown
+VideoOutput.Resize
+{handle: 1426062658032, id: 1427937857600, rect: {height: 1080, left: 0, top: 0, width: 1920}}
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Cinemax┬▓"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Cinemax FHD┬▓" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Cinemax" (original: "Cinemax HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Cinemax" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Cinemax&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "The History of White People in America" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 5
+­ƒÉø [DEBUG]    Melhor match: "The History of White People in America" - Rating: 6.0
+­ƒÉø [DEBUG]    Resultado 1: "The History of White People in America" (1985) - Rating: 6.0
+­ƒÉø [DEBUG]    Resultado 2: "Shadoevision" (1986) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Chris Elliott's FDR -- A One-Man Show" (1987) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Cinemax"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Cinemax HD" - Rating: 6.0 -> Item.rating: 6.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Cinemax" (original: "Cinemax SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Cinemax" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Cinemax&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "The History of White People in America" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 5
+­ƒÉø [DEBUG]    Melhor match: "The History of White People in America" - Rating: 6.0
+­ƒÉø [DEBUG]    Resultado 1: "The History of White People in America" (1985) - Rating: 6.0
+­ƒÉø [DEBUG]    Resultado 2: "Shadoevision" (1986) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Chris Elliott's FDR -- A One-Man Show" (1987) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Cinemax"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Cinemax SD" - Rating: 6.0 -> Item.rating: 6.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Film & Arts" (original: "Film & Arts FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Film & Arts" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Film%20%26%20Arts&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Women in Film: BBC Introducing Arts" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 8
+­ƒÉø [DEBUG]    Melhor match: "Women in Film: BBC Introducing Arts" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Women in Film: BBC Introducing Arts" (2021) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Dance on Film: BBC Introducing Arts" (2020) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Michael Caine on Acting in Film, Arts and Entertainment" (1987) - Rating: 0.0
+media_kit: VideoOutput: Free Texture: 1427937857600
+VideoOutput::~VideoOutput: 1426062658032
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Film & Arts"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Film & Arts FHD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Film & Arts" (original: "Film & Arts HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Film & Arts" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Film%20%26%20Arts&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Women in Film: BBC Introducing Arts" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 8
+­ƒÉø [DEBUG]    Melhor match: "Women in Film: BBC Introducing Arts" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Women in Film: BBC Introducing Arts" (2021) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Dance on Film: BBC Introducing Arts" (2020) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Michael Caine on Acting in Film, Arts and Entertainment" (1987) - Rating: 0.0
+­ƒôì Nav focado: In├¡cio
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Film & Arts"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Film & Arts HD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Film & Arts" (original: "Film & Arts SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Film & Arts" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Film%20%26%20Arts&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Women in Film: BBC Introducing Arts" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 8
+­ƒÉø [DEBUG]    Melhor match: "Women in Film: BBC Introducing Arts" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Women in Film: BBC Introducing Arts" (2021) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Dance on Film: BBC Introducing Arts" (2020) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Michael Caine on Acting in Film, Arts and Entertainment" (1987) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Film & Arts"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Film & Arts SD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Lifetime" (original: "Lifetime FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Lifetime" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Lifetime&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Lifetime" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Lifetime" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Lifetime" (2023) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "LifeTime" (2014) - Rating: 2.0
+­ƒÉø [DEBUG]    Resultado 3: "Lifetime" (2024) - Rating: 10.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Lifetime"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Lifetime FHD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Lifetime┬▓" (original: "Lifetime FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Lifetime┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Lifetime%C2%B2&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Role of a Lifetime" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Role of a Lifetime" - Rating: 4.0
+­ƒÉø [DEBUG]    Resultado 1: "Role of a Lifetime" (2020) - Rating: 4.0
+­ƒÉø [DEBUG]    Resultado 2: "Half a Lifetime" (1986) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Of a Lifetime" (2024) - Rating: 9.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 4.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Lifetime┬▓"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Lifetime FHD┬▓" - Rating: 4.0 -> Item.rating: 4.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Lifetime" (original: "Lifetime HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Lifetime" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Lifetime&language=pt-BR&...
+­ƒÄ¼ Iniciando player para: https://jellyfin.shark.assistant.nom.br/Videos/7106776c3174150b2dafca4bac6cc5f3/stream?api_key=54d8bfcc1bcf46ceb179be435181847e
+ÔÜÖ´©Å Player Config: Decoder=auto (auto), Buffer=medium (100M), HLS=true
+­ƒÄ¼ [Player] Iniciando setup para item: Rick e Morty
+­ƒöì [JELLYFIN] Buscando PlaybackInfo: https://jellyfin.shark.assistant.nom.br/Items/7106776c3174150b2dafca4bac6cc5f3/PlaybackInfo?UserId=c7eeb907beca4c488426c1029351eb4a
+media_kit: ANGLESurfaceManager: Direct3D Feature Level: 11_0
+1 1
+media_kit: VideoOutput: Create Texture: 1427937857312
+media_kit: VideoOutput: Using H/W rendering.
+VideoOutput.Resize
+{handle: 1426551419856, id: 1427937857312, rect: {height: 0, left: 0, top: 0, width: 0}}
+NativeVideoController: Texture ID: 1427937857312
+­ƒöì [JELLYFIN] PlaybackInfo status: 500
+ÔØî [JELLYFIN] Erro PlaybackInfo: 500 - Error processing request.
+! [Player] PlaybackInfo retornou NULL ou sem Sources
+­ƒöä Player: HLS Forced (Jellyfin) -> Adicionando container m3u8 (Final)
+­ƒÄ¼ Abrindo m├¡dia final: https://jellyfin.shark.assistant.nom.br/Videos/7106776c3174150b2dafca4bac6cc5f3/stream?api_key=54d8bfcc1bcf46ceb179be435181847e&TranscodingContainer=m3u8
+­ƒÄÁ Audio tracks: 0
+­ƒôØ Subtitle tracks: 0
+Ô£à M├¡dia pronta. Iniciando playback...
+Ô£à Player inicializado
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Lifetime" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Lifetime" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Lifetime" (2023) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "LifeTime" (2014) - Rating: 2.0
+­ƒÉø [DEBUG]    Resultado 3: "Lifetime" (2024) - Rating: 10.0
+ÔØî Player error: Failed to open https://jellyfin.shark.assistant.nom.br/Videos/7106776c3174150b2dafca4bac6cc5f3/stream?api_key=54d8bfcc1bcf46ceb179be435181847e&TranscodingContainer=m3u8.
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Lifetime"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Lifetime HD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Lifetime" (original: "Lifetime SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Lifetime" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Lifetime&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Lifetime" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Lifetime" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Lifetime" (2023) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "LifeTime" (2014) - Rating: 2.0
+­ƒÉø [DEBUG]    Resultado 3: "Lifetime" (2024) - Rating: 10.0
+­ƒôì Nav focado: In├¡cio
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Lifetime"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Lifetime SD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Megapix" (original: "Megapix FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Megapix" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Megapix&language=pt-BR&...
+media_kit: VideoOutput: Free Texture: 1427937857312
+VideoOutput::~VideoOutput: 1426551419856
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 3
+­ƒÉø [DEBUG]    Melhor match: "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" (2015) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Fiberglass and Megapixels" (2010) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Fibreglass & Megapixels" () - Rating: 0.0
+­ƒÉÖ JellyfinService: Buscando itens de https://jellyfin.shark.assistant.nom.br/Items?Recursive=true&Limit=100&Fields=Overview%2CPrimaryImageAspectRatio%2CProductionYear%2CCommunityRating%2CGenres%2CMediaSources&ParentId=25af7c27a6e3873337f2e9c34bd9503f&IncludeItemTypes=Season
+Ô£à JellyfinService: 1 itens encontrados
+­ƒÉÖ JellyfinService: Buscando itens de https://jellyfin.shark.assistant.nom.br/Items?Recursive=true&Limit=1000&Fields=Overview%2CPrimaryImageAspectRatio%2CProductionYear%2CCommunityRating%2CGenres%2CMediaSources&ParentId=31f234150097d35bac7005cd0411de6c&IncludeItemTypes=Episode
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Megapix"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Megapix FHD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Megapix┬▓" (original: "Megapix FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Megapix┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Megapix%C2%B2&language=pt-BR&...
+Ô£à JellyfinService: 9 itens encontrados
+­ƒòÁ´©Å [DEBUG-FORCE] SeriesDetail loaded 9 episodes for season Temporada 10
+­ƒòÁ´©Å [DEBUG-FORCE] First episode ID: 1ade96044b19ef1a8961be4c9fec8919 | Name: Epis├│dio 1
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Megapix┬▓"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Megapix" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Megapix&language=pt-BR&...
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 1 | ID: 1ade96044b19ef1a8961be4c9fec8919
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 2 | ID: 16055389ecc4119c15e65ab17b8adaf9
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 3 | ID: 88e2114b946cb658e92d1d5b675dc285
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 4 | ID: 06ffc1d90953a13065998ab32e840474
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 5 | ID: 97cc1ca5691bc67ee8a287e5506969ad
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 7 | ID: 900f53085207a4ca0be18e1791f7ba13
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 8 | ID: faffd362e8cba9a98be2b0a10e5b9b32
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 9 | ID: 0eb65cb95b51ef069afe31a3ff6dd91f
+­ƒòÁ´©Å [DEBUG-FORCE] EpisodeTile Init - Item: Epis├│dio 10 | ID: aba31eb5b2ea3994501616eccbc92779
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 3
+­ƒÉø [DEBUG]    Melhor match: "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" (2015) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Fiberglass and Megapixels" (2010) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Fibreglass & Megapixels" () - Rating: 0.0
+­ƒòÁ´©Å [DEBUG-FORCE] OPENING PLAYER - Item: Epis├│dio 4 | ID: 06ffc1d90953a13065998ab32e840474
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Megapix"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Megapix FHD┬▓" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Megapix" (original: "Megapix HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Megapix" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Megapix&language=pt-BR&...
+­ƒÄ¼ Iniciando player para: https://jellyfin.shark.assistant.nom.br/Videos/06ffc1d90953a13065998ab32e840474/stream?api_key=54d8bfcc1bcf46ceb179be435181847e
+ÔÜÖ´©Å Player Config: Decoder=auto (auto), Buffer=medium (100M), HLS=true
+­ƒÄ¼ [Player] Iniciando setup para item: Epis├│dio 4
+­ƒöì [JELLYFIN] Buscando PlaybackInfo: https://jellyfin.shark.assistant.nom.br/Items/06ffc1d90953a13065998ab32e840474/PlaybackInfo?UserId=c7eeb907beca4c488426c1029351eb4a
+media_kit: ANGLESurfaceManager: Direct3D Feature Level: 11_0
+1 1
+media_kit: VideoOutput: Create Texture: 1426054055952
+­ƒöì [JELLYFIN] PlaybackInfo status: 200
+­ƒôª [JELLYFIN] Fontes encontradas: 1
+   ­ƒæë Source Futurama - S10E04 - The Numberland Gap WEBDL-1080p: 24 legendas, 1 ├íudios
+­ƒôØ [Player] Legendas encontradas na API: 24
+­ƒöä Player: HLS Forced (Jellyfin) -> Adicionando container m3u8 (Final)
+­ƒÄ¼ Abrindo m├¡dia final: https://jellyfin.shark.assistant.nom.br/Videos/06ffc1d90953a13065998ab32e840474/stream?api_key=54d8bfcc1bcf46ceb179be435181847e&MediaSourceId=06ffc1d90953a13065998ab32e840474&TranscodingContainer=m3u8
+media_kit: VideoOutput: Using H/W rendering.
+VideoOutput.Resize
+{handle: 1426048766272, id: 1426054055952, rect: {height: 0, left: 0, top: 0, width: 0}}
+NativeVideoController: Texture ID: 1426054055952
+­ƒÄÁ Audio tracks: 0
+­ƒôØ Subtitle tracks: 0
+Ô£à M├¡dia pronta. Iniciando playback...
+Ô£à Player inicializado
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 3
+­ƒÉø [DEBUG]    Melhor match: "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" (2015) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Fiberglass and Megapixels" (2010) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Fibreglass & Megapixels" () - Rating: 0.0
+­ƒÄÁ Audio tracks: 1
+   - 1: unknown
+­ƒôØ Subtitle tracks: 0
+1920 1080
+media_kit: VideoOutput: Free Texture: 1426054055952
+media_kit: ANGLESurfaceManager: Direct3D Feature Level: 11_0
+media_kit: VideoOutput: Create Texture: 1426562872384
+VideoOutput.Resize
+{handle: 1426048766272, id: 1426562872384, rect: {height: 1080, left: 0, top: 0, width: 1920}}
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Megapix"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Megapix HD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Megapix" (original: "Megapix SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Megapix" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Megapix&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 3
+­ƒÉø [DEBUG]    Melhor match: "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "ÓñÜÓñ┐ÓññÓÑìÓñ░Óñ½Óñ┐Óññ 3.0 Megapixel" (2015) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Fiberglass and Megapixels" (2010) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Fibreglass & Megapixels" () - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Megapix"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Megapix SD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Modo Viagem" (original: "Modo Viagem  FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Modo Viagem" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Modo%20Viagem&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Modo Viagem"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Modo Viagem  FHD" (tentou: Modo Viagem)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Modo Viagem┬▓" (original: "Modo Viagem FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Modo Viagem┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Modo%20Viagem%C2%B2&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Modo Viagem┬▓"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Modo Viagem" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Modo%20Viagem&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Modo Viagem"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Modo Viagem FHD┬▓" (tentou: Modo Viagem┬▓, Modo Viagem)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Modo Viagem" (original: "Modo Viagem HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Modo Viagem" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Modo%20Viagem&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Modo Viagem"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Modo Viagem HD" (tentou: Modo Viagem)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Modo Viagem" (original: "Modo Viagem SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Modo Viagem" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Modo%20Viagem&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Modo Viagem"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Modo Viagem SD" (tentou: Modo Viagem)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Space" (original: "Space FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Space" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Space&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Space" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Space" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Space" (1965) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Space" () - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Space" (2020) - Rating: 5.8
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Space"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Space FHD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Space┬▓" (original: "Space FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Space┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Space%C2%B2&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Space Chimps - Micos no Espa├ºo" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Space Chimps - Micos no Espa├ºo" - Rating: 4.946
+­ƒÉø [DEBUG]    Resultado 1: "Space Chimps - Micos no Espa├ºo" (2008) - Rating: 4.946
+­ƒÉø [DEBUG]    Resultado 2: "Dead Space: A Queda" (2008) - Rating: 6.3
+­ƒÉø [DEBUG]    Resultado 3: "Dead Space: A Consequ├¬ncia" (2011) - Rating: 5.878
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 4.946, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Space┬▓"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Space FHD┬▓" - Rating: 4.946 -> Item.rating: 4.946
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Space" (original: "Space HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Space" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Space&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Space" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Space" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Space" (1965) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Space" () - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Space" (2020) - Rating: 5.8
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Space"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Space HD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Space" (original: "Space SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Space" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Space&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Space" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Space" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Space" (1965) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Space" () - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Space" (2020) - Rating: 5.8
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Space"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "Space SD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Studio Universal" (original: "Studio Universal FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Studio Universal" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Studio%20Universal&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Studio Universal"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Studio Universal FHD" (tentou: Studio Universal)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Studio Universal" (original: "Studio Universal HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Studio Universal" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Studio%20Universal&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Studio Universal"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Studio Universal HD" (tentou: Studio Universal)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Studio Universal" (original: "Studio Universal SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Studio Universal" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Studio%20Universal&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Studio Universal"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Studio Universal SD" (tentou: Studio Universal)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TCM" (original: "TCM FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TCM" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TCM&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Luise Rainer: Live from the TCM Classic Film Festival" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 15
+­ƒÉø [DEBUG]    Melhor match: "Luise Rainer: Live from the TCM Classic Film Festival" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Luise Rainer: Live from the TCM Classic Film Festival" (2011) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Live from the TCM Classic Film Festival: Norman Lloyd" (2016) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Michael Douglas: Live from the TCM Classic Film Festival" (2018) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "TCM"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "TCM FHD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TCM" (original: "TCM HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TCM" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TCM&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Luise Rainer: Live from the TCM Classic Film Festival" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 15
+­ƒÉø [DEBUG]    Melhor match: "Luise Rainer: Live from the TCM Classic Film Festival" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Luise Rainer: Live from the TCM Classic Film Festival" (2011) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Live from the TCM Classic Film Festival: Norman Lloyd" (2016) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Michael Douglas: Live from the TCM Classic Film Festival" (2018) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "TCM"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "TCM HD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TCM" (original: "TCM SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TCM" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TCM&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Luise Rainer: Live from the TCM Classic Film Festival" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 15
+­ƒÉø [DEBUG]    Melhor match: "Luise Rainer: Live from the TCM Classic Film Festival" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Luise Rainer: Live from the TCM Classic Film Festival" (2011) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 2: "Live from the TCM Classic Film Festival: Norman Lloyd" (2016) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "Michael Douglas: Live from the TCM Classic Film Festival" (2018) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "TCM"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "TCM SD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT" (original: "TNT FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "TNT" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "TNT" - Rating: 8.0
+­ƒÉø [DEBUG]    Resultado 1: "TNT" (2021) - Rating: 8.0
+­ƒÉø [DEBUG]    Resultado 2: "TNT" (2024) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "T.N.T." (1998) - Rating: 4.7
+­ƒôÑ [UI] Solicitando download da legenda: "Brazilian" (Index: 19, Format: srt, Source: 06ffc1d90953a13065998ab32e840474)
+­ƒôÑ [JELLYFIN] Baixando legenda: https://jellyfin.shark.assistant.nom.br/Videos/06ffc1d90953a13065998ab32e840474/06ffc1d90953a13065998ab32e840474/Subtitles/19/Stream.srt?api_key=54d8bfcc1bcf46ceb179be435181847e
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 8.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "TNT"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "TNT FHD" - Rating: 8.0 -> Item.rating: 8.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT┬▓" (original: "TNT FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%C2%B2&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Konga TNT" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Konga TNT" - Rating: 1.8
+­ƒÉø [DEBUG]    Resultado 1: "Konga TNT" (2020) - Rating: 1.8
+­ƒÉø [DEBUG]    Resultado 2: "TNT Jackson" (1974) - Rating: 4.643
+­ƒÉø [DEBUG]    Resultado 3: "TNT" (2021) - Rating: 8.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 1.8, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "TNT┬▓"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "TNT FHD┬▓" - Rating: 1.8 -> Item.rating: 1.8
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT" (original: "TNT HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "TNT" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "TNT" - Rating: 8.0
+­ƒÉø [DEBUG]    Resultado 1: "TNT" (2021) - Rating: 8.0
+­ƒÉø [DEBUG]    Resultado 2: "TNT" (2024) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "T.N.T." (1998) - Rating: 4.7
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 8.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "TNT"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "TNT HD" - Rating: 8.0 -> Item.rating: 8.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT Novelas" (original: "TNT Novelas FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT Novelas" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20Novelas&language=pt-BR&...
+Ô£à [JELLYFIN] Legenda salva (UTF-8): C:\Users\joaov\AppData\Local\Temp/clickchannel_sub_06ffc1d90953a13065998ab32e840474_19.srt (29454 bytes)
+Ô£à [UI] Windows Path Normalizado: "C:/Users/joaov/AppData/Local/Temp/clickchannel_sub_06ffc1d90953a13065998ab32e840474_19.srt"
+­ƒÄ¼ [UI] Setando legenda no player: "true" (LocalWin=true)
+­ƒÄÁ Audio tracks: 1
+   - 1: unknown
+­ƒôØ Subtitle tracks: 1
+   - 1: Brazilian
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT Novelas"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "TNT Novelas FHD" (tentou: TNT Novelas)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT Novelas" (original: "TNT Novelas HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT Novelas" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20Novelas&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT Novelas"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "TNT Novelas HD" (tentou: TNT Novelas)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT Novelas" (original: "TNT Novelas SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT Novelas" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20Novelas&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT Novelas"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "TNT Novelas SD" (tentou: TNT Novelas)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT" (original: "TNT SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "TNT" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "TNT" - Rating: 8.0
+­ƒÉø [DEBUG]    Resultado 1: "TNT" (2021) - Rating: 8.0
+­ƒÉø [DEBUG]    Resultado 2: "TNT" (2024) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "T.N.T." (1998) - Rating: 4.7
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 8.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "TNT"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "TNT SD" - Rating: 8.0 -> Item.rating: 8.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT S├®ries" (original: "TNT S├®ries FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT S├®ries" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20S%C3%A9ries&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT S├®ries"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT Series" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20Series&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT Series"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "TNT S├®ries FHD" (tentou: TNT S├®ries, TNT Series)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT S├®ries┬▓" (original: "TNT S├®ries FHD┬▓")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT S├®ries┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20S%C3%A9ries%C2%B2&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT S├®ries┬▓"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT Series┬▓" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20Series%C2%B2&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT Series┬▓"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT S├®ries" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20S%C3%A9ries&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT S├®ries"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "TNT S├®ries FHD┬▓" (tentou: TNT S├®ries┬▓, TNT Series┬▓, TNT S├®ries)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT S├®ries" (original: "TNT S├®ries HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT S├®ries" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20S%C3%A9ries&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT S├®ries"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT Series" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20Series&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT Series"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "TNT S├®ries HD" (tentou: TNT S├®ries, TNT Series)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "TNT S├®ries" (original: "TNT S├®ries SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT S├®ries" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20S%C3%A9ries&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT S├®ries"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "TNT Series" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=TNT%20Series&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "TNT Series"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "TNT S├®ries SD" (tentou: TNT S├®ries, TNT Series)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Universal TV" (original: "Universal TV FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Universal TV" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Universal%20TV&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Universal TV"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Universal TV FHD" (tentou: Universal TV)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Universal TV" (original: "Universal TV HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Universal TV" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Universal%20TV&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Universal TV"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Universal TV HD" (tentou: Universal TV)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Universal TV" (original: "Universal TV SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Universal TV" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Universal%20TV&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Universal TV"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Universal TV SD" (tentou: Universal TV)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "USA Network" (original: "USA Network FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "USA Network" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=USA%20Network&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Positive Women's Network - USA" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 1
+­ƒÉø [DEBUG]    Melhor match: "Positive Women's Network - USA" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Positive Women's Network - USA" (2018) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "USA Network"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "USA Network FHD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "USA Network" (original: "USA Network HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "USA Network" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=USA%20Network&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Positive Women's Network - USA" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 1
+­ƒÉø [DEBUG]    Melhor match: "Positive Women's Network - USA" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Positive Women's Network - USA" (2018) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "USA Network"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "USA Network HD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "USA Network" (original: "USA Network SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "USA Network" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=USA%20Network&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Positive Women's Network - USA" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 1
+­ƒÉø [DEBUG]    Melhor match: "Positive Women's Network - USA" - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 1: "Positive Women's Network - USA" (2018) - Rating: 0.0
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 0.0, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "USA Network"
+­ƒÉø [DEBUG] Ôä╣´©Å TMDB: Encontrado "USA Network SD" mas sem rating (tem descri├º├úo: false)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Warner Channel" (original: "Warner Channel FHD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Warner Channel" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Warner%20Channel&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Warner Channel"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Warner Channel FHD" (tentou: Warner Channel)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Warner Channel" (original: "Warner Channel HD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Warner Channel" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Warner%20Channel&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Warner Channel"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Warner Channel HD" (tentou: Warner Channel)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Warner Channel" (original: "Warner Channel SD")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Warner Channel" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Warner%20Channel&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Warner Channel"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Warner Channel SD" (tentou: Warner Channel)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "The Assault" (original: "The Assault [LEG] (2014)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "The Assault" (tipo: movie, ano: 2014)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=The%20Assault&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2014)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "The Assault" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.8, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "The Assault"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "The Assault [LEG] (2014)" - Rating: 6.8 -> Item.rating: 6.8
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Cora├º├Áes Roubados" (original: "Cora├º├Áes Roubados (2024)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Cora├º├Áes Roubados" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Cora%C3%A7%C3%B5es%20Roubados&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Cora├º├Áes Roubados" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 3
+­ƒÉø [DEBUG]    Melhor match: "Cora├º├Áes Roubados" - Rating: 3.333
+­ƒÉø [DEBUG]    Resultado 1: "Cora├º├Áes Roubados" (1998) - Rating: 3.333
+­ƒÉø [DEBUG]    Resultado 2: "Cora├º├Áes Roubados" (2024) - Rating: 5.9
+­ƒÉø [DEBUG]    Resultado 3: "Cora├º├Áes Roubados" (1996) - Rating: 4.9
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 3.333, Descri├º├úo: false
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Cora├º├Áes Roubados"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Cora├º├Áes Roubados (2024)" - Rating: 3.333 -> Item.rating: 3.333
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Culpa e Desejo" (original: "Culpa e Desejo [LEG] (2023)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Culpa e Desejo" (tipo: movie, ano: 2023)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Culpa%20e%20Desejo&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2023)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Culpa e Desejo" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.1, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Culpa e Desejo"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Culpa e Desejo [LEG] (2023)" - Rating: 6.1 -> Item.rating: 6.1
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A Heran├ºa" (original: "A Heran├ºa (2024)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A Heran├ºa" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%20Heran%C3%A7a&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "A Heran├ºa" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "A Heran├ºa" - Rating: 7.2
+­ƒÉø [DEBUG]    Resultado 1: "A Heran├ºa" (1970) - Rating: 7.2
+­ƒÉø [DEBUG]    Resultado 2: "A Heran├ºa" (2024) - Rating: 5.875
+­ƒÉø [DEBUG]    Resultado 3: "A Heran├ºa" (2025) - Rating: 5.9
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.2, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "A Heran├ºa"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "A Heran├ºa (2024)" - Rating: 7.2 -> Item.rating: 7.2
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Um Homem Diferente" (original: "Um Homem Diferente (2024)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Um Homem Diferente" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Um%20Homem%20Diferente&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Um Homem Diferente" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 2
+­ƒÉø [DEBUG]    Melhor match: "Um Homem Diferente" - Rating: 6.91
+­ƒÉø [DEBUG]    Resultado 1: "Um Homem Diferente" (2024) - Rating: 6.91
+­ƒÉø [DEBUG]    Resultado 2: "O Vingador" (2003) - Rating: 6.1
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.91, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Um Homem Diferente"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Um Homem Diferente (2024)" - Rating: 6.91 -> Item.rating: 6.91
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A Lenda de Ochi" (original: "A Lenda de Ochi (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A Lenda de Ochi" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%20Lenda%20de%20Ochi&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "A Lenda de Ochi" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.083, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "A Lenda de Ochi"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "A Lenda de Ochi (2025)" - Rating: 6.083 -> Item.rating: 6.083
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Joe e as Baratas" (original: "Joe e as Baratas (1996)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Joe e as Baratas" (tipo: movie, ano: 1996)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Joe%20e%20as%20Baratas&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1996)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Joe e as Baratas" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.794, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Joe e as Baratas"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Joe e as Baratas (1996)" - Rating: 5.794 -> Item.rating: 5.794
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "At├® Que a Vida Nos Separe" (original: "At├® Que a Vida Nos Separe (2023)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "At├® Que a Vida Nos Separe" (tipo: movie, ano: 2023)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=At%C3%A9%20Que%20a%20Vida%20Nos%20Separe&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2023)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "At├® Que a Vida Nos Separe" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.722, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "At├® Que a Vida Nos Separe"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "At├® Que a Vida Nos Separe (2023)" - Rating: 6.722 -> Item.rating: 6.722
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Kaiju No. 8: Miss├úo de Reconhecimento" (original: "Kaiju No. 8: Miss├úo de Reconhecimento (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Kaiju No. 8: Miss├úo de Reconhecimento" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Kaiju%20No.%208%3A%20Miss%C3%A3o%20de%20Reconhecimento&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Kaiju No. 8: Miss├úo de Reconhecimento" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.914, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Kaiju No. 8: Miss├úo de Reconhecimento"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Kaiju No. 8: Miss├úo de Reconhecimento (2025)" - Rating: 7.914 -> Item.rating: 7.914
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Um Lugar Chamado Utopia" (original: "Um Lugar Chamado Utopia (2024)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Um Lugar Chamado Utopia" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Um%20Lugar%20Chamado%20Utopia&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Um Lugar Chamado Utopia" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 1
+­ƒÉø [DEBUG]    Melhor match: "Um Lugar Chamado Utopia" - Rating: 5.457
+­ƒÉø [DEBUG]    Resultado 1: "Um Lugar Chamado Utopia" (2024) - Rating: 5.457
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.457, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Um Lugar Chamado Utopia"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Um Lugar Chamado Utopia (2024)" - Rating: 5.457 -> Item.rating: 5.457
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Exterminio" (original: "Exterminio (2002)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Exterminio" (tipo: movie, ano: 2002)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Exterminio&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2002)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Exterm├¡nio" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.2, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Exterminio"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Exterminio (2002)" - Rating: 7.2 -> Item.rating: 7.2
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Cerdita" (original: "Cerdita [LEG] (2022)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Cerdita" (tipo: movie, ano: 2022)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Cerdita&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2022)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Cerdita" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.58, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Cerdita"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Cerdita [LEG] (2022)" - Rating: 6.58 -> Item.rating: 6.58
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Os Bad Boas" (original: "Os Bad Boas (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Os Bad Boas" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Os%20Bad%20Boas&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Os Bad Boas" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.922, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Os Bad Boas"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Os Bad Boas (2025)" - Rating: 5.922 -> Item.rating: 5.922
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Confinado" (original: "Confinado (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Confinado" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Confinado&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Confinado" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.188, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Confinado"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Confinado (2025)" - Rating: 6.188 -> Item.rating: 6.188
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "o Ca├ºador de Tesouros" (original: "o Ca├ºador de Tesouros (2006)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "o Ca├ºador de Tesouros" (tipo: movie, ano: 2006)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=o%20Ca%C3%A7ador%20de%20Tesouros&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2006)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Didi, o Ca├ºador de Tesouros" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.4, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "o Ca├ºador de Tesouros"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "o Ca├ºador de Tesouros (2006)" - Rating: 5.4 -> Item.rating: 5.4
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "O Homem Bicenten├írio" (original: "O Homem Bicenten├írio (1999)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "O Homem Bicenten├írio" (tipo: movie, ano: 1999)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=O%20Homem%20Bicenten%C3%A1rio&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1999)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "O Homem Bicenten├írio" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.266, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "O Homem Bicenten├írio"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "O Homem Bicenten├írio (1999)" - Rating: 7.266 -> Item.rating: 7.266
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Uma Floresta Misteriosa" (original: "Uma Floresta Misteriosa [LEG] (2023)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Uma Floresta Misteriosa" (tipo: movie, ano: 2023)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Uma%20Floresta%20Misteriosa&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2023)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Uma Floresta Misteriosa" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 4.959, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Uma Floresta Misteriosa"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Uma Floresta Misteriosa [LEG] (2023)" - Rating: 4.959 -> Item.rating: 4.959
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Grease 2: Os Tempos da Brilhantina Voltaram" (original: "Grease 2: Os Tempos da Brilhantina Voltaram [LEG] (1982)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Grease 2: Os Tempos da Brilhantina Voltaram" (tipo: movie, ano: 1982)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Grease%202%3A%20Os%20Tempos%20da%20Brilhantina%20Voltaram&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1982)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Grease 2: Os Tempos da Brilhantina Voltaram" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.2, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Grease 2: Os Tempos da Brilhantina Voltaram"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Grease 2: Os Tempos da Brilhantina Voltaram [LEG] (1982)" - Rating: 5.2 -> Item.rating: 5.2
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Grease 2: Os Tempos da Brilhantina Voltaram" (original: "Grease 2: Os Tempos da Brilhantina Voltaram (1982)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Grease 2: Os Tempos da Brilhantina Voltaram" (tipo: movie, ano: 1982)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Grease%202%3A%20Os%20Tempos%20da%20Brilhantina%20Voltaram&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1982)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Grease 2: Os Tempos da Brilhantina Voltaram" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.2, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Grease 2: Os Tempos da Brilhantina Voltaram"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Grease 2: Os Tempos da Brilhantina Voltaram (1982)" - Rating: 5.2 -> Item.rating: 5.2
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Gera├º├úo do Futuro" (original: "Gera├º├úo do Futuro [LEG] (2023)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Gera├º├úo do Futuro" (tipo: movie, ano: 2023)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Gera%C3%A7%C3%A3o%20do%20Futuro&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2023)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Gera├º├úo do Futuro" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.973, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Gera├º├úo do Futuro"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Gera├º├úo do Futuro [LEG] (2023)" - Rating: 5.973 -> Item.rating: 5.973
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Gera├º├úo do Futuro" (original: "Gera├º├úo do Futuro (2023)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Gera├º├úo do Futuro" (tipo: movie, ano: 2023)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Gera%C3%A7%C3%A3o%20do%20Futuro&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2023)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Gera├º├úo do Futuro" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.973, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Gera├º├úo do Futuro"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Gera├º├úo do Futuro (2023)" - Rating: 5.973 -> Item.rating: 5.973
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Garota vs. Monstro" (original: "Garota vs. Monstro [LEG] (2012)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Garota vs. Monstro" (tipo: movie, ano: 2012)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Garota%20vs.%20Monstro&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2012)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Garota vs. Monstro" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.289, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Garota vs. Monstro"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Garota vs. Monstro [LEG] (2012)" - Rating: 6.289 -> Item.rating: 6.289
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Garota vs. Monstro" (original: "Garota vs. Monstro (2012)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Garota vs. Monstro" (tipo: movie, ano: 2012)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Garota%20vs.%20Monstro&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2012)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Garota vs. Monstro" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.289, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Garota vs. Monstro"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Garota vs. Monstro (2012)" - Rating: 6.289 -> Item.rating: 6.289
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Interrompida" (original: "Interrompida [LEG] (1999)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Interrompida" (tipo: movie, ano: 1999)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Interrompida&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1999)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Garota, Interrompida" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.566, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Interrompida"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Interrompida [LEG] (1999)" - Rating: 7.566 -> Item.rating: 7.566
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Interrompida" (original: "Interrompida (1999)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Interrompida" (tipo: movie, ano: 1999)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Interrompida&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1999)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Garota, Interrompida" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.566, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Interrompida"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Interrompida (1999)" - Rating: 7.566 -> Item.rating: 7.566
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "C├úofus├Áes" (original: "C├úofus├Áes [LEG] (2005)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "C├úofus├Áes" (tipo: movie, ano: 2005)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=C%C3%A3ofus%C3%B5es&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2005)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "C├úofus├Áes" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.5, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "C├úofus├Áes"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "C├úofus├Áes [LEG] (2005)" - Rating: 5.5 -> Item.rating: 5.5
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "C├úofus├Áes" (original: "C├úofus├Áes (2005)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "C├úofus├Áes" (tipo: movie, ano: 2005)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=C%C3%A3ofus%C3%B5es&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2005)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "C├úofus├Áes" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.5, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "C├úofus├Áes"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "C├úofus├Áes (2005)" - Rating: 5.5 -> Item.rating: 5.5
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A Maldi├º├úo de Medeia" (original: "A Maldi├º├úo de Medeia [LEG] (2022)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A Maldi├º├úo de Medeia" (tipo: movie, ano: 2022)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%20Maldi%C3%A7%C3%A3o%20de%20Medeia&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2022)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "A Maldi├º├úo de Medeia" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 2.0, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "A Maldi├º├úo de Medeia"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "A Maldi├º├úo de Medeia [LEG] (2022)" - Rating: 2.0 -> Item.rating: 2.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "A Maldi├º├úo de Medeia" (original: "A Maldi├º├úo de Medeia (2022)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "A Maldi├º├úo de Medeia" (tipo: movie, ano: 2022)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=A%20Maldi%C3%A7%C3%A3o%20de%20Medeia&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2022)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "A Maldi├º├úo de Medeia" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 2.0, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "A Maldi├º├úo de Medeia"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "A Maldi├º├úo de Medeia (2022)" - Rating: 2.0 -> Item.rating: 2.0
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "9: A Salva├º├úo" (original: "9: A Salva├º├úo [LEG] (2009)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "9: A Salva├º├úo" (tipo: movie, ano: 2009)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=9%3A%20A%20Salva%C3%A7%C3%A3o&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2009)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "9: A Salva├º├úo" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.94, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "9: A Salva├º├úo"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "9: A Salva├º├úo [LEG] (2009)" - Rating: 6.94 -> Item.rating: 6.94
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "9: A Salva├º├úo" (original: "9: A Salva├º├úo (2009)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "9: A Salva├º├úo" (tipo: movie, ano: 2009)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=9%3A%20A%20Salva%C3%A7%C3%A3o&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2009)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "9: A Salva├º├úo" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.94, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "9: A Salva├º├úo"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "9: A Salva├º├úo (2009)" - Rating: 6.94 -> Item.rating: 6.94
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "ZOMBIES 4: A Era dos Vampiros" (original: "ZOMBIES 4: A Era dos Vampiros (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "ZOMBIES 4: A Era dos Vampiros" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=ZOMBIES%204%3A%20A%20Era%20dos%20Vampiros&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "ZOMBIES 4: A Era dos Vampiros" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.926, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "ZOMBIES 4: A Era dos Vampiros"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "ZOMBIES 4: A Era dos Vampiros (2025)" - Rating: 6.926 -> Item.rating: 6.926
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Brick" (original: "Brick (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Brick" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Brick&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Brick" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.786, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Brick"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Brick (2025)" - Rating: 5.786 -> Item.rating: 5.786
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Brick" (original: "Brick [LEG] (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Brick" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Brick&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Brick" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.786, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Brick"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Brick [LEG] (2025)" - Rating: 5.786 -> Item.rating: 5.786
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "O Ref├║gio" (original: "O Ref├║gio (2024)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "O Ref├║gio" (tipo: movie)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=O%20Ref%C3%BAgio&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Destrui├º├úo Final: O ├Ültimo Ref├║gio" (sem ano)
+­ƒÉø [DEBUG]    Total de resultados: 20
+­ƒÉø [DEBUG]    Melhor match: "Destrui├º├úo Final: O ├Ültimo Ref├║gio" - Rating: 7.128
+­ƒÉø [DEBUG]    Resultado 1: "Destrui├º├úo Final: O ├Ültimo Ref├║gio" (2020) - Rating: 7.128
+­ƒÉø [DEBUG]    Resultado 2: "O Ref├║gio" (2024) - Rating: 0.0
+­ƒÉø [DEBUG]    Resultado 3: "O Ref├║gio" (2024) - Rating: 6.515
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.128, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "O Ref├║gio"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "O Ref├║gio (2024)" - Rating: 7.128 -> Item.rating: 7.128
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Fahrenheit 451" (original: "Fahrenheit 451 (2018)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Fahrenheit 451" (tipo: movie, ano: 2018)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Fahrenheit%20451&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2018)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Fahrenheit 451" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.442, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Fahrenheit 451"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Fahrenheit 451 (2018)" - Rating: 5.442 -> Item.rating: 5.442
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "As Aventuras do Dr Dolittle" (original: "As Aventuras do Dr Dolittle (2020)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "As Aventuras do Dr Dolittle" (tipo: movie, ano: 2020)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=As%20Aventuras%20do%20Dr%20Dolittle&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2020)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Dolittle" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.585, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "As Aventuras do Dr Dolittle"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "As Aventuras do Dr Dolittle (2020)" - Rating: 6.585 -> Item.rating: 6.585
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Uma Floresta Misteriosa" (original: "Uma Floresta Misteriosa (2023)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Uma Floresta Misteriosa" (tipo: movie, ano: 2023)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Uma%20Floresta%20Misteriosa&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2023)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Uma Floresta Misteriosa" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 4.959, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Uma Floresta Misteriosa"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Uma Floresta Misteriosa (2023)" - Rating: 4.959 -> Item.rating: 4.959
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Com Unhas e Dentes" (original: "Com Unhas e Dentes (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Com Unhas e Dentes" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Com%20Unhas%20e%20Dentes&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Com Unhas e Dentes" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.7, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Com Unhas e Dentes"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Com Unhas e Dentes (2025)" - Rating: 6.7 -> Item.rating: 6.7
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Bailarina - Do Universo de John Wick" (original: "Bailarina - Do Universo de John Wick (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Bailarina - Do Universo de John Wick" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Bailarina%20-%20Do%20Universo%20de%20John%20Wick&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Bailarina: Do Universo de John Wick" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.269, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Bailarina - Do Universo de John Wick"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Bailarina - Do Universo de John Wick (2025)" - Rating: 7.269 -> Item.rating: 7.269
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Traffic: Ningu├®m Sai Limpo" (original: "Traffic: Ningu├®m Sai Limpo [LEG] (2000)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Traffic: Ningu├®m Sai Limpo" (tipo: movie, ano: 2000)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Traffic%3A%20Ningu%C3%A9m%20Sai%20Limpo&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2000)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Traffic: Ningu├®m Sai Limpo" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.082, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Traffic: Ningu├®m Sai Limpo"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Traffic: Ningu├®m Sai Limpo [LEG] (2000)" - Rating: 7.082 -> Item.rating: 7.082
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Minha M├úe Quer que eu Case" (original: "Minha M├úe Quer que eu Case (2007)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Minha M├úe Quer que eu Case" (tipo: movie, ano: 2007)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Minha%20M%C3%A3e%20Quer%20que%20eu%20Case&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2007)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Minha M├úe Quer que eu Case" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 5.9, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Minha M├úe Quer que eu Case"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Minha M├úe Quer que eu Case (2007)" - Rating: 5.9 -> Item.rating: 5.9
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Guerra e Paz" (original: "Guerra e Paz (1956)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Guerra e Paz" (tipo: movie, ano: 1956)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Guerra%20e%20Paz&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1956)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Guerra e Paz" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.7, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Guerra e Paz"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Guerra e Paz (1956)" - Rating: 6.7 -> Item.rating: 6.7
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Doutor Jivago" (original: "Doutor Jivago (1965)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Doutor Jivago" (tipo: movie, ano: 1965)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Doutor%20Jivago&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1965)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Doutor Jivago" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.541, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Doutor Jivago"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Doutor Jivago (1965)" - Rating: 7.541 -> Item.rating: 7.541
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Jurassic World: Recome├ºo" (original: "Jurassic World: Recome├ºo [CINEMA] (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Jurassic World: Recome├ºo" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Jurassic%20World%3A%20Recome%C3%A7o&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Jurassic World: Recome├ºo" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.316, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Jurassic World: Recome├ºo"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Jurassic World: Recome├ºo [CINEMA] (2025)" - Rating: 6.316 -> Item.rating: 6.316
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Lembran├ºas de Outra Vida" (original: "Lembran├ºas de Outra Vida (1995)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Lembran├ºas de Outra Vida" (tipo: movie, ano: 1995)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Lembran%C3%A7as%20de%20Outra%20Vida&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1995)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Lembran├ºas de Outra Vida" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.087, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Lembran├ºas de Outra Vida"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Lembran├ºas de Outra Vida (1995)" - Rating: 7.087 -> Item.rating: 7.087
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Gattaca: A Experi├¬ncia Gen├®tica" (original: "Gattaca: A Experi├¬ncia Gen├®tica (1997)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Gattaca: A Experi├¬ncia Gen├®tica" (tipo: movie, ano: 1997)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Gattaca%3A%20A%20Experi%C3%AAncia%20Gen%C3%A9tica&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1997)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Gattaca: A Experi├¬ncia Gen├®tica" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.564, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Gattaca: A Experi├¬ncia Gen├®tica"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Gattaca: A Experi├¬ncia Gen├®tica (1997)" - Rating: 7.564 -> Item.rating: 7.564
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "O Fantasma" (original: "O Fantasma (1996)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "O Fantasma" (tipo: movie, ano: 1996)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=O%20Fantasma&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 1996)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Ghost in the Shell: O Fantasma do Futuro" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 7.923, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "O Fantasma"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "O Fantasma (1996)" - Rating: 7.923 -> Item.rating: 7.923
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Below Her Mouth" (original: "Below Her Mouth [LEG] (2017)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Below Her Mouth" (tipo: movie, ano: 2017)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Below%20Her%20Mouth&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2017)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Below Her Mouth" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.8, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Below Her Mouth"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Below Her Mouth [LEG] (2017)" - Rating: 6.8 -> Item.rating: 6.8
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Kasa Branca" (original: "Kasa Branca (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Kasa Branca" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Kasa%20Branca&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Kasa Branca" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.5, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Kasa Branca"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Kasa Branca (2025)" - Rating: 6.5 -> Item.rating: 6.5
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Popstar: Nunca Desista de Nunca Desistir" (original: "Popstar: Nunca Desista de Nunca Desistir [LEG] (2016)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Popstar: Nunca Desista de Nunca Desistir" (tipo: movie, ano: 2016)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Popstar%3A%20Nunca%20Desista%20de%20Nunca%20Desistir&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2016)
+Ôä╣´©Å  [INFO] Ô£à TMDB: Encontrado "Popstar: Nunca Desista de Nunca Desistir" (com ano)
+­ƒÉø [DEBUG] Ô£à TMDB: Detalhes carregados - Rating: 6.6, Descri├º├úo: true
+­ƒÉø [DEBUG] Ô£à TMDB: Encontrado com varia├º├úo "Popstar: Nunca Desista de Nunca Desistir"
+Ôä╣´©Å  [INFO] Ô£à TMDB: Enriquecido "Popstar: Nunca Desista de Nunca Desistir [LEG] (2016)" - Rating: 6.6 -> Item.rating: 6.6
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Back to the Beginning part 2" (original: "Back to the Beginning part 2 (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Back to the Beginning part 2" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Back%20to%20the%20Beginning%20part%202&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Back to the Beginning part 2"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Back to the Beginning part 2 (2025)" (tentou: Back to the Beginning part 2)
+­ƒÉø [DEBUG] ­ƒöì TMDB: Buscando "Back to the Beginning part 1" (original: "Back to the Beginning part 1 (2025)")
+­ƒÉø [DEBUG] ­ƒöì TMDB API: Buscando "Back to the Beginning part 1" (tipo: movie, ano: 2025)
+­ƒÉø [DEBUG]    URL: https://api.themoviedb.org/3/search/movie?api_key=***API_KEY***&query=Back%20to%20the%20Beginning%20part%201&language=pt-BR&...
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (com ano 2025)
+Ôä╣´©Å  [INFO] ­ƒôí TMDB: Status 200 (sem ano)
+!  [WARNING] ! TMDB: Nenhum resultado encontrado para "Back to the Beginning part 1"
+­ƒÉø [DEBUG]    Response body (primeiros 200 chars): {"page":1,"results":[],"total_pages":1,"total_results":0}
+­ƒÉø [DEBUG] ! TMDB: N├úo encontrado "Back to the Beginning part 1 (2025)" (tentou: Back to the Beginning part 1)
+Ôä╣´©Å  [INFO] Ô£à ContentEnricher: 91/120 itens enriquecidos com sucesso
+Ô£à TMDB: 64 itens enriquecidos com sucesso

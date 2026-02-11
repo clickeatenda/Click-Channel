@@ -1,0 +1,6 @@
+Launching lib\main.dart on Windows in debug mode...
+Building Windows application...                                 
+lib/widgets/media_player_screen.dart(596,52): error G75B77105: Member not found: 'JellyfinService.getPlaybackInfo'. [D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\flutter\flutter_assemble.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(254,5): error MSB8066: Custom build for 'D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\CMakeFiles\fad69526e37589fa4db182d6cb8e5c75\flutter_windows.dll.rule;D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\CMakeFiles\7be93c046ba6b2365d72cd08ad361513\flutter_assemble.rule' exited with code 1. [D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\flutter\flutter_assemble.vcxproj]
+Building Windows application...                                    16,3s
+Error: Build process failed.

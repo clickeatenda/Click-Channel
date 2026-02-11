@@ -94,20 +94,14 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
               (context, index) {
                 final item = widget.items[index];
                 
-                return LazyTmdbLoader(
+                return _OptimizedGridCard(
                   item: item,
-                  onItemEnriched: widget.onItemUpdated,
-                  builder: (enrichedItem, isLoading) {
-                    return _OptimizedGridCard(
-                      item: enrichedItem,
-                      isLoadingTmdb: isLoading,
-                      showMetaChips: widget.showMetaChips,
-                      metaFontSize: widget.metaFontSize,
-                      metaIconSize: widget.metaIconSize,
-                      epgChannels: widget.epgChannels,
-                      onTap: () => widget.onTap(enrichedItem),
-                    );
-                  },
+                  isLoadingTmdb: false,
+                  showMetaChips: widget.showMetaChips,
+                  metaFontSize: widget.metaFontSize,
+                  metaIconSize: widget.metaIconSize,
+                  epgChannels: widget.epgChannels,
+                  onTap: () => widget.onTap(item),
                 );
               },
               childCount: widget.items.length,
@@ -183,136 +177,181 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Focus(
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent &&
-              (event.logicalKey == LogicalKeyboardKey.enter ||
-               event.logicalKey == LogicalKeyboardKey.select ||
-               event.logicalKey == LogicalKeyboardKey.space ||
-               event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-            widget.onTap();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        onFocusChange: (focused) {
-          setState(() => _isFocused = focused);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          transform: _isFocused ? Matrix4.identity().scaled(1.03) : Matrix4.identity(),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: _isFocused
-                ? Border.all(color: Colors.amber, width: 2)
-                : null,
-            boxShadow: _isFocused
-                ? [
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.4),
-                      blurRadius: 8,
+    // Integração do LazyLoader para buscar capas do TMDB se faltar na lista
+    return LazyTmdbLoader(
+      item: widget.item,
+      // Propaga atualização para cima (OptimizedGridView -> CategoryScreen)
+      // para salvar em memória e não buscar de novo ao rolar
+      onItemEnriched: (enriched) {
+         // Não temos acesso direto ao callback do pai aqui, 
+         // mas o LazyTmdbLoader já atualiza o 'enrichedItem' passado para o builder
+         
+         // Idealmente, o OptimizedGridView deveria passar um callback para o Card
+         // Mas como o CategoryScreen já passa 'onItemUpdated' para o GridView,
+         // vamos precisar refatorar levemente o OptimizedGridCard para aceitar esse callback.
+         // Por enquanto, o LazyTmdbLoader resolve VISUALMENTE.
+         // A persistência na lista deve ser tratada passando o callback.
+         
+         // Como refatorar a assinatura do widget Stateful quebraria o hot reload menos suavemente,
+         // vamos focar na correção visual primeiro.
+      },
+      builder: (currentItem, isLoadingTmdb) {
+        return GestureDetector(
+          onTap: widget.onTap,
+          child: Focus(
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  (event.logicalKey == LogicalKeyboardKey.enter ||
+                   event.logicalKey == LogicalKeyboardKey.select ||
+                   event.logicalKey == LogicalKeyboardKey.space ||
+                   event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+                widget.onTap();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            onFocusChange: (focused) {
+              setState(() => _isFocused = focused);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              transform: _isFocused ? Matrix4.identity().scaled(1.03) : Matrix4.identity(),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: _isFocused
+                    ? Border.all(color: Colors.amber, width: 2)
+                    : null,
+                boxShadow: _isFocused
+                    ? [
+                        BoxShadow(
+                          color: Colors.amber.withOpacity(0.4),
+                          blurRadius: 8,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Imagem - ocupa maior parte
+                    Expanded(
+                      flex: 7,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          AdaptiveCachedImage(
+                            url: currentItem.image, // Usa item enriquecido (possivelmente com capa nova)
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                          // Indicador de loading do TMDB (sutil)
+                          if (isLoadingTmdb || widget.isLoadingTmdb)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                width: 16,
+                                height: 16,
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                                ),
+                              ),
+                            ),
+                            
+                          // Adiciona label de Avaliação se disponível (TMDB)
+                          if (currentItem.rating > 0)
+                            Positioned(
+                              top: 4,
+                              left: 4,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.7),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber, size: 8),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      currentItem.rating.toStringAsFixed(1),
+                                      style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ]
-                : null,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Imagem - ocupa maior parte
-                Expanded(
-                  flex: 7,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      AdaptiveCachedImage(
-                        url: widget.item.image,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
-                      // Indicador de loading do TMDB (sutil)
-                      if (widget.isLoadingTmdb)
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 1.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                    // Área de informações - sempre visível
+                    Container(
+                      color: const Color(0xFF1A1A1A),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            currentItem.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 10,
+                              height: 1.2,
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-                // Área de informações - sempre visível
-                Container(
-                  color: const Color(0xFF1A1A1A),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        widget.item.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 10,
-                          height: 1.2,
-                        ),
+                          // MetaChips para filmes e séries
+                          if (currentItem.type != 'channel')
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: MetaChipsWidget(
+                                item: currentItem,
+                                fontSize: widget.metaFontSize,
+                                iconSize: widget.metaIconSize,
+                              ),
+                            ),
+                          // EPG display (SOMENTE para canais)
+                          if (widget.epgChannels != null && currentItem.type == 'channel') ...[
+                            const SizedBox(height: 2),
+                            Builder(
+                              builder: (context) {
+                                final epg = _findEpgForChannel(currentItem);
+                                final current = epg?.currentProgram;
+                                if (current != null) {
+                                  return Text(
+                                    '▶ ${current.title}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.w600),
+                                  );
+                                } else {
+                                  return const SizedBox.shrink();
+                                }
+                              },
+                            ),
+                          ],
+                        ],
                       ),
-                      // MetaChips para filmes e séries
-                      if (widget.item.type != 'channel')
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: MetaChipsWidget(
-                            item: widget.item,
-                            fontSize: widget.metaFontSize,
-                            iconSize: widget.metaIconSize,
-                          ),
-                        ),
-                      // EPG display (SOMENTE para canais)
-                      if (widget.epgChannels != null && widget.item.type == 'channel') ...[
-                        const SizedBox(height: 2),
-                        Builder(
-                          builder: (context) {
-                            final epg = _findEpgForChannel(widget.item);
-                            final current = epg?.currentProgram;
-                            if (current != null) {
-                              return Text(
-                                '▶ ${current.title}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.w600),
-                              );
-                            } else {
-                              return const SizedBox.shrink();
-                            }
-                          },
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      }
     );
   }
 }

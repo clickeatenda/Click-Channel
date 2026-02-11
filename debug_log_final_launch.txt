@@ -1,0 +1,14 @@
+
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé A new version of Flutter is available!                  Ôöé
+Ôöé                                                         Ôöé
+Ôöé To update to the latest version, run "flutter upgrade". Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+Launching lib\main.dart on Windows in debug mode...
+Building Windows application...                                 
+lib/widgets/media_player_screen.dart(596,16): error G4127D1E8: The getter 'mediaInfo' isn't defined for the type '_MediaPlayerScreenState'. [D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\flutter\flutter_assemble.vcxproj]
+lib/widgets/media_player_screen.dart(596,37): error G4127D1E8: The getter 'mediaInfo' isn't defined for the type '_MediaPlayerScreenState'. [D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\flutter\flutter_assemble.vcxproj]
+lib/widgets/media_player_screen.dart(597,30): error G4127D1E8: The getter 'mediaInfo' isn't defined for the type '_MediaPlayerScreenState'. [D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\flutter\flutter_assemble.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(254,5): error MSB8066: Custom build for 'D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\CMakeFiles\fad69526e37589fa4db182d6cb8e5c75\flutter_windows.dll.rule;D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\CMakeFiles\7be93c046ba6b2365d72cd08ad361513\flutter_assemble.rule' exited with code 1. [D:\ClickeAtenda-DEV\Projetos\Click-Channel\build\windows\x64\flutter\flutter_assemble.vcxproj]
+Building Windows application...                                    17,4s
+Error: Build process failed.

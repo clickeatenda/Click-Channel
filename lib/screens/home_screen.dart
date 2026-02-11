@@ -22,6 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // For caching
 import '../widgets/media_player_screen.dart';
 import '../widgets/adaptive_cached_image.dart';
 import '../widgets/meta_chips_widget.dart';
+import '../widgets/logo_background.dart';
 import '../data/favorites_service.dart'; // NOVO import
 import '../routes/app_routes.dart';
 
@@ -81,7 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
       onWillPop: _onWillPop,
       child: Scaffold(
       backgroundColor: bg,
-      body: SafeArea(
+      body: LogoBackground(
+        opacity: 0.25,
+        blur: 8.0,
+        child: SafeArea(
         child: Column(
           children: [
             // HEADER
@@ -182,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
       ),
       ),
     );
@@ -1727,12 +1732,12 @@ class _ChannelWithEpgCardState extends State<_ChannelWithEpgCard> {
                         if (widget.channel.image.isNotEmpty)
                           ClipRRect(
                             borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-                            child: CachedNetworkImage(
-                              imageUrl: widget.channel.image,
+                            child: AdaptiveCachedImage(
+                              url: widget.channel.image,
                               width: 80,
                               height: 130,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => const Center(
+                              errorWidget: const Center(
                                 child: Icon(Icons.live_tv, color: Colors.white38, size: 32),
                               ),
                             ),
@@ -2336,20 +2341,33 @@ class _FeaturedCard extends StatelessWidget {
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          image: image.isNotEmpty
-              ? DecorationImage(
-                  image: NetworkImage(image),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
-                )
-              : null,
-          gradient: image.isEmpty
-              ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-              : null,
           border: Border.all(color: Colors.white12),
         ),
         child: Stack(
           children: [
+            // Imagem de fundo adaptativa
+            if (image.isNotEmpty)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AdaptiveCachedImage(
+                    url: image,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            // Gradiente e overlay
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.black.withOpacity(0.3), // Darken equivalent
+                  gradient: image.isEmpty
+                    ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                    : null,
+                ),
+              ),
+            ),
             Positioned(
               bottom: 12,
               left: 12,
@@ -2586,7 +2604,7 @@ class _ChannelThumbState extends State<_ChannelThumb> {
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                   child: image.isNotEmpty
-                    ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.live_tv, color: Colors.white38, size: 28))
+                    ? AdaptiveCachedImage(url: image, fit: BoxFit.cover, errorWidget: const Icon(Icons.live_tv, color: Colors.white38, size: 28))
                     : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.live_tv, color: Colors.white38, size: 28))),
                 ),
               ),
@@ -2782,11 +2800,10 @@ class _CategoryImageCardState extends State<_CategoryImageCard> {
             children: [
               if (widget.image.isNotEmpty)
                 Positioned.fill(
-                  child: CachedNetworkImage(
-                    imageUrl: widget.image,
+                  child: AdaptiveCachedImage(
+                    url: widget.image,
                     fit: BoxFit.cover,
-                    placeholder: (c,u)=>Container(color: const Color(0x33111B2B)),
-                    errorWidget: (c,u,e)=>Container(color: const Color(0x33111B2B)),
+                    errorWidget: Container(color: const Color(0x33111B2B)),
                   ),
                 ),
               Positioned.fill(child: Container(color: Colors.black.withOpacity(0.45))),
@@ -2980,11 +2997,10 @@ class _WatchingCardState extends State<_WatchingCard> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: item.image,
+                      child: AdaptiveCachedImage(
+                        url: item.image,
                         fit: BoxFit.cover,
-                        placeholder: (c, u) => Container(color: const Color(0xFF333333)),
-                        errorWidget: (c, u, e) => Container(
+                        errorWidget: Container(
                           color: const Color(0xFF333333),
                           child: const Icon(Icons.movie, color: Colors.white30, size: 40),
                         ),

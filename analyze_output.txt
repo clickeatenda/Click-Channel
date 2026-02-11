@@ -1,0 +1,14 @@
+Analyzing media_player_screen.dart...                           
+
+warning - The value of the local variable 'currentPos' isn't used - lib\widgets\media_player_screen.dart:432:19 - unused_local_variable
+  error - Undefined name 'mediaInfo' - lib\widgets\media_player_screen.dart:596:16 - undefined_identifier
+  error - Undefined name 'mediaInfo' - lib\widgets\media_player_screen.dart:596:37 - undefined_identifier
+  error - Undefined name 'mediaInfo' - lib\widgets\media_player_screen.dart:597:30 - undefined_identifier
+   info - Use interpolation to compose strings and values - lib\widgets\media_player_screen.dart:604:31 - prefer_interpolation_to_compose_strings
+warning - The declaration '_buildVideoError' isn't referenced - lib\widgets\media_player_screen.dart:961:10 - unused_element
+warning - The declaration '_buildOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1471:10 - unused_element
+warning - The declaration '_buildSimpleOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1534:10 - unused_element
+warning - The declaration '_buildOptionButtonWithFocus' isn't referenced - lib\widgets\media_player_screen.dart:1600:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\widgets\media_player_screen.dart:2023:37 - prefer_const_constructors
+
+10 issues found. (ran in 3.9s)

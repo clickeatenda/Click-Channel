@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io'; // Moved here
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:media_kit/media_kit.dart';
 import 'core/theme/app_colors.dart';
 import 'core/api/api_client.dart';
 import 'core/prefs.dart';
+import 'core/http_overrides.dart'; // Moved here
 import 'providers/auth_provider.dart';
 import 'routes/app_routes.dart';
 import 'core/config.dart';
@@ -24,6 +26,9 @@ void main() {
   // CRÍTICO: Inicializa o binding PRIMEIRO e chama runApp() IMEDIATAMENTE
   // Isso garante que a splash screen nativa seja substituída pelo Flutter o mais rápido possível
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // FIX: Ignora erros de SSL globalmente
+  HttpOverrides.global = MyHttpOverrides();
   
   // Inicializar MediaKit (síncrono, rápido)
   MediaKit.ensureInitialized();

@@ -139,6 +139,10 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
              final seasonName = s.title;
              final episodes = await JellyfinService.getEpisodes(widget.item.id, s.id);
              seasonsMap[seasonName] = episodes;
+             print('🕵️ [DEBUG-FORCE] SeriesDetail loaded ${episodes.length} episodes for season $seasonName');
+             if (episodes.isNotEmpty) {
+                print('🕵️ [DEBUG-FORCE] First episode ID: ${episodes.first.id} | Name: ${episodes.first.title}');
+             }
           }
           
           d = SeriesDetails(seasons: seasonsMap);

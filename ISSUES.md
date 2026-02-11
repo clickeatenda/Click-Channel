@@ -664,3 +664,56 @@ Fixes #número
 
 
 
+
+---
+
+## 🛠️ Relatório de Correções e Melhorias (11/02/2026)
+
+### ISSUE #129: Correção de Capas, Legendas e Build Windows/Firestick
+**Status:** ✅ RESOLVIDO E COMPILADO
+**Prioridade:** ALTA
+**Data de Resolução:** 11/02/2026
+
+**Descrição:**
+Resolução de problemas críticos na integração Jellyfin, incluindo falha no carregamento de capas, erros de construção no Windows devido a métodos não utilizados, e regressão na construção de URLs de legendas.
+
+**Causa Raiz:**
+1.  **Capas:** Lógica de mapeamento ignorava tags `Backdrop` e `Thumb` quando `Primary` estava ausente.
+2.  **Legendas:** URL de legendas malformada (faltava ID do Source).
+3.  **Build:** Métodos não utilizados (`_buildSimpleOptionButton`) e chamada incorreta (`getPlaybackInfo` vs `getMediaInfo`) causavam erro de compilação.
+
+**Solução:**
+
+**1. Correção de Capas (Jellyfin):**
+```dart
+// lib/data/jellyfin_service.dart
+if (tags['Primary'] != null) {
+  imageUrl = getImageUrl(itemId, tags['Primary']!);
+} else if (tags['Backdrop'] != null) {
+  imageUrl = getImageUrl(itemId, tags['Backdrop']!, imageType: 'Backdrop');
+} else if (tags['Thumb'] != null) {
+  imageUrl = getImageUrl(itemId, tags['Thumb']!, imageType: 'Thumb');
+}
+```
+
+**2. Correção de Legendas:**
+- Ajuste na construção da URL para incluir `MediaSourceId`.
+- Implementação de download robusto com headers corretos.
+
+**3. Correção de Build:**
+- Remoção de código morto em `media_player_screen.dart`.
+- Restauração da chamada correta `JellyfinService.getMediaInfo`.
+
+**Arquivos Modificados:**
+- `lib/data/jellyfin_service.dart`
+- `lib/widgets/media_player_screen.dart`
+- `lib/widgets/adaptive_cached_image.dart`
+
+**Entregáveis:**
+- ✅ APK Compilado (Release): `build/app/outputs/flutter-apk/app-release.apk`
+- ✅ Build Windows Validado (Logs de Debug sem erros de compilação)
+- ✅ Correção de Capas Validada (Fallback implementado)
+
+**Próximos Passos:**
+- Sideload do APK no Firestick.
+- Validação visual final das legendas na TV.

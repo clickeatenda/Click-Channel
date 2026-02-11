@@ -982,6 +982,28 @@ class M3uService {
     
     // Limpa espaços e valida URL básica
     logo = logo.trim();
+    
+    // DEBUG TEMP: Log para filmes 4K
+    if (title.toLowerCase().contains("entre") && title.toLowerCase().contains("montanha")) {
+      print("🔍 M3U Parse: titulo='$title', tvg-logo RAW='${meta['tvg-logo'] ?? 'NULL'}', logo final='$logo'");
+    }
+    
+    // 🔥 NOVO: Remove URLs de domínios conhecidos como quebrados
+    // Esses domínios retornam 404 ou DNS error
+    final brokenDomains = [
+      'img.slimtv.in',
+      'playfacil.net/images/',
+      'img.slim.re/imagens/',
+    ];
+    
+    for (final domain in brokenDomains) {
+      if (logo.contains(domain)) {
+        print("⚠️ M3U: URL quebrada detectada ($domain) em '$title' - zerando para forçar TMDB");
+        logo = ''; // Zera para forçar busca no TMDB
+        break;
+      }
+    }
+    
     // Se não começa com http/https, pode ser caminho relativo - mantém como está
     // Remove apenas se estiver completamente vazio ou só espaços
     if (logo.isEmpty) {
@@ -2491,10 +2513,14 @@ Future<List<Map<String, String>>> _parseFileIsolate(Map<String, dynamic> args) a
                       meta['thumbnail'] ??
                       '';
         
+        // REMOVIDO: Whitelist restritiva que bloqueava logos de canais.
+        // Agora aceitamos qualquer URL e o AdaptiveCachedImage trata erros de carga.
+        var cleanImage = image.trim();
+        
         results.add({
           'title': title,
           'url': trimmed,
-          'image': image.trim(),
+          'image': cleanImage,
           'group': groupTitle,
           'type': type,
           'quality': quality,

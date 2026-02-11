@@ -123,6 +123,7 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
     
     // Inicia carregamento Lazy e verificação de assistido
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🕵️ [DEBUG-FORCE] EpisodeTile Init - Item: ${_displayItem.title} | ID: ${_displayItem.id}');
       _lazyEnrich();
       _checkWatched();
     });
@@ -148,6 +149,16 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
     }
   }
   
+  Future<void> _toggleWatched() async {
+    if (_isWatched) {
+      await WatchHistoryService.removeFromWatched(_displayItem.url);
+    } else {
+      await WatchHistoryService.markItemAsWatched(_displayItem);
+    }
+    await _checkWatched();
+    if (mounted) setState(() {}); 
+  }
+
   Future<void> _lazyEnrich() async {
     if (_hasEnriched) return;
     if (_displayItem.description.isEmpty || _displayItem.description == _displayItem.title) {
@@ -166,6 +177,7 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
   }
 
   void _play(BuildContext context) {
+    print('🕵️ [DEBUG-FORCE] OPENING PLAYER - Item: ${_displayItem.title} | ID: ${_displayItem.id}');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -288,9 +300,19 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
                     ),
                   ),
                   
+                  // Botão de Marcar Visto
+                  IconButton(
+                    icon: Icon(
+                      _isWatched ? Icons.check_circle : Icons.radio_button_unchecked,
+                      color: _isWatched ? AppColors.accent : Colors.white24,
+                    ),
+                    onPressed: _toggleWatched,
+                    tooltip: _isWatched ? "Marcar como não visto" : "Marcar como visto",
+                  ),
+
                   // Play Icon (ou Restart se watched)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.only(right: 16, left: 8),
                     child: Icon(
                       _isWatched ? Icons.replay : Icons.play_circle_outline,
                       color: focused ? Colors.white : (_isWatched ? Colors.white54 : AppColors.primary),

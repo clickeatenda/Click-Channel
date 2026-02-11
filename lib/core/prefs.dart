@@ -164,4 +164,36 @@ class Prefs {
   static String getSubtitleLanguage() {
     return _prefs?.getString(keySubtitleLanguage) ?? 'por';
   }
+
+  // --- PLAYER SETTINGS ---
+  static const String keyDecoderMode = 'decoder_mode';
+  static const String keyBufferSize = 'buffer_size';
+  static const String keyHlsForced = 'hls_forced';
+
+  static Future<void> setDecoderMode(String mode) async {
+    if (_prefs == null) await init();
+    await _prefs!.setString(keyDecoderMode, mode);
+  }
+
+  static String getDecoderMode() {
+    return _prefs?.getString(keyDecoderMode) ?? 'auto';
+  }
+
+  static Future<void> setBufferSize(String size) async {
+    if (_prefs == null) await init();
+    await _prefs!.setString(keyBufferSize, size);
+  }
+
+  static String getBufferSize() {
+    return _prefs?.getString(keyBufferSize) ?? 'medium';
+  }
+
+  static Future<void> setHlsForced(bool forced) async {
+    if (_prefs == null) await init();
+    await _prefs!.setBool(keyHlsForced, forced);
+  }
+
+  static bool getHlsForced() {
+    return _prefs?.getBool(keyHlsForced) ?? false;
+  }
 }
