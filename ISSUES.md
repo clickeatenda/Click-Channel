@@ -559,26 +559,33 @@ Implementar notificações locais para programas favoritos do EPG.
 ---
 
 ### PENDING #022: Lazy Loading de Imagens
-**Status:** ⏳ PENDENTE  
+**Status:** ✅ RESOLVIDO
 **Prioridade:** MÉDIA  
 **Tipo:** PERFORMANCE
+**Data de Resolução:** 12/02/2026
 
 **Descrição:**
 Implementar lazy loading de imagens nos cards para melhorar performance.
 
-**Estimativa:** 1-2 dias
+**Solução:**
+- Implementado via `AdaptiveCachedImage` com fade-in animation
+- Implementado `LazyTmdbLoader` para carregamento sob demanda de metadados
+- Arquivos: `lib/widgets/adaptive_cached_image.dart`, `lib/widgets/lazy_tmdb_loader.dart`
 
 ---
 
 ### PENDING #023: Cache de Imagens Limitado
-**Status:** ⏳ PENDENTE  
+**Status:** ✅ RESOLVIDO
 **Prioridade:** MÉDIA  
 **Tipo:** PERFORMANCE
+**Data de Resolução:** 12/02/2026
 
 **Descrição:**
 Implementar limite de 100MB para cache de imagens.
 
-**Estimativa:** 1 dia
+**Solução:**
+- Configurado `AppImageCacheManager` com limite de 2000 objetos (~100MB)
+- Arquivo: `lib/core/image_cache_manager.dart`
 
 ---
 
