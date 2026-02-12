@@ -266,7 +266,7 @@ class JellyfinService {
       final params = <String, String>{
         'Recursive': 'true',
         'Limit': limit.toString(),
-        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources',
+        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,Id,EpisodeId,SeriesId',
       };
 
       if (libId != null && libId.isNotEmpty) {
@@ -611,22 +611,62 @@ class JellyfinService {
 
   /// Busca episódios de uma temporada
   static Future<List<ContentItem>> getEpisodes(String seriesId, String seasonId) async {
-    return getItems(
-      libraryId: seasonId, // Usa o ID da temporada como pai
-      itemType: 'Episode',
-      limit: 1000,
-    );
+    if (!isAuthenticated) {
+      final authenticated = await authenticate();
+      if (!authenticated) return [];
+    }
+
+    try {
+      // FIX: Usar endpoint específico /Shows/{Id}/Episodes em vez de /Items
+      // Este endpoint garante que os IDs retornados são de episódios válidos
+      final params = <String, String>{
+        'SeasonId': seasonId,
+        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources',
+      };
+
+      final uri = Uri.parse('$_baseUrl/Shows/$seriesId/Episodes').replace(queryParameters: params);
+      
+      final headers = {
+        'X-MediaBrowser-Token': _accessToken!,
+        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+      };
+
+      print('🐙 JellyfinService: Buscando episódios de $uri');
+      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final items = List<Map<String, dynamic>>.from(data['Items'] ?? []);
+        print('✅ JellyfinService: ${items.length} episódios encontrados');
+        
+        return items.map((item) => _mapJellyfinToContentItem(item)).toList();
+      } else {
+        print('❌ JellyfinService: Erro ao buscar episódios (${response.statusCode})');
+        return [];
+      }
+    } catch (e) {
+      print('❌ JellyfinService: Erro ao buscar episódios: $e');
+      return [];
+    }
   }
 
   /// Converte um item do Jellyfin para ContentItem
   static ContentItem _mapJellyfinToContentItem(Map<String, dynamic> jellyfinItem) {
     var itemId = jellyfinItem['Id']?.toString() ?? '';
-    if (itemId.isEmpty) {
+    final type = jellyfinItem['Type']?.toString().toLowerCase() ?? 'movie';
+    final name = jellyfinItem['Name'] ?? 'Sem Título';
+
+    // FIX: Priorizar EpisodeId para episódios para evitar colisão com SeriesId
+    if (type == 'episode' && jellyfinItem['EpisodeId'] != null) {
+       itemId = jellyfinItem['EpisodeId'].toString();
+    } else if (itemId.isEmpty) {
        itemId = jellyfinItem['EpisodeId']?.toString() ?? ''; // Tentativa de fallback
     }
-
-    final name = jellyfinItem['Name'] ?? 'Sem Título';
-    final type = jellyfinItem['Type']?.toString().toLowerCase() ?? 'movie';
+    
+    // DEBUG: Verificar IDs de episódios
+    if (type == 'episode') {
+      print('🔍 [Mapping] Episode: "$name" | Id: $itemId | SeasonId: ${jellyfinItem['SeasonId']} | SeriesId: ${jellyfinItem['SeriesId']}');
+    }
 
     final overview = jellyfinItem['Overview'] ?? '';
     final year = jellyfinItem['ProductionYear']?.toString() ?? '';
