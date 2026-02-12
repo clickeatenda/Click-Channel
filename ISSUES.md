@@ -772,161 +772,45 @@ Implementação de tela de login dedicada para serviços Xtream Codes, permitind
 
 
 
-# ISSUE #027: Jellyfin Codec Compatibility - Player Upgrade
+# ISSUE #027: Jellyfin Playback - Smart HLS Transcoding
 
-**Status:** 🔄 EM INVESTIGAÇÃO  
+**Status:** ✅ RESOLVIDO  
 **Prioridade:** 🟠 ALTA  
 **Data de Criação:** 11/02/2026  
+**Data de Resolução:** 12/02/2026  
 **Relacionado:** #025 (Rick and Morty Playback Fix)
 
 ---
 
 ## Descrição
 
-Player atual (`media_kit` com `libmpv`) falha ao reproduzir alguns vídeos do Jellyfin com erro "Failed to recognize file format", mesmo após correções de ID e desabilitação de transcodificação forçada.
+Player (`media_kit` com `libmpv`) falhava ao reproduzir alguns vídeos do Jellyfin com erro "Failed to recognize file format".
 
-**Evidência:**
-- ✅ PlaybackInfo retorna 200 OK
-- ✅ IDs de episódios corretos
-- ✅ Direct Play habilitado
-- ✅ Arquivos reproduzem corretamente no Jellyfin Web UI
-- ❌ Player retorna "Failed to recognize file format"
+## Causa Raiz
 
----
+**NÃO era incompatibilidade de codec.** Jellyfin retorna `DirectPlay: false, DirectStream: false` para esses arquivos. O app usava endpoint `/stream` (Direct Play) ignorando os flags. A solução foi detectar quando DirectPlay não é suportado e usar o endpoint `/master.m3u8` (HLS transcoding server-side).
 
-## Análise de Alternativas de Player
+## Solução
+- `jellyfin_service.dart`: novo método `getHlsTranscodingUrl()` (H.264 + AAC, 8Mbps)
+- `media_player_screen.dart`: verifica flags DirectPlay/DirectStream do PlaybackInfo
+- Commit: `e7b8480` - fix: smart HLS transcoding for Jellyfin DirectPlay=false content
 
-### Opção 1: `better_player` ⭐ RECOMENDADO
-
-**Vantagens:**
-- ✅ Usa players nativos (ExoPlayer no Android, AVPlayer no iOS/macOS)
-- ✅ Suporte a HLS e DASH adaptive streaming
-- ✅ Suporte a DRM (Widevine, FairPlay)
-- ✅ Multi-áudio e legendas (SRT, WEBVTT)
-- ✅ UI pré-construída customizável
-- ✅ Amplamente testado com Jellyfin
-
-**Desvantagens:**
-- ⚠️ Dependente de codecs do sistema (menos consistente cross-platform)
-- ⚠️ Manutenção pode ser inconsistente
-
-**Link:** https://pub.dev/packages/better_player
+## Testes
+- ✅ Rick and Morty (DirectPlay=false) — reproduz com HLS transcoding
+- ✅ Conteúdo com DirectPlay=true — continua usando Direct Play
+- ✅ Conteúdo não-Jellyfin — não afetado
 
 ---
 
-### Opção 2: `awesome_video_player` 🌟 ALTERNATIVA
+## Investigações Descartadas
 
-**Vantagens:**
-- ✅ Fork moderno e mantido de `better_player`
-- ✅ Mesmos benefícios de native players
-- ✅ Atualizações regulares e bug fixes (2025)
-- ✅ Suporte a cache de vídeo
-- ✅ Alternância de resolução
-
-**Desvantagens:**
-- ⚠️ Menos adoção que `better_player`
-- ⚠️ Documentação menos extensa
-
-**Link:** https://pub.dev/packages/awesome_video_player
-
----
-
-### Opção 3: `media_kit` (ATUAL)
-
-**Vantagens:**
-- ✅ Suporte extenso a codecs via `libmpv`
-- ✅ Consistência cross-platform
-- ✅ Bom desempenho
-
-**Desvantagens:**
-- ❌ Incompatibilidade com formatos específicos do Jellyfin
-- ⚠️ Pode requerer configurações específicas de codec
-- ⚠️ Maior complexidade para troubleshooting
-
-**Status Atual:** Falha em reconhecer formatos Direct Play do Jellyfin
-
----
-
-## Investigações Necessárias
-
-### Testes com `media_kit` (Antes de migrar)
-- [ ] Testar diferentes modos de decoder (`auto`, `hardware`, `software`)
-  ```dart
-  Player(
-    configuration: PlayerConfiguration(
-      vo: 'gpu',  // ou 'libmpv', 'direct3d'
-      hwdec: 'auto',  // ou 'no', 'yes'
-    ),
-  )
-  ```
-- [ ] Verificar logs de codec do mpv
-- [ ] Testar com diferentes perfis de transcodificação do Jellyfin
-
-### Testes com `better_player` (PoC)
-- [ ] Criar branch para teste (`feature/better-player-poc`)
-- [ ] Implementar player básico
-- [ ] Testar com mesmos vídeos que falharam
-- [ ] Comparar desempenho e consumo de recursos
-
----
-
-## Plano de Ação Recomendado
-
-### Fase 1: Investigação (1-2 dias)
-1. Testar configurações de decoder do `media_kit`
-2. Se falhar, criar PoC com `better_player`
-3. Comparar resultados
-
-### Fase 2: Decisão (1 dia)
-- **Se `media_kit` funcionar com ajustes:** Aplicar correções
-- **Se `better_player` for necessário:** Planejar migração completa
-
-### Fase 3: Implementação (3-5 dias)
-- Migrar para player escolhido
-- Testar em todos os dispositivos (Windows, Tablet, Firestick)
-- Garantir que funcionalidades existentes sejam mantidas:
-  - Legendas
-  - Multi-áudio
-  - Histórico de reprodução
-  - Zoom/Pan
-
----
-
-## Compatibilidade de Codecs
-
-### `media_kit` (libmpv)
-Suporta: H.264, H.265/HEVC, VP8, VP9, AV1, AAC, MP3, Opus, etc.
-
-**Problema:** Pode falhar em detectar containers específicos ou configurações de stream do Jellyfin Direct Play.
-
-### `better` / `awesome_video_player` (ExoPlayer/AVPlayer)
-- **Android (ExoPlayer):** H.264, H.265, VP8, VP9, AAC, Opus, MP3
-- **iOS (AVPlayer):** H.264, H.265, AAC, MP3, ALAC
-- **Vantagem:** Melhor integração com servidores media como Jellyfin
-
----
+- ~~Migrar para `better_player`~~ — incompatível com Dart SDK atual (`hashValues` removido)
+- ~~Migrar para `video_player`~~ — não suporta Windows (`UnimplementedError`)
+- ~~Testar decoder modes~~ — problema não era o decoder, era a URL de streaming
 
 ## Commits Relacionados
 
 - [`c4a67f8`](https://github.com/clickeatenda/Click-Channel/commit/c4a67f8) - fix: use Shows/Episodes endpoint #025
 - [`77075cb`](https://github.com/clickeatenda/Click-Channel/commit/77075cb) - fix: disable forced HLS transcoding #025
+- [`e7b8480`](https://github.com/clickeatenda/Click-Channel/commit/e7b8480) - fix: smart HLS transcoding for Jellyfin DirectPlay=false content
 
----
-
-## Referências
-
-- [Flutter Video Player Comparison](https://cincopa.com/blog/flutter-video-player/)
-- [better_player Documentation](https://pub.dev/packages/better_player)
-- [awesome_video_player GitHub](https://pub.dev/packages/awesome_video_player)
-- [media_kit GitHub](https://github.com/media-kit/media-kit)
-- [Jellyfin Flutter Clients](https://jellyfin.org/downloads/clients/all)
-
----
-
-## Próximos Passos
-
-1. **Curto Prazo:** Testar configurações de decoder do `media_kit`
-2. **Médio Prazo:** PoC com `better_player` se `media_kit` continuar falhando
-3. **Longo Prazo:** Migração completa para player nativo se PoC for bem-sucedido
-
-**Decisão Pendente:** Aguardando testes de decoder modes
