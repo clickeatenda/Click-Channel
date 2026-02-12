@@ -401,6 +401,43 @@ class JellyfinService {
     return uri.toString();
   }
 
+  /// Gera URL de HLS transcoding para itens que não suportam Direct Play.
+  /// Usa o endpoint /master.m3u8 do Jellyfin para transcodificar server-side.
+  static String getHlsTranscodingUrl(String itemId, {String? mediaSourceId}) {
+    if (!isAuthenticated || _accessToken == null) {
+      print('❌ JellyfinService: Não autenticado para gerar URL HLS');
+      return '';
+    }
+
+    final params = {
+      'api_key': _accessToken!,
+      'DeviceId': 'ClickChannel',
+      'PlaySessionId': DateTime.now().millisecondsSinceEpoch.toString(),
+      'VideoCodec': 'h264',
+      'AudioCodec': 'aac,mp3',
+      'MaxAudioChannels': '2',
+      'TranscodingMaxAudioChannels': '2',
+      'VideoBitRate': '8000000', // 8 Mbps
+      'AudioBitRate': '192000',
+      'MaxStreamingBitrate': '10000000', // 10 Mbps
+      'TranscodingContainer': 'ts',
+      'TranscodingProtocol': 'hls',
+      'SegmentContainer': 'ts',
+      'MinSegments': '2',
+      'BreakOnNonKeyFrames': 'true',
+      'RequireAvc': 'false',
+      'SubtitleMethod': 'Encode',
+    };
+
+    if (mediaSourceId != null) {
+      params['MediaSourceId'] = mediaSourceId;
+    }
+
+    final uri = Uri.parse('$_baseUrl/Videos/$itemId/master.m3u8').replace(queryParameters: params);
+    print('🔄 [JELLYFIN] HLS Transcoding URL: $uri');
+    return uri.toString();
+  }
+
   /// Gera URL de imagem para um item
   static String getImageUrl(String itemId, String imageTag, {String imageType = 'Primary'}) {
     if (_baseUrl == null) return '';

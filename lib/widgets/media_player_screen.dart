@@ -371,12 +371,39 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       
       // Criar player com configurações otimizadas (buffer aumentado e Hardware Acceleration)
       _player = Player(
-        configuration: const PlayerConfiguration(
+        configuration: PlayerConfiguration(
+          // CRÍTICO: Configurações para compatibilidade com Jellyfin Direct Play
+          // Docs: https://mpv.io/manual/master/
+          title: widget.item?.title ?? 'Click Channel',
+          
           // Aumentamos drasticamente o buffer para evitar travamentos em redes instáveis
           bufferSize: 128 * 1024 * 1024, // 128MB
           vo: 'gpu',
         ),
       );
+
+      // Apply mpv-specific options for Jellyfin compatibility
+      // TEMPORARIAMENTE DESABILITADO PARA TESTE
+      /*
+      try {
+        final nativePlayer = _player.platform as dynamic;
+        
+        // Demuxer options - be more permissive with format detection
+        await nativePlayer.setProperty('demuxer-lavf-probe-info', 'yes');
+        await nativePlayer.setProperty('demuxer-lavf-analyzeduration', '20000000'); // 20 seconds
+        await nativePlayer.setProperty('demuxer-lavf-probescore', '25'); // Lower threshold (default 26)
+        
+        // Try software decoding first for compatibility
+        await nativePlayer.setProperty('hwdec', 'no');
+        
+        // Network/stream options
+        await nativePlayer.setProperty('stream-lavf-o', 'reconnect_streamed=1,reconnect_delay_max=5');
+        
+        print('✅ [Player] Configurações mpv aplicadas para compatibilidade Jellyfin');
+      } catch (e) {
+        print('⚠️ [Player] Erro ao aplicar configurações mpv: $e');
+      }
+      */
       
       _controller = VideoController(_player!);
       
@@ -589,7 +616,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       
       print('🎬 [Player] Iniciando setup para item: ${widget.item?.title ?? "Desconhecido"}');
 
-      // CRÍTICO: Buscar PlaybackInfo ANTES de abrir a mídia
+       // CRÍTICO: Buscar PlaybackInfo ANTES de abrir a mídia
       // Relaxando checagem de grupo para teste (se tiver ID, tenta buscar)
       if (widget.item != null && (widget.item!.group == 'Jellyfin' || widget.item!.id.isNotEmpty)) {
         try {
@@ -600,10 +627,24 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
              if (sources.isNotEmpty) {
                final source = sources[0];
                final sourceId = source['Id'];
+               final directPlay = source['SupportsDirectPlay'] == true;
+               final directStream = source['SupportsDirectStream'] == true;
+               final container = source['Container'] ?? 'unknown';
                
-               // ATUALIZAÇÃO DE URL
-               final newUrl = JellyfinService.getStreamUrl(widget.item!.id) + '&MediaSourceId=$sourceId';
-               mediaUrl = newUrl;
+               print('📦 [Player] Source: container=$container, DirectPlay=$directPlay, DirectStream=$directStream');
+               
+               if (directPlay || directStream) {
+                 // Direct Play/Stream - usa URL de stream normal
+                 final newUrl = JellyfinService.getStreamUrl(widget.item!.id) + '&MediaSourceId=$sourceId';
+                 mediaUrl = newUrl;
+                 print('🎬 [Player] Usando Direct Play/Stream');
+               } else {
+                 // CRÍTICO: Precisa de transcoding HLS do servidor
+                 // Usa endpoint /master.m3u8 que pede ao Jellyfin para transcodificar
+                 mediaUrl = JellyfinService.getHlsTranscodingUrl(widget.item!.id, mediaSourceId: sourceId);
+                 print('🔄 [Player] DirectPlay=false → Usando HLS Transcoding do Jellyfin');
+                 print('   └─ URL: $mediaUrl');
+               }
                
                // Carregar Legendas
                if (source['MediaStreams'] != null) {

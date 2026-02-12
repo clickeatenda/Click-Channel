@@ -184,12 +184,11 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
         builder: (_) => MediaPlayerScreen(
           url: _displayItem.url,
           item: _displayItem,
-          playlist: widget.playlist, // Lista para autoplay
-          playlistIndex: widget.index, // Posição inicial
+          playlist: widget.playlist,
+          playlistIndex: widget.index,
         ),
       ),
     ).then((_) {
-      // Ao voltar do player, atualiza estado local e avisa pai
       _checkWatched();
       widget.onReturn();
     });
