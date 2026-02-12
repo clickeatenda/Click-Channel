@@ -639,6 +639,14 @@ class JellyfinService {
         final items = List<Map<String, dynamic>>.from(data['Items'] ?? []);
         print('✅ JellyfinService: ${items.length} episódios encontrados');
         
+        // DEBUG: Imprimir IDs dos primeiros 3 episódios da API
+        if (items.isNotEmpty) {
+          for (int i = 0; i < (items.length < 3 ? items.length : 3); i++) {
+            final item = items[i];
+            print('   📋 API Episode $i: Id=${item['Id']}, Type=${item['Type']}, Name=${item['Name']}');
+          }
+        }
+        
         return items.map((item) => _mapJellyfinToContentItem(item)).toList();
       } else {
         print('❌ JellyfinService: Erro ao buscar episódios (${response.statusCode})');
@@ -663,9 +671,13 @@ class JellyfinService {
        itemId = jellyfinItem['EpisodeId']?.toString() ?? ''; // Tentativa de fallback
     }
     
-    // DEBUG: Verificar IDs de episódios
+    // DEBUG: Verificar IDs de episódios COM MAIS DETALHES
     if (type == 'episode') {
-      print('🔍 [Mapping] Episode: "$name" | Id: $itemId | SeasonId: ${jellyfinItem['SeasonId']} | SeriesId: ${jellyfinItem['SeriesId']}');
+      print('🔍 [Mapping] Episode: "$name"');
+      print('   └─ FINAL ID USADO: $itemId');
+      print('   └─ Raw API Id: ${jellyfinItem['Id']}');
+      print('   └─ SeasonId: ${jellyfinItem['SeasonId']}');
+      print('   └─ SeriesId: ${jellyfinItem['SeriesId']}');
     }
 
     final overview = jellyfinItem['Overview'] ?? '';

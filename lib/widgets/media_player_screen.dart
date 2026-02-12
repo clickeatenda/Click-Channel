@@ -651,14 +651,21 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         if (mediaUrl.contains('.ts')) {
            mediaUrl = mediaUrl.replaceAll('.ts', '.m3u8');
            print('🔄 Player: HLS Forced -> Convertendo .ts para .m3u8');
-        } else if (widget.item?.group == 'Jellyfin' && !mediaUrl.contains('.m3u8') && !mediaUrl.contains('TranscodingContainer')) {
-           // Jellyfin brute force
-           if (mediaUrl.contains('/stream')) {
-             mediaUrl += '&TranscodingContainer=m3u8';
-             print('🔄 Player: HLS Forced (Jellyfin) -> Adicionando container m3u8 (Final)');
-           }
-        }
-      }
+         // FIX: Desabilitar TranscodingContainer forçado para Jellyfin
+         // Causa erro "partial file" pois player tenta abrir antes da transcodificação terminar
+         // Jellyfin já decide automaticamente se precisa transcodificar via PlaybackInfo
+         /*
+         } else if (widget.item?.group == 'Jellyfin' && !mediaUrl.contains('.m3u8') && !mediaUrl.contains('TranscodingContainer')) {
+            // Jellyfin brute force
+            if (mediaUrl.contains('/stream')) {
+              mediaUrl += '&TranscodingContainer=m3u8';
+              print('🔄 Player: HLS Forced (Jellyfin) -> Adicionando container m3u8 (Final)');
+            }
+         */
+         } else if (widget.item?.group == 'Jellyfin') {
+           print('🎬 Direct Play habilitado para Jellyfin (sem transcodificação forçada)');
+         }
+       }
 
       print('🎬 Abrindo mídia final: $mediaUrl');
       _currentMediaUrl = mediaUrl; // Salva para debug na UI de erro
