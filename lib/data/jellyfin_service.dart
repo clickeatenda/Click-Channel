@@ -439,9 +439,20 @@ class JellyfinService {
   }
 
   /// Gera URL de imagem para um item
-  static String getImageUrl(String itemId, String imageTag, {String imageType = 'Primary'}) {
+  static String getImageUrl(String itemId, String imageTag, {
+    String imageType = 'Primary',
+    int? maxWidth,
+    int? maxHeight,
+    int? quality = 90,
+  }) {
     if (_baseUrl == null) return '';
-    return '$_baseUrl/Items/$itemId/Images/$imageType?tag=$imageTag';
+    
+    var url = '$_baseUrl/Items/$itemId/Images/$imageType?tag=$imageTag&quality=$quality';
+    
+    if (maxWidth != null) url += '&maxWidth=$maxWidth';
+    if (maxHeight != null) url += '&maxHeight=$maxHeight';
+    
+    return url;
   }
   
   static String getSubtitleUrl(String itemId, int streamIndex, String format, {String? mediaSourceId}) {
@@ -723,18 +734,21 @@ class JellyfinService {
     final genres = List<String>.from(jellyfinItem['Genres'] ?? []);
     final genreStr = genres.isNotEmpty ? genres.first : '';
     
-    // Gerar URL de imagem
-    // Gerar URL de imagem com fallback
+    
+    // Gerar URL de imagem com fallback e OTIMIZADO
     String imageUrl = '';
     
     if (jellyfinItem['ImageTags'] != null) {
       final tags = jellyfinItem['ImageTags'];
       if (tags['Primary'] != null) {
-        imageUrl = getImageUrl(itemId, tags['Primary']!);
+        // Poster: Limitado a 500px de largura (bom para mobile/TV grids)
+        imageUrl = getImageUrl(itemId, tags['Primary']!, maxWidth: 500);
       } else if (tags['Backdrop'] != null) {
-        imageUrl = getImageUrl(itemId, tags['Backdrop']!, imageType: 'Backdrop');
+        // Backdrop: Limitado a 1280px (720p) - suficiente para backgrounds
+        imageUrl = getImageUrl(itemId, tags['Backdrop']!, imageType: 'Backdrop', maxWidth: 1280);
       } else if (tags['Thumb'] != null) {
-        imageUrl = getImageUrl(itemId, tags['Thumb']!, imageType: 'Thumb');
+        // Thumb: Limitado a 600px
+        imageUrl = getImageUrl(itemId, tags['Thumb']!, imageType: 'Thumb', maxWidth: 600);
       }
     }
 

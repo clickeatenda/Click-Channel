@@ -797,7 +797,44 @@ Player (`media_kit` com `libmpv`) falhava ao reproduzir alguns vídeos do Jellyf
 
 **NÃO era incompatibilidade de codec.** Jellyfin retorna `DirectPlay: false, DirectStream: false` para esses arquivos. O app usava endpoint `/stream` (Direct Play) ignorando os flags. A solução foi detectar quando DirectPlay não é suportado e usar o endpoint `/master.m3u8` (HLS transcoding server-side).
 
+
+# ISSUE #028: Firestick Crash on Jellyfin Section (High Memory)
+
+**Status:** ✅ RESOLVIDO  
+**Prioridade:** 🔴 CRÍTICA  
+**Data de Criação:** 12/02/2026  
+**Data de Resolução:** 12/02/2026  
+
+---
+
+## Descrição
+
+O aplicativo travava ou crashava ("Freezing") imediatamente ao acessar a seção "SharkFlix" (Jellyfin) no Firestick.
+
+## Causa Raiz
+
+**Uso excessivo de memória (OOM):** O aplicativo solicitava imagens (Posters, Backdrops) do Jellyfin na resolução ORIGINAL.
+- Muitos backdrops são 4K (3840x2160) ou maiores.
+- Carregar 20 itens "Latest" + 6 "Featured" com imagens 4K simultaneamente esgotava a RAM do Firestick (que possui apenas ~1GB ou 1.5GB total, muito menos para app).
+- `AdaptiveCachedImage` redimensionava *após* download, mas o decode inicial ainda ocorria, travando a UI thread.
+
 ## Solução
+
+Implementado redimensionamento **Server-Side** (Jellyfin API).
+Ao solicitar a imagem, adicionamos `&maxWidth=...&maxHeight=...` na URL. O servidor Jellyfin processa e envia uma imagem pequena.
+
+- **Posters:** Limitado a `500px` (antes: Original/4K)
+- **Backdrops:** Limitado a `1280px` (720p) (antes: Original/4K)
+- **Thumbs:** Limitado a `600px`
+
+## Arquivos Modificados
+- `lib/data/jellyfin_service.dart`: Atualizado `getImageUrl` e `_mapJellyfinToContentItem`.
+
+## Resultado
+- Redução drástica no uso de RAM e Banda.
+- Carregamento mais rápido.
+- Eliminação dos travamentos no Firestick.
+
 - `jellyfin_service.dart`: novo método `getHlsTranscodingUrl()` (H.264 + AAC, 8Mbps)
 - `media_player_screen.dart`: verifica flags DirectPlay/DirectStream do PlaybackInfo
 - Commit: `e7b8480` - fix: smart HLS transcoding for Jellyfin DirectPlay=false content
