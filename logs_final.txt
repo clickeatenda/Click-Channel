@@ -1,0 +1,36 @@
+Launching lib\main.dart on Windows in debug mode...
+Building Windows application...                                    13,5s
+ÔêÜ Built build\windows\x64\runner\Debug\clickchannel.exe
+package:media_kit_libs_windows_video registered.
+Erro no v├¡deo: UnimplementedError: init() has not been implemented.
+Syncing files to device Windows...                              
+­ƒùæ´©Å M3uService: Cache em mem├│ria limpo
+­ƒº╣ M3uService: Limpando TODOS os caches (mem├│ria e disco)...
+­ƒùæ´©Å M3uService: Cache em mem├│ria limpo
+Ô£à M3uService: 0 arquivo(s) de cache deletado(s)
+Ô£à M3uService: Install marker gravado: C:\Users\joaov\AppData\Roaming\com.example\clickchannel/install_marker
+­ƒùæ´©Å M3uService: Cache em mem├│ria limpo
+­ƒº╣ M3uService: Limpando TODOS os caches (mem├│ria e disco)...
+­ƒùæ´©Å M3uService: Cache em mem├│ria limpo
+Ô£à M3uService: 0 arquivo(s) de cache deletado(s)
+Ôä╣´©Å  [INFO] Ô£à TMDB API key carregada (via hardcode est├ível)
+media_kit: NativeReferenceHolder: Allocated 2524262770800
+Syncing files to device Windows...                                 191ms
+
+Flutter run key commands.
+r Hot reload. 
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on Windows is available at: http://127.0.0.1:64902/Nt0VjoFVFF4=/
+The Flutter DevTools debugger and profiler on Windows is available at: http://127.0.0.1:64902/Nt0VjoFVFF4=/devtools/?uri=ws://127.0.0.1:64902/Nt0VjoFVFF4=/ws
+Ôä╣´©Å  [INFO] Ô£à TMDB: API key v├ílida e funcionando (teste)
+­ƒº╣ Setup: Sem URL configurada, limpando caches antigos...
+­ƒùæ´©Å M3uService: Cache em mem├│ria limpo
+­ƒº╣ M3uService: Limpando TODOS os caches (mem├│ria e disco)...
+­ƒùæ´©Å M3uService: Cache em mem├│ria limpo
+Ô£à M3uService: 0 arquivo(s) de cache deletado(s)
+Lost connection to device.

@@ -1,0 +1,81 @@
+Analyzing Click-Channel...                                      
+
+warning - The value of the local variable 'deviceId' isn't used - lib\data\jellyfin_service.dart:174:13 - unused_local_variable
+  error - Undefined name 'bytes' - lib\data\jellyfin_service.dart:465:13 - undefined_identifier
+  error - Undefined name 'bytes' - lib\data\jellyfin_service.dart:468:36 - undefined_identifier
+  error - Undefined name 'bytes' - lib\data\jellyfin_service.dart:470:38 - undefined_identifier
+  error - Undefined name 'bytes' - lib\data\jellyfin_service.dart:484:80 - undefined_identifier
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\data\m3u_service.dart:1385:7 - prefer_conditional_assignment
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\data\m3u_service.dart:1390:7 - prefer_conditional_assignment
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\data\m3u_service.dart:1395:7 - prefer_conditional_assignment
+   info - Unnecessary escape in string literal - lib\data\m3u_service.dart:1904:68 - unnecessary_string_escapes
+   info - Unnecessary escape in string literal - lib\data\m3u_service.dart:1904:79 - unnecessary_string_escapes
+warning - The value of the local variable 'normalized' isn't used - lib\data\m3u_service.dart:1916:11 - unused_local_variable
+warning - This 'onError' handler must return a value assignable to 'bool', but ends without returning a value - lib\main.dart:135:51 - body_might_complete_normally_catch_error
+warning - The declaration '_BootstrapSplash' isn't referenced - lib\main.dart:267:7 - unused_element
+   info - The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\screens\category_screen.dart:3:8 - unnecessary_import
+warning - The value of the local variable 'count' isn't used - lib\screens\home_screen.dart:1219:31 - unused_local_variable
+warning - Unused import: '../core/utils/logger.dart' - lib\screens\movie_detail_screen.dart:11:8 - unused_import
+warning - The declaration '_loadMetadata' isn't referenced - lib\screens\series_detail_screen.dart:107:16 - unused_element
+warning - The declaration '_loadSimilarItems' isn't referenced - lib\screens\series_detail_screen.dart:184:16 - unused_element
+   info - Unnecessary use of string interpolation - lib\screens\series_detail_screen.dart:376:42 - unnecessary_string_interpolations
+   info - Unnecessary use of string interpolation - lib\screens\series_detail_screen.dart:383:55 - unnecessary_string_interpolations
+   info - Use 'const' with the constructor to improve performance - lib\screens\series_detail_screen.dart:396:27 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\series_detail_screen.dart:397:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\series_detail_screen.dart:399:38 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\series_detail_screen.dart:401:40 - prefer_const_constructors
+warning - Dead code - lib\screens\series_detail_screen.dart:406:37 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:406:63 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:406:82 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:407:30 - dead_code
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\series_detail_screen.dart:410:34 - prefer_const_declarations
+   info - The variable name 'series_item' isn't a lowerCamelCase identifier - lib\screens\series_library_screen.dart:43:18 - non_constant_identifier_names
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:565:71 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:685:74 - use_build_context_synchronously
+warning - Unused import: '../widgets/glass_input.dart' - lib\screens\setup_screen.dart:9:8 - unused_import
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\setup_screen.dart:237:5 - prefer_const_declarations
+   info - Use 'const' with the constructor to improve performance - lib\screens\setup_screen.dart:324:12 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\setup_screen.dart:325:17 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\screens\setup_screen.dart:326:9 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\setup_screen.dart:349:54 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\setup_screen.dart:472:22 - prefer_const_constructors
+warning - Unused import: 'dart:io' - lib\widgets\adaptive_cached_image.dart:2:8 - unused_import
+warning - The value of the local variable 'optimizeMemCacheHeight' isn't used - lib\widgets\adaptive_cached_image.dart:67:15 - unused_local_variable
+   info - Use 'const' for final variables initialized to a constant value - lib\widgets\hero_carousel.dart:32:7 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\widgets\hero_carousel.dart:51:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\widgets\hero_carousel.dart:81:5 - prefer_const_declarations
+warning - The value of the local variable 'currentPos' isn't used - lib\widgets\media_player_screen.dart:432:19 - unused_local_variable
+   info - Use interpolation to compose strings and values - lib\widgets\media_player_screen.dart:619:31 - prefer_interpolation_to_compose_strings
+warning - The declaration '_buildVideoError' isn't referenced - lib\widgets\media_player_screen.dart:973:10 - unused_element
+warning - The declaration '_buildOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1483:10 - unused_element
+warning - The declaration '_buildSimpleOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1546:10 - unused_element
+warning - The declaration '_buildOptionButtonWithFocus' isn't referenced - lib\widgets\media_player_screen.dart:1612:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\widgets\media_player_screen.dart:2035:37 - prefer_const_constructors
+  error - A try block must be followed by an 'on', 'catch', or 'finally' clause - lib\widgets\media_player_screen.dart:2038:30 - missing_catch_or_finally
+  error - A try block must be followed by an 'on', 'catch', or 'finally' clause - lib\widgets\media_player_screen.dart:2071:37 - missing_catch_or_finally
+warning - The '!' will have no effect because the receiver can't be null - lib\widgets\media_player_screen.dart:2075:93 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\widgets\media_player_screen.dart:2082:63 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\widgets\media_player_screen.dart:2086:75 - unnecessary_non_null_assertion
+  error - 'catch' can't be used as an identifier because it's a keyword - lib\widgets\media_player_screen.dart:2108:39 - expected_identifier_but_got_keyword
+  error - The method 'catch' isn't defined for the type '_MediaPlayerScreenState' - lib\widgets\media_player_screen.dart:2108:39 - undefined_method
+  error - Undefined name 'e' - lib\widgets\media_player_screen.dart:2108:46 - undefined_identifier
+  error - Expected to find ';' - lib\widgets\media_player_screen.dart:2108:47 - expected_token
+  error - Undefined name 'e' - lib\widgets\media_player_screen.dart:2110:111 - undefined_identifier
+  error - Expected to find ';' - lib\widgets\media_player_screen.dart:2116:32 - expected_token
+  error - Expected an identifier - lib\widgets\media_player_screen.dart:2116:34 - missing_identifier
+  error - Unexpected text ';' - lib\widgets\media_player_screen.dart:2116:34 - unexpected_token
+  error - 'catch' can't be used as an identifier because it's a keyword - lib\widgets\media_player_screen.dart:2120:32 - expected_identifier_but_got_keyword
+  error - Expected to find ',' - lib\widgets\media_player_screen.dart:2120:32 - expected_token
+  error - The method 'catch' isn't defined for the type '_MediaPlayerScreenState' - lib\widgets\media_player_screen.dart:2120:32 - undefined_method
+  error - Too many positional arguments: 0 expected, but 2 found - lib\widgets\media_player_screen.dart:2120:32 - extra_positional_arguments_could_be_named
+  error - Undefined name 'e' - lib\widgets\media_player_screen.dart:2120:39 - undefined_identifier
+  error - Expected to find ',' - lib\widgets\media_player_screen.dart:2120:42 - expected_token
+  error - Undefined name 'e' - lib\widgets\media_player_screen.dart:2121:79 - undefined_identifier
+  error - Expected to find '}' - lib\widgets\media_player_screen.dart:2121:82 - expected_token
+  error - Expected to find ')' - lib\widgets\media_player_screen.dart:2132:27 - expected_token
+warning - The '!' will have no effect because the receiver can't be null - test\check_jellyfin_url.dart:99:55 - unnecessary_non_null_assertion
+   info - Use 'const' for final variables initialized to a constant value - test\test_jellyfin_auth.dart:65:9 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - test\test_jellyfin_subs.dart:84:3 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - test\test_jellyfin_subs.dart:176:5 - prefer_const_declarations
+  error - The name 'MyApp' isn't a class - test\widget_test.dart:16:35 - creation_with_non_type
+

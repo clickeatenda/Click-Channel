@@ -1,0 +1,52 @@
+175|Feature: Personaliza├º├úo de Legendas (Cor, Fundo, Tamanho)
+172|Fix 404 ao reproduzir Jellyfin (URL Trailing Slash)
+171|Adicionar Configura├º├Áes Avan├ºadas de Player (Decoder/Buffer/HLS)
+170|Adicionar suporte experimental a HLS/m3u8 no Login Xtream
+169|Mover categoria amb├¡gua FILMES|S├ëRIES para Canais
+168|Corrigir ordem de itens em ├Ültimos Adicionados
+167|Aumentar buffer do player para evitar pausas (300MB)
+166|Corrigir classifica├º├úo de canais adultos para aba correta
+165|Adicionar bot├úo manual para marcar conte├║do como assistido
+164|Implementar regra de 80% para conclus├úo autom├ítica
+163|Regra 80% para conclus├úo autom├ítica implementada
+162|Categoria 'FILMES | S├ëRIES' movida para Canais
+161|Fix ordem '├Ültimos Adicionados'
+160|Buffer do player aumentado para 300MB
+159|Canais Adultos corrigidos para aba Canais
+158|Bot├úo 'Marcar como Visto' implementado
+157|Regra 80% para conclus├úo autom├ítica implementada
+156|[UX] Melhorar navega├º├úo de configura├º├úo de legendas para TV (Firestick)
+151|[FEATURE] Implementar reprodu├º├úo cont├¡nua de epis├│dios (Autoplay)
+150|[FEATURE] Implementar reprodu├º├úo cont├¡nua de epis├│dios (Autoplay)
+130|Implementar Certificate Pinning para Chamadas API
+128|Verificar e Remover .env do Hist├│rico do Git
+108|Monitoramento de performance
+107|Analytics (Firebase Mixpanel)
+106|Firebase Crashlytics integration
+105|Reconexao automatica do player
+104|Retry automatico em falhas de rede
+103|Testes de widget
+102|Testes unitarios (coverage > 70%)
+101|Watch Next integration
+100|Channel Shortcuts
+99|Recomendacoes na home do Android TV
+98|Suporte a comandos de voz
+97|Integracao com Leanback launcher
+94|Cast para Chromecast AirPlay
+93|Sincronizacao de favoritos na nuvem
+91|Controle parental com PIN
+90|Multiplos perfis de usuario
+89|Download para assistir offline
+88|Modo picture in picture (PiP)
+87|Animacoes de transicao entre telas
+85|Feedback sonoro na navegacao TV
+84|Indicador de carregamento elegante
+83|Splash screen animada com logo
+82|Sugestoes de busca (autocomplete)
+81|Historico de buscas recentes
+79|Filtro por genero
+78|Filtro por ano de lancamento
+77|Implementar certificate pinning
+76|Migrar credenciais para flutter_secure_storage
+70|Notificacao de programa favorito
+42|Testes unitarios (coverage > 70%)

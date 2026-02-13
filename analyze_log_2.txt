@@ -1,0 +1,12 @@
+Analyzing media_player_screen.dart...                           
+
+warning - Unused import: 'package:flutter_secure_storage/flutter_secure_storage.dart' - lib\widgets\media_player_screen.dart:13:8 - unused_import
+warning - The value of the local variable 'currentPos' isn't used - lib\widgets\media_player_screen.dart:431:19 - unused_local_variable
+   info - Use interpolation to compose strings and values - lib\widgets\media_player_screen.dart:618:31 - prefer_interpolation_to_compose_strings
+  error - The named parameter 'errorBuilder' isn't defined - lib\widgets\media_player_screen.dart:1124:23 - undefined_named_parameter
+warning - The declaration '_buildOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1481:10 - unused_element
+warning - The declaration '_buildSimpleOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1544:10 - unused_element
+warning - The declaration '_buildOptionButtonWithFocus' isn't referenced - lib\widgets\media_player_screen.dart:1610:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\widgets\media_player_screen.dart:2033:37 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\widgets\media_player_screen.dart:2061:56 - use_build_context_synchronously
+
