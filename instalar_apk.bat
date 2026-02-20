@@ -4,7 +4,7 @@ REM =============================================
 
 setlocal enabledelayedexpansion
 
-set ADB_PATH=C:\Android\sdk\platform-tools\adb.exe
+set ADB_PATH=C:\Users\joaov\AppData\Local\Android\Sdk\platform-tools\adb.exe
 set APK_PATH=build\app\outputs\flutter-apk\app-release.apk
 set PACKAGE_NAME=com.cliqueatenda.clickechannel
 set FIRESTICK_IP=192.168.3.110:5555

@@ -17,7 +17,6 @@ import '../utils/content_enricher.dart'; // Para ContentSorter
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
 import '../widgets/hero_carousel.dart';
-import '../widgets/logo_background.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
@@ -192,22 +191,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
       AppLogger.info('✅ Usando fallback TMDB para categoria "${widget.categoryName}" (${widget.type}) - ${data.length} itens');
     }
 
-    // DEBUG: Log primeiros 5 itens
-    if (data.isNotEmpty) {
-      print("🔍 CategoryScreen '${widget.categoryName}' carregou ${data.length} itens. Primeiros 5:");
-      for (var item in data.take(5)) {
-        print("   📄 '${item.title}'");
-        print("      Image: ${item.image.isEmpty ? '<VAZIA>' : '${item.image.substring(0, item.image.length > 70 ? 70 : item.image.length)}...'}");
-      }
-    }
-
     if (mounted) {
       setState(() {
         items = data;
         featuredItems = ContentSorter.sortByLatest(items).take(5).toList();
         filteredItems = _applyFilters(data);
         visibleCount = filteredItems.length > pageSize ? pageSize : filteredItems.length;
-        
         AppLogger.info('📂 CategoryScreen "${widget.categoryName}" (${widget.type}) carregou ${items.length} itens');
         if (items.isNotEmpty) {
           final withImage = items.where((i) => i.image.isNotEmpty).toList();
@@ -397,10 +386,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: LogoBackground(
-        opacity: 0.20,
-        blur: 10.0,
-        child: loading
+      body: loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Column(
               children: [
@@ -626,7 +612,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
               ],
             ),
-      ),
     );
   }
 }

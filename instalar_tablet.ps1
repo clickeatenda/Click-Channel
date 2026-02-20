@@ -22,13 +22,20 @@ $connected = $false
 $connectedIP = ""
 
 foreach ($ip in $possibleIPs) {
-    $currentPort = if ($customPorts.ContainsKey($ip)) { $customPorts[$ip] } else { $PORT }
-    Write-Host "   Tentando: $ip:$currentPort..." -ForegroundColor Gray -NoNewline
+    if ($customPorts.ContainsKey($ip)) { 
+        $currentPort = $customPorts[$ip] 
+    }
+    else { 
+        $currentPort = $PORT 
+    }
     
-    $result = adb connect "$($ip):$currentPort" 2>&1
+    $connectString = "{0}:{1}" -f $ip, $currentPort
+    Write-Host ("   Tentando: {0}..." -f $connectString) -ForegroundColor Gray -NoNewline
+    
+    $result = adb connect $connectString 2>&1
     Start-Sleep -Seconds 1
     
-    $devices = adb devices | Select-String "$($ip):$currentPort.*device$"
+    $devices = adb devices | Select-String "$connectString.*device$"
     
     if ($devices) {
         Write-Host " ✅ CONECTADO!" -ForegroundColor Green
@@ -45,8 +52,10 @@ foreach ($ip in $possibleIPs) {
 Write-Host ""
 
 if ($connected) {
+    $deviceString = "{0}:{1}" -f $connectedIP, $PORT
+
     Write-Host "══════════════════════════════════════════════════════════" -ForegroundColor Green
-    Write-Host "   ✅ TABLET CONECTADO: $connectedIP:$PORT" -ForegroundColor Green
+    Write-Host ("   ✅ TABLET CONECTADO: {0}" -f $deviceString) -ForegroundColor Green
     Write-Host "══════════════════════════════════════════════════════════" -ForegroundColor Green
     Write-Host ""
     
@@ -54,7 +63,7 @@ if ($connected) {
     Write-Host "   Aguarde..." -ForegroundColor Gray
     Write-Host ""
     
-    adb -s "$($connectedIP):$PORT" install -r $APK_PATH
+    adb -s $deviceString install -r $APK_PATH
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
@@ -102,4 +111,3 @@ else {
     Write-Host "══════════════════════════════════════════════════════════" -ForegroundColor Cyan
     Write-Host ""
 }
-

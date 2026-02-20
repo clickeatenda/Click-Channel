@@ -23,24 +23,22 @@ class LogoBackground extends StatelessWidget {
           child: Container(
             decoration: const BoxDecoration(
               gradient: RadialGradient(
-                center: Alignment(0.0, -0.3),
-                radius: 0.8,
+                center: Alignment(0.0, -0.2),
+                radius: 1.0,
                 colors: [
-                  Color(0xFF1a1a2e),
-                  Color(0xFF0f0f1e),
+                  Color(0xFF161e2b), // Brilho central mais neutro/navy
+                  Color(0xFF0b0f16), // Bordas mais escuras
                 ],
               ),
             ),
-            child: Center(
-              child: Opacity(
-                opacity: opacity,
+            child: Opacity(
+              opacity: opacity,
+              child: RepaintBoundary(
                 child: ImageFiltered(
                   imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
                   child: Image.asset(
                     'assets/images/logo.png',
-                    width: 300,
-                    height: 300,
-                    fit: BoxFit.contain,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),

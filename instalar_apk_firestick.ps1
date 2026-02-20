@@ -1,10 +1,10 @@
 # Script para instalar APK no Firestick
-$adbPath = "C:\Android\sdk\platform-tools\adb.exe"
+$adbPath = "C:\Users\joaov\AppData\Local\Android\Sdk\platform-tools\adb.exe"
 $apkPath = ".\build\app\outputs\flutter-apk\app-release.apk"
 $packageName = "com.cliqueatenda.clickechannel"
 $firestickIp = "192.168.3.110:5555"
 
-Write-Host "🔌 Conectando ao Firestick..." -ForegroundColor Cyan
+Write-Host "🔌 Conectando ao Firestick ($firestickIp)..." -ForegroundColor Cyan
 & $adbPath connect $firestickIp
 
 Write-Host "⏳ Aguardando conexão..." -ForegroundColor Cyan

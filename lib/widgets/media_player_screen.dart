@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // Required for Timer (Watchdog)
-import 'dart:io'; // Required for Platform check
 import 'package:flutter/services.dart';
-import 'dart:convert'; // Required for Base64
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/content_item.dart';
@@ -13,7 +10,7 @@ import '../models/epg_program.dart';
 import '../data/favorites_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // NOVO import para bypassar erro de build
 import '../data/jellyfin_service.dart'; // Garantir import do service
-import '../core/prefs.dart'; // Player Settings
+import 'dart:async'; // Para o timer de auto-reconnect
 
 /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
 class MediaPlayerScreen extends StatefulWidget {
@@ -46,13 +43,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   bool _hasError = false;
   String _errorMessage = '';
   int _retryCount = 0; // Contador para tentativas de recuperação de erro
+  Timer? _stallTimer; // Timer para detectar congelamento de buffering
   bool _showControls = true;
   bool _showInfo = false;
   bool _showAudioOptions = false;
   bool _showSubtitleOptions = false;
   bool _showFitOptions = false;
   bool isFavorite = false; // Novo estado
-  String _currentMediaUrl = ''; // Debug URL
   
   // Informações de mídia
   String _videoQuality = 'Carregando...';
@@ -63,10 +60,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   String _currentSubtitle = 'Desativado';
   List<AudioTrack> _audioTracks = [];
   List<SubtitleTrack> _subtitleTracks = [];
-  // v25: Lista manual de legendas (Jellyfin API)
-  List<Map<String, dynamic>> _jellyfinSubtitles = [];
-  bool _isLoadingSubs = false;
-
   int _selectedAudioIndex = 0;
   int _selectedSubtitleIndex = -1;
   
@@ -147,64 +140,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     });
     // Feedback é mostrado via ícone preenchido
   }
-
-  // --- WATCHDOG / KEEP ALIVE SYSTEM ---
-  Timer? _watchdogTimer;
-  Duration _lastWatchdogPos = Duration.zero;
-  int _stallCount = 0;
-
-  void _startWatchdog() {
-    _watchdogTimer?.cancel();
-    // Verifica a cada 2 segundos se o vídeo está andando
-    _watchdogTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      
-      // Só monitora se deveria estar tocando e não está explicitamente em buffer
-      if (_isPlaying && !_isBuffering) {
-        final currentPos = _position;
-        
-        // Se a posição não mudou (ou mudou muito pouco) em 2 segundos
-        if ((currentPos - _lastWatchdogPos).abs().inMilliseconds < 200) {
-           _stallCount++;
-        } else {
-           _stallCount = 0; // Playback normal, reseta contador
-           _lastWatchdogPos = currentPos;
-        }
-
-        // Se detectarmos 5 verificações seguidas (10 segundos) sem progresso...
-        if (_stallCount >= 5) {
-           print('⚠️ Watchdog: DETECTADO TRAVAMENTO (Stall). Reiniciando player...');
-           _stallCount = 0;
-           _retryPlayback();
-        }
-      }
-    });
-  }
-
-  void _stopWatchdog() {
-    _watchdogTimer?.cancel();
-    _watchdogTimer = null;
-  }
-
-  Future<void> _retryPlayback() async {
-    _stopWatchdog();
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Sinal instável. Reconectando...'),
-        backgroundColor: Colors.orange,
-        duration: Duration(seconds: 2),
-      )
-    );
-
-    // Pequeno delay para liberar recursos
-    await Future.delayed(const Duration(milliseconds: 500));
-    _initPlayer(); // Re-inicializa tudo
-  }
+  
+  // ... (método _initPlayer original inalterado) ...
 
   // ... (dentro de _buildTopBar) ...
   
@@ -366,44 +303,19 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     try {
       print('🎬 Iniciando player para: ${widget.url}');
       
+      // Cancelar timers anteriores
+      _stallTimer?.cancel();
+      
       // Cleanup anterior se houver (retry)
       await _player?.dispose();
       
       // Criar player com configurações otimizadas (buffer aumentado e Hardware Acceleration)
       _player = Player(
-        configuration: PlayerConfiguration(
-          // CRÍTICO: Configurações para compatibilidade com Jellyfin Direct Play
-          // Docs: https://mpv.io/manual/master/
-          title: widget.item?.title ?? 'Click Channel',
-          
-          // Aumentamos drasticamente o buffer para evitar travamentos em redes instáveis
-          bufferSize: 128 * 1024 * 1024, // 128MB
-          vo: 'gpu',
+        configuration: const PlayerConfiguration(
+          bufferSize: 64 * 1024 * 1024, // 64MB buffer para estabilidade
+          vo: 'gpu', // Hardware Acceleration (Vital para performance no Firestick)
         ),
       );
-
-      // Apply mpv-specific options for Jellyfin compatibility
-      // TEMPORARIAMENTE DESABILITADO PARA TESTE
-      /*
-      try {
-        final nativePlayer = _player.platform as dynamic;
-        
-        // Demuxer options - be more permissive with format detection
-        await nativePlayer.setProperty('demuxer-lavf-probe-info', 'yes');
-        await nativePlayer.setProperty('demuxer-lavf-analyzeduration', '20000000'); // 20 seconds
-        await nativePlayer.setProperty('demuxer-lavf-probescore', '25'); // Lower threshold (default 26)
-        
-        // Try software decoding first for compatibility
-        await nativePlayer.setProperty('hwdec', 'no');
-        
-        // Network/stream options
-        await nativePlayer.setProperty('stream-lavf-o', 'reconnect_streamed=1,reconnect_delay_max=5');
-        
-        print('✅ [Player] Configurações mpv aplicadas para compatibilidade Jellyfin');
-      } catch (e) {
-        print('⚠️ [Player] Erro ao aplicar configurações mpv: $e');
-      }
-      */
       
       _controller = VideoController(_player!);
       
@@ -424,7 +336,26 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       });
       
       _player!.stream.buffering.listen((buffering) {
-        if (mounted) setState(() => _isBuffering = buffering);
+        if (mounted) {
+          setState(() => _isBuffering = buffering);
+          
+          // Auto-reconnect para Live Channels travados em Buffering
+          if (widget.item?.type == 'channel') {
+            if (buffering) {
+              // Iniciar timer de stall
+              _stallTimer?.cancel();
+              _stallTimer = Timer(const Duration(seconds: 5), () {
+                if (mounted && _isBuffering) {
+                  print('🔄 Canal travado em buffering há 5s. Forçando reconexão imediata...');
+                  _initPlayer();
+                }
+              });
+            } else {
+              // Parou de carregar, limpar timer
+              _stallTimer?.cancel();
+            }
+          }
+        }
       });
       
       _player!.stream.error.listen((error) {
@@ -473,40 +404,38 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       // Auto-Play Listener
       _player!.stream.completed.listen((completed) {
         if (completed && mounted) {
-           _onVideoCompleted();
+           // Auto-reconnect se o fluxo do canal cair (streaming "encerra")
+           if (widget.item?.type == 'channel') {
+             print('🔄 Canal "encerrou". Tentando reconectar imediatamente...');
+             Future.delayed(const Duration(seconds: 1), () {
+               if (mounted) _initPlayer();
+             });
+           } else {
+             _onVideoCompleted();
+           }
         }
       });
       
       // Listener para tracks de áudio
-    _player!.stream.tracks.listen((tracks) {
-      if (mounted) {
-        setState(() {
-          // Filtrar tracks vazias (a primeira geralmente é "no" track)
-          _audioTracks = tracks.audio.where((t) => t.id != 'no' && t.id != 'auto').toList();
-          _subtitleTracks = tracks.subtitle.where((t) => t.id != 'no' && t.id != 'auto').toList();
-          
-          // Debug
-          print('🎵 Audio tracks: ${_audioTracks.length}');
-          for (var t in _audioTracks) {
-            print('   - ${t.id}: ${t.title ?? t.language ?? "unknown"}');
-          }
-          print('📝 Subtitle tracks: ${_subtitleTracks.length}');
-          for (var t in _subtitleTracks) {
-            print('   - ${t.id}: ${t.title ?? t.language ?? "unknown"}');
-          }
-          
-          // AUTO-RECOVERY: Se perdeu todas as tracks de áudio durante reprodução, força play
-          if (_audioTracks.isEmpty && _position.inSeconds > 5 && !_isPlaying) {
-            print('⚠️ PERDA DE ÁUDIO DETECTADA! Forçando continuação da reprodução...');
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (mounted && _player != null) {
-                _player!.play();
-              }
-            });
-          }
-        });
-      }
-    });
+      _player!.stream.tracks.listen((tracks) {
+        if (mounted) {
+          setState(() {
+            // Filtrar tracks vazias (a primeira geralmente é "no" track)
+            _audioTracks = tracks.audio.where((t) => t.id != 'no' && t.id != 'auto').toList();
+            _subtitleTracks = tracks.subtitle.where((t) => t.id != 'no' && t.id != 'auto').toList();
+            
+            // Debug
+            print('🎵 Audio tracks: ${_audioTracks.length}');
+            for (var t in _audioTracks) {
+              print('   - ${t.id}: ${t.title ?? t.language ?? "unknown"}');
+            }
+            print('📝 Subtitle tracks: ${_subtitleTracks.length}');
+            for (var t in _subtitleTracks) {
+              print('   - ${t.id}: ${t.title ?? t.language ?? "unknown"}');
+            }
+          });
+        }
+      });
       
       // Listener para track de áudio atual
       _player!.stream.track.listen((track) {
@@ -579,168 +508,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       }
       
       // Abrir mídia com timeout
-      // Configs v18 (Player Settings)
-      final decoderMode = Prefs.getDecoderMode();
-      final bufferSize = Prefs.getBufferSize();
-      final hlsForced = Prefs.getHlsForced();
-
-      // HLS Override Logic moved to end of function
-      var mediaUrl = _playlist[_currentIndex].url;
-
-      // Decoder Mapping
-      String hwdecValue = 'auto'; // Default safer
-      
-      if (Platform.isAndroid) {
-        hwdecValue = 'mediacodec-copy'; // Tenta copy para melhor compatibilidade
-      } else if (Platform.isWindows) {
-        hwdecValue = 'd3d11va'; // Windows Explicit (Melhor que auto)
-      }
-
-      if (decoderMode == 'sw') hwdecValue = 'no'; // Software
-      if (decoderMode == 'auto') hwdecValue = 'auto'; // Automatic
-      if (decoderMode == 'hw') hwdecValue = Platform.isAndroid ? 'mediacodec' : 'auto';
-
-      // Buffer Mapping
-      String demuxerMaxBytes = '100M'; // Default Medium
-      String demuxerMaxBackBytes = '20M';
-      
-      if (bufferSize == 'low') {
-        demuxerMaxBytes = '32M';
-        demuxerMaxBackBytes = '5M';
-      } else if (bufferSize == 'high') {
-         demuxerMaxBytes = '300M';
-         demuxerMaxBackBytes = '50M';
-      }
-
-      print('⚙️ Player Config: Decoder=$decoderMode ($hwdecValue), Buffer=$bufferSize ($demuxerMaxBytes), HLS=$hlsForced');
-      
-      print('🎬 [Player] Iniciando setup para item: ${widget.item?.title ?? "Desconhecido"}');
-
-       // CRÍTICO: Buscar PlaybackInfo ANTES de abrir a mídia
-      // Relaxando checagem de grupo para teste (se tiver ID, tenta buscar)
-      if (widget.item != null && (widget.item!.group == 'Jellyfin' || widget.item!.id.isNotEmpty)) {
-        try {
-           final mediaInfo = await JellyfinService.getMediaInfo(widget.item!.id);
-           if (mediaInfo != null && mediaInfo['MediaSources'] != null) {
-             final sources = mediaInfo['MediaSources'] as List;
-             
-             if (sources.isNotEmpty) {
-               final source = sources[0];
-               final sourceId = source['Id'];
-               final directPlay = source['SupportsDirectPlay'] == true;
-               final directStream = source['SupportsDirectStream'] == true;
-               final container = source['Container'] ?? 'unknown';
-               
-               print('📦 [Player] Source: container=$container, DirectPlay=$directPlay, DirectStream=$directStream');
-               
-               if (directPlay || directStream) {
-                 // Direct Play/Stream - usa URL de stream normal
-                 final newUrl = JellyfinService.getStreamUrl(widget.item!.id) + '&MediaSourceId=$sourceId';
-                 mediaUrl = newUrl;
-                 print('🎬 [Player] Usando Direct Play/Stream');
-               } else {
-                 // CRÍTICO: Precisa de transcoding HLS do servidor
-                 // Usa endpoint /master.m3u8 que pede ao Jellyfin para transcodificar
-                 mediaUrl = JellyfinService.getHlsTranscodingUrl(widget.item!.id, mediaSourceId: sourceId);
-                 print('🔄 [Player] DirectPlay=false → Usando HLS Transcoding do Jellyfin');
-                 print('   └─ URL: $mediaUrl');
-               }
-               
-               // Carregar Legendas
-               if (source['MediaStreams'] != null) {
-                 final streams = source['MediaStreams'] as List;
-                     final subtitles = streams.where((s) => s['Type'] == 'Subtitle').toList();
-                 
-                     // ignore: avoid_print
-                     print('📝 [Player] Legendas encontradas na API: ${subtitles.length}');
-                 
-                     if (mounted) {
-                       setState(() {
-                         _jellyfinSubtitles = subtitles.map((s) {
-                           // Adiciona ID do source para garantir download correto
-                           final map = Map<String, dynamic>.from(s);
-                           map['MediaSourceId'] = sourceId; 
-                           return map;
-                         }).toList();
-                       });
-                   
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Jellyfin (Force): ${subtitles.length} legendas!'),
-                        backgroundColor: subtitles.isNotEmpty ? Colors.green : Colors.orange,
-                        duration: const Duration(seconds: 5),
-                      ),
-                    );
-                 }
-               }
-             }
-           } else {
-             // ignore: avoid_print
-             print('⚠️ [Player] PlaybackInfo retornou NULL ou sem Sources');
-           }
-        } catch (e) {
-           // ignore: avoid_print
-           print('⚠️ [Player] Erro PlaybackInfo: $e');
-        }
-      }
-
-
-
-      // CRÍTICO: Aplicar lógica de HLS Forced POR ÚLTIMO, para garantir que params sejam adicionados
-      // mesmo após a atualização da URL pelo PlaybackInfo
-      if (hlsForced) {
-        if (mediaUrl.contains('.ts')) {
-           mediaUrl = mediaUrl.replaceAll('.ts', '.m3u8');
-           print('🔄 Player: HLS Forced -> Convertendo .ts para .m3u8');
-         // FIX: Desabilitar TranscodingContainer forçado para Jellyfin
-         // Causa erro "partial file" pois player tenta abrir antes da transcodificação terminar
-         // Jellyfin já decide automaticamente se precisa transcodificar via PlaybackInfo
-         /*
-         } else if (widget.item?.group == 'Jellyfin' && !mediaUrl.contains('.m3u8') && !mediaUrl.contains('TranscodingContainer')) {
-            // Jellyfin brute force
-            if (mediaUrl.contains('/stream')) {
-              mediaUrl += '&TranscodingContainer=m3u8';
-              print('🔄 Player: HLS Forced (Jellyfin) -> Adicionando container m3u8 (Final)');
-            }
-         */
-         } else if (widget.item?.group == 'Jellyfin') {
-           print('🎬 Direct Play habilitado para Jellyfin (sem transcodificação forçada)');
-         }
-       }
-
-      print('🎬 Abrindo mídia final: $mediaUrl');
-      _currentMediaUrl = mediaUrl; // Salva para debug na UI de erro
+      print('🎬 Abrindo mídia: ${_playlist[_currentIndex].url}');
       
       // Mídia Principal
       final media = Media(
-        mediaUrl,
+        _playlist[_currentIndex].url,
         httpHeaders: {
-          'User-Agent': 'ClickChannel/1.0 VLC/3.0.18',
-          if (widget.item?.group == 'Jellyfin' && JellyfinService.accessToken.isNotEmpty) ...{
-            'X-Emby-Authorization': JellyfinService.getAuthorizationHeader(),
-            // Mantendo token legacy apenas por segurança
-            'X-MediaBrowser-Token': JellyfinService.accessToken,
-          } 
-        },
-        extras: {
-          'network-timeout': '30',
-          'reconnect': 'yes',
-          'reconnect-delay': '1',
-          'tls-verify': 'no', // Fix SSL Self-Signed
-          // Buffer Dinâmico
-          'stream-buffer-size': '2M',
-          'demuxer-max-bytes': demuxerMaxBytes,
-          'demuxer-max-back-bytes': demuxerMaxBackBytes,
-          'hls-bitrate': 'max',
-          'sub-codepage': 'utf-8', // CRÍTICO: Forçar codificação UTF-8
-          'cache': 'yes',
-          'keep-open': 'yes',
-          'user-agent': 'VLC/3.0.18 LibVLC/3.0.18',
-          'audio-fallback-to-null': 'yes',
-          'video-sync': 'audio',
-          'hwdec': hwdecValue,     // Codec Dinâmico
-          'framedrop': 'vo',
-          'vd-lavc-threads': '16', // CRÍTICO: Multithread decoding para 4K
+          'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18', // User-Agent universal para evitar bloqueios
         },
       );
       
@@ -753,10 +527,52 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         },
       );
       
-      // Logica de legendas movida para antes do player.open
+      // Carregar Legendas do Jellyfin (se for item do Jellyfin)
+      if (widget.item != null && widget.item!.group == 'Jellyfin') {
+        try {
+          final mediaInfo = await JellyfinService.getMediaInfo(widget.item!.id);
+          if (mediaInfo != null && mediaInfo['MediaSources'] != null) {
+            final source = mediaInfo['MediaSources'][0]; // Assume primeira fonte
+            if (source['MediaStreams'] != null) {
+              final streams = source['MediaStreams'] as List;
+              final subtitles = streams.where((s) => s['Type'] == 'Subtitle').toList();
+              
+              print('📝 Encontradas ${subtitles.length} legendas externas no Jellyfin');
+              
+              for (var sub in subtitles) {
+                final index = (sub['Index'] as num?)?.toInt() ?? 0;
+                final title = sub['Title'] ?? sub['Language'] ?? 'Legenda $index';
+                final codec = sub['Codec'] ?? 'vtt';
+                
+                // Prioriza VTT e SRT
+                String format = 'vtt';
+                if (codec == 'srt' || codec == 'subrip') format = 'srt';
+                
+                // BYPASS: Ler credenciais direto do storage para evitar erro de build
+                const storage = FlutterSecureStorage();
+                final baseUrl = await storage.read(key: 'jellyfin_url') ?? '';
+                final token = await storage.read(key: 'jellyfin_access_token') ?? '';
+                
+                if (baseUrl.isNotEmpty && token.isNotEmpty) {
+                    final subUrl = '$baseUrl/Videos/${widget.item!.id}/$index/Subtitles.$format?api_key=$token';
+                    
+                    print('➕ Adicionando legenda externa: $title ($format) -> $subUrl');
+                    
+                    // Adiciona como track externa
+                    await _player!.setSubtitleTrack(
+                      SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
+                    );
+                }
+              }
+            }
+          }
+        } catch (e) {
+          print('⚠️ Erro ao carregar legendas do Jellyfin: $e');
+        }
+      }
       
       // Seek seguro antes de tocar (evita que o player toque do início e pule depois)
-      if (savedPosition != null && savedPosition.inSeconds > 5) { // Só resume se > 5s
+      if (widget.item?.type != 'channel' && savedPosition != null && savedPosition.inSeconds > 5) { // Só resume se > 5s
         print('⏩ Retomando de ${_formatDuration(savedPosition)}');
         try {
            await _player!.seek(savedPosition).timeout(
@@ -778,9 +594,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       
       // Auto-hide controls após 5 segundos
       _startControlsTimer();
-      
-      // Inicia monitoramento de travamentos
-      _startWatchdog();
       
     } catch (e, stackTrace) {
       print('❌ Erro ao inicializar player: $e');
@@ -859,7 +672,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
   
   void _saveProgress() {
-    if (widget.item != null && _position.inSeconds % 10 == 0 && _duration.inSeconds > 0) {
+    if (widget.item != null && widget.item!.type != 'channel' && _position.inSeconds % 10 == 0 && _duration.inSeconds > 0) {
       WatchHistoryService.saveProgress(widget.item!, _position, _duration);
     }
   }
@@ -943,12 +756,12 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   
   @override
   void dispose() {
+    _stallTimer?.cancel();
     // Salvar progresso final
-    if (widget.item != null && _duration.inSeconds > 0) {
+    if (widget.item != null && widget.item!.type != 'channel' && _duration.inSeconds > 0) {
       WatchHistoryService.saveProgress(widget.item!, _position, _duration);
     }
     _player?.dispose();
-    _player = null; // CRÍTICO: Evita erro "player has been disposed" em callbacks async
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -961,7 +774,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     _subtitleFocusNode.dispose();
     _fitFocusNode.dispose();
     _infoFocusNode.dispose();
-    _stopWatchdog();
     super.dispose();
   }
 
@@ -1003,80 +815,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             child: const Text('Voltar', style: TextStyle(color: Colors.white70)),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildVideoError(BuildContext context, String error) {
-    // Tradução amigável de erros comuns
-    String displayError = error;
-    if (error.contains('Failed to open')) {
-      displayError = 'Falha ao abrir o vídeo.\n\nVerifique:\n1. Se o servidor Jellyfin está online.\n2. Se o formato do arquivo é suportado.\n3. Se sua conexão de internet está estável.';
-    } else if (error.contains('404')) {
-      displayError = 'Arquivo não encontrado (Erro 404).\nO vídeo pode ter sido movido ou deletado do servidor.';
-    } else if (error.contains('401') || error.contains('403')) {
-      displayError = 'Acesso negado (Erro de Autenticação).\nVerifique seu login no Jellyfin.';
-    }
-
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        color: Colors.black87,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.orange, size: 48),
-              const SizedBox(height: 16),
-              const Text('Erro de Reprodução', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              Text(displayError, style: const TextStyle(color: Colors.white70, fontSize: 14), textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              if (displayError != error) // Mostra erro original menor se foi traduzido
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text('Detalhe técnico: $error', style: const TextStyle(color: Colors.grey, fontSize: 10), textAlign: TextAlign.center),
-                ),
-              const SizedBox(height: 16),
-              if (_currentMediaUrl.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Colors.white12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('URL de Origem:', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 2),
-                      SelectableText(
-                        _currentMediaUrl,
-                        style: const TextStyle(color: Colors.blueGrey, fontSize: 10, fontFamily: 'monospace'),
-                        maxLines: 4,
-                      ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () {
-                   // Força reset do player
-                   _initPlayer();
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tentar Novamente'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                 onPressed: () => Navigator.pop(context),
-                 child: const Text('Voltar', style: TextStyle(color: Colors.white54)),
-              )
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -1579,9 +1317,146 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     );
   }
   
-
+  /// Botão de opção simples com FocusNode dedicado
+  Widget _buildSimpleOptionButton({
+    required FocusNode focusNode,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.space || 
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final hasFocus = Focus.of(context).hasFocus;
+          return GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: hasFocus 
+                    ? Colors.white.withOpacity(0.35) 
+                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: hasFocus 
+                      ? Colors.white 
+                      : (isActive ? Colors.blueAccent : Colors.white24),
+                  width: hasFocus ? 3 : 1,
+                ),
+                boxShadow: hasFocus ? [
+                   const BoxShadow(color: Colors.white24, blurRadius: 8, spreadRadius: 2)
+                ] : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70), size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70),
+                      fontSize: 13,
+                      fontWeight: hasFocus ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      ),
+    );
+  }
   
-
+  /// Option button with explicit FocusNode and up navigation support
+  Widget _buildOptionButtonWithFocus({
+    required FocusNode focusNode,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required VoidCallback onUpPressed,
+    bool isActive = false,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          // Enter/Select - ativa o botão
+          if (event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.space || 
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onTap();
+            return KeyEventResult.handled;
+          }
+          // Seta para cima - volta aos controles centrais
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            onUpPressed();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final hasFocus = Focus.of(context).hasFocus;
+          return GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: hasFocus 
+                    ? Colors.white.withOpacity(0.4) 
+                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: hasFocus 
+                      ? Colors.white 
+                      : (isActive ? Colors.blueAccent : Colors.white24),
+                  width: hasFocus ? 3 : 1,
+                ),
+                boxShadow: hasFocus ? [
+                   const BoxShadow(color: Colors.white30, blurRadius: 8, spreadRadius: 2)
+                ] : null,
+              ),
+              transform: hasFocus ? Matrix4.identity().scaled(1.1) : Matrix4.identity(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70), size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70),
+                      fontSize: 13,
+                      fontWeight: hasFocus ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      ),
+    );
+  }
   
   Widget _buildInfoPanel() {
     final isChannel = widget.item != null && widget.item!.type == 'channel';
@@ -1868,183 +1743,40 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               ),
               onTap: () => _setSubtitleTrack(-1),
             ),
-            if (_isLoadingSubs)
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(child: CircularProgressIndicator(color: Colors.white)),
-              ),
-
-             if (!_isLoadingSubs && _subtitleTracks.isEmpty && _jellyfinSubtitles.isEmpty)
+            if (_subtitleTracks.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(8.0),
                 child: Text('Nenhuma legenda disponível', style: TextStyle(color: Colors.white70)),
               )
             else
               Flexible(
-                child: ListView(
+                child: ListView.builder(
                   shrinkWrap: true,
-                  children: [
-                    // Legendas Nativas (Player)
-                    if (_subtitleTracks.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.only(left: 12, top: 4, bottom: 4),
-                        child: Text('Internas', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                  itemCount: _subtitleTracks.length,
+                  itemBuilder: (context, index) {
+                    final track = _subtitleTracks[index];
+                    final title = track.title ?? track.language ?? 'Legenda ${index + 1}';
+                    final isSelected = index == _selectedSubtitleIndex;
+                    return ListTile(
+                      dense: true,
+                      leading: Icon(
+                        isSelected ? Icons.check_circle : Icons.circle_outlined,
+                        color: isSelected ? Colors.blueAccent : Colors.white54,
+                        size: 20,
                       ),
-                      ..._subtitleTracks.asMap().entries.map((entry) {
-                         final index = entry.key;
-                         final track = entry.value;
-                         final title = track.title ?? track.language ?? 'Legenda ${index + 1}';
-                         final isSelected = index == _selectedSubtitleIndex && _selectedSubtitleIndex < _subtitleTracks.length;
-                         
-                         return ListTile(
-                          dense: true,
-                          leading: Icon(
-                            isSelected ? Icons.check_circle : Icons.circle_outlined,
-                            color: isSelected ? Colors.blueAccent : Colors.white54,
-                            size: 20,
-                          ),
-                          title: Text(title, style: TextStyle(color: isSelected ? Colors.blueAccent : Colors.white, fontSize: 13)),
-                          subtitle: track.language != null ? Text(track.language!, style: const TextStyle(color: Colors.white54, fontSize: 11)) : null,
-                          onTap: () => _setSubtitleTrack(index),
-                        );
-                      }),
-                    ],
-
-                    // Legendas Externas (Jellyfin API)
-                    if (_jellyfinSubtitles.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.only(left: 12, top: 8, bottom: 4),
-                        child: Text('Externas (Jellyfin)', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                      title: Text(
+                        title,
+                        style: TextStyle(
+                          color: isSelected ? Colors.blueAccent : Colors.white,
+                          fontSize: 13,
+                        ),
                       ),
-                      ..._jellyfinSubtitles.asMap().entries.map((entry) {
-                         final idx = entry.key;
-                         final sub = entry.value;
-                         final title = sub['Title'] ?? sub['Language'] ?? 'Externo ${idx + 1}';
-                         
-                         // Verifica se já está selecionado (hacky check via nome)
-                         final isSelected = _currentSubtitle == title;
-                         
-                         return ListTile(
-                          dense: true,
-                          leading: Icon(
-                            isSelected ? Icons.check_circle : Icons.download, // Ícone de download
-                            color: isSelected ? Colors.blueAccent : Colors.white70,
-                            size: 20,
-                          ),
-                          title: Text(title, style: TextStyle(color: isSelected ? Colors.blueAccent : Colors.white, fontSize: 13)),
-                          subtitle: Text('Toque para baixar e ativar', style: const TextStyle(color: Colors.white38, fontSize: 10)),
-                          onTap: () async {
-                             setState(() => _isLoadingSubs = true);
-                             try {
-                               final index = (sub['Index'] as num?)?.toInt() ?? 0;
-                               final codec = sub['Codec'] ?? 'vtt';
-                               String format = (codec == 'srt' || codec == 'subrip') ? 'srt' : 'vtt';
-                               final mediaSourceId = sub['MediaSourceId'];
-
-                               print('📥 [UI] Solicitando download da legenda: "$title" (Index: $index, Format: $format, Source: $mediaSourceId)');
-                               String? finalUri;
-                               
-                               // Tenta baixar primeiro
-                               final path = await JellyfinService.downloadSubtitle(widget.item!.id, index, format, mediaSourceId: mediaSourceId);
-                               if (path != null) {
-                                  // CRÍTICO: No Windows, MPV prefere caminhos absolutos com barras normais ou invertidas
-                                  // Uri.file() pode causar problemas com encoding de espaços/caracteres
-                                  if (Platform.isWindows) {
-                                     finalUri = path.replaceAll('\\', '/'); // Normaliza para forward slashes
-                                     print('✅ [UI] Windows Path Normalizado: "$finalUri"');
-                                  } else {
-                                     finalUri = Uri.file(path).toString();
-                                     print('✅ [UI] URI padrão: "$finalUri"');
-                                  }
-                               } else {
-                                  // Fallback: URL direta (usando sourceId se tiver)
-                                  print('⚠️ [UI] Download falhou. Tentando URL direta...');
-                                  
-                                  // TODO: Atualizar getSubtitleUrl para aceitar sourceId também se necessário, 
-                                  // mas por enquanto vamos manter simples ou construir manual
-                                  // O ideal seria que getSubtitleUrl também recebesse mediaSourceId
-                                  var directUrl = JellyfinService.getSubtitleUrl(widget.item!.id, index, format, mediaSourceId: mediaSourceId);
-                                  if (mediaSourceId != null) {
-                                     // Hack rápido para injetar o ID correto na URL se getSubtitleUrl não suportar ainda e usar baseUrl padrão
-                                     // Mas como getSubtitleUrl é simples, melhor não mexer. Se download falhou (404), URL direta tbm vai falhar se usar ID errado.
-                                     // Vamos confiar no downloadSubtitle que já corrigimos.
-                                  }
-                                  
-                                  if (directUrl.isNotEmpty) {
-                                     finalUri = directUrl;
-                                     print('✅ [UI] Usando URL direta de legenda: $finalUri');
-                                  }
-                               }
-
-                               if (finalUri != null && mounted) {
-                                  // CRÍTICO: Verificar se player ainda existe e não foi descartado
-                                  if (_player != null) {
-                                    try {
-                                      // Se for arquivo local no Windows, não usa esquema URI file://
-                                      // Se for URL remota ou Data URI, usa URI normal
-
-                                      final isLocalWindows = Platform.isWindows && !finalUri.startsWith('http');
-                                      
-                                      SubtitleTrack track;
-                                      
-                                      if (isLocalWindows) {
-                                        // CRÍTICO: Windows prefere path cru com barras normais (C:/...) ao invés de file:///
-                                        // Removemos o scheme file:// se estiver presente (embora aqui finalUri já deva ser path cru vindo do download)
-                                        var winPath = finalUri.replaceAll('\\', '/');
-                                        if (winPath.startsWith('file:///')) winPath = winPath.substring(8);
-                                        track = SubtitleTrack.uri(winPath, title: title, language: sub['Language']);
-                                      } else {
-                                        track = SubtitleTrack.uri(finalUri, title: title, language: sub['Language']);
-                                      }
-
-                                      print('🎬 [UI] Setando legenda no player: "${track.uri}" (LocalWin=$isLocalWindows)');
-                                      await _player!.setSubtitleTrack(track);
-                                        
-                                        if (mounted) {
-                                          setState(() {
-                                            _currentSubtitle = title;
-                                            _selectedSubtitleIndex = 999; 
-                                            _isLoadingSubs = false;
-                                          });
-                                          
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text('Legenda ativada: $title'), 
-                                              backgroundColor: Colors.green,
-                                              duration: const Duration(seconds: 2)
-                                            )
-                                          );
-                                        }
-
-                                    } catch (e) {
-                                      // Captura AssertionError (player disposed) e outras exceções
-                                      print('❌ [UI] Erro ao setar legenda (Player pode ter sido descartado): $e');
-                                      if (mounted) {
-                                         setState(() => _isLoadingSubs = false);
-                                      }
-                                    }
-                                  }
-                               } else {
-                                  print('❌ [UI] Falha fatal: Não foi possível obter URI da legenda');
-                                  throw Exception('Falha ao carregar legenda (Download e URL direta falharam)');
-                               }
-                             } catch (e) {
-                               print('❌ [UI] Erro ao ativar legenda externa: $e');
-                               if (mounted) {
-                                 setState(() => _isLoadingSubs = false);
-                                 ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Erro ao carregar legenda: $e'), 
-                                      backgroundColor: Colors.red,
-                                    )
-                                  );
-                               }
-                             }
-                          },
-                        );
-                      }),
-                    ],
-                  ],
+                      subtitle: track.language != null
+                          ? Text(track.language!, style: const TextStyle(color: Colors.white54, fontSize: 11))
+                          : null,
+                      onTap: () => _setSubtitleTrack(index),
+                    );
+                  },
                 ),
               ),
           ],

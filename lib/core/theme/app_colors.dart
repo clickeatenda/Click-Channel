@@ -38,6 +38,11 @@ class AppColors {
   static const Color overlayDark = Color(0xCC000000); // 80% opacity
   static const Color glassLight = Color(0x0dffffff); // 5% white for glass effect
   static const Color glassMedium = Color(0x1affffff); // 10% white for glass effect
+
+  // Solid Fallbacks for TV/FireStick Performance
+  static const Color solidPanel = Color(0xFF1e293b); // Opaque surface
+  static const Color solidInput = Color(0xFF141926); // Opaque background for inputs
+  static const Color solidButton = Color(0xFF135bec); // Primary opaque
 }
 
 // Gradientes

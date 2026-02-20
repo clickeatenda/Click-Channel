@@ -982,28 +982,6 @@ class M3uService {
     
     // Limpa espaços e valida URL básica
     logo = logo.trim();
-    
-    // DEBUG TEMP: Log para filmes 4K
-    if (title.toLowerCase().contains("entre") && title.toLowerCase().contains("montanha")) {
-      print("🔍 M3U Parse: titulo='$title', tvg-logo RAW='${meta['tvg-logo'] ?? 'NULL'}', logo final='$logo'");
-    }
-    
-    // 🔥 NOVO: Remove URLs de domínios conhecidos como quebrados
-    // Esses domínios retornam 404 ou DNS error
-    final brokenDomains = [
-      'img.slimtv.in',
-      'playfacil.net/images/',
-      'img.slim.re/imagens/',
-    ];
-    
-    for (final domain in brokenDomains) {
-      if (logo.contains(domain)) {
-        print("⚠️ M3U: URL quebrada detectada ($domain) em '$title' - zerando para forçar TMDB");
-        logo = ''; // Zera para forçar busca no TMDB
-        break;
-      }
-    }
-    
     // Se não começa com http/https, pode ser caminho relativo - mantém como está
     // Remove apenas se estiver completamente vazio ou só espaços
     if (logo.isEmpty) {
@@ -1030,7 +1008,7 @@ class M3uService {
 
   static String _inferType(String group, String title) {
     final g = group.toLowerCase();
-    final t = title.toLowerCase();
+    final t = title.toLowerCase().replaceAll('.', ' ').replaceAll('_', ' ');
 
     // === HEURÍSTICAS DE SEGMENTAÇÃO MELHORADAS ===
     // ORDEM DE PRIORIDADE (do mais específico ao mais genérico)
@@ -1051,7 +1029,7 @@ class M3uService {
           }
           // Caso contrário: se NÃO tem padrão de série (S##E##), retorna 'movie'
           // Isso evita que itens genéricos de "FILMES | SÉRIES" sejam forçados para 'series'
-          if (!RegExp(r's\d{2}e\d{2}|season\s*\d+|temporada\s*\d+|episódio\s*\d+').hasMatch(lowerTitle)) {
+          if (!RegExp(r's\s*\d{2}\s*e\s*\d{2}|season\s*\d+|temporada\s*\d+|episódio\s*\d+', caseSensitive: false).hasMatch(lowerTitle)) {
             return 'movie'; // Sem padrão de série → assume filme
           }
           // Se TEM padrão de série, deixa as próximas heurísticas (regra 3) confirmarem
@@ -1086,8 +1064,8 @@ class M3uService {
       return 'channel';
     }
 
-    // 🔴 REGRA 3: Padrão de episódio explícito = SÉRIE
-    if (RegExp(r's\d{2}e\d{2}|season\s*\d+|temporada\s*\d+|episódio\s*\d+').hasMatch(t)) {
+    // 🔴 REGRA 3: Padrão de episódio explícito = SÉRIE (Suporta S01 E01 com espaço)
+    if (RegExp(r's\s*\d{2}\s*e\s*\d{2}|season\s*\d+|temporada\s*\d+|episódio\s*\d+', caseSensitive: false).hasMatch(t)) {
       return 'series';
     }
 
@@ -1231,8 +1209,8 @@ class M3uService {
     final result = <String, String>{};
     
     // Padrão 1: S##E## ou S## E## ou s##e## (com ou sem espaço)
-    var episodeRegex = RegExp(r's(\d{1,2})\s*e(\d{1,2})', caseSensitive: false);
-    var match = episodeRegex.firstMatch(t);
+    var episodeRegex = RegExp(r's\s*(\d{1,2})\s*e\s*(\d{1,2})', caseSensitive: false);
+    var match = episodeRegex.firstMatch(t.replaceAll('.', ' ').replaceAll('_', ' '));
     
     if (match == null) {
       // Padrão 2: ##x## ou #.# (ex: "01x05" ou "1.5")
@@ -1348,7 +1326,9 @@ class M3uService {
     base = base.replaceAll(RegExp(r'\s+[\-\|:]+\s+'), ' '); // Remove separadores soltos no meio
     base = base.replaceAll(RegExp(r'[\.\-_\|\:]+$'), ''); // Remove pontuação no final
     
-    // Normaliza espaços múltiplos
+    // Normaliza espaços múltiplos e remove pontos/underscores
+    base = base.replaceAll('.', ' ');
+    base = base.replaceAll('_', ' ');
     base = base.replaceAll(RegExp(r'\s+'), ' ').trim();
     
     return base.isEmpty ? title : base;
@@ -2513,14 +2493,10 @@ Future<List<Map<String, String>>> _parseFileIsolate(Map<String, dynamic> args) a
                       meta['thumbnail'] ??
                       '';
         
-        // REMOVIDO: Whitelist restritiva que bloqueava logos de canais.
-        // Agora aceitamos qualquer URL e o AdaptiveCachedImage trata erros de carga.
-        var cleanImage = image.trim();
-        
         results.add({
           'title': title,
           'url': trimmed,
-          'image': cleanImage,
+          'image': image.trim(),
           'group': groupTitle,
           'type': type,
           'quality': quality,

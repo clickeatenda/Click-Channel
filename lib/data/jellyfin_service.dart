@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:path_provider/path_provider.dart';
 import '../models/content_item.dart';
 
 /// Serviço para integração com API do Jellyfin
@@ -28,20 +27,8 @@ class JellyfinService {
   static bool _authenticated = false;
 
   // Getters públicos para acesso externo
+  static String get baseUrl => _baseUrl ?? '';
   static String get accessToken => _accessToken ?? '';
-  
-  /// Retorna o DeviceId consistente
-  static String _getDeviceId() {
-    if (Platform.isAndroid) return 'clickchannel_android';
-    if (Platform.isIOS) return 'clickchannel_ios';
-    if (Platform.isWindows) return 'clickchannel_windows';
-    return 'clickchannel_web';
-  }
-
-  /// Gera o header de autorização padrão
-  static String getAuthorizationHeader() {
-    return 'MediaBrowser Client="ClickChannel", Device="App", DeviceId="${_getDeviceId()}", Version="1.0.0"';
-  }
 
   /// Inicializa o serviço carregando configurações do .env ou storage
   static Future<void> initialize() async {
@@ -60,13 +47,6 @@ class JellyfinService {
         _baseUrl = dotenv.env['JELLYFIN_URL'];
         _username = dotenv.env['JELLYFIN_USERNAME'];
         _password = dotenv.env['JELLYFIN_PASSWORD'];
-      }
-
-      // Sanitize URL (remove trailing slash)
-      if (_baseUrl != null) {
-         while (_baseUrl!.endsWith('/')) {
-           _baseUrl = _baseUrl!.substring(0, _baseUrl!.length - 1);
-         }
       }
       
       _libraryId = dotenv.env['JELLYFIN_LIBRARY_ID'];
@@ -98,11 +78,6 @@ class JellyfinService {
     required String username,
     required String password,
   }) async {
-    // Remove trailing slash
-    while (url.endsWith('/')) {
-      url = url.substring(0, url.length - 1);
-    }
-
     _baseUrl = url;
     _username = username;
     _password = password;
@@ -171,10 +146,11 @@ class JellyfinService {
 
     try {
       final url = '$_baseUrl/Users/AuthenticateByName';
+      final deviceId = Platform.isAndroid ? 'clickchannel_android' : 'clickchannel_mobile';
       
       final headers = {
         'Content-Type': 'application/json',
-        'X-Emby-Authorization': getAuthorizationHeader(),
+        'X-Emby-Authorization': 'MediaBrowser Client="ClickChannel", Device="Mobile", DeviceId="$deviceId", Version="1.0"',
       };
 
       final body = jsonEncode({
@@ -266,7 +242,7 @@ class JellyfinService {
       final params = <String, String>{
         'Recursive': 'true',
         'Limit': limit.toString(),
-        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,Id,EpisodeId,SeriesId',
+        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources',
       };
 
       if (libId != null && libId.isNotEmpty) {
@@ -401,192 +377,19 @@ class JellyfinService {
     return uri.toString();
   }
 
-  /// Gera URL de HLS transcoding para itens que não suportam Direct Play.
-  /// Usa o endpoint /master.m3u8 do Jellyfin para transcodificar server-side.
-  static String getHlsTranscodingUrl(String itemId, {String? mediaSourceId}) {
-    if (!isAuthenticated || _accessToken == null) {
-      print('❌ JellyfinService: Não autenticado para gerar URL HLS');
-      return '';
-    }
-
-    final params = {
-      'api_key': _accessToken!,
-      'DeviceId': 'ClickChannel',
-      'PlaySessionId': DateTime.now().millisecondsSinceEpoch.toString(),
-      'VideoCodec': 'h264',
-      'AudioCodec': 'aac,mp3',
-      'MaxAudioChannels': '2',
-      'TranscodingMaxAudioChannels': '2',
-      'VideoBitRate': '8000000', // 8 Mbps
-      'AudioBitRate': '192000',
-      'MaxStreamingBitrate': '10000000', // 10 Mbps
-      'TranscodingContainer': 'ts',
-      'TranscodingProtocol': 'hls',
-      'SegmentContainer': 'ts',
-      'MinSegments': '2',
-      'BreakOnNonKeyFrames': 'true',
-      'RequireAvc': 'false',
-      'SubtitleMethod': 'Encode',
-    };
-
-    if (mediaSourceId != null) {
-      params['MediaSourceId'] = mediaSourceId;
-    }
-
-    final uri = Uri.parse('$_baseUrl/Videos/$itemId/master.m3u8').replace(queryParameters: params);
-    print('🔄 [JELLYFIN] HLS Transcoding URL: $uri');
-    return uri.toString();
-  }
-
   /// Gera URL de imagem para um item
-  static String getImageUrl(String itemId, String imageTag, {
-    String imageType = 'Primary',
-    int? maxWidth,
-    int? maxHeight,
-    int? quality = 90,
-  }) {
+  static String getImageUrl(String itemId, String imageTag, {String imageType = 'Primary'}) {
     if (_baseUrl == null) return '';
-    
-    var url = '$_baseUrl/Items/$itemId/Images/$imageType?tag=$imageTag&quality=$quality';
-    
-    if (maxWidth != null) url += '&maxWidth=$maxWidth';
-    if (maxHeight != null) url += '&maxHeight=$maxHeight';
-    
-    return url;
+    return '$_baseUrl/Items/$itemId/Images/$imageType?tag=$imageTag';
   }
   
-  static String getSubtitleUrl(String itemId, int streamIndex, String format, {String? mediaSourceId}) {
+  /// Gera URL de legenda para um item
+  static String getSubtitleUrl(String itemId, int streamIndex, String format) {
     if (!isAuthenticated || _accessToken == null || _baseUrl == null) {
       return '';
     }
-    final targetId = mediaSourceId ?? itemId;
-    // Correct API format: /Videos/{Id}/{MediaSourceId}/Subtitles/{Index}/Stream.{Format}
-    return '$_baseUrl/Videos/$itemId/$targetId/Subtitles/$streamIndex/Stream.$format?api_key=$_accessToken';
-  }
-
-
-  /// Baixa a legenda e salva em arquivo temporário (Fix Auth v22)
-  /// Baixa a legenda e retorna o caminho do arquivo local
-  static Future<String?> downloadSubtitle(String itemId, int streamIndex, String format, {String? mediaSourceId}) async {
-    if (!isAuthenticated) return null;
-
-    try {
-      final apiKey = _accessToken ?? '';
-      // Usa MediaSourceId se disponível, senão usa ItemId
-      final targetId = mediaSourceId ?? itemId;
-      
-      // Adiciona api_key na URL também para garantir
-      // Correct API format: /Videos/{Id}/{MediaSourceId}/Subtitles/{Index}/Stream.{Format}
-      final url = '$_baseUrl/Videos/$itemId/$targetId/Subtitles/$streamIndex/Stream.$format?api_key=$apiKey';
-      print('📥 [JELLYFIN] Baixando legenda: $url');
-
-      final headers = {
-        'X-Emby-Authorization': getAuthorizationHeader(),
-      };
-
-      final client = HttpClient();
-      client.badCertificateCallback = (cert, host, port) => true; // Bypass SSL
-
-      final request = await client.getUrl(Uri.parse(url));
-      headers.forEach((k, v) => request.headers.add(k, v));
-      
-      final response = await request.close();
-      
-      if (response.statusCode == 200) {
-        // Usa diretório temporário seguro via plugin
-        final tempDir = await getTemporaryDirectory();
-        // Sanitizar nome do arquivo
-        final safeId = itemId.replaceAll(RegExp(r'[^\w\.-]'), '');
-        final fileName = 'clickchannel_sub_${safeId}_$streamIndex.$format';
-        final file = File('${tempDir.path}/$fileName');
-        
-        // Deleta se já existir para evitar conflito/lock
-        if (await file.exists()) {
-          try {
-            await file.delete();
-          } catch (e) {
-            print('⚠️ [JELLYFIN] Falha ao deletar arquivo antigo de legenda: $e');
-          }
-        }
-        
-        final bytes = await response.fold<List<int>>([], (buffer, chunk) => buffer..addAll(chunk));
-
-        if (bytes.isNotEmpty) {
-           String content;
-           try {
-             content = utf8.decode(bytes);
-           } catch (e) {
-             content = latin1.decode(bytes);
-           }
-
-           // CRÍTICO: Verificar conteúdo
-           if (content.trim().startsWith('<!DOCTYPE') || content.trim().startsWith('<html')) {
-              print('❌ [JELLYFIN] ERRO CRÍTICO: O arquivo baixado é HTML/Erro!');
-              return null;
-           }
-
-           final sink = file.openWrite();
-           sink.write(content);
-           await sink.flush();
-           await sink.close();
-           
-           print('✅ [JELLYFIN] Legenda salva (UTF-8): ${file.absolute.path} (${bytes.length} bytes)');
-           await Future.delayed(const Duration(milliseconds: 100));
-           return file.absolute.path;
-        } else {
-           print('⚠️ [JELLYFIN] Arquivo de legenda está VAZIO! (0 bytes)');
-           return null;
-        }
-      } else {
-        print('❌ [JELLYFIN] Erro ao baixar legenda: ${response.statusCode} - URL: $url');
-        return null;
-      }
-    } catch (e) {
-      print('❌ [JELLYFIN] Exceção download legenda: $e');
-      return null;
-    }
-  }
-
-  /// Baixa o CONTEÚDO da legenda (Texto) para uso em Data URI
-  static Future<String?> getSubtitleContent(String itemId, int streamIndex, String format, {String? mediaSourceId}) async {
-    try {
-      final apiKey = _accessToken ?? '';
-      final targetId = mediaSourceId ?? itemId;
-      final url = '$_baseUrl/Videos/$itemId/$targetId/Subtitles/$streamIndex/Stream.$format?api_key=$apiKey';
-      print('📥 [JELLYFIN] Buscando conteúdo da legenda: $url');
-
-      final client = HttpClient();
-      client.badCertificateCallback = (cert, host, port) => true; 
-
-      final request = await client.getUrl(Uri.parse(url));
-      request.headers.set('X-Emby-Authorization', getAuthorizationHeader());
-      
-      final response = await request.close();
-      
-      if (response.statusCode == 200) {
-        final bytes = await response.fold<List<int>>([], (buffer, chunk) => buffer..addAll(chunk));
-        String content;
-        try {
-          content = utf8.decode(bytes);
-        } catch (e) {
-          content = latin1.decode(bytes);
-        }
-
-        if (content.trim().startsWith('<!DOCTYPE') || content.trim().startsWith('<html')) {
-           print('❌ [JELLYFIN] Conteúdo é HTML/Erro!');
-           return null;
-        }
-        
-        print('✅ [JELLYFIN] Conteúdo da legenda baixado: ${content.length} chars');
-        return content;
-      } else {
-        print('❌ [JELLYFIN] Erro HTTP ao buscar legenda: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      print('❌ [JELLYFIN] Erro ao buscar conteúdo da legenda: $e');
-      return null;
-    }
+    
+    return '$_baseUrl/Videos/$itemId/$streamIndex/Subtitles.$format?api_key=$_accessToken';
   }
 
   // Force recompile verify
@@ -599,52 +402,16 @@ class JellyfinService {
     }
 
     try {
-      final url = '$_baseUrl/Items/$itemId/PlaybackInfo?UserId=$_userId';
-      
-      final body = jsonEncode({
-        'DeviceProfile': {'Name': 'ClickChannel', 'MaxStreamingBitrate': 120000000},
-      });
-      
-      print('🔍 [JELLYFIN] Buscando PlaybackInfo: $url');
-      
-      // CRÍTICO: Usar HttpClient com bypass SSL (mesmo padrão de downloadSubtitle)
-      final client = HttpClient();
-      client.badCertificateCallback = (cert, host, port) => true;
-      
-      final request = await client.postUrl(Uri.parse(url));
-      request.headers.set('X-MediaBrowser-Token', _accessToken!);
-      request.headers.set('Content-Type', 'application/json');
-      request.headers.set('Accept', 'application/json');
-      request.write(body);
-      
-      final response = await request.close();
-      final responseBody = await response.transform(utf8.decoder).join();
-      
-      print('🔍 [JELLYFIN] PlaybackInfo status: ${response.statusCode}');
-      
+      final response = await http.get(
+        Uri.parse('$_baseUrl/Users/$_userId/Items/$itemId?api_key=$_accessToken'),
+      );
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(responseBody);
-        
-        if (data['MediaSources'] != null) {
-           final sources = data['MediaSources'] as List;
-           print('📦 [JELLYFIN] Fontes encontradas: ${sources.length}');
-           for(var s in sources) {
-             final streams = s['MediaStreams'] as List? ?? [];
-             final subs = streams.where((st) => st['Type'] == 'Subtitle').toList();
-             final audios = streams.where((st) => st['Type'] == 'Audio').toList();
-             print('   👉 Source ${s['Name']}: ${subs.length} legendas, ${audios.length} áudios');
-           }
-        }
-        
-        client.close();
-        return data;
-      } else {
-        print('❌ [JELLYFIN] Erro PlaybackInfo: ${response.statusCode} - $responseBody');
-        client.close();
-        return null;
+        return json.decode(response.body);
       }
+      return null;
     } catch (e) {
-      print('❌ [JELLYFIN] Exceção PlaybackInfo: $e');
+      print('❌ JellyfinService: Erro ao buscar info de mídia: $e');
       return null;
     }
   }
@@ -659,118 +426,36 @@ class JellyfinService {
 
   /// Busca episódios de uma temporada
   static Future<List<ContentItem>> getEpisodes(String seriesId, String seasonId) async {
-    if (!isAuthenticated) {
-      final authenticated = await authenticate();
-      if (!authenticated) return [];
-    }
-
-    try {
-      // FIX: Usar endpoint específico /Shows/{Id}/Episodes em vez de /Items
-      // Este endpoint garante que os IDs retornados são de episódios válidos
-      final params = <String, String>{
-        'SeasonId': seasonId,
-        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources',
-      };
-
-      final uri = Uri.parse('$_baseUrl/Shows/$seriesId/Episodes').replace(queryParameters: params);
-      
-      final headers = {
-        'X-MediaBrowser-Token': _accessToken!,
-        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-      };
-
-      print('🐙 JellyfinService: Buscando episódios de $uri');
-      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final items = List<Map<String, dynamic>>.from(data['Items'] ?? []);
-        print('✅ JellyfinService: ${items.length} episódios encontrados');
-        
-        // DEBUG: Imprimir IDs dos primeiros 3 episódios da API
-        if (items.isNotEmpty) {
-          for (int i = 0; i < (items.length < 3 ? items.length : 3); i++) {
-            final item = items[i];
-            print('   📋 API Episode $i: Id=${item['Id']}, Type=${item['Type']}, Name=${item['Name']}');
-          }
-        }
-        
-        return items.map((item) => _mapJellyfinToContentItem(item)).toList();
-      } else {
-        print('❌ JellyfinService: Erro ao buscar episódios (${response.statusCode})');
-        return [];
-      }
-    } catch (e) {
-      print('❌ JellyfinService: Erro ao buscar episódios: $e');
-      return [];
-    }
+    return getItems(
+      libraryId: seasonId, // Usa o ID da temporada como pai
+      itemType: 'Episode',
+      limit: 1000,
+    );
   }
 
   /// Converte um item do Jellyfin para ContentItem
   static ContentItem _mapJellyfinToContentItem(Map<String, dynamic> jellyfinItem) {
-    var itemId = jellyfinItem['Id']?.toString() ?? '';
-    final type = jellyfinItem['Type']?.toString().toLowerCase() ?? 'movie';
+    final itemId = jellyfinItem['Id'] ?? '';
     final name = jellyfinItem['Name'] ?? 'Sem Título';
-
-    // FIX: Priorizar EpisodeId para episódios para evitar colisão com SeriesId
-    if (type == 'episode' && jellyfinItem['EpisodeId'] != null) {
-       itemId = jellyfinItem['EpisodeId'].toString();
-    } else if (itemId.isEmpty) {
-       itemId = jellyfinItem['EpisodeId']?.toString() ?? ''; // Tentativa de fallback
-    }
-    
-    // DEBUG: Verificar IDs de episódios COM MAIS DETALHES
-    if (type == 'episode') {
-      print('🔍 [Mapping] Episode: "$name"');
-      print('   └─ FINAL ID USADO: $itemId');
-      print('   └─ Raw API Id: ${jellyfinItem['Id']}');
-      print('   └─ SeasonId: ${jellyfinItem['SeasonId']}');
-      print('   └─ SeriesId: ${jellyfinItem['SeriesId']}');
-    }
-
+    final type = jellyfinItem['Type']?.toString().toLowerCase() ?? 'movie';
     final overview = jellyfinItem['Overview'] ?? '';
     final year = jellyfinItem['ProductionYear']?.toString() ?? '';
     final rating = (jellyfinItem['CommunityRating'] ?? 0.0).toDouble();
     final genres = List<String>.from(jellyfinItem['Genres'] ?? []);
     final genreStr = genres.isNotEmpty ? genres.first : '';
-    
-    
-    // Gerar URL de imagem com fallback e OTIMIZADO
+
+    // Gerar URL de imagem
     String imageUrl = '';
-    
-    if (jellyfinItem['ImageTags'] != null) {
-      final tags = jellyfinItem['ImageTags'];
-      if (tags['Primary'] != null) {
-        // Poster: Limitado a 500px de largura (bom para mobile/TV grids)
-        imageUrl = getImageUrl(itemId, tags['Primary']!, maxWidth: 500);
-      } else if (tags['Backdrop'] != null) {
-        // Backdrop: Limitado a 1280px (720p) - suficiente para backgrounds
-        imageUrl = getImageUrl(itemId, tags['Backdrop']!, imageType: 'Backdrop', maxWidth: 1280);
-      } else if (tags['Thumb'] != null) {
-        // Thumb: Limitado a 600px
-        imageUrl = getImageUrl(itemId, tags['Thumb']!, imageType: 'Thumb', maxWidth: 600);
-      }
+    if (jellyfinItem['ImageTags'] != null && jellyfinItem['ImageTags']['Primary'] != null) {
+      final imageTag = jellyfinItem['ImageTags']['Primary'];
+      imageUrl = getImageUrl(itemId, imageTag);
     }
 
     // Gerar URL de streaming
     final streamUrl = getStreamUrl(itemId);
 
     // Determinar tipo de conteúdo
-    // Fix: Video, Recording e TvProgram devem ser tratados como 'movie' (VOD)
-    // 'episode' deve ser mantido como 'episode' para não quebrar navegação de séries
-    final isVod = ['movie', 'video', 'recording', 'tvprogram'].contains(type);
-    
-    String contentType;
-    if (type == 'series') {
-      contentType = 'series';
-    } else if (type == 'episode') {
-      contentType = 'episode';
-    } else if (isVod) {
-      contentType = 'movie';
-    } else {
-      contentType = 'channel';
-    }
-
+    final contentType = type == 'series' ? 'series' : type == 'movie' ? 'movie' : 'channel';
     final isSeries = type == 'series';
 
     // Determinar qualidade baseada nos MediaSources

@@ -4,8 +4,7 @@ import '../core/config.dart';
 import '../core/prefs.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
-import '../widgets/glass_button.dart';
-import '../routes/app_routes.dart';
+import '../data/xtream_service.dart';
 
 /// Tela de configuração inicial.
 /// Se não houver playlist configurada, exibe campo para inserir URL.
@@ -19,8 +18,14 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   final TextEditingController _urlController = TextEditingController();
+  final TextEditingController _xtreamHostController = TextEditingController();
+  final TextEditingController _xtreamUserController = TextEditingController();
+  final TextEditingController _xtreamPassController = TextEditingController();
+  
   final FocusNode _urlFocusNode = FocusNode();
   final FocusNode _buttonFocusNode = FocusNode();
+  
+  int _selectedTab = 0; // 0 = URL, 1 = Xtream
   
   bool _isLoading = false;
   String _statusMessage = '';
@@ -55,6 +60,9 @@ class _SetupScreenState extends State<SetupScreen> {
     _urlFocusNode.removeListener(_onUrlFocusChange);
     _buttonFocusNode.removeListener(_onButtonFocusChange);
     _urlController.dispose();
+    _xtreamHostController.dispose();
+    _xtreamUserController.dispose();
+    _xtreamPassController.dispose();
     _urlFocusNode.dispose();
     _buttonFocusNode.dispose();
     super.dispose();
@@ -369,7 +377,67 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   void _onSubmit() {
-    _downloadPlaylist(_urlController.text);
+    if (_selectedTab == 0) {
+      _downloadPlaylist(_urlController.text);
+    } else {
+      _loginWithXtream();
+    }
+  }
+
+  Future<void> _loginWithXtream() async {
+    final host = _xtreamHostController.text.trim();
+    final username = _xtreamUserController.text.trim();
+    final password = _xtreamPassController.text.trim();
+
+    if (host.isEmpty || username.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Por favor, preencha todos os campos';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _progress = 0.0;
+      _statusMessage = 'Conectando ao servidor Xtream...';
+    });
+
+    try {
+      setState(() {
+        _progress = 0.3;
+        _statusMessage = 'Validando credenciais...';
+      });
+
+      await XtreamService.validateCredentials(
+        host: host,
+        username: username,
+        password: password,
+      );
+
+      setState(() {
+        _progress = 0.6;
+        _statusMessage = 'Login realizado! Gerando URL da playlist...';
+      });
+
+      final playlistUrl = XtreamService.generateM3uUrl(
+        host: host,
+        username: username,
+        password: password,
+      );
+
+      print('✅ Setup: URL Xtream gerada: $playlistUrl');
+
+      await _downloadPlaylist(playlistUrl);
+    } catch (e) {
+      print('❌ Setup: Erro no login Xtream: $e');
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Falha no login: $e';
+        _statusMessage = '';
+        _progress = 0.0;
+      });
+    }
   }
 
   @override
@@ -378,14 +446,38 @@ class _SetupScreenState extends State<SetupScreen> {
       backgroundColor: AppColors.backgroundDark,
       body: Stack(
         children: [
-          // Background Logo (Marca d'água)
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.05, // Bem sutil para não brigar com contraste
-              child: Image.asset(
-                'assets/images/logo.png',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox(),
+          // Background blobs (RadialGradient for performance)
+          Positioned(
+            top: -200,
+            right: -200,
+            child: Container(
+              width: 600,
+              height: 600,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primary.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -200,
+            left: -200,
+            child: Container(
+              width: 600,
+              height: 600,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primaryLight.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -472,8 +564,11 @@ class _SetupScreenState extends State<SetupScreen> {
                     // Loading com progresso
                     _buildLoadingState(),
                   ] else ...[
-                    // Campo de URL
-                    _buildUrlInput(),
+                    // Tab switcher
+                    _buildTabSwitcher(),
+                    const SizedBox(height: 24),
+                    // Campo de URL ou Xtream
+                    _selectedTab == 0 ? _buildUrlInput() : _buildXtreamForm(),
                   ],
                   
                   // Mensagem de erro
@@ -685,21 +780,6 @@ class _SetupScreenState extends State<SetupScreen> {
             ),
           ),
           
-          const SizedBox(height: 24),
-
-          // Botão Xtream Codes
-          SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: GlassButton(
-              label: 'ENTRAR COM XTREAM CODES',
-              icon: Icons.dns,
-              onPressed: () => AppRoutes.goToXtreamLogin(context),
-              backgroundColor: Colors.white.withOpacity(0.05),
-              height: 60,
-            ),
-          ),
-          
           const SizedBox(height: 32),
           // Debug Tools
           Row(
@@ -718,6 +798,170 @@ class _SetupScreenState extends State<SetupScreen> {
                  child: const Text("FORCE HOME (Bypass)", style: TextStyle(color: Colors.white24, fontSize: 10)),
                ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabSwitcher() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedTab = 0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 0
+                      ? AppColors.primary
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    'URL Direta',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: _selectedTab == 0
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedTab = 1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 1
+                      ? AppColors.primary
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    'Login Xtream',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: _selectedTab == 1
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildXtreamForm() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      child: Column(
+        children: [
+          // Host field
+          TextField(
+            controller: _xtreamHostController,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              labelText: 'URL/DNS do Servidor',
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintText: 'http://playfacil.net:80',
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+              prefixIcon: const Icon(Icons.dns, color: Colors.white54, size: 28),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Username field
+          TextField(
+            controller: _xtreamUserController,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              labelText: 'Usuário',
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintText: 'Seu usuário Xtream',
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+              prefixIcon: const Icon(Icons.person, color: Colors.white54, size: 28),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Password field
+          TextField(
+            controller: _xtreamPassController,
+            obscureText: true,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              labelText: 'Senha',
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintText: 'Sua senha Xtream',
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+              prefixIcon: const Icon(Icons.lock, color: Colors.white54, size: 28),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            onSubmitted: (_) => _onSubmit(),
+          ),
+          const SizedBox(height: 24),
+          // Login button
+          SizedBox(
+            width: double.infinity,
+            height: 70,
+            child: ElevatedButton.icon(
+              focusNode: _buttonFocusNode,
+              onPressed: _onSubmit,
+              icon: const Icon(Icons.login, size: 26),
+              label: const Text(
+                'FAZER LOGIN',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+              ),
+            ),
           ),
         ],
       ),

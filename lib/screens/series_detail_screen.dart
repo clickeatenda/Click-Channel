@@ -139,10 +139,6 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
              final seasonName = s.title;
              final episodes = await JellyfinService.getEpisodes(widget.item.id, s.id);
              seasonsMap[seasonName] = episodes;
-             print('🕵️ [DEBUG-FORCE] SeriesDetail loaded ${episodes.length} episodes for season $seasonName');
-             if (episodes.isNotEmpty) {
-                print('🕵️ [DEBUG-FORCE] First episode ID: ${episodes.first.id} | Name: ${episodes.first.title}');
-             }
           }
           
           d = SeriesDetails(seasons: seasonsMap);
@@ -344,26 +340,6 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                                onPressed: (selectedSeason != null && details != null && details!.seasons.isNotEmpty && details!.seasons[selectedSeason]!.isNotEmpty) 
                                 ? () {
                                    final firstEpisode = details!.seasons[selectedSeason]!.first;
-                                   print('🔘 [UI] "Assistir" clicked. Item: ${firstEpisode.title} (ID: ${firstEpisode.id}, Type: ${firstEpisode.type})');
-
-                                   if (firstEpisode.id == widget.item.id || firstEpisode.type == 'series') {
-                                     print('❌ [UI] CRITICAL: Item inválido detectado (ID colide com Série ou Tipo incorreto).');
-                                     showDialog(
-                                       context: context,
-                                       builder: (context) => AlertDialog(
-                                         title: const Text('Erro de Reprodução', style: TextStyle(color: Colors.red)),
-                                         content: Text('Dados inválidos detectados.\n\nTentativa de reproduzir a SÉRIE em vez do EPISÓDIO.\n\nID Episódio: ${firstEpisode.id}\nID Série: ${widget.item.id}\nTipo: ${firstEpisode.type}'),
-                                         actions: [
-                                           TextButton(
-                                             onPressed: () => Navigator.pop(context),
-                                             child: const Text('OK'),
-                                           ),
-                                         ],
-                                       ),
-                                     );
-                                     return;
-                                   }
-
                                    Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: firstEpisode.url, item: firstEpisode)));
                                  }
                                 : null,

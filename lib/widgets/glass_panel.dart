@@ -69,23 +69,29 @@ class SmallGlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: const BorderRadius.all(Radius.circular(12)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.03),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.04),
-                width: 1,
+        focusColor: Colors.white.withOpacity(0.15),
+        hoverColor: Colors.white.withOpacity(0.05),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.03),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.04),
+                  width: 1,
+                ),
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
               ),
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
+              padding: padding,
+              child: child,
             ),
-            padding: padding,
-            child: child,
           ),
         ),
       ),

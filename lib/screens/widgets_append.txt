@@ -1,0 +1,135 @@
+
+  Widget _buildTabSwitcher() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedTab = 0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 0 ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    'URL Directa',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: _selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedTab = 1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 1 ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    'Xtream Login',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: _selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildXtreamForm() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      child: Column(
+        children: [
+          TextField(
+            controller: _xtreamHostController,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              labelText: 'URL/DNS do Servidor',
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintText: 'http://playfacil.net:80',
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+              prefixIcon: const Icon(Icons.dns, color: Colors.white54, size: 28),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _xtreamUserController,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              labelText: 'Usuário',
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintText: 'Seu usuário Xtream',
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+              prefixIcon: const Icon(Icons.person, color: Colors.white54, size: 28),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _xtreamPassController,
+            obscureText: true,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              labelText: 'Senha',
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              hintText: 'Sua senha Xtream',
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+              prefixIcon: const Icon(Icons.lock, color: Colors.white54, size: 28),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            ),
+            onSubmitted: (_) => _onSubmit(),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 70,
+            child: ElevatedButton.icon(
+              focusNode: _buttonFocusNode,
+              onPressed: _onSubmit,
+              icon: const Icon(Icons.login, size: 26),
+              label: const Text('FAZER LOGIN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

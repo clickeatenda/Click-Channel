@@ -22,7 +22,6 @@ import 'package:shared_preferences/shared_preferences.dart'; // For caching
 import '../widgets/media_player_screen.dart';
 import '../widgets/adaptive_cached_image.dart';
 import '../widgets/meta_chips_widget.dart';
-import '../widgets/logo_background.dart';
 import '../data/favorites_service.dart'; // NOVO import
 import '../routes/app_routes.dart';
 
@@ -82,10 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onWillPop: _onWillPop,
       child: Scaffold(
       backgroundColor: bg,
-      body: LogoBackground(
-        opacity: 0.25,
-        blur: 8.0,
-        child: SafeArea(
+      body: SafeArea(
         child: Column(
           children: [
             // HEADER
@@ -186,7 +182,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-      ),
       ),
       ),
     );
@@ -1159,22 +1154,40 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
             ],
           ),
           const SizedBox(height: 24),
-          // Últimos Adicionados
-          if (latest.isNotEmpty) ...[
-            const _SectionTitle(title: 'Últimos Adicionados'),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 200,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: latest.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) => SizedBox(
-                  width: 120,
-                  child: _MovieThumb(item: latest[index]),
-                ),
-              ),
+          // Continuar Assistindo (Filmes)
+          if (movies.isNotEmpty)
+            FutureBuilder<List<WatchingItem>>(
+              future: WatchHistoryService.getWatchingItems(limit: 10),
+              builder: (context, snapshot) {
+                final watching = snapshot.data?.where((w) => w.item.type == 'movie').toList() ?? [];
+                if (watching.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  children: [
+                    _WatchingCarousel(items: watching, onRefresh: () => setState(() {})),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
             ),
+
+          // Minha Lista (Filmes)
+          ValueListenableBuilder<List<ContentItem>>(
+            valueListenable: FavoritesService.favoritesNotifier,
+            builder: (context, favorites, _) {
+              final movieFavs = favorites.where((f) => f.type == 'movie').toList();
+              if (movieFavs.isEmpty) return const SizedBox.shrink();
+              return Column(
+                children: [
+                   _FeaturedCarousel(items: movieFavs, title: 'Minha Lista'),
+                  const SizedBox(height: 24),
+                ],
+              );
+            },
+          ),
+
+          // Últimos Adicionados (Carousel style)
+          if (latest.isNotEmpty) ...[
+            _FeaturedCarousel(items: latest, title: 'Últimos Adicionados'),
             const SizedBox(height: 24),
           ],
 
@@ -1410,18 +1423,40 @@ class _SeriesBodyState extends State<_SeriesBody> {
           ],
         ),
         const SizedBox(height: 16),
-        if (latest.isNotEmpty) ...[
-          const _SectionTitle(title: 'Últimas séries adicionadas'),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 200,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: latest.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (_, i) => SizedBox(width: 120, child: _SeriesThumb(item: latest[i])),
-            ),
+        // Continuar Assistindo (Séries)
+        if (loading == false)
+          FutureBuilder<List<WatchingItem>>(
+            future: WatchHistoryService.getWatchingItems(limit: 10),
+            builder: (context, snapshot) {
+              final watching = snapshot.data?.where((w) => w.item.type == 'series').toList() ?? [];
+              if (watching.isEmpty) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  _WatchingCarousel(items: watching, onRefresh: () => setState(() {})),
+                  const SizedBox(height: 24),
+                ],
+              );
+            },
           ),
+
+        // Minha Lista (Séries)
+        ValueListenableBuilder<List<ContentItem>>(
+          valueListenable: FavoritesService.favoritesNotifier,
+          builder: (context, favorites, _) {
+            final seriesFavs = favorites.where((f) => f.type == 'series').toList();
+            if (seriesFavs.isEmpty) return const SizedBox.shrink();
+            return Column(
+              children: [
+                 _FeaturedCarousel(items: seriesFavs, title: 'Minha Lista'),
+                const SizedBox(height: 24),
+              ],
+            );
+          },
+        ),
+
+        if (latest.isNotEmpty) ...[
+          _FeaturedCarousel(items: latest, title: 'Últimas séries adicionadas'),
+          const SizedBox(height: 24),
         ],
         const SizedBox(height: 24),
         const Text('Categorias', style: TextStyle(color: Colors.white70, fontSize: 13)),
@@ -1732,12 +1767,12 @@ class _ChannelWithEpgCardState extends State<_ChannelWithEpgCard> {
                         if (widget.channel.image.isNotEmpty)
                           ClipRRect(
                             borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-                            child: AdaptiveCachedImage(
-                              url: widget.channel.image,
+                            child: CachedNetworkImage(
+                              imageUrl: widget.channel.image,
                               width: 80,
                               height: 130,
                               fit: BoxFit.cover,
-                              errorWidget: const Center(
+                              errorWidget: (_, __, ___) => const Center(
                                 child: Icon(Icons.live_tv, color: Colors.white38, size: 32),
                               ),
                             ),
@@ -1961,8 +1996,8 @@ class _SharkflixBodyState extends State<_SharkflixBody> {
     try {
       // Carrega dados com timeout para evitar travamento
       final results = await Future.wait([
-        JellyfinService.getFeaturedItems(count: 6).timeout(const Duration(seconds: 15)),
-        JellyfinService.getLatestItems(count: 20).timeout(const Duration(seconds: 15)),
+        JellyfinService.getFeaturedItems(count: 4).timeout(const Duration(seconds: 15)), // Reduzido de 6 para 4
+        JellyfinService.getLatestItems(count: 6).timeout(const Duration(seconds: 15)), // Reduzido de 20 para 6
         JellyfinService.getLibraries().timeout(const Duration(seconds: 10)),
       ]).timeout(
         const Duration(seconds: 30),
@@ -2099,18 +2134,43 @@ class _SharkflixBodyState extends State<_SharkflixBody> {
           _FeaturedCarousel(items: featured),
           
         const SizedBox(height: 16),
-        const _SectionTitle(title: 'Últimos adicionados'),
-        const SizedBox(height: 12),
-        if (latest.isNotEmpty)
-          SizedBox(
-            height: 250,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: latest.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 14),
-              itemBuilder: (_, i) => SizedBox(width: 150, child: _MovieThumb(item: latest[i])),
-            ),
-          )
+        
+        // Continuar Assistindo (SharkFlix - Jellyfin)
+        if (!loading)
+          FutureBuilder<List<WatchingItem>>(
+            future: WatchHistoryService.getWatchingItems(limit: 10),
+            builder: (context, snapshot) {
+              // Filtra itens que vieram do Jellyfin (SharkFlix) ou todos? 
+              // Vou mostrar todos que forem Filmes/Series para conveniência
+              final watching = snapshot.data?.where((w) => w.item.type == 'movie' || w.item.type == 'series').toList() ?? [];
+              if (watching.isEmpty) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  _WatchingCarousel(items: watching, onRefresh: () => setState(() {})),
+                  const SizedBox(height: 24),
+                ],
+              );
+            },
+          ),
+
+        // Minha Lista (SharkFlix - Jellyfin)
+        ValueListenableBuilder<List<ContentItem>>(
+          valueListenable: FavoritesService.favoritesNotifier,
+          builder: (context, favorites, _) {
+            if (favorites.isEmpty) return const SizedBox.shrink();
+            return Column(
+              children: [
+                 _FeaturedCarousel(items: favorites, title: 'Minha Lista'),
+                const SizedBox(height: 24),
+              ],
+            );
+          },
+        ),
+
+        if (latest.isNotEmpty) ...[
+          _FeaturedCarousel(items: latest, title: 'Últimos adicionados'),
+          const SizedBox(height: 12),
+        ]
         else
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
@@ -2341,33 +2401,20 @@ class _FeaturedCard extends StatelessWidget {
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
+          image: image.isNotEmpty
+              ? DecorationImage(
+                  image: NetworkImage(image),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
+                )
+              : null,
+          gradient: image.isEmpty
+              ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              : null,
           border: Border.all(color: Colors.white12),
         ),
         child: Stack(
           children: [
-            // Imagem de fundo adaptativa
-            if (image.isNotEmpty)
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AdaptiveCachedImage(
-                    url: image,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            // Gradiente e overlay
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.black.withOpacity(0.3), // Darken equivalent
-                  gradient: image.isEmpty
-                    ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-                    : null,
-                ),
-              ),
-            ),
             Positioned(
               bottom: 12,
               left: 12,
@@ -2604,7 +2651,7 @@ class _ChannelThumbState extends State<_ChannelThumb> {
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                   child: image.isNotEmpty
-                    ? AdaptiveCachedImage(url: image, fit: BoxFit.cover, errorWidget: const Icon(Icons.live_tv, color: Colors.white38, size: 28))
+                    ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.live_tv, color: Colors.white38, size: 28))
                     : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.live_tv, color: Colors.white38, size: 28))),
                 ),
               ),
@@ -2648,8 +2695,13 @@ class _MovieThumbState extends State<_MovieThumb> {
   bool _focused = false;
 
   void _handleTap() {
+    // Se for série, abre tela de sériesindependente do type ser 'movie' (comum em listas de recém adicionados)
+    if (widget.item.isSeries || widget.item.type == 'series') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: widget.item)));
+      return;
+    }
     // Filmes: abre tela de detalhes, não player direto
-    if (widget.item.type == 'movie' && !widget.item.isSeries) {
+    if (widget.item.type == 'movie') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: widget.item)));
       return;
     }
@@ -2800,10 +2852,11 @@ class _CategoryImageCardState extends State<_CategoryImageCard> {
             children: [
               if (widget.image.isNotEmpty)
                 Positioned.fill(
-                  child: AdaptiveCachedImage(
-                    url: widget.image,
+                  child: CachedNetworkImage(
+                    imageUrl: widget.image,
                     fit: BoxFit.cover,
-                    errorWidget: Container(color: const Color(0x33111B2B)),
+                    placeholder: (c,u)=>Container(color: const Color(0x33111B2B)),
+                    errorWidget: (c,u,e)=>Container(color: const Color(0x33111B2B)),
                   ),
                 ),
               Positioned.fill(child: Container(color: Colors.black.withOpacity(0.45))),
@@ -2997,10 +3050,11 @@ class _WatchingCardState extends State<_WatchingCard> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: AdaptiveCachedImage(
-                        url: item.image,
+                      child: CachedNetworkImage(
+                        imageUrl: item.image,
                         fit: BoxFit.cover,
-                        errorWidget: Container(
+                        placeholder: (c, u) => Container(color: const Color(0xFF333333)),
+                        errorWidget: (c, u, e) => Container(
                           color: const Color(0xFF333333),
                           child: const Icon(Icons.movie, color: Colors.white30, size: 40),
                         ),

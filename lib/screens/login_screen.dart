@@ -43,36 +43,38 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Stack(
           children: [
-            // Background blobs
+            // Background blobs (Otimizados: usando RadialGradient sem BackdropFilter para Fire Stick)
             Positioned(
-              top: -100,
-              right: -100,
+              top: -200,
+              right: -200,
               child: Container(
-                width: 400,
-                height: 400,
+                width: 600,
+                height: 600,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withOpacity(0.1),
-                ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-                  child: Container(),
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.15),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),
             Positioned(
-              bottom: -150,
-              left: -100,
+              bottom: -200,
+              left: -200,
               child: Container(
-                width: 450,
-                height: 450,
+                width: 600,
+                height: 600,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.indigo.withOpacity(0.1),
-                ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-                  child: Container(),
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.primaryLight.withOpacity(0.15),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -82,11 +82,71 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     }
     
-    // Enquanto carrega ou se deu erro, mostra tela preta com loading
-    return const Center(
-      child: CircularProgressIndicator(
-        color: Colors.white,
-        strokeWidth: 2,
+    // Fallback premium animado (ao invés de apenas um spinner)
+    return Container(
+      color: const Color(0xFF111318), // Deep Space Navy
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF135bec),
+                    Color(0xFF38bdf8),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF135bec).withOpacity(0.6),
+                    blurRadius: 40,
+                    spreadRadius: 10,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.play_arrow_rounded,
+                color: Colors.white,
+                size: 60,
+              ),
+            ),
+            const SizedBox(height: 30),
+            const Text(
+              'Click Channel',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -1.0,
+              ),
+            ),
+            const SizedBox(height: 40),
+            const SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(
+                color: Color(0xFF38bdf8),
+                strokeWidth: 3,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'STARTING ENGINE',
+              style: TextStyle(
+                color: Color(0xFF38bdf8),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 4.0, 
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -116,30 +116,36 @@ class CustomAppHeader extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: List.generate(
                           navItems.length,
-                          (index) => GestureDetector(
-                            onTap: () => onNavSelected(index),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: selectedNavIndex == index
-                                    ? Colors.white.withOpacity(0.1)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                navItems[index].label,
-                                style: TextStyle(
+                          (index) => Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => onNavSelected(index),
+                              borderRadius: BorderRadius.circular(16),
+                              focusColor: Colors.white.withOpacity(0.15),
+                              hoverColor: Colors.white.withOpacity(0.05),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
                                   color: selectedNavIndex == index
-                                      ? Colors.white
-                                      : Colors.white.withOpacity(0.6),
-                                  fontSize: 13,
-                                  fontWeight: selectedNavIndex == index
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
+                                      ? Colors.white.withOpacity(0.1)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  navItems[index].label,
+                                  style: TextStyle(
+                                    color: selectedNavIndex == index
+                                        ? Colors.white
+                                        : Colors.white.withOpacity(0.6),
+                                    fontSize: 13,
+                                    fontWeight: selectedNavIndex == index
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  ),
                                 ),
                               ),
                             ),
@@ -189,124 +195,139 @@ class CustomAppHeader extends StatelessWidget {
                 const SizedBox(width: 24),
               ],
               // Actions
-              GestureDetector(
-                onTap: onNotificationTap,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onNotificationTap,
+                  borderRadius: BorderRadius.circular(8),
+                  focusColor: Colors.white.withOpacity(0.15),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
-                      width: 1,
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      Center(
-                        child: Icon(
-                          Icons.notifications,
-                          color: Colors.white.withOpacity(0.7),
-                          size: 20,
-                        ),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.05),
+                        width: 1,
                       ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Icon(
+                            Icons.notifications,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 20,
                           ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: AppColors.error,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 16),
               // Settings button
-              GestureDetector(
-                onTap: onSettingsTap,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onSettingsTap,
+                  borderRadius: BorderRadius.circular(8),
+                  focusColor: Colors.white.withOpacity(0.15),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
-                      width: 1,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.05),
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  child: Icon(
-                    Icons.settings,
-                    color: Colors.white.withOpacity(0.7),
-                    size: 20,
+                    child: Icon(
+                      Icons.settings,
+                      color: Colors.white.withOpacity(0.7),
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               // Profile menu
-              GestureDetector(
-                onTap: onProfileTap,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onProfileTap,
+                  borderRadius: BorderRadius.circular(8),
+                  focusColor: Colors.white.withOpacity(0.15),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
-                      width: 1,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.05),
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (userAvatarUrl != null)
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (userAvatarUrl != null)
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.1),
+                                width: 1,
+                              ),
+                              image: DecorationImage(
+                                image: NetworkImage(userAvatarUrl!),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
                               color: Colors.white.withOpacity(0.1),
-                              width: 1,
                             ),
-                            image: DecorationImage(
-                              image: NetworkImage(userAvatarUrl!),
-                              fit: BoxFit.cover,
+                            child: const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 18,
                             ),
                           ),
-                        )
-                      else
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                            color: Colors.white.withOpacity(0.1),
+                        if (userName != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            userName!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      if (userName != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          userName!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
