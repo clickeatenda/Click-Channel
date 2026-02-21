@@ -23,6 +23,7 @@ import '../widgets/media_player_screen.dart';
 import '../widgets/adaptive_cached_image.dart';
 import '../widgets/meta_chips_widget.dart';
 import '../data/favorites_service.dart'; // NOVO import
+import '../widgets/app_sidebar.dart';
 import '../routes/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -75,109 +76,30 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     const bg = Color(0xFF111318);  // --bg-dark
-    const bg2 = Color(0xFF0F1620); // --bg-darker
 
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
       backgroundColor: bg,
       body: SafeArea(
-        child: Column(
+        child: Row(
           children: [
-            // HEADER
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: const BoxDecoration(
-                color: bg2,
-                border: Border(
-                  bottom: BorderSide(color: Color(0x334B5563)),
-                ),
-              ),
-              child: Row(
-                children: [
-                  // Logo + título
-                  GestureDetector(
-                    onTap: () => setState(() => _selectedIndex = 0),
-                    child: const Row(
-                      children: [
-                        _AppLogo(),
-                        SizedBox(width: 8),
-                        Text(
-                          'Click Channel',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 32),
-
-                  // NAV
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _NavItem(
-                            label: 'Início',
-                            selected: _selectedIndex == 0,
-                            onTap: () => setState(() => _selectedIndex = 0),
-                            autofocus: true,
-                          ),
-                          _NavItem(
-                            label: 'Filmes',
-                            selected: _selectedIndex == 1,
-                            onTap: () => setState(() => _selectedIndex = 1),
-                          ),
-                          _NavItem(
-                            label: 'Séries',
-                            selected: _selectedIndex == 2,
-                            onTap: () => setState(() => _selectedIndex = 2),
-                          ),
-                          _NavItem(
-                            label: 'Canais',
-                            selected: _selectedIndex == 3,
-                            onTap: () => setState(() => _selectedIndex = 3),
-                          ),
-                          _NavItem(
-                            label: 'SharkFlix',
-                            selected: _selectedIndex == 4,
-                            onTap: () => setState(() => _selectedIndex = 4),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 16),
-                  // Search - com Focus para Fire TV
-                  _SearchButton(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => const SearchScreen(),
-                      ));
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  const _ProfileMenu(),
-                ],
-              ),
+            // BARRA LATERAL (SIDEBAR)
+            AppSidebar(
+              selectedIndex: _selectedIndex,
+              onNavSelected: (index) {
+                setState(() => _selectedIndex = index);
+              },
             ),
 
             // CONTEÚDO POR ABA
             Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: const [
-                  _HomeBody(),
-                  MoviesLibraryBody(),
-                  SeriesLibraryBody(),
-                  LiveChannelsBody(),
-                  PremiumBody(),
-                ],
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child: _buildNavigationBody(_selectedIndex),
               ),
             ),
           ],
@@ -186,173 +108,22 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
 
-class _NavItem extends StatefulWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool autofocus;
-
-  const _NavItem({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.autofocus = false,
-  });
-
-  @override
-  State<_NavItem> createState() => _NavItemState();
-}
-
-class _NavItemState extends State<_NavItem> {
-  bool _focused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFFE11D48);
-    final active = widget.selected || _focused;
-
-    return Focus(
-      autofocus: widget.autofocus,
-      onFocusChange: (f) {
-        setState(() => _focused = f);
-        if (f) print('📍 Nav focado: ${widget.label}');
-      },
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent &&
-            (event.logicalKey == LogicalKeyboardKey.enter ||
-             event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-          print('🎯 Nav selecionado: ${widget.label}');
-          widget.onTap();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: InkWell(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          decoration: BoxDecoration(
-            color: _focused ? Colors.white.withOpacity(0.08) : Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-            border: Border(
-              bottom: BorderSide(
-                color: widget.selected ? primary : Colors.transparent,
-                width: 2,
-              ),
-            ),
-          ),
-          child: Text(
-            widget.label,
-            style: TextStyle(
-              color: active ? Colors.white : Colors.white70,
-              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Botão de busca com suporte a Focus para Fire TV
-class _SearchButton extends StatefulWidget {
-  final VoidCallback onTap;
-  const _SearchButton({required this.onTap});
-
-  @override
-  State<_SearchButton> createState() => _SearchButtonState();
-}
-
-class _SearchButtonState extends State<_SearchButton> {
-  bool _focused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      onFocusChange: (f) => setState(() => _focused = f),
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            (event.logicalKey == LogicalKeyboardKey.enter ||
-             event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-          widget.onTap();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 200,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: _focused ? Colors.white.withOpacity(0.15) : Colors.white10,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: _focused ? AppColors.primary : const Color(0x334B5563),
-              width: _focused ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.search, color: _focused ? Colors.white : Colors.white70, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Buscar filmes, séries...',
-                style: TextStyle(
-                  color: _focused ? Colors.white : Colors.white54, 
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileMenu extends StatelessWidget {
-  const _ProfileMenu();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Botão de Configurações (engrenagem)
-        IconButton(
-          icon: const Icon(Icons.settings, color: Colors.white70),
-          onPressed: () {
-            Navigator.pushNamed(context, '/settings');
-          },
-        ),
-        const SizedBox(width: 4),
-        // Botão de Perfil (pessoa)
-        GestureDetector(
-          onTap: () {
-            Navigator.pushNamed(context, '/profile');
-          },
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.white.withOpacity(0.1),
-              border: Border.all(color: Colors.white24),
-            ),
-            child: const Icon(Icons.person, color: Colors.white, size: 20),
-          ),
-        ),
-      ],
-    );
+  Widget _buildNavigationBody(int index) {
+    switch (index) {
+      case 0:
+        return const _HomeBody(key: ValueKey('tab_home'));
+      case 1:
+        return const MoviesLibraryBody(key: ValueKey('tab_movies'));
+      case 2:
+        return const SeriesLibraryBody(key: ValueKey('tab_series'));
+      case 3:
+        return const LiveChannelsBody(key: ValueKey('tab_live'));
+      case 4:
+        return const PremiumBody(key: ValueKey('tab_premium'));
+      default:
+        return const _HomeBody(key: ValueKey('tab_home_default'));
+    }
   }
 }
 
@@ -383,7 +154,10 @@ class _AppLogo extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFE11D48), Color(0xFFEC4C63)],
+                colors: [
+                  AppColors.primary, 
+                  AppColors.primaryLight,
+                ],
               ),
             ),
             child: const Icon(Icons.live_tv, color: Colors.white, size: 24),
@@ -553,7 +327,7 @@ class _TestPanelState extends State<_TestPanel> {
 
 // Home (Início)
 class _HomeBody extends StatefulWidget {
-  const _HomeBody();
+  const _HomeBody({super.key});
   @override
   State<_HomeBody> createState() => _HomeBodyState();
 }
@@ -789,12 +563,12 @@ class _HomeBodyState extends State<_HomeBody> {
           // Destaques
           if (loading) const Center(child: CircularProgressIndicator()),
           
-          // Filmes em destaque
+          // Filmes em destaque (Hero)
           if (!loading && featuredMovies.isNotEmpty) ...[
-            _FeaturedCarousel(items: featuredMovies, title: 'Filmes em destaque'),
-            const SizedBox(height: 20),
+            _HeroBanner(items: featuredMovies.take(5).toList()),
+            const SizedBox(height: 24),
           ],
-          
+
           // Séries em destaque
           if (!loading && featuredSeries.isNotEmpty) ...[
             _FeaturedCarousel(items: featuredSeries, title: 'Séries em destaque'),
@@ -1119,8 +893,7 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Destaques em carrossel
-          if (featuredList.isNotEmpty)
-            _FeaturedCarousel(items: featuredList, title: 'Filmes em destaque'),
+          if (featuredItems.isNotEmpty) _HeroBanner(items: featuredItems.take(5).toList()),
           const SizedBox(height: 24),
           // Header com título e filtros
           Row(
@@ -1397,7 +1170,7 @@ class _SeriesBodyState extends State<_SeriesBody> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (featured.isNotEmpty) _FeaturedCarousel(items: featured, title: 'Séries em destaque'),
+        if (featured.isNotEmpty) _HeroBanner(items: featured.take(5).toList()),
         const SizedBox(height: 24),
         // Header com título e filtros
         Row(
@@ -1740,16 +1513,16 @@ class _ChannelWithEpgCardState extends State<_ChannelWithEpgCard> {
               duration: const Duration(milliseconds: 150),
               width: 320,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1F2E),
+                color: const Color(0xFF161b22),
                 borderRadius: BorderRadius.circular(12),
-                border: _focused 
-                    ? Border.all(color: AppColors.primary, width: 2) 
-                    : Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(
+                    color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05),
+                    width: 1),
                 boxShadow: _focused 
-                    ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12)] 
-                    : null,
+                    ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
+                    : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
               ),
-              transform: _focused ? (Matrix4.identity()..scale(1.02)) : Matrix4.identity(),
+              transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
               transformAlignment: Alignment.center,
               child: Row(
                 children: [
@@ -2351,23 +2124,44 @@ class _FeaturedCarousel extends StatelessWidget {
 }
 
 // Card de destaque para filmes, séries e canais (com EPG opcional)
-class _FeaturedCard extends StatelessWidget {
+class _FeaturedCard extends StatefulWidget {
   final ContentItem item;
   final int index;
   final bool showEpg;
   const _FeaturedCard({Key? key, required this.item, required this.index, this.showEpg = false}) : super(key: key);
 
   @override
+  State<_FeaturedCard> createState() => _FeaturedCardState();
+}
+
+class _FeaturedCardState extends State<_FeaturedCard> {
+  bool _focused = false;
+
+  void _handleTap() {
+    if (widget.item.isSeries || widget.item.type == 'series') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: widget.item)));
+      return;
+    }
+    if (widget.item.type == 'channel') {
+      if (widget.item.url.isEmpty) return;
+      Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: widget.item.url, item: widget.item)));
+      return;
+    }
+    // Filmes: abre tela de detalhes
+    Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: widget.item)));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final title = item.title;
-    final subtitle = item.group.isNotEmpty ? item.group : 'Filme';
-    final image = item.image;
+    final title = widget.item.title;
+    final subtitle = widget.item.group.isNotEmpty ? widget.item.group : 'Filme';
+    final image = widget.item.image;
 
     EpgChannel? epg;
     EpgProgram? current;
-    if (showEpg && item.type == 'channel') {
+    if (widget.showEpg && widget.item.type == 'channel') {
       final epgMap = EpgService.getAllChannels().asMap().map((_, c) => MapEntry(c.displayName.trim().toLowerCase(), c));
-      final name = item.title.trim().toLowerCase();
+      final name = widget.item.title.trim().toLowerCase();
       epg = epgMap[name];
       if (epg == null) {
         final matches = epgMap.values.where(
@@ -2382,23 +2176,26 @@ class _FeaturedCard extends StatelessWidget {
       }
     }
 
-    return InkWell(
-      onTap: () {
-        if (item.isSeries || item.type == 'series') {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
-          return;
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _handleTap();
+          return KeyEventResult.handled;
         }
-        if (item.type == 'channel') {
-          if (item.url.isEmpty) return;
-          Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: item.url, item: item)));
-          return;
-        }
-        // Filmes: abre tela de detalhes
-        Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
+        return KeyEventResult.ignored;
       },
-      child: Container(
-        width: 280,
-        margin: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 280,
+          margin: const EdgeInsets.only(right: 12, bottom: 8),
+          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           image: image.isNotEmpty
@@ -2411,7 +2208,8 @@ class _FeaturedCard extends StatelessWidget {
           gradient: image.isEmpty
               ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
               : null,
-          border: Border.all(color: Colors.white12),
+          border: _focused ? Border.all(color: AppColors.primary, width: 3) : Border.all(color: Colors.white12),
+          boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 15, spreadRadius: 2)] : [],
         ),
         child: Stack(
           children: [
@@ -2434,23 +2232,23 @@ class _FeaturedCard extends StatelessWidget {
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   // CRÍTICO: Mostra qualidade e rating para filmes e séries
-                  if (item.type != 'channel')
+                  if (widget.item.type != 'channel')
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: MetaChipsWidget(
-                        item: item,
+                        item: widget.item,
                         fontSize: 10,
                         iconSize: 12,
                       ),
                     ),
                   // CRÍTICO: Para canais, mostra qualidade + EPG compacto
-                  if (item.type == 'channel') ...[
+                  if (widget.item.type == 'channel') ...[
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Row(
                         children: [
                           // Qualidade
-                          if (item.quality.isNotEmpty)
+                          if (widget.item.quality.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
@@ -2464,14 +2262,14 @@ class _FeaturedCard extends StatelessWidget {
                                   const Icon(Icons.high_quality, color: Colors.white70, size: 12),
                                   const SizedBox(width: 4),
                                   Text(
-                                    item.quality.toUpperCase(),
+                                    widget.item.quality.toUpperCase(),
                                     style: const TextStyle(color: Colors.white70, fontSize: 10),
                                   ),
                                 ],
                               ),
                             ),
                           // EPG compacto ao lado
-                          if (showEpg && epg != null && current != null) ...[
+                          if (widget.showEpg && epg != null && current != null) ...[
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -2506,6 +2304,7 @@ class _FeaturedCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -2547,12 +2346,16 @@ class _SeriesThumbState extends State<_SeriesThumb> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(8),
-            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
-            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+            color: const Color(0xFF161b22),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
+                width: 1),
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
+                BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+            ],
           ),
-          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transform: _focused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2560,7 +2363,7 @@ class _SeriesThumbState extends State<_SeriesThumb> {
               Expanded(
                 flex: 7,
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
                   child: image.isNotEmpty
                     ? AdaptiveCachedImage(url: image, fit: BoxFit.cover, errorWidget: const Icon(Icons.tv, color: Colors.white38, size: 28))
                     : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.tv, color: Colors.white38, size: 28))),
@@ -2636,12 +2439,16 @@ class _ChannelThumbState extends State<_ChannelThumb> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(8),
-            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
-            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+            color: const Color(0xFF161b22),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
+                width: 1),
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
+                BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+            ],
           ),
-          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transform: _focused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2649,10 +2456,10 @@ class _ChannelThumbState extends State<_ChannelThumb> {
               Expanded(
                 flex: 7,
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
                   child: image.isNotEmpty
-                    ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.live_tv, color: Colors.white38, size: 28))
-                    : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.live_tv, color: Colors.white38, size: 28))),
+                    ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.movie, color: Colors.white38, size: 28))
+                    : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.movie, color: Colors.white38, size: 28))),
                 ),
               ),
               Container(
@@ -2730,12 +2537,16 @@ class _MovieThumbState extends State<_MovieThumb> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(8),
-            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
-            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+            color: const Color(0xFF161b22),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
+                width: 1),
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
+                BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+            ],
           ),
-          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transform: _focused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2743,7 +2554,7 @@ class _MovieThumbState extends State<_MovieThumb> {
               Expanded(
                 flex: 7,
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
                   child: image.isNotEmpty
                     ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (c,u,e)=>const Icon(Icons.movie, color: Colors.white38, size: 28))
                     : Container(color: const Color(0xFF0F1620), child: const Center(child: Icon(Icons.movie, color: Colors.white38, size: 28))),
@@ -2830,23 +2641,31 @@ class _CategoryImageCardState extends State<_CategoryImageCard> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: const Duration(milliseconds: 150),
           transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: activeColor,
+            color: const Color(0xFF161b22),
             border: Border.all(
-              color: _focused ? Colors.amber : const Color(0x334B5563),
-              width: _focused ? 3 : 1,
+              color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05),
+              width: 1,
             ),
             boxShadow: _focused ? [
               BoxShadow(
-                color: Colors.amber.withOpacity(0.4),
-                blurRadius: 12,
+                color: AppColors.primary.withOpacity(0.5),
+                blurRadius: 20,
                 spreadRadius: 2,
               ),
-            ] : [],
+            ] : [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          clipBehavior: Clip.hardEdge,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Stack(
             children: [
@@ -3108,6 +2927,185 @@ class _WatchingCardState extends State<_WatchingCard> {
                     Text(
                       remaining,
                       style: const TextStyle(color: Colors.white54, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =====================
+// HERO BANNER WIDGET
+// =====================
+
+class _HeroBanner extends StatefulWidget {
+  final List<ContentItem> items;
+  const _HeroBanner({required this.items});
+
+  @override
+  State<_HeroBanner> createState() => _HeroBannerState();
+}
+
+class _HeroBannerState extends State<_HeroBanner> {
+  int _currentIndex = 0;
+  bool _focused = false;
+
+  void _handleTap() {
+    final item = widget.items[_currentIndex];
+    if (item.type == 'movie') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)));
+    } else if (item.type == 'series') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => SeriesDetailScreen(item: item)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.items.isEmpty) return const SizedBox.shrink();
+    final item = widget.items[_currentIndex];
+    final image = item.image;
+
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          _handleTap();
+          return KeyEventResult.handled;
+        }
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowRight) {
+             setState(() => _currentIndex = (_currentIndex + 1) % widget.items.length);
+             return KeyEventResult.handled;
+        }
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+             setState(() => _currentIndex = (_currentIndex - 1 + widget.items.length) % widget.items.length);
+             return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 350,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: _focused ? Border.all(color: AppColors.primary, width: 2) : Border.all(color: Colors.white.withOpacity(0.05), width: 1),
+            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
+                BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, 10))
+            ],
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Hero Image
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: image.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: image,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                      )
+                    : Container(color: const Color(0xFF161b22)),
+              ),
+              // Gradient Overlay
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      const Color(0xFF111318),
+                      const Color(0xFF111318).withOpacity(0.8),
+                      const Color(0xFF111318).withOpacity(0.1),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+              // Content
+              Positioned(
+                bottom: 24,
+                left: 32,
+                right: 32,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Badge 
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.2),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text('EM DESTAQUE', style: TextStyle(color: AppColors.primaryLight, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      item.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        if (item.rating > 0.0) ...[
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text('${item.rating} ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ],
+                        if (item.year.isNotEmpty) ...[
+                          const Text(' • ', style: TextStyle(color: Colors.white54)),
+                          Text(item.year, style: const TextStyle(color: Colors.white70)),
+                        ],
+                        const Text(' • ', style: TextStyle(color: Colors.white54)),
+                        Text(item.type == 'movie' ? 'Filme' : 'Série', style: const TextStyle(color: Colors.white70)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _handleTap,
+                          icon: const Icon(Icons.play_arrow, color: Colors.white),
+                          label: const Text('Assistir Agora', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Dots indicators
+                        Row(
+                           children: List.generate(widget.items.length, (index) => Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _currentIndex == index ? 24 : 8,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                 color: _currentIndex == index ? AppColors.primary : Colors.white24,
+                                 borderRadius: BorderRadius.circular(8)
+                              ),
+                           )),
+                        )
+                      ],
                     ),
                   ],
                 ),

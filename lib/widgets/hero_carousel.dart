@@ -29,7 +29,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
     super.initState();
     // Troca de slide a cada 5 segundos
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
-      final itemsPerPage = 3;
+      const itemsPerPage = 3;
       final totalPages = (widget.items.take(6).length / itemsPerPage).ceil();
       
       if (_currentPage < totalPages - 1) {
@@ -48,7 +48,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
   }
   
   void _goToNext() {
-    final itemsPerPage = 3;
+    const itemsPerPage = 3;
     final totalPages = (widget.items.take(6).length / itemsPerPage).ceil();
     
     if (_currentPage < totalPages - 1) {
@@ -78,7 +78,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
     // Mostrar no máximo os primeiros 6 itens (2 páginas de 3)
     final displayItems = widget.items.take(6).toList();
-    final itemsPerPage = 3;
+    const itemsPerPage = 3;
     final totalPages = (displayItems.length / itemsPerPage).ceil();
 
     return Focus(
@@ -111,8 +111,12 @@ class _HeroCarouselState extends State<HeroCarousel> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
           border: _isFocused 
-              ? Border.all(color: AppColors.primary, width: 3)
+              ? Border.all(color: AppColors.primary, width: 2)
+              : Border.all(color: Colors.transparent, width: 2),
+          boxShadow: _isFocused 
+              ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 20, spreadRadius: 2)]
               : null,
         ),
         child: SizedBox(
@@ -177,9 +181,15 @@ class _HeroCarouselState extends State<HeroCarousel> {
   }
 
   Widget _buildHeroItem(ContentItem item) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Stack(
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF161b22),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
         fit: StackFit.expand,
         children: [
           // 1. Imagem de Fundo
@@ -267,6 +277,6 @@ class _HeroCarouselState extends State<HeroCarousel> {
           ),
         ],
       ),
-    );
+    ));
   }
 }

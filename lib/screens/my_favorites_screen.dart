@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
-import '../widgets/glass_panel.dart';
-import '../widgets/custom_app_header.dart';
+import '../widgets/app_sidebar.dart';
 import '../models/content_item.dart';
 import '../widgets/optimized_gridview.dart';
 import '../data/favorites_service.dart';
@@ -41,20 +41,6 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
     }
   }
 
-  final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Início'),
-    HeaderNav(label: 'Filmes'),
-    HeaderNav(label: 'Séries'),
-    HeaderNav(label: 'Canais'),
-    HeaderNav(label: 'SharkFlix'),
-  ];
-
-  void _navigateByIndex(int index) {
-    if (index >= 0 && index <= 4) {
-      Navigator.pushNamed(context, '/home', arguments: index);
-    }
-  }
-
   List<ContentItem> get _filteredFavorites {
     if (_filter == 'Todos') return _favorites;
     if (_filter == 'Filmes') return _favorites.where((i) => !i.isSeries).toList();
@@ -66,23 +52,9 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      body: Column(
+      body: Row(
         children: [
-          CustomAppHeader(
-            title: 'Click Channel',
-            navItems: _navItems,
-            selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) => _navigateByIndex(index),
-            userAvatarUrl: 'https://via.placeholder.com/32x32?text=User',
-            userName: 'Usuário',
-            onNotificationTap: () {},
-            onProfileTap: () {
-              Navigator.pushNamed(context, '/profile');
-            },
-            onSettingsTap: () {
-              Navigator.pushNamed(context, '/settings');
-            },
-          ),
+          const AppSidebar(selectedIndex: -1),
           Expanded(
             child: _isLoading 
             ? const Center(child: CircularProgressIndicator())
@@ -114,18 +86,30 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          _buildFilterChip('Todos'),
-                          _buildFilterChip('Filmes'),
-                          _buildFilterChip('Séries'),
+                          _FavoritesFilterChip(
+                            label: 'Todos',
+                            selected: _filter == 'Todos',
+                            onTap: () => setState(() => _filter = 'Todos'),
+                          ),
+                          _FavoritesFilterChip(
+                            label: 'Filmes',
+                            selected: _filter == 'Filmes',
+                            onTap: () => setState(() => _filter = 'Filmes'),
+                          ),
+                          _FavoritesFilterChip(
+                            label: 'Séries',
+                            selected: _filter == 'Séries',
+                            onTap: () => setState(() => _filter = 'Séries'),
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 32),
                     
                     if (_filteredFavorites.isEmpty)
-                       Center(
+                       const Center(
                           child: Padding(
-                            padding: const EdgeInsets.all(48.0),
+                            padding: EdgeInsets.all(48.0),
                             child: Column(
                               children: [
                                 Icon(Icons.favorite_border, size: 60, color: Colors.white24),
@@ -159,29 +143,6 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label) {
-    final isSelected = _filter == label;
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: GestureDetector(
-        onTap: () => setState(() => _filter = label),
-        child: GlassPanel(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          borderRadius: BorderRadius.circular(20),
-          backgroundColor: isSelected ? AppColors.primary.withOpacity(0.5) : null,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _handleFavoriteTap(ContentItem item) {
     if (item.isSeries) {
          Navigator.push(
@@ -194,5 +155,67 @@ class _MyFavoritesScreenState extends State<MyFavoritesScreen> {
           MaterialPageRoute(builder: (_) => MovieDetailScreen(item: item)),
         ).then((_) => _loadFavorites()); // Recarrega ao voltar
     }
+  }
+}
+
+class _FavoritesFilterChip extends StatefulWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FavoritesFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  State<_FavoritesFilterChip> createState() => _FavoritesFilterChipState();
+}
+
+class _FavoritesFilterChipState extends State<_FavoritesFilterChip> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Focus(
+        onFocusChange: (f) => setState(() => _focused = f),
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
+              (event.logicalKey == LogicalKeyboardKey.enter ||
+               event.logicalKey == LogicalKeyboardKey.select ||
+               event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+            widget.onTap();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: widget.selected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _focused ? Colors.white : (widget.selected ? AppColors.primary.withOpacity(0.5) : Colors.transparent),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: widget.selected ? AppColors.primary : Colors.white70,
+                fontSize: 13,
+                fontWeight: widget.selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

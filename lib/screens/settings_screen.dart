@@ -10,7 +10,7 @@ import '../data/epg_service.dart';
 import '../data/tmdb_service.dart';
 import '../data/jellyfin_service.dart';
 import '../widgets/glass_panel.dart';
-import '../widgets/custom_app_header.dart';
+import '../widgets/app_sidebar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -89,9 +89,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user = _jfUserController.text.trim();
     final pass = _jfPassController.text.trim();
     
+    if (!context.mounted) return;
     if (url.isEmpty) {
       await JellyfinService.clearConfig();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração Jellyfin removida')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração Jellyfin removida')));
       return;
     }
 
@@ -105,54 +106,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _jfUrlController.text = url; // Atualiza UI
 
     await JellyfinService.saveConfig(url: url, username: user, password: pass);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração Jellyfin salva!')));
-    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Configuração Jellyfin salva!')));
   }
 
   Future<void> _testJellyfinConfig() async {
     // Salva temporariamente para testar (já com a URL normalizada pelo _saveJellyfinConfig)
     await _saveJellyfinConfig();
     
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⏳ Testando conexão...')));
-    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⏳ Testando conexão...')));
 
     try {
       // Tenta conectar
       final connected = await JellyfinService.testConnection();
+      if (!context.mounted) return;
       if (!connected) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('❌ Falha ao conectar. Verifique URL e se o servidor está online.'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
-          ));
-        }
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('❌ Falha ao conectar. Verifique URL e se o servidor está online.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 4),
+        ));
         return;
       }
 
       // Tenta autenticar
       final auth = await JellyfinService.authenticate();
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(auth ? '✅ Conexão e Login OK!' : '⚠️ Servidor achado, mas senha incorreta.'),
-            backgroundColor: auth ? Colors.green : Colors.orange,
-            duration: const Duration(seconds: 3),
-          )
-        );
-      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth ? '✅ Conexão e Login OK!' : '⚠️ Servidor achado, mas senha incorreta.'),
+          backgroundColor: auth ? Colors.green : Colors.orange,
+          duration: const Duration(seconds: 3),
+        )
+      );
     } catch (e) {
-      if (mounted) {
-         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-           content: Text('❌ Erro: $e'),
-           backgroundColor: Colors.red,
-         )); 
-      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('❌ Erro: $e'),
+        backgroundColor: Colors.red,
+      )); 
     }
   }
 
@@ -162,24 +158,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await Prefs.setTmdbApiKey(key.isEmpty ? null : key);
       // Re-init service so it picks up runtime key
       TmdbService.init();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chave TMDB salva')),
-        );
-      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chave TMDB salva')),
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar chave TMDB: $e')),
-        );
-      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar chave TMDB: $e')),
+      );
     }
   }
 
   Future<void> _testTmdbKey() async {
     final key = _tmdbController.text.trim();
     if (key.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insira a chave TMDB antes de testar')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insira a chave TMDB antes de testar')));
       return;
     }
     try {
@@ -188,13 +182,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Force reload
       TmdbService.init();
       final ok = await TmdbService.testApiKeyNow();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ok ? '✅ Chave TMDB válida' : '❌ Chave inválida ou erro (veja logs)')),
-        );
-      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ok ? '✅ Chave TMDB válida' : '❌ Chave inválida ou erro (veja logs)')),
+      );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao testar chave: $e')));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao testar chave: $e')));
     }
   }
 
@@ -406,42 +400,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
   }
-  final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Início'),
-    HeaderNav(label: 'Filmes'),
-    HeaderNav(label: 'Séries'),
-    HeaderNav(label: 'Canais'),
-    HeaderNav(label: 'SharkFlix'),
-  ];
-
-  void _navigateByIndex(int index) {
-    // Mapeia para abas da Home
-    if (index >= 0 && index <= 4) {
-      Navigator.pushNamed(context, '/home', arguments: index);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      body: Column(
+      body: Row(
         children: [
-          CustomAppHeader(
-            title: 'Click Channel',
-            navItems: _navItems,
-            selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) => _navigateByIndex(index),
-            showSearch: false,
-            onNotificationTap: () {},
-            onProfileTap: () {
-              Navigator.pushNamed(context, '/profile');
-            },
-            onSettingsTap: () {
-              // Já estamos em Settings, fechar ou fazer nada
-              print('🔧 Já em Settings');
-            },
-          ),
+          const AppSidebar(selectedIndex: 10),
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
@@ -486,11 +451,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
                               decoration: BoxDecoration(
+                                color: const Color(0xFF161b22),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: _tmdbHasFocus ? AppColors.primary : Colors.transparent,
-                                  width: 3,
+                                  color: _tmdbHasFocus ? AppColors.primary : Colors.white.withOpacity(0.05),
+                                  width: 1,
                                 ),
+                                boxShadow: _tmdbHasFocus ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.5),
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
+                                  ),
+                                ] : [],
                               ),
                               child: RawKeyboardListener(
                                 focusNode: FocusNode(),
@@ -544,7 +517,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     _tmdbController.text = '';
                                     await Prefs.setTmdbApiKey(null);
                                     TmdbService.init();
-                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chave TMDB removida')));
+                                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chave TMDB removida')));
                                   },
                                   child: const Text('Limpar'),
                                 ),
@@ -588,15 +561,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
                               decoration: BoxDecoration(
+                                color: const Color(0xFF161b22),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: _urlHasFocus ? AppColors.primary : Colors.transparent,
-                                  width: 3,
+                                  color: _urlHasFocus ? AppColors.primary : Colors.white.withOpacity(0.05),
+                                  width: 1,
                                 ),
                                 boxShadow: _urlHasFocus ? [
                                   BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.4),
-                                    blurRadius: 12,
+                                    color: AppColors.primary.withOpacity(0.5),
+                                    blurRadius: 20,
                                     spreadRadius: 2,
                                   ),
                                 ] : [],
@@ -650,7 +624,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           ],
                                         ),
                                       );
-                                      if (confirm == true && mounted) {
+                                      if (confirm == true && context.mounted) {
                                         // Reset
                                         await Prefs.setPlaylistOverride(null);
                                         await Prefs.setPlaylistReady(false);
@@ -661,7 +635,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         Config.setPlaylistOverride(null);
                                         // Recreate install marker to leave the app in a clean configured state
                                         await M3uService.writeInstallMarker();
-                                        if (mounted) {
+                                        if (context.mounted) {
                                           messenger.showSnackBar(const SnackBar(content: Text('Reset realizado: playlist e cache limpos')));
                                           // Restart initialization to ensure UI reflects cleared state
                                           Navigator.pushReplacementNamed(context, '/splash', arguments: {'nextRoute': '/settings'});
@@ -700,12 +674,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _buttonHasFocus ? Colors.white : Colors.transparent,
-                                    width: 3,
+                                    width: 1,
                                   ),
                                   boxShadow: _buttonHasFocus ? [
                                     BoxShadow(
                                       color: AppColors.primary.withOpacity(0.6),
-                                      blurRadius: 16,
+                                      blurRadius: 20,
                                       spreadRadius: 2,
                                     ),
                                   ] : [],
@@ -771,11 +745,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 150),
                                   decoration: BoxDecoration(
+                                    color: const Color(0xFF161b22),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: _jfUrlFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
-                                      width: 3
+                                      color: _jfUrlFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
+                                      width: 1
                                     ),
+                                    boxShadow: _jfUrlFocusNode.hasFocus ? [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.5),
+                                        blurRadius: 20,
+                                        spreadRadius: 2,
+                                      ),
+                                    ] : [],
                                   ),
                                   child: RawKeyboardListener(
                                     focusNode: FocusNode(), // Dummy node for listener
@@ -813,11 +795,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 150),
                                   decoration: BoxDecoration(
+                                    color: const Color(0xFF161b22),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: _jfUserFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
-                                      width: 3
+                                      color: _jfUserFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
+                                      width: 1
                                     ),
+                                    boxShadow: _jfUserFocusNode.hasFocus ? [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.5),
+                                        blurRadius: 20,
+                                        spreadRadius: 2,
+                                      ),
+                                    ] : [],
                                   ),
                                   child: RawKeyboardListener(
                                     focusNode: FocusNode(),
@@ -852,11 +842,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 150),
                                   decoration: BoxDecoration(
+                                    color: const Color(0xFF161b22),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: _jfPassFocusNode.hasFocus ? AppColors.primary : Colors.transparent, 
-                                      width: 3
+                                      color: _jfPassFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
+                                      width: 1
                                     ),
+                                    boxShadow: _jfPassFocusNode.hasFocus ? [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.5),
+                                        blurRadius: 20,
+                                        spreadRadius: 2,
+                                      ),
+                                    ] : [],
                                   ),
                                   child: RawKeyboardListener(
                                     focusNode: FocusNode(),

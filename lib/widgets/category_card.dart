@@ -60,11 +60,12 @@ class _CategoryCardState extends State<CategoryCard> {
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          transform: _isFocused ? Matrix4.identity().scaled(1.05) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          transform: _isFocused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
           decoration: BoxDecoration(
             color: _isFocused ? AppColors.primary : _getDynamicColor(widget.name).withOpacity(0.4),
             borderRadius: BorderRadius.circular(12),
-            border: _isFocused ? Border.all(color: Colors.white, width: 2) : Border.all(color: Colors.white10),
+            border: _isFocused ? Border.all(color: AppColors.primary, width: 3) : Border.all(color: Colors.white10),
             boxShadow: _isFocused 
                 ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 15)] 
                 : [],

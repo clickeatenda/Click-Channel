@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/glass_button.dart';
-import '../widgets/custom_app_header.dart';
+import '../widgets/app_sidebar.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -12,49 +12,13 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  int _selectedNavIndex = -1; // fora da Home
-
-  final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Início'),
-    HeaderNav(label: 'Filmes'),
-    HeaderNav(label: 'Séries'),
-    HeaderNav(label: 'Canais'),
-    HeaderNav(label: 'SharkFlix'),
-  ];
-
-  void _navigateByIndex(int index) {
-    if (index >= 0 && index <= 4) {
-      Navigator.pushNamed(context, '/home', arguments: index);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      body: Column(
+      body: Row(
         children: [
-          CustomAppHeader(
-            title: 'Click Channel',
-            navItems: _navItems,
-            selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) => _navigateByIndex(index),
-            showSearch: false,
-            onNotificationTap: () {},
-            onProfileTap: () {
-              // Abrir Configurações ao tocar na imagem de perfil
-              print('👤 Perfil: abrindo Configurações...');
-              Navigator.pushNamed(context, '/settings').then((_) {
-                print('✅ Voltou de Settings (via perfil)');
-              });
-            },
-            onSettingsTap: () {
-              print('🔧 Navegando para Settings...');
-              Navigator.pushNamed(context, '/settings').then((_) {
-                print('✅ Voltou de Settings');
-              });
-            },
-          ),
+          const AppSidebar(selectedIndex: 11),
           Expanded(
             child: SingleChildScrollView(
               child: Padding(

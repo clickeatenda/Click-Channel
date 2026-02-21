@@ -1238,20 +1238,11 @@ class M3uService {
       // Padrão 5: "Nome - Episódio 01" ou "Nome - Ep 01"
       var animeMatch = RegExp(r'[-–]\s*(?:episódio|episodio|episode|ep\.?)\s*(\d{1,4})', caseSensitive: false).firstMatch(t);
       
-      if (animeMatch == null) {
-        // Padrão 6: "Nome - 01" (hífen seguido de número)
-        animeMatch = RegExp(r'[-–]\s*(\d{1,4})\s*(?:$|[\[\(]|\bdub|\bleg|\bfhd|\bhd|\b4k)').firstMatch(t);
-      }
+      animeMatch ??= RegExp(r'[-–]\s*(\d{1,4})\s*(?:$|[\[\(]|\bdub|\bleg|\bfhd|\bhd|\b4k)').firstMatch(t);
       
-      if (animeMatch == null) {
-        // Padrão 7: "Nome E01" ou "Nome Ep01" (sem espaço)
-        animeMatch = RegExp(r'\be(?:p\.?)?\s*(\d{1,4})\b', caseSensitive: false).firstMatch(t);
-      }
+      animeMatch ??= RegExp(r'\be(?:p\.?)?\s*(\d{1,4})\b', caseSensitive: false).firstMatch(t);
       
-      if (animeMatch == null) {
-        // Padrão 8: Número solto no final (ex: "Naruto 143", "One Piece 1089")
-        animeMatch = RegExp(r'\s(\d{1,4})\s*$').firstMatch(t);
-      }
+      animeMatch ??= RegExp(r'\s(\d{1,4})\s*$').firstMatch(t);
       
       if (animeMatch != null) {
         // Animes geralmente não têm temporadas explícitas - usamos temporada 1
@@ -1730,7 +1721,7 @@ class M3uService {
     // Verifica cache de agregação primeiro
     final cacheKey = '${source}_$category';
     if (_seriesAggregationCache.containsKey(cacheKey)) {
-      print('✅ fetchSeriesAggregatedForCategory: Usando cache para \"$category\"');
+      print('✅ fetchSeriesAggregatedForCategory: Usando cache para "${category}"');
       return _seriesAggregationCache[cacheKey]!;
     }
     

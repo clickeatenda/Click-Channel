@@ -86,7 +86,8 @@ class _ContentCardState extends State<ContentCard> {
                   ]
                 : null,
           ),
-          transform: _isFocused ? Matrix4.translationValues(0, -4, 0) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          transform: _isFocused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
           child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

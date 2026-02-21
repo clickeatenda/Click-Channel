@@ -6,6 +6,7 @@ import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 import '../data/m3u_service.dart';
 import '../widgets/media_player_screen.dart';
+import '../widgets/app_sidebar.dart';
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
 
@@ -130,180 +131,185 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header com busca
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F1620),
-                border: Border(bottom: BorderSide(color: Color(0x334B5563))),
-              ),
-              child: Column(
-                children: [
-                  Row(
+      backgroundColor: AppColors.backgroundDark,
+      body: Row(
+        children: [
+          const AppSidebar(selectedIndex: -1),
+          Expanded(
+            child: Column(
+              children: [
+                // Header com busca
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0F1620),
+                    border: Border(bottom: BorderSide(color: Color(0x334B5563))),
+                  ),
+                  child: Column(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                        autofocus: false,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _searchFocus,
-                          autofocus: true,
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
-                          decoration: InputDecoration(
-                            hintText: 'Buscar filmes, séries, canais...',
-                            hintStyle: const TextStyle(color: Colors.white54),
-                            filled: true,
-                            fillColor: Colors.white10,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                            suffixIcon: _searchController.text.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear, color: Colors.white54),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      _onSearchChanged('');
-                                    },
-                                  )
-                                : null,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                            autofocus: false,
                           ),
-                          onChanged: _onSearchChanged,
-                          onSubmitted: (val) {
-                            if (_debounce?.isActive ?? false) _debounce!.cancel();
-                            _performSearch(val);
-                          },
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              focusNode: _searchFocus,
+                              autofocus: true,
+                              style: const TextStyle(color: Colors.white, fontSize: 16),
+                              decoration: InputDecoration(
+                                hintText: 'Buscar filmes, séries, canais...',
+                                hintStyle: const TextStyle(color: Colors.white54),
+                                filled: true,
+                                fillColor: Colors.white10,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear, color: Colors.white54),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _onSearchChanged('');
+                                        },
+                                      )
+                                    : null,
+                              ),
+                              onChanged: _onSearchChanged,
+                              onSubmitted: (val) {
+                                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                                _performSearch(val);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Filtros
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _FilterChip(
+                              label: 'Todos',
+                              selected: _typeFilter == 'all',
+                              onTap: () {
+                                setState(() => _typeFilter = 'all');
+                                _updateFilters();
+                              },
+                            ),
+                            _FilterChip(
+                              label: 'Filmes',
+                              selected: _typeFilter == 'movie',
+                              onTap: () {
+                                setState(() => _typeFilter = 'movie');
+                                _updateFilters();
+                              },
+                            ),
+                            _FilterChip(
+                              label: 'Séries',
+                              selected: _typeFilter == 'series',
+                              onTap: () {
+                                setState(() => _typeFilter = 'series');
+                                _updateFilters();
+                              },
+                            ),
+                            _FilterChip(
+                              label: 'Canais',
+                              selected: _typeFilter == 'channel',
+                              onTap: () {
+                                setState(() => _typeFilter = 'channel');
+                                _updateFilters();
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  // Filtros
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _FilterChip(
-                          label: 'Todos',
-                          selected: _typeFilter == 'all',
-                          onTap: () {
-                            setState(() => _typeFilter = 'all');
-                            _updateFilters();
-                          },
-                        ),
-                        _FilterChip(
-                          label: 'Filmes',
-                          selected: _typeFilter == 'movie',
-                          onTap: () {
-                            setState(() => _typeFilter = 'movie');
-                            _updateFilters();
-                          },
-                        ),
-                        _FilterChip(
-                          label: 'Séries',
-                          selected: _typeFilter == 'series',
-                          onTap: () {
-                            setState(() => _typeFilter = 'series');
-                            _updateFilters();
-                          },
-                        ),
-                        _FilterChip(
-                          label: 'Canais',
-                          selected: _typeFilter == 'channel',
-                          onTap: () {
-                            setState(() => _typeFilter = 'channel');
-                            _updateFilters();
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Resultados
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _results.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _lastQuery.isEmpty ? Icons.search : Icons.search_off,
-                                color: Colors.white30,
-                                size: 64,
+                ),
+                
+                // Resultados
+                Expanded(
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                      : _results.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _lastQuery.isEmpty ? Icons.search : Icons.search_off,
+                                    color: Colors.white30,
+                                    size: 64,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    _lastQuery.isEmpty
+                                        ? 'Digite para buscar'
+                                        : 'Nenhum resultado para "$_lastQuery"',
+                                    style: const TextStyle(color: Colors.white54, fontSize: 16),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _lastQuery.isEmpty
-                                    ? 'Digite para buscar'
-                                    : 'Nenhum resultado para "$_lastQuery"',
-                                style: const TextStyle(color: Colors.white54, fontSize: 16),
-                              ),
-                            ],
-                          ),
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Text(
-                                '${_results.length} resultados encontrados',
-                                style: const TextStyle(color: Colors.white70, fontSize: 14),
-                              ),
-                            ),
-                            Expanded(
-                              child: GridView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 6,
-                                  childAspectRatio: 0.55,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Text(
+                                    '${_results.length} resultados encontrados',
+                                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                  ),
                                 ),
-                                itemCount: _results.length,
-                                itemBuilder: (context, index) {
-                                  final item = _results[index];
-                                  return _SearchResultCard(
-                                    item: item,
-                                    onTap: () {
-                                      if (item.isSeries) {
-                                        Navigator.push(context, MaterialPageRoute(
-                                          builder: (_) => SeriesDetailScreen(item: item),
-                                        ));
-                                      } else if (item.type == 'movie') {
-                                        // CRÍTICO: Rota correta para filmes
-                                        Navigator.push(context, MaterialPageRoute(
-                                          builder: (_) => MovieDetailScreen(item: item),
-                                        ));
-                                      } else {
-                                        Navigator.push(context, MaterialPageRoute(
-                                          builder: (_) => MediaPlayerScreen(url: item.url, item: item),
-                                        ));
-                                      }
+                                Expanded(
+                                  child: GridView.builder(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 6,
+                                      childAspectRatio: 0.55,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                    ),
+                                    itemCount: _results.length,
+                                    itemBuilder: (context, index) {
+                                      final item = _results[index];
+                                      return _SearchResultCard(
+                                        item: item,
+                                        onTap: () {
+                                          if (item.isSeries) {
+                                            Navigator.push(context, MaterialPageRoute(
+                                              builder: (_) => SeriesDetailScreen(item: item),
+                                            ));
+                                          } else if (item.type == 'movie') {
+                                            // CRÍTICO: Rota correta para filmes
+                                            Navigator.push(context, MaterialPageRoute(
+                                              builder: (_) => MovieDetailScreen(item: item),
+                                            ));
+                                          } else {
+                                            Navigator.push(context, MaterialPageRoute(
+                                              builder: (_) => MediaPlayerScreen(url: item.url, item: item),
+                                            ));
+                                          }
+                                        },
+                                      );
                                     },
-                                  );
-                                },
-                              ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -349,17 +355,17 @@ class _FilterChipState extends State<_FilterChip> {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: widget.selected ? AppColors.primary : Colors.white10,
-              borderRadius: BorderRadius.circular(20),
+              color: widget.selected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: _focused ? Colors.white : (widget.selected ? AppColors.primary : Colors.white24),
-                width: _focused ? 2 : 1,
+                color: _focused ? Colors.white : (widget.selected ? AppColors.primary.withOpacity(0.5) : Colors.transparent),
+                width: 1,
               ),
             ),
             child: Text(
               widget.label,
               style: TextStyle(
-                color: widget.selected ? Colors.white : Colors.white70,
+                color: widget.selected ? AppColors.primary : Colors.white70,
                 fontSize: 13,
                 fontWeight: widget.selected ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -403,27 +409,33 @@ class _SearchResultCardState extends State<_SearchResultCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: _focused ? Border.all(color: AppColors.primary, width: 2) : null,
-            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12)] : null,
+            color: const Color(0xFF161b22),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05),
+                width: 1),
+            boxShadow: _focused 
+                ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
+                : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
           ),
-          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transform: _focused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
+                flex: 7,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
                       child: CachedNetworkImage(
                         imageUrl: widget.item.image,
                         fit: BoxFit.cover,
-                        placeholder: (c, u) => Container(color: const Color(0xFF333333)),
+                        placeholder: (c, u) => Container(color: const Color(0xFF0F1620)),
                         errorWidget: (c, u, e) => Container(
-                          color: const Color(0xFF333333),
+                          color: const Color(0xFF0F1620),
                           child: Icon(
                             widget.item.type == 'channel' ? Icons.live_tv : Icons.movie,
                             color: Colors.white30,
@@ -460,7 +472,7 @@ class _SearchResultCardState extends State<_SearchResultCard> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.black87,
+                            color: Colors.black87.withOpacity(0.7),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -472,20 +484,32 @@ class _SearchResultCardState extends State<_SearchResultCard> {
                   ],
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                widget.item.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
-              ),
-              if (widget.item.group.isNotEmpty)
-                Text(
-                  widget.item.group,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white54, fontSize: 9),
+              Expanded(
+                flex: 3,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.item.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                      ),
+                      if (widget.item.group.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.item.group,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white54, fontSize: 9),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
+              ),
             ],
           ),
         ),

@@ -238,7 +238,7 @@ class _LazyTmdbLoaderState extends State<LazyTmdbLoader> {
       
       if (metadata != null && mounted) {
         final enriched = widget.item.enrichWithTmdb(
-          rating: metadata!.rating,
+          rating: metadata.rating,
           description: metadata.overview,
           genre: metadata.genres.join(', '),
           image: metadata.posterUrl,

@@ -201,24 +201,21 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
           setState(() => _isFocused = focused);
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          transform: _isFocused ? Matrix4.identity().scaled(1.03) : Matrix4.identity(),
+          duration: const Duration(milliseconds: 150),
+          transform: _isFocused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: _isFocused
-                ? Border.all(color: Colors.amber, width: 2)
-                : null,
-            boxShadow: _isFocused
-                ? [
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.4),
-                      blurRadius: 8,
-                    ),
-                  ]
-                : null,
+            color: const Color(0xFF161b22),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: _isFocused ? const Color(0xFF007BFF) : Colors.white.withOpacity(0.05),
+                width: 1),
+            boxShadow: _isFocused 
+                ? [BoxShadow(color: const Color(0xFF007BFF).withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
+                : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(11), bottom: Radius.circular(11)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -258,8 +255,8 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                 ),
                 // Área de informações - sempre visível
                 Container(
-                  color: const Color(0xFF1A1A1A),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                  color: Colors.transparent, // Background was set on the container already
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -297,7 +294,7 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                                 '▶ ${current.title}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.w600),
+                                style: const TextStyle(color: Color(0xFF007BFF), fontSize: 8, fontWeight: FontWeight.w600),
                               );
                             } else {
                               return const SizedBox.shrink();

@@ -12,6 +12,7 @@ import '../utils/content_enricher.dart';
 
 import '../data/favorites_service.dart'; // NOVO import
 import '../data/jellyfin_service.dart';
+import 'dart:ui';
 
 import 'season_details_screen.dart';
 
@@ -248,11 +249,36 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
       backgroundColor: Colors.black, // Fundo preto puro para performance
       body: Stack(
         children: [
-          // Background estático OTIMIZADO (sem CachedNetworkImage pesado em background)
-          // Background Image REMOVIDA para performance extrema no Firestick
-          // Apenas fundo preto (definido no Scaffold backgroundColor)
-
-          
+          // Background Hero (edge-to-edge na parte superior)
+          if (_displayItem.image.isNotEmpty)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.of(context).size.height * 0.75,
+              child: CachedNetworkImage(
+                imageUrl: _displayItem.image,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+              ),
+            ),
+          // Gradiente Escuro (Fade do backdrop para o conteúdo sólido)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.background.withOpacity(0.1),
+                    AppColors.background.withOpacity(0.7),
+                    AppColors.background,
+                  ],
+                  stops: const [0.0, 0.45, 0.8],
+                ),
+              ),
+            ),
+          ),
           // Conteúdo
           SafeArea(
             child: SingleChildScrollView(
@@ -290,13 +316,17 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                             ),
                          ),
                          const SizedBox(height: 16),
-                         // Info Panel simplificado
-                         Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white10,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                         // Info Panel Glassmorphism
+                         ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                                ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -307,7 +337,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                                 ]
                               ],
                             ),
-                         ),
+                          ),
+                        ),
+                     ),
                        ],
                      ),
                    ),
@@ -373,14 +405,14 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                               itemBuilder: (ctx, i) {
                                 final season = sortedSeasons[i];
                                 return _SeasonChip(
-                                  label: '$season',
+                                  label: season,
                                   isActive: season == selectedSeason,
                                   onPressed: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => SeasonDetailsScreen(
-                                          seasonName: '$season',
+                                          seasonName: season,
                                           episodes: details!.seasons[season]!,
                                           seriesTitle: widget.item.title,
                                           posterUrl: widget.item.image,
@@ -393,9 +425,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                             ),
                           ),
                           
-                          Center(
+                          const Center(
                             child: Padding(
-                              padding: const EdgeInsets.only(top: 20, bottom: 20),
+                              padding: EdgeInsets.only(top: 20, bottom: 20),
                               child: Text(
                                 'Clique na temporada acima para ver os episódios',
                                 style: TextStyle(color: Colors.white54, fontStyle: FontStyle.italic),
@@ -407,7 +439,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                              Builder(
                                builder: (context) {
                                  final episodes = details!.seasons[selectedSeason]!;
-                                 final limit = 20; 
+                                 const limit = 20; 
                                  final displayedEpisodes = episodes.take(limit).toList();
                                  return Column(
                                    children: [
@@ -576,12 +608,12 @@ class _EpisodeItemState extends State<_EpisodeItem> {
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
             color: _isFocused 
-                ? AppColors.primary.withOpacity(0.3) 
-                : Colors.grey[900]!.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(8),
+                ? const Color(0xFF1F2937) 
+                : const Color(0xFF161b22),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _isFocused ? AppColors.primary : Colors.white10,
-              width: _isFocused ? 2 : 1,
+              color: _isFocused ? AppColors.primary : Colors.white.withOpacity(0.05),
+              width: 1,
             ),
             boxShadow: _isFocused ? [
               BoxShadow(
@@ -670,43 +702,60 @@ class _SimilarSeriesCardState extends State<_SimilarSeriesCard> {
       child: GestureDetector(
         onTap: _open,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 150),
           width: 140,
+          transform: _isFocused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFF161b22),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _isFocused ? AppColors.primary : Colors.transparent,
-              width: 2,
+              color: _isFocused ? AppColors.primary : Colors.white.withOpacity(0.05),
+              width: 1,
             ),
+            boxShadow: _isFocused 
+                ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
+                : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
+                flex: 7,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
                   child: CachedNetworkImage(
                     imageUrl: widget.item.image,
                     fit: BoxFit.cover,
                     width: double.infinity,
                     memCacheWidth: 140, // Otimização de memória
-                    placeholder: (_, __) => Container(color: Colors.white12),
+                    placeholder: (_, __) => Container(color: const Color(0xFF0F1620)),
                     errorWidget: (_, __, ___) => Container(
-                      color: Colors.white10,
+                      color: const Color(0xFF0F1620),
                       child: const Icon(Icons.movie, color: Colors.white30),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                widget.item.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: _isFocused ? Colors.white : Colors.white70,
-                  fontSize: 12,
-                  fontWeight: _isFocused ? FontWeight.bold : FontWeight.normal,
+              Expanded(
+                flex: 3,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.item.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _isFocused ? Colors.white : Colors.white70,
+                          fontSize: 11,
+                          fontWeight: _isFocused ? FontWeight.bold : FontWeight.w500,
+                        ),
+                      ),
+                    ]
+                  ),
                 ),
               ),
             ],

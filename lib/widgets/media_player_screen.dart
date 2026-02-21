@@ -11,6 +11,7 @@ import '../data/favorites_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // NOVO import para bypassar erro de build
 import '../data/jellyfin_service.dart'; // Garantir import do service
 import 'dart:async'; // Para o timer de auto-reconnect
+import 'dart:ui';
 
 /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
 class MediaPlayerScreen extends StatefulWidget {
@@ -148,23 +149,19 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   /// CAMADA SUPERIOR: Voltar | Favoritos | Info
   Widget _buildTopBar() {
     return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 8,
-          left: 16,
-          right: 16,
-          bottom: 8,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.black.withOpacity(0.8), Colors.transparent],
-          ),
-        ),
+      top: MediaQuery.of(context).padding.top > 0 ? MediaQuery.of(context).padding.top : 24,
+      left: 32,
+      right: 32,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
         child: Row(
           children: [
             // Título
@@ -233,6 +230,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               ],
             ),
           ],
+        ),
+        ),
         ),
       ),
     );
@@ -1053,18 +1052,19 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   /// CAMADA INFERIOR: Áudio | Legenda | Ajuste | Info
   Widget _buildBottomBar() {
     return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [Colors.black.withOpacity(0.8), Colors.transparent],
-          ),
-        ),
+      bottom: 32,
+      left: 32,
+      right: 32,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1164,6 +1164,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               ],
             ),
           ],
+        ),
+        ),
         ),
       ),
     );

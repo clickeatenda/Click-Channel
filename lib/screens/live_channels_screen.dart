@@ -5,7 +5,7 @@ import '../data/epg_service.dart';
 import '../models/epg_program.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/glass_panel.dart';
-import '../widgets/custom_app_header.dart';
+import '../widgets/app_sidebar.dart';
 
 class LiveChannelsScreen extends StatefulWidget {
   const LiveChannelsScreen({super.key});
@@ -15,22 +15,6 @@ class LiveChannelsScreen extends StatefulWidget {
 }
 
 class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
-  int _selectedNavIndex = -1; // fora da Home, nenhum selecionado
-
-  final List<HeaderNav> _navItems = [
-    HeaderNav(label: 'Início'),
-    HeaderNav(label: 'Filmes'),
-    HeaderNav(label: 'Séries'),
-    HeaderNav(label: 'Canais'),
-    HeaderNav(label: 'SharkFlix'),
-  ];
-
-  void _navigateByIndex(int index) {
-    if (index >= 0 && index <= 4) {
-      Navigator.pushNamed(context, '/home', arguments: index);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final epgChannelsMap = EpgService.isLoaded
@@ -40,24 +24,9 @@ class _LiveChannelsScreenState extends State<LiveChannelsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      body: Column(
+      body: Row(
         children: [
-          CustomAppHeader(
-            title: 'Click Channel',
-            navItems: _navItems,
-            selectedNavIndex: _selectedNavIndex,
-            onNavSelected: (index) => _navigateByIndex(index),
-            userAvatarUrl:
-                'https://via.placeholder.com/32x32?text=User',
-            userName: 'Sarah J',
-            onNotificationTap: () {},
-            onProfileTap: () {
-              Navigator.pushNamed(context, '/profile');
-            },
-            onSettingsTap: () {
-              Navigator.pushNamed(context, '/settings');
-            },
-          ),
+          const AppSidebar(selectedIndex: 3),
           Expanded(
             child: SingleChildScrollView(
               child: Padding(

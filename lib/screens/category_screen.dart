@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../models/content_item.dart';
@@ -17,6 +16,7 @@ import '../utils/content_enricher.dart'; // Para ContentSorter
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
 import '../widgets/hero_carousel.dart';
+import '../widgets/app_sidebar.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryName;
@@ -385,12 +385,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : Column(
-              children: [
-                // Header com título, busca e botão voltar
+      backgroundColor: AppColors.backgroundDark,
+      body: Row(
+        children: [
+          const AppSidebar(selectedIndex: -1),
+          Expanded(
+            child: loading
+              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              : Column(
+                  children: [
+                    // Header com título, busca e botão voltar
                 Container(
                   padding: EdgeInsets.only(
                     top: MediaQuery.of(context).padding.top + 8,
@@ -610,8 +614,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             ),
                           ),
                 ),
-              ],
-            ),
+                  ],
+                ),
+          ),
+        ],
+      ),
     );
   }
 }

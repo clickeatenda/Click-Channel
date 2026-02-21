@@ -202,15 +202,21 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
           final focused = Focus.of(context).hasFocus;
           return GestureDetector(
             onTap: () => _play(context),
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
               margin: const EdgeInsets.only(bottom: 12),
+              transform: focused ? (Matrix4.identity()..translate(0, -2)..scale(1.02)) : Matrix4.identity(),
+              transformAlignment: Alignment.center,
               decoration: BoxDecoration(
-                color: focused ? AppColors.primary.withOpacity(0.3) : (_isWatched ? AppColors.accent.withOpacity(0.1) : Colors.white.withOpacity(0.05)),
-                borderRadius: BorderRadius.circular(8),
+                color: const Color(0xFF161b22),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: focused ? AppColors.primary : (_isWatched ? AppColors.accent.withOpacity(0.5) : Colors.transparent),
+                  color: focused ? AppColors.primary : (_isWatched ? AppColors.primary.withOpacity(0.4) : Colors.white.withOpacity(0.05)),
                   width: 1,
                 ),
+                boxShadow: focused 
+                    ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
+                    : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Row(
                 children: [
