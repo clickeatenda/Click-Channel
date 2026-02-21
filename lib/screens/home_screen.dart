@@ -2877,8 +2877,9 @@ class _QualityFilterChip extends StatelessWidget {
 class _WatchingCard extends StatefulWidget {
   final WatchingItem watching;
   final VoidCallback? onRefresh;
+  final bool autofocus;
 
-  const _WatchingCard({required this.watching, this.onRefresh});
+  const _WatchingCard({required this.watching, this.onRefresh, this.autofocus = false});
 
   @override
   State<_WatchingCard> createState() => _WatchingCardState();
@@ -2911,6 +2912,7 @@ class _WatchingCardState extends State<_WatchingCard> {
     final remaining = widget.watching.remainingTime;
 
     return Focus(
+      autofocus: widget.autofocus,
       onFocusChange: (f) => setState(() => _focused = f),
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
@@ -3047,6 +3049,7 @@ class _HeroBannerState extends State<_HeroBanner> {
     final image = item.image;
 
     return Focus(
+      autofocus: widget.autofocus,
       onFocusChange: (f) => setState(() => _focused = f),
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
