@@ -267,18 +267,26 @@ class _SidebarItemState extends State<_SidebarItem> {
       onFocusChange: (f) {
         setState(() => _focused = f);
       },
-      onKey: (node, event) {
-        if (event is RawKeyDownEvent) {
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.enter ||
               event.logicalKey == LogicalKeyboardKey.select ||
               event.logicalKey == LogicalKeyboardKey.gameButtonA) {
             widget.onTap();
+            // Pula o foco para a direita (conteúdo) de forma mais agressiva
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+               FocusScope.of(context).focusInDirection(TraversalDirection.right);
+            });
             return KeyEventResult.handled;
           }
           if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-            // Explicitly force focus to the right content area
             FocusScope.of(context).focusInDirection(TraversalDirection.right);
             return KeyEventResult.handled;
+          }
+          // Se apertar "Para Baixo" no último item, manda o foco para o conteúdo
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown && widget.label == 'Perfil') {
+             FocusScope.of(context).focusInDirection(TraversalDirection.right);
+             return KeyEventResult.handled;
           }
         }
         return KeyEventResult.ignored;

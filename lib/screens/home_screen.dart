@@ -16,8 +16,8 @@ import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 import '../models/epg_program.dart';
 import 'dart:convert'; // For jsonEncode/Decode
+import 'dart:ui'; // For ImageFilter
 import 'package:shared_preferences/shared_preferences.dart'; // For caching
-
 
 import '../widgets/media_player_screen.dart';
 import '../widgets/adaptive_cached_image.dart';
@@ -25,6 +25,8 @@ import '../widgets/meta_chips_widget.dart';
 import '../data/favorites_service.dart'; // NOVO import
 import '../widgets/app_sidebar.dart';
 import '../routes/app_routes.dart';
+
+final ValueNotifier<String?> topBackgroundNotifier = ValueNotifier<String?>(null);
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -80,31 +82,70 @@ class _HomeScreenState extends State<HomeScreen> {
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        child: Row(
+        backgroundColor: bg,
+        body: Stack(
           children: [
-            // BARRA LATERAL (SIDEBAR)
-            AppSidebar(
-              selectedIndex: _selectedIndex,
-              onNavSelected: (index) {
-                setState(() => _selectedIndex = index);
-              },
-            ),
-
-            // CONTEÚDO POR ABA
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(opacity: animation, child: child);
+            // DYNAMIC BACKGROUND LAYER
+            Positioned.fill(
+              child: ValueListenableBuilder<String?>(
+                valueListenable: topBackgroundNotifier,
+                builder: (context, imageUrl, _) {
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 600),
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    child: imageUrl != null && imageUrl.isNotEmpty
+                        ? Container(
+                            key: ValueKey(imageUrl),
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: CachedNetworkImageProvider(imageUrl),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                              child: Container(
+                                color: bg.withOpacity(0.65), // Escurece o fundo para destacar o conteúdo
+                              ),
+                            ),
+                          )
+                        : Container(
+                            key: const ValueKey('default_bg'),
+                            color: bg,
+                          ),
+                  );
                 },
-                child: _buildNavigationBody(_selectedIndex),
+              ),
+            ),
+            // CONTEÚDO PRINCIPAL
+            SafeArea(
+              child: Row(
+                children: [
+                  // BARRA LATERAL (SIDEBAR)
+                  AppSidebar(
+                    selectedIndex: _selectedIndex,
+                    onNavSelected: (index) {
+                      setState(() => _selectedIndex = index);
+                    },
+                  ),
+
+                  // CONTEÚDO POR ABA
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                      child: _buildNavigationBody(_selectedIndex),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ),
       ),
     );
   }
@@ -565,7 +606,7 @@ class _HomeBodyState extends State<_HomeBody> {
           
           // Filmes em destaque (Hero)
           if (!loading && featuredMovies.isNotEmpty) ...[
-            _HeroBanner(items: featuredMovies.take(5).toList()),
+            _HeroBanner(items: featuredMovies.take(5).toList(), autofocus: true),
             const SizedBox(height: 24),
           ],
 
@@ -893,7 +934,7 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Destaques em carrossel
-          if (featuredItems.isNotEmpty) _HeroBanner(items: featuredItems.take(5).toList()),
+          if (featuredItems.isNotEmpty) _HeroBanner(items: featuredItems.take(5).toList(), autofocus: true),
           const SizedBox(height: 24),
           // Header com título e filtros
           Row(
@@ -1170,7 +1211,7 @@ class _SeriesBodyState extends State<_SeriesBody> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (featured.isNotEmpty) _HeroBanner(items: featured.take(5).toList()),
+        if (featured.isNotEmpty) _HeroBanner(items: featured.take(5).toList(), autofocus: true),
         const SizedBox(height: 24),
         // Header com título e filtros
         Row(
@@ -1381,7 +1422,7 @@ class _ChannelsBodyState extends State<_ChannelsBody> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (featured.isNotEmpty) _FeaturedCarousel(items: featured, title: 'Canais em destaque', showEpg: true),
+        if (featured.isNotEmpty) _FeaturedCarousel(items: featured, title: 'Canais em destaque', showEpg: true, autofocus: true),
         const SizedBox(height: 24),
         // Header com título e filtros
         Row(
@@ -1988,8 +2029,9 @@ class _SharkflixBodyState extends State<_SharkflixBody> {
 class _WatchingCarousel extends StatelessWidget {
   final List<WatchingItem> items;
   final VoidCallback? onRefresh;
+  final bool autofocus;
   
-  const _WatchingCarousel({required this.items, this.onRefresh});
+  const _WatchingCarousel({required this.items, this.onRefresh, this.autofocus = false});
 
   @override
   Widget build(BuildContext context) {
@@ -2025,6 +2067,7 @@ class _WatchingCarousel extends StatelessWidget {
               return _WatchingCard(
                 watching: watching,
                 onRefresh: onRefresh,
+                autofocus: autofocus && index == 0,
               );
             },
           ),
@@ -2037,8 +2080,9 @@ class _WatchingCarousel extends StatelessWidget {
 // Carrossel "Últimos assistidos"
 class _WatchedCarousel extends StatelessWidget {
   final List<ContentItem> items;
+  final bool autofocus;
   
-  const _WatchedCarousel({required this.items});
+  const _WatchedCarousel({required this.items, this.autofocus = false});
 
   @override
   Widget build(BuildContext context) {
@@ -2076,7 +2120,7 @@ class _WatchedCarousel extends StatelessWidget {
                 width: 110,
                 child: Padding(
                   padding: const EdgeInsets.only(right: 12),
-                  child: _MovieThumb(item: item),
+                  child: _MovieThumb(item: item, autofocus: autofocus && index == 0),
                 ),
               );
             },
@@ -2092,7 +2136,8 @@ class _FeaturedCarousel extends StatelessWidget {
   final List<ContentItem> items;
   final String title;
   final bool showEpg;
-  const _FeaturedCarousel({required this.items, this.title = 'Em destaque hoje', this.showEpg = false});
+  final bool autofocus;
+  const _FeaturedCarousel({required this.items, this.title = 'Em destaque hoje', this.showEpg = false, this.autofocus = false});
 
   @override
   Widget build(BuildContext context) {
@@ -2114,7 +2159,7 @@ class _FeaturedCarousel extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return _FeaturedCard(item: item, index: index + 1, showEpg: showEpg);
+              return _FeaturedCard(item: item, index: index + 1, showEpg: showEpg, autofocus: widget.autofocus && index == 0);
             },
           ),
         ),
@@ -2128,7 +2173,8 @@ class _FeaturedCard extends StatefulWidget {
   final ContentItem item;
   final int index;
   final bool showEpg;
-  const _FeaturedCard({Key? key, required this.item, required this.index, this.showEpg = false}) : super(key: key);
+  final bool autofocus;
+  const _FeaturedCard({Key? key, required this.item, required this.index, this.showEpg = false, this.autofocus = false}) : super(key: key);
 
   @override
   State<_FeaturedCard> createState() => _FeaturedCardState();
@@ -2177,7 +2223,13 @@ class _FeaturedCardState extends State<_FeaturedCard> {
     }
 
     return Focus(
-      onFocusChange: (f) => setState(() => _focused = f),
+      autofocus: widget.autofocus,
+      onFocusChange: (f) {
+        setState(() => _focused = f);
+        if (f && image.isNotEmpty) {
+          topBackgroundNotifier.value = image;
+        }
+      },
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -2194,23 +2246,28 @@ class _FeaturedCardState extends State<_FeaturedCard> {
           duration: const Duration(milliseconds: 150),
           width: 280,
           margin: const EdgeInsets.only(right: 12, bottom: 8),
-          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
+          transform: _focused ? (Matrix4.identity()..translate(0.0, -4.0)..scale(1.05)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          image: image.isNotEmpty
-              ? DecorationImage(
-                  image: NetworkImage(image),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
-                )
-              : null,
-          gradient: image.isEmpty
-              ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-              : null,
-          border: _focused ? Border.all(color: AppColors.primary, width: 3) : Border.all(color: Colors.white12),
-          boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 15, spreadRadius: 2)] : [],
-        ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            image: image.isNotEmpty
+                ? DecorationImage(
+                    image: NetworkImage(image),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
+                  )
+                : null,
+            gradient: image.isEmpty
+                ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                : null,
+            border: Border.all(
+                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), width: 1),
+            boxShadow: _focused ? [
+              BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30, spreadRadius: 4)
+            ] : [
+              BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))
+            ],
+          ),
         child: Stack(
           children: [
             Positioned(
@@ -2422,7 +2479,12 @@ class _ChannelThumbState extends State<_ChannelThumb> {
     final title = widget.item.title;
     final image = widget.item.image;
     return Focus(
-      onFocusChange: (f) => setState(() => _focused = f),
+      onFocusChange: (f) {
+        setState(() => _focused = f);
+        if (f && image.isNotEmpty) {
+          topBackgroundNotifier.value = image;
+        }
+      },
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -2444,11 +2506,13 @@ class _ChannelThumbState extends State<_ChannelThumb> {
             border: Border.all(
                 color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
                 width: 1),
-            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
+            boxShadow: _focused ? [
+                BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30, spreadRadius: 4)
+            ] : [
                 BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
             ],
           ),
-          transform: _focused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
+          transform: _focused ? (Matrix4.identity()..translate(0.0, -6.0)..scale(1.05)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2492,7 +2556,8 @@ class _ChannelThumbState extends State<_ChannelThumb> {
 
 class _MovieThumb extends StatefulWidget {
   final ContentItem item;
-  const _MovieThumb({required this.item});
+  final bool autofocus;
+  const _MovieThumb({required this.item, this.autofocus = false});
 
   @override
   State<_MovieThumb> createState() => _MovieThumbState();
@@ -2521,7 +2586,13 @@ class _MovieThumbState extends State<_MovieThumb> {
     final title = widget.item.title;
     final image = widget.item.image;
     return Focus(
-      onFocusChange: (f) => setState(() => _focused = f),
+      autofocus: widget.autofocus,
+      onFocusChange: (f) {
+        setState(() => _focused = f);
+        if (f && image.isNotEmpty) {
+          topBackgroundNotifier.value = image;
+        }
+      },
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -2542,11 +2613,13 @@ class _MovieThumbState extends State<_MovieThumb> {
             border: Border.all(
                 color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
                 width: 1),
-            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
+            boxShadow: _focused ? [
+                BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30, spreadRadius: 4)
+            ] : [
                 BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
             ],
           ),
-          transform: _focused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
+          transform: _focused ? (Matrix4.identity()..translate(0.0, -6.0)..scale(1.05)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2599,6 +2672,7 @@ class _CategoryImageCard extends StatefulWidget {
     required this.info,
     required this.image,
     required this.onTap,
+    this.autofocus = false,
   });
 
   @override
@@ -2620,6 +2694,7 @@ class _CategoryImageCardState extends State<_CategoryImageCard> {
     final activeColor = _focused ? Colors.white.withOpacity(0.16) : const Color(0x33111B2B);
     return Focus(
       focusNode: _focusNode,
+      autofocus: widget.autofocus,
       onFocusChange: (f) {
         setState(() => _focused = f);
         if (f) {
@@ -2945,7 +3020,8 @@ class _WatchingCardState extends State<_WatchingCard> {
 
 class _HeroBanner extends StatefulWidget {
   final List<ContentItem> items;
-  const _HeroBanner({required this.items});
+  final bool autofocus;
+  const _HeroBanner({required this.items, this.autofocus = false});
 
   @override
   State<_HeroBanner> createState() => _HeroBannerState();

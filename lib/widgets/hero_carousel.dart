@@ -8,10 +8,14 @@ import '../models/content_item.dart';
 import 'lazy_tmdb_loader.dart';
 
 class HeroCarousel extends StatefulWidget {
-  final List<ContentItem> items;
-  final Function(ContentItem) onPlay;
+  final bool autofocus;
 
-  const HeroCarousel({super.key, required this.items, required this.onPlay});
+  const HeroCarousel({
+    super.key, 
+    required this.items, 
+    required this.onPlay,
+    this.autofocus = false,
+  });
 
   @override
   State<HeroCarousel> createState() => _HeroCarouselState();
@@ -19,264 +23,278 @@ class HeroCarousel extends StatefulWidget {
 
 class _HeroCarouselState extends State<HeroCarousel> {
   final PageController _pageController = PageController();
-  final FocusNode _focusNode = FocusNode();
   int _currentPage = 0;
   Timer? _timer;
-  bool _isFocused = false;
+
+  static const _itemsPerPage = 3;
+
+  int get _totalPages => (widget.items.take(6).length / _itemsPerPage).ceil();
 
   @override
   void initState() {
     super.initState();
-    // Troca de slide a cada 5 segundos
-    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
-      const itemsPerPage = 3;
-      final totalPages = (widget.items.take(6).length / itemsPerPage).ceil();
-      
-      if (_currentPage < totalPages - 1) {
-        _currentPage++;
-      } else {
-        _currentPage = 0;
-      }
+    _timer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (!mounted) return;
+      final next = _currentPage < _totalPages - 1 ? _currentPage + 1 : 0;
+      setState(() => _currentPage = next);
       if (_pageController.hasClients) {
         _pageController.animateToPage(
           _currentPage,
-          duration: const Duration(milliseconds: 800),
+          duration: const Duration(milliseconds: 600),
           curve: Curves.easeInOut,
         );
       }
     });
-  }
-  
-  void _goToNext() {
-    const itemsPerPage = 3;
-    final totalPages = (widget.items.take(6).length / itemsPerPage).ceil();
-    
-    if (_currentPage < totalPages - 1) {
-      setState(() => _currentPage++);
-      _pageController.animateToPage(_currentPage, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-    }
-  }
-  
-  void _goToPrevious() {
-    if (_currentPage > 0) {
-      setState(() => _currentPage--);
-      _pageController.animateToPage(_currentPage, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _pageController.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.items.isEmpty) return const SizedBox(height: 280);
+    if (widget.items.isEmpty) return const SizedBox(height: 200);
 
-    // Mostrar no máximo os primeiros 6 itens (2 páginas de 3)
     final displayItems = widget.items.take(6).toList();
-    const itemsPerPage = 3;
-    final totalPages = (displayItems.length / itemsPerPage).ceil();
 
-    return Focus(
-      focusNode: _focusNode,
-      onFocusChange: (focused) => setState(() => _isFocused = focused),
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent) {
-          // Navegação horizontal
-          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-            _goToNext();
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-            _goToPrevious();
-            return KeyEventResult.handled;
-          }
-          // Ativar (reproduzir) o item atual
-          if (event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.select ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
-            final itemIndex = _currentPage * itemsPerPage;
-            if (itemIndex < displayItems.length) {
-              widget.onPlay(displayItems[itemIndex]);
-            }
-            return KeyEventResult.handled;
-          }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: _isFocused 
-              ? Border.all(color: AppColors.primary, width: 2)
-              : Border.all(color: Colors.transparent, width: 2),
-          boxShadow: _isFocused 
-              ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 20, spreadRadius: 2)]
-              : null,
-        ),
-        child: SizedBox(
-          height: 380,
-          child: Stack(
-            children: [
-              PageView.builder(
-                controller: _pageController,
-                itemCount: totalPages,
-                onPageChanged: (int page) => setState(() => _currentPage = page),
-                itemBuilder: (context, pageIndex) {
-                  final startIndex = pageIndex * itemsPerPage;
-                  final endIndex = (startIndex + itemsPerPage).clamp(0, displayItems.length);
-                  final pageItems = displayItems.sublist(startIndex, endIndex);
+    return SizedBox(
+      height: 220, // Reduzido de 380 para 220 — apropriado para TV 1080p
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: _totalPages,
+            onPageChanged: (page) => setState(() => _currentPage = page),
+            itemBuilder: (context, pageIndex) {
+              final startIndex = pageIndex * _itemsPerPage;
+              final endIndex = (startIndex + _itemsPerPage).clamp(0, displayItems.length);
+              final pageItems = displayItems.sublist(startIndex, endIndex);
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: pageItems.map((originalItem) {
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: LazyTmdbLoader(
-                              item: originalItem,
-                              builder: (item, isLoading) {
-                                return _buildHeroItem(item);
-                              },
-                            ),
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  children: pageItems.map((originalItem) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: LazyTmdbLoader(
+                          item: originalItem,
+                          builder: (item, _) => _HeroCard(
+                            item: item,
+                            onPlay: () => widget.onPlay(item),
+                            autofocus: widget.autofocus && originalItem == displayItems.first,
                           ),
-                        );
-                      }).toList(),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+          // Page indicators
+          if (_totalPages > 1)
+            Positioned(
+              bottom: 8,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_totalPages, (index) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: _currentPage == index ? 20 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: _currentPage == index
+                          ? AppColors.primary
+                          : Colors.white.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   );
-                },
+                }),
               ),
-              // Indicadores (Dots)
-              if (totalPages > 1)
-                Positioned(
-                  bottom: 16,
-                  left: 0,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(totalPages, (index) {
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: _currentPage == index ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index ? AppColors.primary : Colors.white.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildHeroItem(ContentItem item) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF161b22),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. Imagem de Fundo
-          item.image.isNotEmpty
-              ? CachedNetworkImage(
-                  imageUrl: item.image,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  memCacheHeight: 500,
-                  placeholder: (_, __) => Container(color: AppColors.background),
-                  errorWidget: (_, __, ___) => Container(color: const Color(0xFF1A1A1A)),
-                )
-              : Container(color: const Color(0xFF1A1A1A)),
+/// Card individual do banner com foco próprio para navegação TV
+class _HeroCard extends StatefulWidget {
+  final bool autofocus;
 
-          // 2. Degradê Preto
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black87],
-                stops: [0.5, 1.0],
-              ),
+  const _HeroCard({required this.item, required this.onPlay, this.autofocus = false});
+
+  @override
+  State<_HeroCard> createState() => _HeroCardState();
+}
+
+class _HeroCardState extends State<_HeroCard> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      autofocus: widget.autofocus,
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+          widget.onPlay();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onPlay,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          transform: _isFocused
+              ? (Matrix4.identity()..translate(0.0, -4.0)..scale(1.04))
+              : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _isFocused ? AppColors.primary : Colors.white.withOpacity(0.08),
+              width: _isFocused ? 2.5 : 1,
             ),
+            boxShadow: _isFocused
+                ? [BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 20, spreadRadius: 2)]
+                : [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))],
           ),
-
-          // 3. Conteúdo
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(13),
+            child: Stack(
+              fit: StackFit.expand,
               children: [
+                // Background image
+                widget.item.image.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: widget.item.image,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        memCacheHeight: 400,
+                        placeholder: (_, __) => Container(color: AppColors.background),
+                        errorWidget: (_, __, ___) => Container(color: const Color(0xFF1A1A1A)),
+                      )
+                    : Container(color: const Color(0xFF1A1A1A)),
+
+                // Gradient overlay
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    "DESTAQUE",
-                    style: AppTypography.labelMedium.copyWith(fontSize: 9),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black87],
+                      stops: [0.45, 1.0],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  item.title,
-                  style: AppTypography.titleLarge.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (item.rating > 0) ...[
-                  const SizedBox(height: 6),
-                  Row(
+
+                // Focus highlight overlay
+                if (_isFocused)
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.primary.withOpacity(0.15),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.5],
+                      ),
+                    ),
+                  ),
+
+                // Content
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 14),
-                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _isFocused ? AppColors.primary : AppColors.primary.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'DESTAQUE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       Text(
-                        item.rating.toStringAsFixed(1),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        widget.item.title,
+                        style: AppTypography.titleLarge.copyWith(
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          shadows: [const Shadow(blurRadius: 4, color: Colors.black87)],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (widget.item.rating > 0) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
+                            const SizedBox(width: 3),
+                            Text(
+                              widget.item.rating.toStringAsFixed(1),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 150),
+                        opacity: _isFocused ? 1.0 : 0.8,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isFocused ? AppColors.primary : AppColors.primary.withOpacity(0.85),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            minimumSize: const Size(0, 30),
+                            elevation: _isFocused ? 4 : 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: widget.onPlay,
+                          icon: const Icon(Icons.play_arrow_rounded, size: 14),
+                          label: const Text('Assistir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ],
                   ),
-                ],
-                const SizedBox(height: 10),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.primaryForeground,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    minimumSize: const Size(0, 36),
-                  ),
-                  onPressed: () => widget.onPlay(item),
-                  icon: const Icon(Icons.play_arrow, size: 16),
-                  label: const Text("Assistir", style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
-    ));
+    );
   }
 }

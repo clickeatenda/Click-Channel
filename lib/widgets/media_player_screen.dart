@@ -343,7 +343,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             if (buffering) {
               // Iniciar timer de stall
               _stallTimer?.cancel();
-              _stallTimer = Timer(const Duration(seconds: 5), () {
+              _stallTimer = Timer(const Duration(seconds: 15), () {
                 if (mounted && _isBuffering) {
                   print('🔄 Canal travado em buffering há 5s. Forçando reconexão imediata...');
                   _initPlayer();

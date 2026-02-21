@@ -26,114 +26,71 @@ class AdaptiveCachedImage extends StatefulWidget {
   State<AdaptiveCachedImage> createState() => _AdaptiveCachedImageState();
 }
 
-class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> with SingleTickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _fadeController = AnimationController(duration: widget.fadeInDuration, vsync: this);
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_fadeController);
-  }
-
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    super.dispose();
-  }
-
+class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> {
   @override
   Widget build(BuildContext context) {
     // Validação: se URL está vazia, mostra placeholder
-    // Aceita qualquer URL não vazia (deixa CachedNetworkImage lidar com erros)
     if (widget.url.isEmpty || widget.url.trim().isEmpty) {
-      return widget.errorWidget ?? Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white10),
-        ),
-        width: widget.width,
-        height: widget.height,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.broken_image, color: Colors.white24, size: 28),
-            const SizedBox(height: 4),
-            Text(
-              'Sem imagem',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.3),
-                fontSize: 9,
-              ),
-            ),
-          ],
-        ),
-      );
+      return widget.errorWidget ?? _buildErrorPlaceholder();
     }
 
-    // OTIMIZAÇÃO DE MEMÓRIA CRÍTICA PARA FIRESTICK:
-    // Força decode da imagem em tamanho reduzido (thumbnail)
-    // Isso evita OOM (Out Of Memory) ao carregar listas grandes com posters 4K
-    const int optimizeMemCacheHeight = 400; // Altura suficiente para cards na TV (Grid tem ~200-300px)
+    // OTIMIZAÇÃO DE MEMÓRIA PARA FIRESTICK
+    const int optimizeMemCacheHeight = 400;
 
     return CachedNetworkImage(
       imageUrl: widget.url,
       cacheManager: AppImageCacheManager.instance,
-      // Parâmetros de otimização de memória
-      memCacheHeight: optimizeMemCacheHeight,
-      memCacheWidth: 300, // Limita largura também
-      maxWidthDiskCache: 600, // Limita tamanho no disco
-      maxHeightDiskCache: 800,
-      
-      imageBuilder: (context, imageProvider) {
-        // Trigger fade-in animation quando imagem é carregada
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _fadeController.forward();
-        });
-        return FadeTransition(
-          opacity: _fadeAnimation,
-          child: Image(image: imageProvider, width: widget.width, height: widget.height, fit: widget.fit),
-        );
+      httpHeaders: const {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
-      placeholder: (context, url) => Shimmer.fromColors(
-        baseColor: const Color(0xFF2A2A2A),
-        highlightColor: const Color(0xFF3A3A3A),
-        child: Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: const Color(0xFF2A2A2A),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Center(
-            child: Icon(Icons.image, color: Colors.white10, size: 32),
+      memCacheHeight: optimizeMemCacheHeight,
+      memCacheWidth: 300,
+      maxWidthDiskCache: 600,
+      maxHeightDiskCache: 800,
+      fit: widget.fit,
+      width: widget.width,
+      height: widget.height,
+      fadeInDuration: widget.fadeInDuration,
+      fadeOutDuration: const Duration(milliseconds: 200),
+      // Usa placeholder transparente para evitar flashes cinzas em rebuilds/remounts
+      placeholder: (context, url) => Container(
+        width: widget.width,
+        height: widget.height,
+        color: Colors.transparent, 
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white10)),
           ),
         ),
       ),
-      errorWidget: (context, url, error) => widget.errorWidget ?? Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white10),
-        ),
-        width: widget.width,
-        height: widget.height,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.broken_image, color: Colors.white24, size: 28),
-            const SizedBox(height: 4),
-            Text(
-              'Sem imagem',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.3),
-                fontSize: 9,
-              ),
+      errorWidget: (context, url, error) => widget.errorWidget ?? _buildErrorPlaceholder(),
+    );
+  }
+
+  Widget _buildErrorPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white10),
+      ),
+      width: widget.width,
+      height: widget.height,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.broken_image, color: Colors.white24, size: 28),
+          const SizedBox(height: 4),
+          Text(
+            'Sem imagem',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.3),
+              fontSize: 9,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

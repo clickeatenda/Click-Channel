@@ -72,7 +72,7 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
     return CustomScrollView(
       controller: _scrollController,
       physics: widget.physics ?? const BouncingScrollPhysics(),
-      cacheExtent: 200.0, // Reduz área de renderização fora da tela para economizar memória no Firestick
+      cacheExtent: 1000.0, // Aumentado para evitar remounts frequentes durante navegação no Firestick
       slivers: [
         // Header (Banner)
         if (widget.headerWidget != null)
@@ -205,13 +205,13 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
           transform: _isFocused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
-            color: const Color(0xFF161b22),
+            color: Colors.black, // Fundo preto puro para evitar o bloco "cinza" se a imagem demorar a renderizar
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: _isFocused ? const Color(0xFF007BFF) : Colors.white.withOpacity(0.05),
-                width: 1),
+                color: _isFocused ? const Color(0xFF007BFF) : Colors.white.withOpacity(0.08),
+                width: _isFocused ? 3 : 1),
             boxShadow: _isFocused 
-                ? [BoxShadow(color: const Color(0xFF007BFF).withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
+                ? [BoxShadow(color: const Color(0xFF007BFF).withOpacity(0.7), blurRadius: 24, spreadRadius: 4)] 
                 : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: ClipRRect(
@@ -225,12 +225,28 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      AdaptiveCachedImage(
-                        url: widget.item.image,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
+                      // Imagem ou placeholder com ícone
+                      widget.item.image.isNotEmpty
+                          ? AdaptiveCachedImage(
+                              url: widget.item.image,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            )
+                          : Container(
+                              color: const Color(0xFF1E2530),
+                              child: Center(
+                                child: Icon(
+                                  widget.item.type == 'channel'
+                                      ? Icons.live_tv_rounded
+                                      : widget.item.type == 'series'
+                                          ? Icons.tv_rounded
+                                          : Icons.movie_rounded,
+                                  color: Colors.white.withOpacity(0.2),
+                                  size: 36,
+                                ),
+                              ),
+                            ),
                       // Indicador de loading do TMDB (sutil)
                       if (widget.isLoadingTmdb)
                         Positioned(

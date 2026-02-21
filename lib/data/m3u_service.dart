@@ -1013,18 +1013,22 @@ class M3uService {
     // === HEURÍSTICAS DE SEGMENTAÇÃO MELHORADAS ===
     // ORDEM DE PRIORIDADE (do mais específico ao mais genérico)
 
-        // 🔴 REGRA -1 (PRIORIDADE MÁXIMA) REVISADA: "FILMES | SÉRIES"
+        // 🔴 REGRA -1 (PRIORIDADE MÁXIMA) REVISADA: "FILMES | SÉRIES" ou "FILMES E SERIES"
         // Antes tratávamos sempre como CANAL, mas isso causa muitos falsos positivos
         // (listas que usam este rótulo para agrupar filmes e séries). Agora só
         // considera CANAL se o título indicar claramente streaming/ao-vivo ou
         // terminar com um número curto indicando um canal numerado (ex: "Netflix 1").
         if (g.contains('filmes | séries') || g.contains('filmes | series') ||
-            g.contains('filmes|séries') || g.contains('filmes|series')) {
+            g.contains('filmes|séries') || g.contains('filmes|series') ||
+            g.contains('filmes e séries') || g.contains('filmes e series') ||
+            g.contains('filme e série') || g.contains('filme e serie')) {
           final lowerTitle = t;
           // Se o título indica live/stream/24h ou termina com número (canal numerado),
           // então é provável que se trate de um canal
           if (lowerTitle.contains('live') || lowerTitle.contains('ao vivo') ||
-              lowerTitle.contains('24h') || RegExp(r'\b\d{1,3}\$').hasMatch(lowerTitle) || RegExp(r'\s\d{1,3}\$').hasMatch(lowerTitle)) {
+              lowerTitle.contains('24h') || lowerTitle.contains('channel') || 
+              lowerTitle.contains('canal') || lowerTitle.contains('tv ') ||
+              RegExp(r'\b\d{1,3}$').hasMatch(lowerTitle) || RegExp(r'\b\d{1,3}\s*$').hasMatch(lowerTitle)) {
             return 'channel';
           }
           // Caso contrário: se NÃO tem padrão de série (S##E##), retorna 'movie'
