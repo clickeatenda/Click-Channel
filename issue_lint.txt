@@ -1,0 +1,36 @@
+TÍTULO:
+Limpeza de Código e Remoção de Warnings - Nova UI (Fase 5)
+
+DESCRIÇÃO:
+Contexto:
+Após o longo refactoring de UI (Fases 1 a 4) para o design Premium Glassmorphism, dezenas de imports foram deixados para trás, além de variáveis não utilizadas e blocos de comentário de código da interface legada.
+
+O que precisa ser feito:
+- [ ] Executar o comando `flutter analyze` em todo o projeto.
+- [ ] Resolver todos os casos de unused imports.
+- [ ] Remover e limpar lixo de debug.
+- [ ] Aplicar correções de sintaxe sugeridas pelo linter (ex: constantes preferenciais, dead code).
+
+Critérios de aceitação:
+- O comando `flutter analyze` deve executar com zero falhas e zero warnings na branch feature/premium-ui-redesign.
+
+Impacto / Benefício:
+Código fonte mais limpo, previsível e um bundle (APK) ligeiramente mais enxuto e seguro contra vazamentos e warnings mudos no futuro.
+
+LABELS:
+mobile
+refatoração
+Média
+Em andamento
+
+MILESTONE - STATUS:
+🔧 Em Desenvolvimento
+
+MILESTONE - FASE:
+Fase 4: Performance e Otimização
+
+REPOSITÓRIO:
+clickeatenda/Click-Channel
+
+RESPONSÁVEL:
+A definir

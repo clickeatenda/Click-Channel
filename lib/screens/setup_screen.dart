@@ -5,6 +5,9 @@ import '../core/prefs.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
 import '../data/xtream_service.dart';
+import '../widgets/blinking_cursor_placeholder.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
 
 /// Tela de configuração inicial.
 /// Se não houver playlist configurada, exibe campo para inserir URL.
@@ -23,7 +26,18 @@ class _SetupScreenState extends State<SetupScreen> {
   final TextEditingController _xtreamPassController = TextEditingController();
   
   final FocusNode _urlFocusNode = FocusNode();
+  final FocusNode _xtreamHostFocusNode = FocusNode();
+  final FocusNode _xtreamUserFocusNode = FocusNode();
+  final FocusNode _xtreamPassFocusNode = FocusNode();
   final FocusNode _buttonFocusNode = FocusNode();
+  
+  // Nodes para o placeholder (navegação)
+  final FocusNode _urlPlaceholderFocus = FocusNode();
+  final FocusNode _xtreamHostPlaceholderFocus = FocusNode();
+  final FocusNode _xtreamUserPlaceholderFocus = FocusNode();
+  final FocusNode _xtreamPassPlaceholderFocus = FocusNode();
+  final FocusNode _tab1Focus = FocusNode();
+  final FocusNode _tab2Focus = FocusNode();
   
   int _selectedTab = 0; // 0 = URL, 1 = Xtream
   
@@ -31,6 +45,12 @@ class _SetupScreenState extends State<SetupScreen> {
   String _statusMessage = '';
   double _progress = 0.0;
   String? _errorMessage;
+  
+  // Controle de ativação do teclado
+  bool _urlActive = false;
+  bool _xtreamHostActive = false;
+  bool _xtreamUserActive = false;
+  bool _xtreamPassActive = false;
   
   // Para foco visual claro na TV
   bool _urlHasFocus = false;
@@ -65,6 +85,12 @@ class _SetupScreenState extends State<SetupScreen> {
     _xtreamPassController.dispose();
     _urlFocusNode.dispose();
     _buttonFocusNode.dispose();
+    _urlPlaceholderFocus.dispose();
+    _xtreamHostPlaceholderFocus.dispose();
+    _xtreamUserPlaceholderFocus.dispose();
+    _xtreamPassPlaceholderFocus.dispose();
+    _tab1Focus.dispose();
+    _tab2Focus.dispose();
     super.dispose();
   }
 
@@ -176,6 +202,18 @@ class _SetupScreenState extends State<SetupScreen> {
       });
     }
     // Se não está pronto, o usuário precisa configurar
+    setState(() {
+      _isLoading = false;
+      _statusMessage = '';
+    });
+    
+    // Pequeno delay para garantir que a UI foi construída antes de solicitar foco
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted && !_isLoading) {
+        FocusScope.of(context).unfocus(); // Limpa focos fantasmagóricos
+        FocusScope.of(context).nextFocus(); // Vai para o primeiro elemento (Geralmente a Tab 1)
+      }
+    });
   }
 
   Future<void> _showDebugInfo() async {
@@ -377,9 +415,20 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   void _onSubmit() {
+    print('DEBUG: _onSubmit called. Tab: $_selectedTab');
+    // Clear active states
+    setState(() {
+      _urlActive = false;
+      _xtreamHostActive = false;
+      _xtreamUserActive = false;
+      _xtreamPassActive = false;
+    });
+
     if (_selectedTab == 0) {
+      print('DEBUG: Submitting URL: ${_urlController.text}');
       _downloadPlaylist(_urlController.text);
     } else {
+      print('DEBUG: Submitting Xtream Login');
       _loginWithXtream();
     }
   }
@@ -388,6 +437,8 @@ class _SetupScreenState extends State<SetupScreen> {
     final host = _xtreamHostController.text.trim();
     final username = _xtreamUserController.text.trim();
     final password = _xtreamPassController.text.trim();
+    
+    print('DEBUG: _loginWithXtream - Host: $host, User: $username');
 
     if (host.isEmpty || username.isEmpty || password.isEmpty) {
       setState(() {
@@ -483,119 +534,105 @@ class _SetupScreenState extends State<SetupScreen> {
           ),
           
           // Conteúdo Central
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo Principal (Aumentada)
-                  Container(
-                    width: 200, // Aumentado de 100 para 200
-                    height: 200,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(40),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 40,
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(40), // Aumentado raio
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  AppColors.primary,
-                                  AppColors.primary.withOpacity(0.7),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(40),
-                            ),
-                            child: const Icon(Icons.live_tv, color: Colors.white, size: 100), // Aumentado icone
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Título
-                  const Text(
-                    'Click Channel',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                      shadows: [
-                        Shadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4))
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  Text(
-                    'Configure sua playlist IPTV',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 18,
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 48),
-                  
-                  if (_isLoading) ...[
-                    // Loading com progresso
-                    _buildLoadingState(),
-                  ] else ...[
-                    // Tab switcher
-                    _buildTabSwitcher(),
-                    const SizedBox(height: 24),
-                    // Campo de URL ou Xtream
-                    _selectedTab == 0 ? _buildUrlInput() : _buildXtreamForm(),
-                  ],
-                  
-                  // Mensagem de erro
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 16),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo Principal
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      width: 140,
+                      height: 140,
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: Colors.red, fontSize: 14),
-                            ),
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.25),
+                            blurRadius: 30,
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(32),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 140,
+                          height: 140,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [AppColors.primary, AppColors.primaryLight],
+                                ),
+                                borderRadius: BorderRadius.circular(32),
+                              ),
+                              child: const Icon(Icons.live_tv, color: Colors.white, size: 70),
+                            );
+                          },
+                        ),
+                      ),
                     ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    const Text(
+                      'Click Channel',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    Text(
+                      'Configure sua playlist IPTV',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 16,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    if (_isLoading) ...[
+                      _buildLoadingState(),
+                    ] else ...[
+                      _buildTabSwitcher(),
+                      const SizedBox(height: 24),
+                      _selectedTab == 0 ? _buildUrlInput() : _buildXtreamForm(),
+                    ],
+                    
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red, fontSize: 13),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+
+                    // Espaçador extra no fundo para garantir visibilidade da parte de baixo
+                    const SizedBox(height: 80),
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -665,140 +702,60 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Widget _buildUrlInput() {
+    if (_urlActive) {
+      return Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: Focus(
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+              setState(() => _urlActive = false);
+              _urlPlaceholderFocus.requestFocus();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: TextField(
+            controller: _urlController,
+            focusNode: _urlFocusNode,
+            autofocus: true,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: _inputDecoration('URL da Playlist M3U', Icons.link),
+            onSubmitted: (_) => _onSubmit(),
+          ),
+        ),
+      );
+    }
+
     return Container(
       constraints: const BoxConstraints(maxWidth: 500),
       child: Column(
         children: [
-          // Campo de URL com navegação TV e foco visual
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _urlHasFocus ? AppColors.primary : Colors.transparent,
-                width: 3,
-              ),
-              boxShadow: _urlHasFocus ? [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.4),
-                  blurRadius: 16,
-                  spreadRadius: 2,
-                ),
-              ] : [],
-            ),
-            child: TextField(
-              controller: _urlController,
-                focusNode: _urlFocusNode,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-                decoration: InputDecoration(
-                  labelText: 'URL da Playlist M3U',
-                  labelStyle: TextStyle(
-                    color: _urlHasFocus ? AppColors.primary : Colors.white.withOpacity(0.7),
-                    fontWeight: _urlHasFocus ? FontWeight.bold : FontWeight.normal,
-                  ),
-                  hintText: 'https://exemplo.com/playlist.m3u',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                  prefixIcon: Icon(
-                    Icons.link,
-                    color: _urlHasFocus ? AppColors.primary : Colors.white54,
-                    size: 28,
-                  ),
-                  filled: true,
-                  fillColor: _urlHasFocus 
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.white.withOpacity(0.05),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                onSubmitted: (_) => _onSubmit(),
-              ),
-            ),
-          
-          const SizedBox(height: 24),
-          
-          // Botão Carregar com FOCO VISUAL CLARO para TV
-          AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: double.infinity,
-              height: 70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _buttonHasFocus ? Colors.white : Colors.transparent,
-                  width: 4,
-                ),
-                boxShadow: _buttonHasFocus ? [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.6),
-                    blurRadius: 24,
-                    spreadRadius: 4,
-                  ),
-                  const BoxShadow(
-                    color: Colors.white24,
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ] : [],
-              ),
-            child: ElevatedButton.icon(
-              focusNode: _buttonFocusNode,
-              autofocus: true, // Foco automático inicial
-              onPressed: _onSubmit,
-              icon: Icon(
-                Icons.download,
-                size: _buttonHasFocus ? 32 : 26,
-              ),
-              label: Text(
-                _buttonHasFocus ? '▶ CARREGAR PLAYLIST ◀' : 'CARREGAR PLAYLIST',
-                style: TextStyle(
-                  fontSize: _buttonHasFocus ? 20 : 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: _buttonHasFocus ? 2 : 1,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _buttonHasFocus 
-                    ? AppColors.primary
-                    : AppColors.primary.withOpacity(0.8),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: _buttonHasFocus ? 12 : 4,
+          Focus(
+            focusNode: _urlPlaceholderFocus,
+            onFocusChange: (f) {
+              if (mounted) setState(() => _urlHasFocus = f);
+              if (f) SystemChannels.textInput.invokeMethod('TextInput.hide');
+            },
+            onKeyEvent: (node, event) => _handleNavigation(event, () {
+              setState(() => _urlActive = true);
+              Future.delayed(const Duration(milliseconds: 50), () => _urlFocusNode.requestFocus());
+            }, _urlFocusNode),
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _urlActive = true);
+                Future.delayed(const Duration(milliseconds: 50), () => _urlFocusNode.requestFocus());
+              },
+              child: BlinkingCursorPlaceholder(
+                text: _urlController.text,
+                hintText: 'https://exemplo.com/playlist.m3u',
+                isFocused: _urlHasFocus,
+                onActivate: () => setState(() => _urlActive = true),
+                prefixIcon: Icons.link,
               ),
             ),
           ),
-          
           const SizedBox(height: 32),
-          // Debug Tools
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-               TextButton(
-                 onPressed: _showDebugInfo,
-                 child: const Text("VERIFICAR CACHE", style: TextStyle(color: Colors.white24, fontSize: 10)),
-               ),
-               const SizedBox(width: 20),
-               TextButton(
-                 onPressed: () {
-                    // Bypass para Home
-                    Navigator.pushReplacementNamed(context, '/home');
-                 },
-                 child: const Text("FORCE HOME (Bypass)", style: TextStyle(color: Colors.white24, fontSize: 10)),
-               ),
-            ],
-          ),
+          _buildSubmitButton(),
         ],
       ),
     );
@@ -813,59 +770,63 @@ class _SetupScreenState extends State<SetupScreen> {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedTab = 0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: _selectedTab == 0
-                      ? AppColors.primary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    'URL Direta',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: _selectedTab == 0
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedTab = 1),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: _selectedTab == 1
-                      ? AppColors.primary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    'Login Xtream',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: _selectedTab == 1
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildTabItem(0, 'URL Direta', _tab1Focus),
+          _buildTabItem(1, 'Login Xtream', _tab2Focus),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTabItem(int index, String label, FocusNode focusNode) {
+    bool isSelected = _selectedTab == index;
+    
+    return Expanded(
+      child: Focus(
+        focusNode: focusNode,
+        onFocusChange: (hasKeyboardFocus) {
+          if (mounted) setState(() {});
+          if (hasKeyboardFocus) SystemChannels.textInput.invokeMethod('TextInput.hide');
+        },
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.enter || 
+                event.logicalKey == LogicalKeyboardKey.select) {
+              setState(() => _selectedTab = index);
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Builder(
+          builder: (context) {
+            bool hasFocus = Focus.of(context).hasFocus;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedTab = index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : (hasFocus ? Colors.white.withOpacity(0.1) : Colors.transparent),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: hasFocus ? Colors.white : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: (isSelected || hasFocus) ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -875,95 +836,132 @@ class _SetupScreenState extends State<SetupScreen> {
       constraints: const BoxConstraints(maxWidth: 500),
       child: Column(
         children: [
-          // Host field
-          TextField(
-            controller: _xtreamHostController,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: InputDecoration(
-              labelText: 'URL/DNS do Servidor',
-              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-              hintText: 'http://playfacil.net:80',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-              prefixIcon: const Icon(Icons.dns, color: Colors.white54, size: 28),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
+          _buildXtreamField(_xtreamHostController, _xtreamHostPlaceholderFocus, _xtreamHostFocusNode, 'URL do Servidor', Icons.dns, _xtreamHostActive, (v) => setState(() => _xtreamHostActive = v), action: TextInputAction.next),
           const SizedBox(height: 16),
-          // Username field
-          TextField(
-            controller: _xtreamUserController,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: InputDecoration(
-              labelText: 'Usuário',
-              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-              hintText: 'Seu usuário Xtream',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-              prefixIcon: const Icon(Icons.person, color: Colors.white54, size: 28),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
+          _buildXtreamField(_xtreamUserController, _xtreamUserPlaceholderFocus, _xtreamUserFocusNode, 'Usuário', Icons.person, _xtreamUserActive, (v) => setState(() => _xtreamUserActive = v), action: TextInputAction.next),
           const SizedBox(height: 16),
-          // Password field
-          TextField(
-            controller: _xtreamPassController,
-            obscureText: true,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: InputDecoration(
-              labelText: 'Senha',
-              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-              hintText: 'Sua senha Xtream',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-              prefixIcon: const Icon(Icons.lock, color: Colors.white54, size: 28),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            onSubmitted: (_) => _onSubmit(),
-          ),
+          _buildXtreamField(_xtreamPassController, _xtreamPassPlaceholderFocus, _xtreamPassFocusNode, 'Senha', Icons.lock, _xtreamPassActive, (v) => setState(() => _xtreamPassActive = v), obscure: true, action: TextInputAction.done),
           const SizedBox(height: 24),
-          // Login button
-          SizedBox(
-            width: double.infinity,
-            height: 70,
-            child: ElevatedButton.icon(
-              focusNode: _buttonFocusNode,
-              onPressed: _onSubmit,
-              icon: const Icon(Icons.login, size: 26),
-              label: const Text(
-                'FAZER LOGIN',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 4,
-              ),
-            ),
-          ),
+          _buildSubmitButton(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildXtreamField(TextEditingController controller, FocusNode pFocus, FocusNode fFocus, String label, IconData icon, bool isActive, Function(bool) setActive, {bool obscure = false, TextInputAction action = TextInputAction.next}) {
+    if (isActive) {
+      return Focus(
+        onFocusChange: (f) {
+          print('DEBUG: Field Active Focus Change: $f (label: $label)');
+          // REMOVIDO: Desativação agressiva que cancelava o clique no botão
+          // setActive(false); 
+        },
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent && 
+              (event.logicalKey == LogicalKeyboardKey.escape || 
+               event.logicalKey == LogicalKeyboardKey.goBack)) {
+            setActive(false);
+            pFocus.requestFocus();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: TextField(
+          controller: controller,
+          focusNode: fFocus,
+          autofocus: true,
+          obscureText: obscure,
+          textInputAction: action,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+          decoration: _inputDecoration(label, icon),
+          onSubmitted: (_) {
+            if (action == TextInputAction.done) {
+              _onSubmit();
+            } else {
+              // Próximo campo
+              FocusScope.of(context).nextFocus();
+            }
+          },
+        ),
+      );
+    }
+
+    return Focus(
+      focusNode: pFocus,
+      onFocusChange: (f) {
+        if (mounted) setState(() {});
+        if (f) SystemChannels.textInput.invokeMethod('TextInput.hide');
+      },
+      onKeyEvent: (node, event) => _handleNavigation(event, () {
+        setActive(true);
+        Future.delayed(const Duration(milliseconds: 50), () => fFocus.requestFocus());
+      }, fFocus),
+      child: GestureDetector(
+        onTap: () {
+          setActive(true);
+          Future.delayed(const Duration(milliseconds: 50), () => fFocus.requestFocus());
+        },
+        child: BlinkingCursorPlaceholder(
+          text: obscure && controller.text.isNotEmpty ? '********' : controller.text,
+          hintText: label,
+          isFocused: pFocus.hasFocus,
+          onActivate: () => setActive(true),
+          prefixIcon: icon,
+          focusedColor: AppColors.primary,
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
+      prefixIcon: Icon(icon, color: AppColors.primary),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+    );
+  }
+
+  KeyEventResult _handleNavigation(KeyEvent event, VoidCallback onActive, FocusNode next) {
+    if (event is KeyDownEvent) {
+      final isChar = event.logicalKey.keyLabel.length == 1 && RegExp(r'^[a-zA-Z0-9]$').hasMatch(event.logicalKey.keyLabel);
+      if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.select || isChar) {
+        onActive();
+        return isChar ? KeyEventResult.ignored : KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
+  Widget _buildSubmitButton() {
+    return Focus(
+      focusNode: _buttonFocusNode,
+      onFocusChange: (f) => setState(() => _buttonHasFocus = f),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: double.infinity,
+        height: 60,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _buttonHasFocus ? Colors.white : Colors.transparent, width: 3),
+          boxShadow: _buttonHasFocus ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20)] : [],
+        ),
+        child: ElevatedButton(
+          onPressed: _onSubmit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: Text(
+            _selectedTab == 0 ? 'CARREGAR PLAYLIST' : 'FAZER LOGIN',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
       ),
     );
   }

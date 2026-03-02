@@ -6,6 +6,7 @@ import '../models/epg_program.dart';
 import '../data/epg_service.dart';
 import 'meta_chips_widget.dart';
 import 'lazy_tmdb_loader.dart';
+import '../screens/home_screen.dart' show topBackgroundNotifier;
 
 /// GridView otimizado com lazy loading, suporte a TV remoto e Header opcional
 class OptimizedGridView extends StatefulWidget {
@@ -105,6 +106,7 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
                       metaFontSize: widget.metaFontSize,
                       metaIconSize: widget.metaIconSize,
                       epgChannels: widget.epgChannels,
+                      autofocus: index == 0,
                       onTap: () => widget.onTap(enrichedItem),
                     );
                   },
@@ -130,6 +132,7 @@ class _OptimizedGridCard extends StatefulWidget {
   final double metaFontSize;
   final double metaIconSize;
   final Map<String, EpgChannel>? epgChannels;
+  final bool autofocus;
 
   const _OptimizedGridCard({
     required this.item,
@@ -139,6 +142,7 @@ class _OptimizedGridCard extends StatefulWidget {
     required this.metaIconSize,
     this.isLoadingTmdb = false,
     this.epgChannels,
+    this.autofocus = false,
   });
 
   @override
@@ -186,6 +190,7 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Focus(
+        autofocus: widget.autofocus,
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent &&
               (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -199,17 +204,18 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
         },
         onFocusChange: (focused) {
           setState(() => _isFocused = focused);
+          if (focused && widget.item.image.isNotEmpty) {
+            topBackgroundNotifier.value = widget.item.image;
+          }
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          transform: _isFocused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
-          transformAlignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.black, // Fundo preto puro para evitar o bloco "cinza" se a imagem demorar a renderizar
+            color: Colors.black,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
                 color: _isFocused ? const Color(0xFF007BFF) : Colors.white.withOpacity(0.08),
-                width: _isFocused ? 3 : 1),
+                width: 2),
             boxShadow: _isFocused 
                 ? [BoxShadow(color: const Color(0xFF007BFF).withOpacity(0.7), blurRadius: 24, spreadRadius: 4)] 
                 : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],

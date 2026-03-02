@@ -32,12 +32,22 @@ class GlassButton extends StatefulWidget {
 
 class _GlassButtonState extends State<GlassButton> {
   bool _isHovering = false;
+  bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
+    final bool isActive = _isHovering || _isFocused;
+    return FocusableActionDetector(
+      onShowFocusHighlight: (hasFocus) => setState(() => _isFocused = hasFocus),
+      onShowHoverHighlight: (isHovering) => setState(() => _isHovering = isHovering),
+      actions: {
+        ActivateIntent: CallbackAction<Intent>(
+          onInvoke: (_) {
+            if (!widget.isLoading) widget.onPressed();
+            return null;
+          },
+        ),
+      },
       child: GestureDetector(
         onTap: widget.isLoading ? null : widget.onPressed,
         child: ClipRRect(
@@ -49,13 +59,13 @@ class _GlassButtonState extends State<GlassButton> {
               width: widget.width,
               height: widget.height,
               decoration: BoxDecoration(
-                color: widget.backgroundColor ?? Colors.white.withOpacity(_isHovering ? 0.08 : 0.03),
+                color: widget.backgroundColor ?? Colors.white.withOpacity(isActive ? 0.08 : 0.03),
                 border: Border.all(
-                  color: Colors.white.withOpacity(_isHovering ? 0.15 : 0.04),
+                  color: Colors.white.withOpacity(isActive ? 0.15 : 0.04),
                   width: 1,
                 ),
                 borderRadius: const BorderRadius.all(Radius.circular(12)),
-                boxShadow: _isHovering ? [
+                boxShadow: isActive ? [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3),
                     blurRadius: 12,
@@ -141,12 +151,22 @@ class SolidButton extends StatefulWidget {
 
 class _SolidButtonState extends State<SolidButton> {
   bool _isHovering = false;
+  bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
+    final bool isActive = _isHovering || _isFocused;
+    return FocusableActionDetector(
+      onShowFocusHighlight: (hasFocus) => setState(() => _isFocused = hasFocus),
+      onShowHoverHighlight: (isHovering) => setState(() => _isHovering = isHovering),
+      actions: {
+        ActivateIntent: CallbackAction<Intent>(
+          onInvoke: (_) {
+            if (!widget.isLoading) widget.onPressed();
+            return null;
+          },
+        ),
+      },
       child: GestureDetector(
         onTap: widget.isLoading ? null : widget.onPressed,
         child: AnimatedContainer(
@@ -156,7 +176,7 @@ class _SolidButtonState extends State<SolidButton> {
           decoration: BoxDecoration(
             color: widget.backgroundColor ?? AppColors.primary,
             borderRadius: const BorderRadius.all(Radius.circular(12)),
-            boxShadow: _isHovering ? [
+            boxShadow: isActive ? [
               BoxShadow(
                 color: (widget.backgroundColor ?? AppColors.primary).withOpacity(0.4),
                 blurRadius: 20,

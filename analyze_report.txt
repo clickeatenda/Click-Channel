@@ -1,0 +1,19 @@
+Analyzing category_screen.dart, search_screen.dart, home_screen.dart...
+
+  error - lib\screens\category_screen.dart:66:42 - The method 'getLibraryItems' isn't defined for the type 'JellyfinService'. Try correcting the name to the name of an existing method, or defining a method named 'getLibraryItems'. - undefined_method
+  error - lib\screens\category_screen.dart:169:60 - The getter 'h1' isn't defined for the type 'AppTypography'. Try importing the library that defines 'h1', correcting the name to the name of an existing getter, or defining a getter or field named 'h1'. - undefined_getter
+  error - lib\screens\category_screen.dart:283:24 - The name 'KeyDownEvent' isn't defined, so it can't be used in an 'is' expression. Try changing the name to the name of an existing type, or creating a type with the name 'KeyDownEvent'. - type_test_with_undefined_name
+  error - lib\screens\category_screen.dart:284:36 - Undefined name 'LogicalKeyboardKey'. Try correcting the name to one that is defined, or defining the name. - undefined_identifier
+  error - lib\screens\category_screen.dart:285:36 - Undefined name 'LogicalKeyboardKey'. Try correcting the name to one that is defined, or defining the name. - undefined_identifier
+  error - lib\screens\category_screen.dart:286:36 - Undefined name 'LogicalKeyboardKey'. Try correcting the name to one that is defined, or defining the name. - undefined_identifier
+warning - lib\screens\home_screen.dart:7:8 - Unused import: 'search_screen.dart'. Try removing the import directive. - unused_import
+warning - lib\screens\home_screen.dart:177:7 - The declaration '_AppLogo' isn't referenced. Try removing the declaration of '_AppLogo'. - unused_element
+warning - lib\screens\home_screen.dart:923:11 - The value of the local variable 'featuredList' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - lib\screens\home_screen.dart:1026:31 - The value of the local variable 'count' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - lib\screens\home_screen.dart:2034:70 - A value for optional parameter 'autofocus' isn't ever given. Try removing the unused parameter. - unused_element_parameter
+warning - lib\screens\home_screen.dart:2085:53 - A value for optional parameter 'autofocus' isn't ever given. Try removing the unused parameter. - unused_element_parameter
+warning - lib\screens\home_screen.dart:2678:10 - A value for optional parameter 'autofocus' isn't ever given. Try removing the unused parameter. - unused_element_parameter
+warning - lib\screens\home_screen.dart:2697:11 - The value of the local variable 'activeColor' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - lib\screens\home_screen.dart:2801:7 - The declaration '_SectionTitle' isn't referenced. Try removing the declaration of '_SectionTitle'. - unused_element
+
+15 issues found.

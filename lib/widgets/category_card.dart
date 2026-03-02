@@ -65,7 +65,7 @@ class _CategoryCardState extends State<CategoryCard> {
           decoration: BoxDecoration(
             color: _isFocused ? AppColors.primary : _getDynamicColor(widget.name).withOpacity(0.4),
             borderRadius: BorderRadius.circular(12),
-            border: _isFocused ? Border.all(color: AppColors.primary, width: 3) : Border.all(color: Colors.white10),
+            border: _isFocused ? Border.all(color: AppColors.primary, width: 3) : Border.all(color: Colors.white10, width: 3),
             boxShadow: _isFocused 
                 ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 15)] 
                 : [],

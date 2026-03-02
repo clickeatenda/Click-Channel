@@ -18,6 +18,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
 
+  bool _loginTabFocused = false;
+  bool _registerTabFocused = false;
+  bool _forgotPasswordFocused = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -136,40 +140,43 @@ class _LoginScreenState extends State<LoginScreen> {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _selectedTab = 0),
-                                      child: AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
+                                    child: FocusableActionDetector(
+                                      onShowFocusHighlight: (v) => setState(() => _loginTabFocused = v),
+                                      actions: {
+                                        ActivateIntent: CallbackAction<Intent>(
+                                          onInvoke: (_) { setState(() => _selectedTab = 0); return null; },
                                         ),
-                                        decoration: BoxDecoration(
-                                          border: Border(
-                                            bottom: BorderSide(
-                                              color: _selectedTab == 0
-                                                  ? AppColors.primary
-                                                  : Colors.transparent,
-                                              width: 2,
+                                      },
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _selectedTab = 0),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          decoration: BoxDecoration(
+                                            border: Border(
+                                              bottom: BorderSide(
+                                                color: _selectedTab == 0
+                                                    ? AppColors.primary
+                                                    : _loginTabFocused ? Colors.white.withOpacity(0.5) : Colors.transparent,
+                                                width: 2,
+                                              ),
                                             ),
+                                            color: _selectedTab == 0
+                                                ? Colors.white.withOpacity(0.05)
+                                                : _loginTabFocused ? Colors.white.withOpacity(0.02) : Colors.transparent,
                                           ),
-                                          color: _selectedTab == 0
-                                              ? Colors.white.withOpacity(0.05)
-                                              : Colors.transparent,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            'Login',
-                                            style: TextStyle(
-                                              color: _selectedTab == 0
-                                                  ? Colors.white
-                                                  : Colors.white
-                                                      .withOpacity(0.6),
-                                              fontSize: 14,
-                                              fontWeight: _selectedTab == 0
-                                                  ? FontWeight.w600
-                                                  : FontWeight.w400,
+                                          child: Center(
+                                            child: Text(
+                                              'Login',
+                                              style: TextStyle(
+                                                color: _selectedTab == 0 || _loginTabFocused
+                                                    ? Colors.white
+                                                    : Colors.white.withOpacity(0.6),
+                                                fontSize: 14,
+                                                fontWeight: _selectedTab == 0
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -177,40 +184,43 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   Expanded(
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _selectedTab = 1),
-                                      child: AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
+                                    child: FocusableActionDetector(
+                                      onShowFocusHighlight: (v) => setState(() => _registerTabFocused = v),
+                                      actions: {
+                                        ActivateIntent: CallbackAction<Intent>(
+                                          onInvoke: (_) { setState(() => _selectedTab = 1); return null; },
                                         ),
-                                        decoration: BoxDecoration(
-                                          border: Border(
-                                            bottom: BorderSide(
-                                              color: _selectedTab == 1
-                                                  ? AppColors.primary
-                                                  : Colors.transparent,
-                                              width: 2,
+                                      },
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _selectedTab = 1),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          decoration: BoxDecoration(
+                                            border: Border(
+                                              bottom: BorderSide(
+                                                color: _selectedTab == 1
+                                                    ? AppColors.primary
+                                                    : _registerTabFocused ? Colors.white.withOpacity(0.5) : Colors.transparent,
+                                                width: 2,
+                                              ),
                                             ),
+                                            color: _selectedTab == 1
+                                                ? Colors.white.withOpacity(0.05)
+                                                : _registerTabFocused ? Colors.white.withOpacity(0.02) : Colors.transparent,
                                           ),
-                                          color: _selectedTab == 1
-                                              ? Colors.white.withOpacity(0.05)
-                                              : Colors.transparent,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            'Register',
-                                            style: TextStyle(
-                                              color: _selectedTab == 1
-                                                  ? Colors.white
-                                                  : Colors.white
-                                                      .withOpacity(0.6),
-                                              fontSize: 14,
-                                              fontWeight: _selectedTab == 1
-                                                  ? FontWeight.w600
-                                                  : FontWeight.w400,
+                                          child: Center(
+                                            child: Text(
+                                              'Register',
+                                              style: TextStyle(
+                                                color: _selectedTab == 1 || _registerTabFocused
+                                                    ? Colors.white
+                                                    : Colors.white.withOpacity(0.6),
+                                                fontSize: 14,
+                                                fontWeight: _selectedTab == 1
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -278,14 +288,30 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerRight,
-          child: GestureDetector(
-            onTap: () {},
-            child: const Text(
-              'Forgot password?',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+          child: FocusableActionDetector(
+            onShowFocusHighlight: (v) => setState(() => _forgotPasswordFocused = v),
+            actions: {
+              ActivateIntent: CallbackAction<Intent>(
+                onInvoke: (_) { /* handle forgot password */ return null; },
+              ),
+            },
+            child: GestureDetector(
+              onTap: () {},
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _forgotPasswordFocused ? Colors.white.withOpacity(0.1) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'Forgot password?',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ),
           ),

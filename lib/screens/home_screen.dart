@@ -124,21 +124,27 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 children: [
                   // BARRA LATERAL (SIDEBAR)
-                  AppSidebar(
-                    selectedIndex: _selectedIndex,
-                    onNavSelected: (index) {
-                      setState(() => _selectedIndex = index);
-                    },
+                  FocusTraversalGroup(
+                    policy: WidgetOrderTraversalPolicy(),
+                    child: AppSidebar(
+                      selectedIndex: _selectedIndex,
+                      onNavSelected: (index) {
+                        setState(() => _selectedIndex = index);
+                      },
+                    ),
                   ),
 
                   // CONTEÚDO POR ABA
                   Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(opacity: animation, child: child);
-                      },
-                      child: _buildNavigationBody(_selectedIndex),
+                    child: FocusTraversalGroup(
+                      policy: WidgetOrderTraversalPolicy(),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(opacity: animation, child: child);
+                        },
+                        child: _buildNavigationBody(_selectedIndex),
+                      ),
                     ),
                   ),
                 ],
@@ -2159,7 +2165,7 @@ class _FeaturedCarousel extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return _FeaturedCard(item: item, index: index + 1, showEpg: showEpg, autofocus: widget.autofocus && index == 0);
+              return _FeaturedCard(item: item, index: index + 1, showEpg: showEpg, autofocus: autofocus && index == 0);
             },
           ),
         ),
@@ -2250,116 +2256,124 @@ class _FeaturedCardState extends State<_FeaturedCard> {
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            image: image.isNotEmpty
-                ? DecorationImage(
-                    image: NetworkImage(image),
-                    fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
-                  )
-                : null,
             gradient: image.isEmpty
                 ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
                 : null,
             border: Border.all(
-                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), width: 1),
+                color: _focused ? AppColors.primary : Colors.transparent, width: 2),
             boxShadow: _focused ? [
               BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30, spreadRadius: 4)
             ] : [
               BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))
             ],
           ),
-        child: Stack(
-          children: [
-            Positioned(
-              bottom: 12,
-              left: 12,
-              right: 12,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  // CRÍTICO: Mostra qualidade e rating para filmes e séries
-                  if (widget.item.type != 'channel')
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: MetaChipsWidget(
-                        item: widget.item,
-                        fontSize: 10,
-                        iconSize: 12,
-                      ),
-                    ),
-                  // CRÍTICO: Para canais, mostra qualidade + EPG compacto
-                  if (widget.item.type == 'channel') ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Row(
-                        children: [
-                          // Qualidade
-                          if (widget.item.quality.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white10,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.white24),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.high_quality, color: Colors.white70, size: 12),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    widget.item.quality.toUpperCase(),
-                                    style: const TextStyle(color: Colors.white70, fontSize: 10),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          // EPG compacto ao lado
-                          if (widget.showEpg && epg != null && current != null) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.greenAccent.withOpacity(0.5)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.live_tv, color: Colors.greenAccent, size: 12),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      current.title,
-                                      style: const TextStyle(color: Colors.greenAccent, fontSize: 10),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (image.isNotEmpty)
+                AdaptiveCachedImage(
+                  url: image,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                color: _focused ? Colors.transparent : Colors.black.withOpacity(0.3),
               ),
-            ),
-          ],
+              Positioned(
+                bottom: 12,
+                left: 12,
+                right: 12,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    // CRÍTICO: Mostra qualidade e rating para filmes e séries
+                    if (widget.item.type != 'channel')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: MetaChipsWidget(
+                          item: widget.item,
+                          fontSize: 10,
+                          iconSize: 12,
+                        ),
+                      ),
+                    // CRÍTICO: Para canais, mostra qualidade + EPG compacto
+                    if (widget.item.type == 'channel') ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          children: [
+                            // Qualidade
+                            if (widget.item.quality.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white10,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.high_quality, color: Colors.white70, size: 12),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      widget.item.quality.toUpperCase(),
+                                      style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            // EPG compacto ao lado
+                            if (widget.showEpg && epg != null && current != null) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.greenAccent.withOpacity(0.5)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.live_tv, color: Colors.greenAccent, size: 12),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        current.title,
+                                        style: const TextStyle(color: Colors.greenAccent, fontSize: 10),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       ),
@@ -2406,8 +2420,8 @@ class _SeriesThumbState extends State<_SeriesThumb> {
             color: const Color(0xFF161b22),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
-                width: 1),
+                color: _focused ? AppColors.primary : Colors.transparent, 
+                width: 2),
             boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
                 BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
             ],
@@ -2504,8 +2518,8 @@ class _ChannelThumbState extends State<_ChannelThumb> {
             color: const Color(0xFF161b22),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
-                width: 1),
+                color: _focused ? AppColors.primary : Colors.transparent, 
+                width: 2),
             boxShadow: _focused ? [
                 BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30, spreadRadius: 4)
             ] : [
@@ -2666,6 +2680,7 @@ class _CategoryImageCard extends StatefulWidget {
   final String info;
   final String image;
   final VoidCallback onTap;
+  final bool autofocus;
 
   const _CategoryImageCard({
     required this.label,
@@ -2746,14 +2761,18 @@ class _CategoryImageCardState extends State<_CategoryImageCard> {
             children: [
               if (widget.image.isNotEmpty)
                 Positioned.fill(
-                  child: CachedNetworkImage(
-                    imageUrl: widget.image,
+                  child: AdaptiveCachedImage(
+                    url: widget.image,
                     fit: BoxFit.cover,
-                    placeholder: (c,u)=>Container(color: const Color(0x33111B2B)),
-                    errorWidget: (c,u,e)=>Container(color: const Color(0x33111B2B)),
+                    errorWidget: Container(color: const Color(0x33111B2B)),
                   ),
                 ),
-              Positioned.fill(child: Container(color: Colors.black.withOpacity(0.45))),
+              Positioned.fill(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  color: Colors.black.withOpacity(_focused ? 0.0 : 0.45),
+                ),
+              ),
               Row(
                 children: [
                   Expanded(
@@ -2913,7 +2932,12 @@ class _WatchingCardState extends State<_WatchingCard> {
 
     return Focus(
       autofocus: widget.autofocus,
-      onFocusChange: (f) => setState(() => _focused = f),
+      onFocusChange: (f) {
+        setState(() => _focused = f);
+        if (f && item.image.isNotEmpty) {
+          topBackgroundNotifier.value = item.image;
+        }
+      },
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -3050,7 +3074,12 @@ class _HeroBannerState extends State<_HeroBanner> {
 
     return Focus(
       autofocus: widget.autofocus,
-      onFocusChange: (f) => setState(() => _focused = f),
+      onFocusChange: (f) {
+        setState(() => _focused = f);
+        if (f && image.isNotEmpty) {
+          topBackgroundNotifier.value = image;
+        }
+      },
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||

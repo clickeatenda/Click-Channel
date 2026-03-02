@@ -198,7 +198,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                 _buildTopButton(
                   icon: Icons.arrow_back,
                   label: 'Voltar',
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _handleBackAction,
                   onDownPressed: () => _rewindFocusNode.requestFocus(),
                 ),
                 const SizedBox(width: 12),
@@ -818,6 +818,31 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     );
   }
   
+  bool _isAnyPanelOpen() {
+    return _showInfo || _showAudioOptions || _showSubtitleOptions || _showFitOptions;
+  }
+
+  void _handleBackAction() {
+    print('🔙 _handleBackAction: panels=${_isAnyPanelOpen()}, controls=$_showControls');
+    
+    if (_isAnyPanelOpen()) {
+      setState(() {
+        _showInfo = false;
+        _showAudioOptions = false;
+        _showSubtitleOptions = false;
+        _showFitOptions = false;
+      });
+      return;
+    }
+
+    if (_showControls) {
+      setState(() => _showControls = false);
+      return;
+    }
+
+    Navigator.pop(context);
+  }
+
   Widget _buildPlayerView() {
     return Focus(
       focusNode: _rootFocusNode,
@@ -829,8 +854,10 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         final key = event.logicalKey;
         
         // Atalho global: Voltar
-        if (key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.backspace) {
-          Navigator.pop(context);
+        if (key == LogicalKeyboardKey.escape || 
+            key == LogicalKeyboardKey.backspace ||
+            key == LogicalKeyboardKey.gameButtonB) {
+          _handleBackAction();
           return KeyEventResult.handled;
         }
 

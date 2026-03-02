@@ -16,16 +16,43 @@ class AppSidebar extends StatefulWidget {
   @override
   State<AppSidebar> createState() => _AppSidebarState();
 }
-
 class _AppSidebarState extends State<AppSidebar> {
-  bool _isExpanded = false; // Start compact by default on larger screens or let focus handle it
-  bool _hasFocus = false;
+  bool _isExpanded = false;
+  late FocusNode _activeTabFocusNode;
 
-  void _onFocusChange(bool focused) {
-    setState(() {
-      _hasFocus = focused;
-      // Auto-expand when a child gets focus
-      _isExpanded = focused;
+  @override
+  void initState() {
+    super.initState();
+    _activeTabFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _activeTabFocusNode.dispose();
+    super.dispose();
+  }
+
+  // Called when a sidebar item gets focused
+  void _onItemFocused() {
+    if (!_isExpanded) {
+      setState(() => _isExpanded = true);
+    }
+  }
+
+  // Called when a sidebar item loses focus (to check if whole sidebar lost focus)
+  void _onItemBlurred() {
+    // Use post-frame so the next focused widget is known
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Check if focus is still within the sidebar
+      final focus = FocusManager.instance.primaryFocus;
+      // If focus moved outside the sidebar subtree, collapse
+      if (focus != null && !_activeTabFocusNode.context.toString().contains(focus.toString())) {
+        // simpler: just check if none of our known items have focus
+        if (!_isAnyItemFocused()) {
+          setState(() => _isExpanded = false);
+        }
+      }
     });
   }
 
@@ -33,6 +60,21 @@ class _AppSidebarState extends State<AppSidebar> {
     setState(() {
       _isExpanded = !_isExpanded;
     });
+  }
+
+  bool _isAnyItemFocused() {
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus == null || focus.context == null) return false;
+    
+    bool isInsideSidebar = false;
+    focus.context!.visitAncestorElements((element) {
+      if (element.widget is AppSidebar) {
+        isInsideSidebar = true;
+        return false; // Stop visiting
+      }
+      return true; // Continue visiting
+    });
+    return isInsideSidebar;
   }
 
   void _navigate(int index) {
@@ -48,12 +90,10 @@ class _AppSidebarState extends State<AppSidebar> {
   Widget build(BuildContext context) {
     final width = _isExpanded ? 250.0 : 80.0;
 
-    return Focus( // Wrap in Focus to detect when ANY element inside gets focus
-      onFocusChange: _onFocusChange,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: width,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      width: width,
         decoration: BoxDecoration(
           color: const Color(0xFF161b22).withOpacity(0.8),
           border: Border(
@@ -129,15 +169,20 @@ class _AppSidebarState extends State<AppSidebar> {
   
             // NAV
             Expanded(
-              child: ListView(
-                children: [
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
                   _SidebarItem(
                     label: 'Início',
                     icon: Icons.home_outlined,
                     selected: widget.selectedIndex == 0,
                     isExpanded: _isExpanded,
                     onTap: () => _navigate(0),
+                    onFocused: _onItemFocused,
+                    onBlurred: _onItemBlurred,
                     autofocus: widget.selectedIndex == 0,
+                    focusNode: widget.selectedIndex == 0 ? _activeTabFocusNode : null,
                   ),
                   _SidebarItem(
                     label: 'Filmes',
@@ -145,6 +190,9 @@ class _AppSidebarState extends State<AppSidebar> {
                     selected: widget.selectedIndex == 1,
                     isExpanded: _isExpanded,
                     onTap: () => _navigate(1),
+                    onFocused: _onItemFocused,
+                    onBlurred: _onItemBlurred,
+                    focusNode: widget.selectedIndex == 1 ? _activeTabFocusNode : null,
                   ),
                   _SidebarItem(
                     label: 'Séries',
@@ -152,6 +200,9 @@ class _AppSidebarState extends State<AppSidebar> {
                     selected: widget.selectedIndex == 2,
                     isExpanded: _isExpanded,
                     onTap: () => _navigate(2),
+                    onFocused: _onItemFocused,
+                    onBlurred: _onItemBlurred,
+                    focusNode: widget.selectedIndex == 2 ? _activeTabFocusNode : null,
                   ),
                   _SidebarItem(
                     label: 'Canais',
@@ -159,6 +210,9 @@ class _AppSidebarState extends State<AppSidebar> {
                     selected: widget.selectedIndex == 3,
                     isExpanded: _isExpanded,
                     onTap: () => _navigate(3),
+                    onFocused: _onItemFocused,
+                    onBlurred: _onItemBlurred,
+                    focusNode: widget.selectedIndex == 3 ? _activeTabFocusNode : null,
                   ),
                   _SidebarItem(
                     label: 'SharkFlix',
@@ -166,6 +220,9 @@ class _AppSidebarState extends State<AppSidebar> {
                     selected: widget.selectedIndex == 4,
                     isExpanded: _isExpanded,
                     onTap: () => _navigate(4),
+                    onFocused: _onItemFocused,
+                    onBlurred: _onItemBlurred,
+                    focusNode: widget.selectedIndex == 4 ? _activeTabFocusNode : null,
                   ),
                   const SizedBox(height: 16),
                   Padding(
@@ -178,6 +235,8 @@ class _AppSidebarState extends State<AppSidebar> {
                     icon: Icons.search_outlined,
                     selected: false,
                     isExpanded: _isExpanded,
+                    onFocused: _onItemFocused,
+                    onBlurred: _onItemBlurred,
                     onTap: () {
                       setState(() => _isExpanded = false);
                       Navigator.push(context, MaterialPageRoute(
@@ -196,6 +255,7 @@ class _AppSidebarState extends State<AppSidebar> {
                         Navigator.pushNamed(context, '/settings');
                       }
                     },
+                    focusNode: widget.selectedIndex == 10 ? _activeTabFocusNode : null,
                   ),
                   _SidebarItem(
                     label: 'Perfil',
@@ -208,10 +268,12 @@ class _AppSidebarState extends State<AppSidebar> {
                         Navigator.pushNamed(context, '/profile');
                       }
                     },
+                    focusNode: widget.selectedIndex == 11 ? _activeTabFocusNode : null,
                   ),
                 ],
               ),
             ),
+          ),
             
             // Expand/Collapse Toggle Button (Useful for Mouse/Touch)
             Padding(
@@ -228,8 +290,7 @@ class _AppSidebarState extends State<AppSidebar> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -238,16 +299,22 @@ class _SidebarItem extends StatefulWidget {
   final IconData? icon;
   final bool selected;
   final VoidCallback onTap;
+  final VoidCallback? onFocused;
+  final VoidCallback? onBlurred;
   final bool autofocus;
   final bool isExpanded;
+  final FocusNode? focusNode;
 
   const _SidebarItem({
     required this.label,
     this.icon,
     required this.selected,
     required this.onTap,
+    this.onFocused,
+    this.onBlurred,
     this.autofocus = false,
     this.isExpanded = true,
+    this.focusNode,
   });
 
   @override
@@ -263,9 +330,15 @@ class _SidebarItemState extends State<_SidebarItem> {
     final active = widget.selected || _focused;
 
     return Focus(
+      focusNode: widget.focusNode,
       autofocus: widget.autofocus,
       onFocusChange: (f) {
         setState(() => _focused = f);
+        if (f) {
+          widget.onFocused?.call();
+        } else {
+          widget.onBlurred?.call();
+        }
       },
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
@@ -273,75 +346,52 @@ class _SidebarItemState extends State<_SidebarItem> {
               event.logicalKey == LogicalKeyboardKey.select ||
               event.logicalKey == LogicalKeyboardKey.gameButtonA) {
             widget.onTap();
-            // Pula o foco para a direita (conteúdo) de forma mais agressiva
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-               FocusScope.of(context).focusInDirection(TraversalDirection.right);
-            });
             return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-            FocusScope.of(context).focusInDirection(TraversalDirection.right);
-            return KeyEventResult.handled;
-          }
-          // Se apertar "Para Baixo" no último item, manda o foco para o conteúdo
-          if (event.logicalKey == LogicalKeyboardKey.arrowDown && widget.label == 'Perfil') {
-             FocusScope.of(context).focusInDirection(TraversalDirection.right);
-             return KeyEventResult.handled;
           }
         }
         return KeyEventResult.ignored;
       },
       child: InkWell(
-        onTap: widget.onTap,
+        onTap: () {
+          if (!widget.selected && widget.onTap != null) {
+            widget.onTap!();
+          }
+        },
+        borderRadius: BorderRadius.circular(10),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: EdgeInsets.symmetric(
-            horizontal: widget.isExpanded ? 16 : 8, 
-            vertical: 4
-          ),
-          padding: EdgeInsets.symmetric(
-            vertical: 12, 
-            horizontal: widget.isExpanded ? 16 : 0
-          ),
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: active ? primary.withOpacity(0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10), // Fully rounded pills
+            color: widget.selected 
+                ? AppColors.primary.withOpacity(0.15) 
+                : (_focused ? Colors.white.withOpacity(0.05) : Colors.transparent),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: active ? primary.withOpacity(0.5) : Colors.transparent,
+              color: widget.selected 
+                  ? AppColors.primary.withOpacity(0.5) 
+                  : (_focused ? Colors.white24 : Colors.transparent),
               width: 1,
             ),
-            boxShadow: _focused ? [
-              BoxShadow(
-                color: primary.withOpacity(0.2),
-                blurRadius: 10,
-                spreadRadius: 1,
-              )
-            ] : null,
           ),
           child: Row(
             mainAxisAlignment: widget.isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
             children: [
-              if (widget.icon != null) ...[
-                Icon(
-                  widget.icon,
-                  color: active ? primary : Colors.white54,
-                  size: 24, // slightly larger icon for collapsed view
-                ),
-                if (widget.isExpanded) const SizedBox(width: 12),
-              ],
-              if (widget.isExpanded)
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    style: TextStyle(
-                      color: active ? primary : Colors.white70,
-                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 15,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              if (widget.isExpanded) const SizedBox(width: 16),
+              Icon(
+                widget.icon,
+                color: widget.selected ? AppColors.primary : (_focused ? Colors.white : Colors.white54),
+                size: 24,
+              ),
+              if (widget.isExpanded) ...[
+                const SizedBox(width: 16),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: widget.selected ? AppColors.primary : (_focused ? Colors.white : Colors.white70),
+                    fontWeight: widget.selected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
+              ],
             ],
           ),
         ),

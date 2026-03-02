@@ -22,7 +22,6 @@ class HeroSection extends StatelessWidget {
             imageUrl: item.image,
             fit: BoxFit.cover,
             alignment: Alignment.topCenter,
-            memCacheHeight: 800,
             placeholder: (_, __) => Container(color: AppColors.background),
             errorWidget: (_, __, ___) => Container(color: AppColors.background),
           ),

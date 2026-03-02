@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'adaptive_cached_image.dart';
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 
@@ -75,7 +76,7 @@ class _ContentCardState extends State<ContentCard> {
             color: AppColors.card,
             border: _isFocused 
                 ? Border.all(color: AppColors.primary, width: 3)
-                : null,
+                : Border.all(color: Colors.transparent, width: 3),
             boxShadow: _isFocused 
                 ? [
                     BoxShadow(
@@ -86,8 +87,6 @@ class _ContentCardState extends State<ContentCard> {
                   ]
                 : null,
           ),
-          transformAlignment: Alignment.center,
-          transform: _isFocused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
           child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,12 +97,10 @@ class _ContentCardState extends State<ContentCard> {
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                   child: widget.item.image.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: widget.item.image, 
+                      ? AdaptiveCachedImage(
+                          url: widget.item.image, 
                           fit: BoxFit.cover, 
-                          memCacheHeight: 280,
-                          placeholder: (context, url) => Container(color: AppColors.card),
-                          errorWidget: (c, u, e) => _placeholder(),
+                          errorWidget: _placeholder(),
                         )
                       : _placeholder(),
                 ),

@@ -1,14 +1,17 @@
+import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:async'; // Para Timer debounce
 import '../core/theme/app_colors.dart';
 import '../models/content_item.dart';
 import '../data/m3u_service.dart';
+import '../widgets/blinking_cursor_placeholder.dart';
 import '../widgets/media_player_screen.dart';
 import '../widgets/app_sidebar.dart';
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
+import 'home_screen.dart' show topBackgroundNotifier;
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -21,15 +24,20 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
-  List<ContentItem> _rawResults = []; // Resultados SEM filtro
-  List<ContentItem> _results = [];    // Resultados FILTRADOS (exibidos)
+  final FocusNode _placeholderFocus = FocusNode(); // Foco para o estado de navegação
+  
+  List<ContentItem> _rawResults = []; 
+  List<ContentItem> _results = [];    
   bool _loading = false;
   String _lastQuery = '';
   Timer? _debounce;
   
+  // Controle de ativação do teclado
+  bool _isInputActive = false; 
+  bool _isPlaceholderFocused = false;
+  
   // Filtros
-  String _typeFilter = 'all'; // all, movie, series, channel
-  String _qualityFilter = 'all'; // all, 4k, fhd, hd, sd
+  String _typeFilter = 'all'; 
 
   @override
   void initState() {
@@ -39,7 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _performSearch(widget.initialQuery!);
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocus.requestFocus();
+      _placeholderFocus.requestFocus();
     });
   }
 
@@ -48,6 +56,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _debounce?.cancel();
     _searchController.dispose();
     _searchFocus.dispose();
+    _placeholderFocus.dispose();
     super.dispose();
   }
 
@@ -66,18 +75,12 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
 
-    // Debounce de 800ms
     _debounce = Timer(const Duration(milliseconds: 800), () {
       _performSearch(query);
     });
   }
 
   Future<void> _performSearch(String query) async {
-    if (query.isEmpty || query.length < 2) return;
-    // Removemos a verificação rigida de _lastQuery aqui para permitir retry, 
-    // mas idealmente só buscamos se mudar.
-    if (query == _lastQuery && _rawResults.isNotEmpty) return; 
-    
     setState(() {
       _loading = true;
       _lastQuery = query;
@@ -88,8 +91,8 @@ class _SearchScreenState extends State<SearchScreen> {
       
       if (mounted) {
         setState(() {
-          _rawResults = allItems; // Salva o resultado bruto
-          _results = _applyFilters(allItems); // Aplica filtros
+          _rawResults = allItems;
+          _results = _applyFilters(allItems);
           _loading = false;
         });
       }
@@ -106,7 +109,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<ContentItem> _applyFilters(List<ContentItem> items) {
     return items.where((item) {
-      // Filtro por tipo
       if (_typeFilter != 'all') {
         if (_typeFilter == 'movie' && item.type != 'movie') return false;
         if (_typeFilter == 'series' && !item.isSeries && item.type != 'series') return false;
@@ -117,13 +119,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _updateFilters() {
-    // Reaplica os filtros usando a lista bruta JÁ carregada
     if (_rawResults.isNotEmpty) {
       setState(() {
         _results = _applyFilters(_rawResults);
       });
     } else if (_lastQuery.isNotEmpty) {
-      // Se por acaso não tiver rawResults mas tiver query (raro), busca de novo
       _performSearch(_lastQuery);
     }
   }
@@ -132,186 +132,314 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      body: Row(
+      body: Stack(
         children: [
-          const AppSidebar(selectedIndex: -1),
-          Expanded(
-            child: Column(
-              children: [
-                // Header com busca
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF0F1620),
-                    border: Border(bottom: BorderSide(color: Color(0x334B5563))),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                            autofocus: false,
+          // DYNAMIC BACKGROUND LAYER
+          Positioned.fill(
+            child: ValueListenableBuilder<String?>(
+              valueListenable: topBackgroundNotifier,
+              builder: (context, imageUrl, _) {
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 600),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  child: imageUrl != null && imageUrl.isNotEmpty
+                      ? Container(
+                          key: ValueKey(imageUrl),
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: NetworkImage(imageUrl),
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              focusNode: _searchFocus,
-                              autofocus: true,
-                              style: const TextStyle(color: Colors.white, fontSize: 16),
-                              decoration: InputDecoration(
-                                hintText: 'Buscar filmes, séries, canais...',
-                                hintStyle: const TextStyle(color: Colors.white54),
-                                filled: true,
-                                fillColor: Colors.white10,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                                suffixIcon: _searchController.text.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear, color: Colors.white54),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          _onSearchChanged('');
-                                        },
-                                      )
-                                    : null,
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                            child: Container(
+                              color: AppColors.backgroundDark.withOpacity(0.75),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          key: const ValueKey('default_bg'),
+                          color: AppColors.backgroundDark,
+                        ),
+                );
+              },
+            ),
+          ),
+          Row(
+            children: [
+              const AppSidebar(selectedIndex: -1),
+              Expanded(
+                child: Column(
+                  children: [
+                    // Header com busca
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0F1620),
+                        border: Border(bottom: BorderSide(color: Color(0x334B5563))),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
                               ),
-                              onChanged: _onSearchChanged,
-                              onSubmitted: (val) {
-                                if (_debounce?.isActive ?? false) _debounce!.cancel();
-                                _performSearch(val);
-                              },
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildSearchField(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Filtros
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _FilterChip(
+                                  label: 'Todos',
+                                  selected: _typeFilter == 'all',
+                                  onTap: () {
+                                    setState(() => _typeFilter = 'all');
+                                    _updateFilters();
+                                  },
+                                ),
+                                _FilterChip(
+                                  label: 'Filmes',
+                                  selected: _typeFilter == 'movie',
+                                  onTap: () {
+                                    setState(() => _typeFilter = 'movie');
+                                    _updateFilters();
+                                  },
+                                ),
+                                _FilterChip(
+                                  label: 'Séries',
+                                  selected: _typeFilter == 'series',
+                                  onTap: () {
+                                    setState(() => _typeFilter = 'series');
+                                    _updateFilters();
+                                  },
+                                ),
+                                _FilterChip(
+                                  label: 'Canais',
+                                  selected: _typeFilter == 'channel',
+                                  onTap: () {
+                                    setState(() => _typeFilter = 'channel');
+                                    _updateFilters();
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      // Filtros
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _FilterChip(
-                              label: 'Todos',
-                              selected: _typeFilter == 'all',
-                              onTap: () {
-                                setState(() => _typeFilter = 'all');
-                                _updateFilters();
-                              },
-                            ),
-                            _FilterChip(
-                              label: 'Filmes',
-                              selected: _typeFilter == 'movie',
-                              onTap: () {
-                                setState(() => _typeFilter = 'movie');
-                                _updateFilters();
-                              },
-                            ),
-                            _FilterChip(
-                              label: 'Séries',
-                              selected: _typeFilter == 'series',
-                              onTap: () {
-                                setState(() => _typeFilter = 'series');
-                                _updateFilters();
-                              },
-                            ),
-                            _FilterChip(
-                              label: 'Canais',
-                              selected: _typeFilter == 'channel',
-                              onTap: () {
-                                setState(() => _typeFilter = 'channel');
-                                _updateFilters();
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Resultados
-                Expanded(
-                  child: _loading
-                      ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                      : _results.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _lastQuery.isEmpty ? Icons.search : Icons.search_off,
-                                    color: Colors.white30,
-                                    size: 64,
+                    ),
+                    Expanded(
+                      child: _loading
+                          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                          : _results.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _lastQuery.isEmpty ? Icons.search : Icons.search_off,
+                                        color: Colors.white30,
+                                        size: 64,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        _lastQuery.isEmpty
+                                            ? 'Digite para buscar'
+                                            : 'Nenhum resultado para "$_lastQuery"',
+                                        style: const TextStyle(color: Colors.white54, fontSize: 16),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    _lastQuery.isEmpty
-                                        ? 'Digite para buscar'
-                                        : 'Nenhum resultado para "$_lastQuery"',
-                                    style: const TextStyle(color: Colors.white54, fontSize: 16),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Text(
-                                    '${_results.length} resultados encontrados',
-                                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: GridView.builder(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 6,
-                                      childAspectRatio: 0.55,
-                                      crossAxisSpacing: 12,
-                                      mainAxisSpacing: 12,
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Text(
+                                        '${_results.length} resultados encontrados',
+                                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                      ),
                                     ),
-                                    itemCount: _results.length,
-                                    itemBuilder: (context, index) {
-                                      final item = _results[index];
-                                      return _SearchResultCard(
-                                        item: item,
-                                        onTap: () {
-                                          if (item.isSeries) {
-                                            Navigator.push(context, MaterialPageRoute(
-                                              builder: (_) => SeriesDetailScreen(item: item),
-                                            ));
-                                          } else if (item.type == 'movie') {
-                                            // CRÍTICO: Rota correta para filmes
-                                            Navigator.push(context, MaterialPageRoute(
-                                              builder: (_) => MovieDetailScreen(item: item),
-                                            ));
-                                          } else {
-                                            Navigator.push(context, MaterialPageRoute(
-                                              builder: (_) => MediaPlayerScreen(url: item.url, item: item),
-                                            ));
-                                          }
+                                    Expanded(
+                                      child: GridView.builder(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 6,
+                                          childAspectRatio: 0.55,
+                                          crossAxisSpacing: 12,
+                                          mainAxisSpacing: 12,
+                                        ),
+                                        itemCount: _results.length,
+                                        itemBuilder: (context, index) {
+                                          final item = _results[index];
+                                          return _SearchResultCard(
+                                            item: item,
+                                            onTap: () {
+                                              if (item.isSeries) {
+                                                Navigator.push(context, MaterialPageRoute(
+                                                  builder: (_) => SeriesDetailScreen(item: item),
+                                                ));
+                                              } else if (item.type == 'movie') {
+                                                Navigator.push(context, MaterialPageRoute(
+                                                  builder: (_) => MovieDetailScreen(item: item),
+                                                ));
+                                              } else {
+                                                Navigator.push(context, MaterialPageRoute(
+                                                  builder: (_) => MediaPlayerScreen(url: item.url, item: item),
+                                                ));
+                                              }
+                                            },
+                                          );
                                         },
-                                      );
-                                    },
-                                  ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  // CAMPO DE BUSCA FINAL (V23)
+  // Usa BlinkingCursorPlaceholder para navegação (zero gatilho de teclado OS)
+  // Swapa para TextField real apenas quando ativado.
+  Widget _buildSearchField() {
+    if (_isInputActive) {
+      return Focus(
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+            _deactivateInput();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocus,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+          decoration: InputDecoration(
+            hintText: 'Digite para buscar...',
+            hintStyle: const TextStyle(color: Colors.white54),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.2),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+            prefixIcon: const Icon(Icons.keyboard, color: AppColors.primary),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: _deactivateInput,
+            ),
+          ),
+          onChanged: _onSearchChanged,
+          onSubmitted: (val) {
+            if (_debounce?.isActive ?? false) _debounce!.cancel();
+            _performSearch(val);
+            _deactivateInput();
+          },
+        ),
+      );
+    }
+
+    return Focus(
+      focusNode: _placeholderFocus,
+      onFocusChange: (f) {
+        setState(() => _isPlaceholderFocused = f);
+        if (f) SystemChannels.textInput.invokeMethod('TextInput.hide');
+      },
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            FocusScope.of(context).nextFocus();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            FocusScope.of(context).previousFocus();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            FocusScope.of(context).previousFocus();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            FocusScope.of(context).nextFocus();
+            return KeyEventResult.handled;
+          }
+
+          // Ativação por Enter ou Tecla de Caractere
+          final isChar = event.logicalKey.keyLabel.length == 1 && _isAlphanumeric(event.logicalKey.keyLabel);
+          if (event.logicalKey == LogicalKeyboardKey.enter || 
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA || 
+              isChar) {
+            _activateInput();
+            return isChar ? KeyEventResult.ignored : KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: _activateInput,
+        child: BlinkingCursorPlaceholder(
+          text: _searchController.text,
+          hintText: _isPlaceholderFocused && _searchController.text.isEmpty 
+              ? 'Pressione OK para buscar' 
+              : 'Buscar filmes, séries...',
+          isFocused: _isPlaceholderFocused,
+          onActivate: _activateInput,
+          prefixIcon: Icons.search,
+        ),
+      ),
+    );
+  }
+
+  bool _isAlphanumeric(String s) {
+    return RegExp(r'^[a-zA-Z0-9]$').hasMatch(s);
+  }
+
+  void _activateInput() {
+    setState(() => _isInputActive = true);
+    // Delay para garantir construção e foco
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (mounted) {
+        _searchFocus.requestFocus();
+        SystemChannels.textInput.invokeMethod('TextInput.show');
+      }
+    });
+  }
+
+  void _deactivateInput() {
+    setState(() => _isInputActive = false);
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    _placeholderFocus.requestFocus();
   }
 }
 
@@ -393,7 +521,12 @@ class _SearchResultCardState extends State<_SearchResultCard> {
   @override
   Widget build(BuildContext context) {
     return Focus(
-      onFocusChange: (f) => setState(() => _focused = f),
+      onFocusChange: (f) {
+        setState(() => _focused = f);
+        if (f && widget.item.image.isNotEmpty) {
+          topBackgroundNotifier.value = widget.item.image;
+        }
+      },
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -444,7 +577,6 @@ class _SearchResultCardState extends State<_SearchResultCard> {
                         ),
                       ),
                     ),
-                    // Badge de tipo
                     Positioned(
                       top: 6,
                       right: 6,
@@ -464,7 +596,6 @@ class _SearchResultCardState extends State<_SearchResultCard> {
                         ),
                       ),
                     ),
-                    // Badge de qualidade
                     if (widget.item.quality.isNotEmpty)
                       Positioned(
                         top: 6,

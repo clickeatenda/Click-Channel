@@ -228,7 +228,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               width: 240,
                               height: 360,
                               fit: BoxFit.cover,
-                              memCacheWidth: 240,
                               placeholder: (_, __) => Container(color: Colors.white10, height: 360),
                               errorWidget: (_, __, ___) => Container(color: Colors.grey[900], height: 360),
                             ),
@@ -517,7 +516,6 @@ class _SimilarMovieCardState extends State<_SimilarMovieCard> {
                     imageUrl: widget.item.image,
                     fit: BoxFit.cover,
                     width: double.infinity,
-                    memCacheWidth: 140, // OTIMIZAÇÃO CRÍTICA DE MEMÓRIA
                     placeholder: (_, __) => Container(color: const Color(0xFF0F1620)),
                     errorWidget: (_, __, ___) => Container(
                       color: const Color(0xFF0F1620),

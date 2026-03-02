@@ -311,7 +311,6 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                               width: 240,
                               height: 360,
                               fit: BoxFit.cover,
-                              memCacheWidth: 240,
                               errorWidget: (_, __, ___) => Container(color: Colors.grey[900], height: 360),
                             ),
                          ),
@@ -728,7 +727,6 @@ class _SimilarSeriesCardState extends State<_SimilarSeriesCard> {
                     imageUrl: widget.item.image,
                     fit: BoxFit.cover,
                     width: double.infinity,
-                    memCacheWidth: 140, // Otimização de memória
                     placeholder: (_, __) => Container(color: const Color(0xFF0F1620)),
                     errorWidget: (_, __, ___) => Container(
                       color: const Color(0xFF0F1620),

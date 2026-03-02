@@ -1,0 +1,247 @@
+diff --git a/lib/screens/home_screen.dart b/lib/screens/home_screen.dart
+index 55ff841..6dd2518 100644
+--- a/lib/screens/home_screen.dart
++++ b/lib/screens/home_screen.dart
+@@ -16,9 +16,9 @@ import '../core/theme/app_colors.dart';
+ import '../models/content_item.dart';
+ import '../models/epg_program.dart';
+ import 'dart:convert'; // For jsonEncode/Decode
++import 'dart:ui'; // For ImageFilter
+ import 'package:shared_preferences/shared_preferences.dart'; // For caching
+ 
+-
+ import '../widgets/media_player_screen.dart';
+ import '../widgets/adaptive_cached_image.dart';
+ import '../widgets/meta_chips_widget.dart';
+@@ -26,6 +26,8 @@ import '../data/favorites_service.dart'; // NOVO import
+ import '../widgets/app_sidebar.dart';
+ import '../routes/app_routes.dart';
+ 
++final ValueNotifier<String?> topBackgroundNotifier = ValueNotifier<String?>(null);
++
+ class HomeScreen extends StatefulWidget {
+   final int initialIndex;
+   const HomeScreen({super.key, this.initialIndex = 0});
+@@ -80,32 +82,71 @@ class _HomeScreenState extends State<HomeScreen> {
+     return WillPopScope(
+       onWillPop: _onWillPop,
+       child: Scaffold(
+-      backgroundColor: bg,
+-      body: SafeArea(
+-        child: Row(
++        backgroundColor: bg,
++        body: Stack(
+           children: [
+-            // BARRA LATERAL (SIDEBAR)
+-            AppSidebar(
+-              selectedIndex: _selectedIndex,
+-              onNavSelected: (index) {
+-                setState(() => _selectedIndex = index);
+-              },
++            // DYNAMIC BACKGROUND LAYER
++            Positioned.fill(
++              child: ValueListenableBuilder<String?>(
++                valueListenable: topBackgroundNotifier,
++                builder: (context, imageUrl, _) {
++                  return AnimatedSwitcher(
++                    duration: const Duration(milliseconds: 600),
++                    transitionBuilder: (child, animation) {
++                      return FadeTransition(opacity: animation, child: child);
++                    },
++                    child: imageUrl != null && imageUrl.isNotEmpty
++                        ? Container(
++                            key: ValueKey(imageUrl),
++                            decoration: BoxDecoration(
++                              image: DecorationImage(
++                                image: CachedNetworkImageProvider(imageUrl),
++                                fit: BoxFit.cover,
++                              ),
++                            ),
++                            child: BackdropFilter(
++                              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
++                              child: Container(
++                                color: bg.withOpacity(0.65), // Escurece o fundo para destacar o conteúdo
++                              ),
++                            ),
++                          )
++                        : Container(
++                            key: const ValueKey('default_bg'),
++                            color: bg,
++                          ),
++                  );
++                },
++              ),
+             ),
++            // CONTEÚDO PRINCIPAL
++            SafeArea(
++              child: Row(
++                children: [
++                  // BARRA LATERAL (SIDEBAR)
++                  AppSidebar(
++                    selectedIndex: _selectedIndex,
++                    onNavSelected: (index) {
++                      setState(() => _selectedIndex = index);
++                    },
++                  ),
+ 
+-            // CONTEÚDO POR ABA
+-            Expanded(
+-              child: AnimatedSwitcher(
+-                duration: const Duration(milliseconds: 250),
+-                transitionBuilder: (child, animation) {
+-                  return FadeTransition(opacity: animation, child: child);
+-                },
+-                child: _buildNavigationBody(_selectedIndex),
++                  // CONTEÚDO POR ABA
++                  Expanded(
++                    child: AnimatedSwitcher(
++                      duration: const Duration(milliseconds: 250),
++                      transitionBuilder: (child, animation) {
++                        return FadeTransition(opacity: animation, child: child);
++                      },
++                      child: _buildNavigationBody(_selectedIndex),
++                    ),
++                  ),
++                ],
+               ),
+             ),
+           ],
+         ),
+       ),
+-      ),
+     );
+   }
+ 
+@@ -2177,7 +2218,12 @@ class _FeaturedCardState extends State<_FeaturedCard> {
+     }
+ 
+     return Focus(
+-      onFocusChange: (f) => setState(() => _focused = f),
++      onFocusChange: (f) {
++        setState(() => _focused = f);
++        if (f && image.isNotEmpty) {
++          topBackgroundNotifier.value = image;
++        }
++      },
+       onKeyEvent: (node, event) {
+         if (event is KeyDownEvent &&
+             (event.logicalKey == LogicalKeyboardKey.enter ||
+@@ -2194,23 +2240,28 @@ class _FeaturedCardState extends State<_FeaturedCard> {
+           duration: const Duration(milliseconds: 150),
+           width: 280,
+           margin: const EdgeInsets.only(right: 12, bottom: 8),
+-          transform: _focused ? (Matrix4.identity()..scale(1.05)) : Matrix4.identity(),
++          transform: _focused ? (Matrix4.identity()..translate(0.0, -4.0)..scale(1.05)) : Matrix4.identity(),
+           transformAlignment: Alignment.center,
+-        decoration: BoxDecoration(
+-          borderRadius: BorderRadius.circular(12),
+-          image: image.isNotEmpty
+-              ? DecorationImage(
+-                  image: NetworkImage(image),
+-                  fit: BoxFit.cover,
+-                  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
+-                )
+-              : null,
+-          gradient: image.isEmpty
+-              ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+-              : null,
+-          border: _focused ? Border.all(color: AppColors.primary, width: 3) : Border.all(color: Colors.white12),
+-          boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 15, spreadRadius: 2)] : [],
+-        ),
++          decoration: BoxDecoration(
++            borderRadius: BorderRadius.circular(12),
++            image: image.isNotEmpty
++                ? DecorationImage(
++                    image: NetworkImage(image),
++                    fit: BoxFit.cover,
++                    colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.3), BlendMode.darken),
++                  )
++                : null,
++            gradient: image.isEmpty
++                ? const LinearGradient(colors: [Color(0xFF243B55), Color(0xFF141E30)], begin: Alignment.topLeft, end: Alignment.bottomRight)
++                : null,
++            border: Border.all(
++                color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), width: 1),
++            boxShadow: _focused ? [
++              BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30, spreadRadius: 4)
++            ] : [
++              BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))
++            ],
++          ),
+         child: Stack(
+           children: [
+             Positioned(
+@@ -2422,7 +2473,12 @@ class _ChannelThumbState extends State<_ChannelThumb> {
+     final title = widget.item.title;
+     final image = widget.item.image;
+     return Focus(
+-      onFocusChange: (f) => setState(() => _focused = f),
++      onFocusChange: (f) {
++        setState(() => _focused = f);
++        if (f && image.isNotEmpty) {
++          topBackgroundNotifier.value = image;
++        }
++      },
+       onKeyEvent: (node, event) {
+         if (event is KeyDownEvent &&
+             (event.logicalKey == LogicalKeyboardKey.enter ||
+@@ -2444,11 +2500,13 @@ class _ChannelThumbState extends State<_ChannelThumb> {
+             border: Border.all(
+                 color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
+                 width: 1),
+-            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
++            boxShadow: _focused ? [
++                BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30, spreadRadius: 4)
++            ] : [
+                 BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+             ],
+           ),
+-          transform: _focused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
++          transform: _focused ? (Matrix4.identity()..translate(0.0, -6.0)..scale(1.05)) : Matrix4.identity(),
+           transformAlignment: Alignment.center,
+           child: Column(
+             crossAxisAlignment: CrossAxisAlignment.stretch,
+@@ -2521,7 +2579,12 @@ class _MovieThumbState extends State<_MovieThumb> {
+     final title = widget.item.title;
+     final image = widget.item.image;
+     return Focus(
+-      onFocusChange: (f) => setState(() => _focused = f),
++      onFocusChange: (f) {
++        setState(() => _focused = f);
++        if (f && image.isNotEmpty) {
++          topBackgroundNotifier.value = image;
++        }
++      },
+       onKeyEvent: (node, event) {
+         if (event is KeyDownEvent &&
+             (event.logicalKey == LogicalKeyboardKey.enter ||
+@@ -2542,11 +2605,13 @@ class _MovieThumbState extends State<_MovieThumb> {
+             border: Border.all(
+                 color: _focused ? AppColors.primary : Colors.white.withOpacity(0.05), 
+                 width: 1),
+-            boxShadow: _focused ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] : [
++            boxShadow: _focused ? [
++                BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30, spreadRadius: 4)
++            ] : [
+                 BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+             ],
+           ),
+-          transform: _focused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
++          transform: _focused ? (Matrix4.identity()..translate(0.0, -6.0)..scale(1.05)) : Matrix4.identity(),
+           transformAlignment: Alignment.center,
+           child: Column(
+             crossAxisAlignment: CrossAxisAlignment.stretch,
+diff --git a/lib/widgets/adaptive_cached_image.dart b/lib/widgets/adaptive_cached_image.dart
+index 722aa53..69ca281 100644
+--- a/lib/widgets/adaptive_cached_image.dart
++++ b/lib/widgets/adaptive_cached_image.dart
+@@ -81,6 +81,9 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> with SingleTi
+     return CachedNetworkImage(
+       imageUrl: widget.url,
+       cacheManager: AppImageCacheManager.instance,
++      httpHeaders: const {
++        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
++      },
+       // Parâmetros de otimização de memória
+       memCacheHeight: optimizeMemCacheHeight,
+       memCacheWidth: 300, // Limita largura também

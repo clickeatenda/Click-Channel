@@ -1,0 +1,37 @@
+TÍTULO:
+Homologação e Testes Navegação TV da Nova UI Premium (Fase 5)
+
+DESCRIÇÃO:
+Contexto:
+Implementamos a nova interface "Premium Glassmorphism" nas views principais do projeto. Como este app foca no uso em TV (Android TV, Fire Stick), precisamos validar rigorosamente a ergonomia e as restrições de navegação via D-Pad (direcional).
+
+O que precisa ser feito:
+- [ ] Validar D-Pad Focus na SplashScreen e LoginScreen.
+- [ ] Validar D-Pad Focus e persistência da borda "glow" invisível na HomeScreen (Carrosséis e Categoria).
+- [ ] Validar troca de focus na MovieDetailScreen e SeriesDetailScreen sem travamentos (dead ends).
+- [ ] Validar navegação na aba de Configurações (Settings) através dos Inputs e Botões.
+
+Critérios de aceitação:
+- Foco luminoso (AppColors.primary) acompanha os itens em todas as telas sem sumir no limbo da interface (dead ends).
+- Ausência de crashes durante scroll rápido em listas horizontal/vertical.
+
+Impacto / Benefício:
+Evita que usuários de TV fiquem presos na interface sem conseguir acessar botões de navegação, e fortalece a percepção de produto Premium.
+
+LABELS:
+mobile
+tarefa
+Alta
+Em andamento
+
+MILESTONE - STATUS:
+🧪 Testes e Garantia de Qualidade
+
+MILESTONE - FASE:
+Fase 4: Performance e Otimização
+
+REPOSITÓRIO:
+clickeatenda/Click-Channel
+
+RESPONSÁVEL:
+A definir

@@ -8,6 +8,8 @@ import '../models/content_item.dart';
 import 'lazy_tmdb_loader.dart';
 
 class HeroCarousel extends StatefulWidget {
+  final List<ContentItem> items;
+  final Function(ContentItem) onPlay;
   final bool autofocus;
 
   const HeroCarousel({
@@ -127,6 +129,8 @@ class _HeroCarouselState extends State<HeroCarousel> {
 
 /// Card individual do banner com foco próprio para navegação TV
 class _HeroCard extends StatefulWidget {
+  final ContentItem item;
+  final VoidCallback onPlay;
   final bool autofocus;
 
   const _HeroCard({required this.item, required this.onPlay, this.autofocus = false});
@@ -164,8 +168,8 @@ class _HeroCardState extends State<_HeroCard> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: _isFocused ? AppColors.primary : Colors.white.withOpacity(0.08),
-              width: _isFocused ? 2.5 : 1,
+              color: _isFocused ? AppColors.primary : Colors.transparent,
+              width: 2.5,
             ),
             boxShadow: _isFocused
                 ? [BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 20, spreadRadius: 2)]
@@ -182,7 +186,6 @@ class _HeroCardState extends State<_HeroCard> {
                         imageUrl: widget.item.image,
                         fit: BoxFit.cover,
                         alignment: Alignment.topCenter,
-                        memCacheHeight: 400,
                         placeholder: (_, __) => Container(color: AppColors.background),
                         errorWidget: (_, __, ___) => Container(color: const Color(0xFF1A1A1A)),
                       )

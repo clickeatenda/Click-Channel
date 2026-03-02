@@ -1,0 +1,14 @@
+TÍTULO: Fase 6: UI Polish & Next-Gen TV Experience
+
+DESCRIÇÃO:
+Contexto: Com a refatoração estrutural (Sidebar e Row layouts) concluída, o próximo foco é elevar a experiência gráfica do app aos padrões premium de "Next-Gen TV" (ex: Netflix, Max), introduzindo micro-interações intensas, transições fluidas e feedback dinâmico para controle remoto.
+
+Tarefas Previstas (Phase 6):
+- [ ] Implementar **Backgrounds Dinâmicos (Crossfade Blur)** na tela Inicial e de Categorias. O background do app deve transicionar suavemente para uma versão opaca da capa selecionada.
+- [ ] Melhorar **Focus Animations** nos Content Grids (escala suave e bordas estilizadas ao passar o foco do D-Pad).
+- [ ] Adicionar **Loading Skeletons** para transições de conteúdo (substituindo spinners básicos).
+- [ ] Substituir `IndexedStack` por `AnimatedSwitcher` na `HomeScreen` para transições de tab/aba fluidas ("Cross-fade").
+- [ ] Aprimorar `media_player_screen.dart` e Telas de Detalhes (`movie_detail_screen.dart` / `series_detail_screen.dart`) consolidando pílulas de Glassmorphism.
+
+OBJETIVO GERAL:
+Polir interações e feedback visual contínuo, reduzindo atritos visuais e melhorando percepção de performance na Smart TV.

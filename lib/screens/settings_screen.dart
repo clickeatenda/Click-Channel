@@ -77,7 +77,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final creds = await JellyfinService.getCredentials();
     if (mounted) {
       setState(() {
-        _jfUrlController.text = creds['url'] ?? '';
+        String urlLoad = creds['url'] ?? '';
+        if (urlLoad.startsWith('http://')) {
+          urlLoad = urlLoad.substring(7); // Remove HTTP:// default
+        }
+        _jfUrlController.text = urlLoad;
         _jfUserController.text = creds['username'] ?? '';
         _jfPassController.text = creds['password'] ?? '';
       });
@@ -103,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (url.endsWith('/')) {
       url = url.substring(0, url.length - 1);
     }
-    _jfUrlController.text = url; // Atualiza UI
+    // _jfUrlController.text = url; // Removido: Não re-preencher a UI com o 'http://' para facilitar tv
 
     await JellyfinService.saveConfig(url: url, username: user, password: pass);
     if (!context.mounted) return;
@@ -759,17 +763,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: RawKeyboardListener(
-                                    focusNode: FocusNode(), // Dummy node for listener
-                                    onKey: (event) {
-                                      if (event is RawKeyDownEvent) {
+                                  child: Focus(
+                                    canRequestFocus: false,
+                                    onKeyEvent: (node, event) {
+                                      if (event is KeyDownEvent) {
                                         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
                                           _jfUserFocusNode.requestFocus();
+                                          return KeyEventResult.handled;
                                         } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                                           // Voltar para o botão de download ou campo anterior
-                                           _buttonFocusNode.requestFocus();
+                                          _buttonFocusNode.requestFocus();
+                                          return KeyEventResult.handled;
                                         }
                                       }
+                                      return KeyEventResult.ignored;
                                     },
                                     child: TextField(
                                       controller: _jfUrlController,
@@ -780,7 +786,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       decoration: InputDecoration(
                                         labelText: 'Server URL',
                                         labelStyle: const TextStyle(color: Colors.white70),
-                                        hintText: 'http://192.168.1.100:8096',
+                                        hintText: '192.168.1.100:8096',
                                         hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
                                         filled: true,
                                         fillColor: Colors.white.withOpacity(0.05),
@@ -809,16 +815,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: RawKeyboardListener(
-                                    focusNode: FocusNode(),
-                                    onKey: (event) {
-                                      if (event is RawKeyDownEvent) {
+                                  child: Focus(
+                                    canRequestFocus: false,
+                                    onKeyEvent: (node, event) {
+                                      if (event is KeyDownEvent) {
                                         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
                                           _jfPassFocusNode.requestFocus();
+                                          return KeyEventResult.handled;
                                         } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
                                           _jfUrlFocusNode.requestFocus();
+                                          return KeyEventResult.handled;
                                         }
                                       }
+                                      return KeyEventResult.ignored;
                                     },
                                     child: TextField(
                                       controller: _jfUserController,
@@ -856,16 +865,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: RawKeyboardListener(
-                                    focusNode: FocusNode(),
-                                    onKey: (event) {
-                                      if (event is RawKeyDownEvent) {
+                                  child: Focus(
+                                    canRequestFocus: false,
+                                    onKeyEvent: (node, event) {
+                                      if (event is KeyDownEvent) {
                                         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
                                           _jfSaveFocusNode.requestFocus();
+                                          return KeyEventResult.handled;
                                         } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
                                           _jfUserFocusNode.requestFocus();
+                                          return KeyEventResult.handled;
                                         }
                                       }
+                                      return KeyEventResult.ignored;
                                     },
                                     child: TextField(
                                       controller: _jfPassController,

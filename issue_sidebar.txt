@@ -1,0 +1,37 @@
+TÍTULO:
+Refatoração Estrutural da Interface: Menu Lateral (Sidebar) e Otimizações de UX
+
+DESCRIÇÃO:
+Contexto: A navegação superior (Top Nav) antiga consumia muito espaço útil e dificultava a imersão visual, além de ter uma usabilidade complexa em Smart TVs convencionais e Fire Sticks.
+
+O que precisou ser feito:
+- [x] Remover o componente `CustomAppHeader` das telas principais e de bibliotecas.
+- [x] Criar um novo widget `AppSidebar` como single source de navegação.
+- [x] Atualizar os layouts de `Column` para `Row` nas telas Home, Favorites, Search, Settings, etc., permitindo o pareamento lado-a-lado.
+- [x] Adicionar lógica de recolhimento inteligente (a barra expanda no foco e recolha quando perde ou em navegação).
+- [x] Ajustar engine de Foco (Focus System) forçando `TraversalDirection.right` na tecla nativa de Seta para a Direita no controle de TV, otimizando D-Pads.
+
+Critérios de Aceitação:
+- Navegação pelo D-Pad tem que ser fluida.
+- Espaço em tela maximizado esvaziando elementos horizontais na barra superior.
+- Interface seguindo as novas métricas Glassmorphism definidas nos protótipos.
+
+Impacto / Benefício:
+O aplicativo assume uma aparência "Premium", o espaço de exibição de capas de filmes e séries é aumentado, e a experiência em controles remotos torna-se nativa e esperada por apps de VOD de grande escala.
+
+LABELS:
+frontend
+melhoria
+Alta
+
+MILESTONE - STATUS:
+✅ Pronto para Implantação
+
+MILESTONE - FASE:
+Fase 3: Polimento da Interface
+
+REPOSITÓRIO:
+clickeatenda/Click-Channel
+
+RESPONSÁVEL:
+A definir
