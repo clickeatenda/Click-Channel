@@ -743,7 +743,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             // Manual Focus Chain for TV Remote
                             // URL -> User -> Pass -> Save Button -> Test Button
-                            Column(
+                            FocusTraversalGroup(
+                              child: Column(
                               children: [
                                 // URL
                                 AnimatedContainer(
@@ -763,35 +764,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: Focus(
-                                    canRequestFocus: false,
-                                    onKeyEvent: (node, event) {
-                                      if (event is KeyDownEvent) {
-                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                          _jfUserFocusNode.requestFocus();
-                                          return KeyEventResult.handled;
-                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                                          _buttonFocusNode.requestFocus();
-                                          return KeyEventResult.handled;
-                                        }
-                                      }
-                                      return KeyEventResult.ignored;
-                                    },
-                                    child: TextField(
-                                      controller: _jfUrlController,
-                                      focusNode: _jfUrlFocusNode,
-                                      style: const TextStyle(color: Colors.white),
-                                      textInputAction: TextInputAction.next,
-                                      onSubmitted: (_) => _jfUserFocusNode.requestFocus(),
-                                      decoration: InputDecoration(
-                                        labelText: 'Server URL',
-                                        labelStyle: const TextStyle(color: Colors.white70),
-                                        hintText: '192.168.1.100:8096',
-                                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                        filled: true,
-                                        fillColor: Colors.white.withOpacity(0.05),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                      ),
+                                  child: TextField(
+                                    controller: _jfUrlController,
+                                    focusNode: _jfUrlFocusNode,
+                                    style: const TextStyle(color: Colors.white),
+                                    textInputAction: TextInputAction.next,
+                                    onSubmitted: (_) => _jfUserFocusNode.requestFocus(),
+                                    decoration: InputDecoration(
+                                      labelText: 'Server URL',
+                                      labelStyle: const TextStyle(color: Colors.white70),
+                                      hintText: '192.168.1.100:8096',
+                                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                      filled: true,
+                                      fillColor: Colors.white.withOpacity(0.05),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                                     ),
                                   ),
                                 ),
@@ -815,33 +801,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: Focus(
-                                    canRequestFocus: false,
-                                    onKeyEvent: (node, event) {
-                                      if (event is KeyDownEvent) {
-                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                          _jfPassFocusNode.requestFocus();
-                                          return KeyEventResult.handled;
-                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                                          _jfUrlFocusNode.requestFocus();
-                                          return KeyEventResult.handled;
-                                        }
-                                      }
-                                      return KeyEventResult.ignored;
-                                    },
-                                    child: TextField(
-                                      controller: _jfUserController,
-                                      focusNode: _jfUserFocusNode,
-                                      style: const TextStyle(color: Colors.white),
-                                      textInputAction: TextInputAction.next,
-                                      onSubmitted: (_) => _jfPassFocusNode.requestFocus(),
-                                      decoration: InputDecoration(
-                                        labelText: 'Username',
-                                        labelStyle: const TextStyle(color: Colors.white70),
-                                        filled: true,
-                                        fillColor: Colors.white.withOpacity(0.05),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                      ),
+                                  child: TextField(
+                                    controller: _jfUserController,
+                                    focusNode: _jfUserFocusNode,
+                                    style: const TextStyle(color: Colors.white),
+                                    textInputAction: TextInputAction.next,
+                                    onSubmitted: (_) => _jfPassFocusNode.requestFocus(),
+                                    decoration: InputDecoration(
+                                      labelText: 'Username',
+                                      labelStyle: const TextStyle(color: Colors.white70),
+                                      filled: true,
+                                      fillColor: Colors.white.withOpacity(0.05),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                                     ),
                                   ),
                                 ),
@@ -865,34 +836,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: Focus(
-                                    canRequestFocus: false,
-                                    onKeyEvent: (node, event) {
-                                      if (event is KeyDownEvent) {
-                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                          _jfSaveFocusNode.requestFocus();
-                                          return KeyEventResult.handled;
-                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                                          _jfUserFocusNode.requestFocus();
-                                          return KeyEventResult.handled;
-                                        }
-                                      }
-                                      return KeyEventResult.ignored;
-                                    },
-                                    child: TextField(
-                                      controller: _jfPassController,
-                                      focusNode: _jfPassFocusNode,
-                                      obscureText: true,
-                                      style: const TextStyle(color: Colors.white),
-                                      textInputAction: TextInputAction.done,
-                                      onSubmitted: (_) => _jfSaveFocusNode.requestFocus(),
-                                      decoration: InputDecoration(
-                                        labelText: 'Password',
-                                        labelStyle: const TextStyle(color: Colors.white70),
-                                        filled: true,
-                                        fillColor: Colors.white.withOpacity(0.05),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                      ),
+                                  child: TextField(
+                                    controller: _jfPassController,
+                                    focusNode: _jfPassFocusNode,
+                                    obscureText: true,
+                                    style: const TextStyle(color: Colors.white),
+                                    textInputAction: TextInputAction.done,
+                                    onSubmitted: (_) => _jfSaveFocusNode.requestFocus(),
+                                    decoration: InputDecoration(
+                                      labelText: 'Password',
+                                      labelStyle: const TextStyle(color: Colors.white70),
+                                      filled: true,
+                                      fillColor: Colors.white.withOpacity(0.05),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                                     ),
                                   ),
                                 ),
