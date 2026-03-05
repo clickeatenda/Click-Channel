@@ -240,10 +240,22 @@ class JellyfinService {
     try {
       final libId = libraryId ?? _libraryId;
       final params = <String, String>{
-        'Recursive': 'true',
         'Limit': limit.toString(),
-        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources',
       };
+
+      // By default, Jellyfin Items API without Recursive only shows root folders/items.
+      // To get all movies/series, we need Recursive=true, but MUST filter types so we don't get seasons/episodes loosely.
+      if (itemType == null) {
+        params['Recursive'] = 'true';
+        params['IncludeItemTypes'] = 'Movie,Series';
+      } else {
+        params['IncludeItemTypes'] = itemType;
+        // For seasons/episodes, we don't necessarily want recursive if we have a direct parent
+        // but we'll leave it out or explicitly false if needed.
+      }
+
+      final fields = 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
+      params['Fields'] = fields;
 
       if (libId != null && libId.isNotEmpty) {
         params['ParentId'] = libId;
@@ -291,7 +303,7 @@ class JellyfinService {
     }
 
     try {
-      final url = '$_baseUrl/Users/$_userId/Items/Latest?Limit=$count&IncludeItemTypes=Movie,Series&Fields=Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources';
+      final url = '$_baseUrl/Users/$_userId/Items/Latest?Limit=$count&IncludeItemTypes=Movie,Series&Fields=Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
       final headers = {
         'X-MediaBrowser-Token': _accessToken!,
         'Accept-Language': 'pt-BR,pt;q=0.9',
@@ -329,7 +341,7 @@ class JellyfinService {
         'IncludeItemTypes': 'Movie,Series',
         'SortBy': 'CommunityRating,DateCreated',
         'SortOrder': 'Descending',
-        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources',
+        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags',
       };
 
       final uri = Uri.parse('$_baseUrl/Items').replace(queryParameters: params);
@@ -367,6 +379,7 @@ class JellyfinService {
     // Permite transcoding/remuxing se necessário (mais compatível)
     final params = {
       'api_key': _accessToken!,
+      'Static': 'true',
     };
 
     if (mediaSourceId != null) {
@@ -446,9 +459,11 @@ class JellyfinService {
 
     // Gerar URL de imagem
     String imageUrl = '';
+    print('DEBUG-COVER: ${jellyfinItem['Name']} - ImageTags: ${jellyfinItem['ImageTags']}');
     if (jellyfinItem['ImageTags'] != null && jellyfinItem['ImageTags']['Primary'] != null) {
       final imageTag = jellyfinItem['ImageTags']['Primary'];
       imageUrl = getImageUrl(itemId, imageTag);
+      print('DEBUG-COVER: Generated URL -> $imageUrl');
     }
 
     // Gerar URL de streaming

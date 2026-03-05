@@ -39,12 +39,12 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> {
 
     return CachedNetworkImage(
       imageUrl: widget.url,
-      cacheManager: AppImageCacheManager.instance,
-      httpHeaders: const {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
       maxWidthDiskCache: 600,
       maxHeightDiskCache: 800,
+      errorListener: (err) {
+        // Log image load errors explicitly so we can see why TMDB/Jellyfin covers fail.
+        debugPrint('⚠️ ERRO DE IMAGEM na URL ${widget.url}: $err');
+      },
       fit: widget.fit,
       width: widget.width,
       height: widget.height,

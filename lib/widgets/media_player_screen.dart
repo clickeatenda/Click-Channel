@@ -12,6 +12,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // NOVO imp
 import '../data/jellyfin_service.dart'; // Garantir import do service
 import 'dart:async'; // Para o timer de auto-reconnect
 import 'dart:ui';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
 
 /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
 class MediaPlayerScreen extends StatefulWidget {
@@ -509,12 +512,16 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       // Abrir mídia com timeout
       print('🎬 Abrindo mídia: ${_playlist[_currentIndex].url}');
       
+      // Use empty headers for Jellyfin (avoid User-Agent issues), IPTV sources get VLC mask
+      final isJellyfin = widget.item != null && widget.item!.group == 'Jellyfin';
+      final Map<String, String> mediaHeaders = isJellyfin
+          ? const {}
+          : const {'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18'};
+
       // Mídia Principal
       final media = Media(
         _playlist[_currentIndex].url,
-        httpHeaders: {
-          'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18', // User-Agent universal para evitar bloqueios
-        },
+        httpHeaders: mediaHeaders,
       );
       
       // CRÍTICO: Abre sem dar play imediatamente para configurar buffer e seek com segurança
@@ -555,12 +562,24 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                 if (baseUrl.isNotEmpty && token.isNotEmpty) {
                     final subUrl = '$baseUrl/Videos/${widget.item!.id}/$index/Subtitles.$format?api_key=$token';
                     
-                    print('➕ Adicionando legenda externa: $title ($format) -> $subUrl');
-                    
-                    // Adiciona como track externa
-                    await _player!.setSubtitleTrack(
-                      SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
-                    );
+                    // Verifica se a legenda existe antes de enviar ao media_kit
+                    // Evita crash fatal no MPV ("Can not open external file") em caso de 404
+                    try {
+                      final headRes = await http.head(Uri.parse(subUrl)).timeout(
+                        const Duration(seconds: 3),
+                        onTimeout: () => http.Response('', 408),
+                      );
+                      if (headRes.statusCode == 200) {
+                        print('➕ Legenda válida: $title ($format)');
+                        await _player!.setSubtitleTrack(
+                          SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
+                        );
+                      } else {
+                        print('➖ Legenda ignorada (HTTP ${headRes.statusCode}): $subUrl');
+                      }
+                    } catch (e) {
+                      print('➖ Legenda ignorada (erro): $e');
+                    }
                 }
               }
             }
@@ -778,9 +797,15 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: _hasError ? _buildErrorView() : _buildPlayerView(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBackAction();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: _hasError ? _buildErrorView() : _buildPlayerView(),
+      ),
     );
   }
   
