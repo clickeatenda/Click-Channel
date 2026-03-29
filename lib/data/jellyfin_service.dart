@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/content_item.dart';
+import '../core/utils/logger.dart';
 
 /// Serviço para integração com API do Jellyfin
 /// Permite buscar e reproduzir conteúdo de um servidor Jellyfin
