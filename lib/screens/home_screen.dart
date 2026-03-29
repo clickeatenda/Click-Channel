@@ -520,15 +520,48 @@ class _HomeBodyState extends State<_HomeBody> {
           print('✅ M3U: Carregados ${channels.length} canais em destaque');
         }
         
+        // 4. Filtrar itens já assistidos ou em progresso de "Destaques"
+        // (Exceto se for um container de série - isSeries == true)
+        final watchedUrls = {
+          ...watchingItems.map((w) => w.item.url),
+          ...watchedItems.map((w) => w.url),
+        }.where((url) => url.isNotEmpty).toSet();
+        
+        final watchedIds = {
+          ...watchingItems.map((w) => w.item.id),
+          ...watchedItems.map((w) => w.id),
+        }.where((id) => id.isNotEmpty).toSet();
+
+        // Filtra apenas itens individuais (filmes ou episódios) de M3U
+        // Mantém containers de séries (isSeries == true) ou itens TMDB originais
+        final filteredMovies = tmdbMovies.where((m) {
+          if (m.url.isNotEmpty && watchedUrls.contains(m.url)) return false;
+          if (m.id.isNotEmpty && watchedIds.contains(m.id)) return false;
+          return true;
+        }).toList();
+
+        final filteredSeries = tmdbSeries.where((s) {
+          if (s.isSeries) return true; // Nunca oculta o container da série
+          if (s.url.isNotEmpty && watchedUrls.contains(s.url)) return false;
+          if (s.id.isNotEmpty && watchedIds.contains(s.id)) return false;
+          return true;
+        }).toList();
+
+        final filteredChannels = channels.where((c) {
+           // Canais geralmente não são "concluídos", mas se o usuário quiser, podemos filtrar
+           // por enquanto não filtramos canais para não causar confusão
+           return true;
+        }).toList();
+
         if (!mounted) return;
         setState(() {
-          featuredMovies = tmdbMovies;
-          featuredSeries = tmdbSeries;
-          featuredChannels = channels;
+          featuredMovies = filteredMovies;
+          featuredSeries = filteredSeries;
+          featuredChannels = filteredChannels;
           loading = false;
         });
         
-        // 4. Salvar atualização no cache
+        // 5. Salvar atualização no cache (salva os dados filtrados para a sessão)
         _saveToCache();
 
       } catch (e) {
@@ -544,14 +577,38 @@ class _HomeBodyState extends State<_HomeBody> {
             ]);
             
             print('⚠️ Usando fallback M3U para destaques');
+            final watchedUrls = {
+              ...watchingItems.map((w) => w.item.url),
+              ...watchedItems.map((w) => w.url),
+            }.where((url) => url.isNotEmpty).toSet();
+            
+            final watchedIds = {
+              ...watchingItems.map((w) => w.item.id),
+              ...watchedItems.map((w) => w.id),
+            }.where((id) => id.isNotEmpty).toSet();
+
+            final filteredMovies = results[0].where((m) {
+              if (m.url.isNotEmpty && watchedUrls.contains(m.url)) return false;
+              if (m.id.isNotEmpty && watchedIds.contains(m.id)) return false;
+              return true;
+            }).toList();
+
+            final filteredSeries = results[1].where((s) {
+              if (s.isSeries) return true;
+              if (s.url.isNotEmpty && watchedUrls.contains(s.url)) return false;
+              if (s.id.isNotEmpty && watchedIds.contains(s.id)) return false;
+              return true;
+            }).toList();
+
+            print('⚠️ Usando fallback M3U para destaques (filtrado)');
             if (!mounted) return;
             setState(() {
-              featuredMovies = results[0];
-              featuredSeries = results[1];
+              featuredMovies = filteredMovies;
+              featuredSeries = filteredSeries;
               featuredChannels = results[2];
               loading = false;
             });
-            _saveToCache(); // Salva fallback também
+            _saveToCache(); 
           } catch (_) {
             if (!mounted) return;
              // Se falhar tudo, mantém o cache (apenas remove loading se não tiver dados)

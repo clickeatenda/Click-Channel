@@ -40,9 +40,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
 
   @override
   void dispose() {
-    // Limpeza AGRESSIVA de memória ao sair da tela
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
+    // A limpeza agressiva foi removida para evitar o problema da tela cinza ao voltar
     super.dispose();
   }
 

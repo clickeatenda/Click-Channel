@@ -15,6 +15,7 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
 class MediaPlayerScreen extends StatefulWidget {
@@ -107,6 +108,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    // Ativa o bloqueio de tela durante a reprodução
+    WakelockPlus.enable();
     
     try {
       if (widget.item != null) {
@@ -792,6 +795,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     _subtitleFocusNode.dispose();
     _fitFocusNode.dispose();
     _infoFocusNode.dispose();
+    // Desativa o bloqueio de tela ao sair do player
+    WakelockPlus.disable();
     super.dispose();
   }
 

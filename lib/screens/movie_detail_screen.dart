@@ -34,8 +34,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   @override
   void dispose() {
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
+    // Limpeza agressiva removida para evitar tela cinza ao voltar
     super.dispose();
   }
 

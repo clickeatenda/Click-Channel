@@ -27,6 +27,7 @@ class WatchHistoryService {
     
     // Adiciona no início
     history.insert(0, {
+      'id': item.id,
       'title': item.title,
       'url': item.url,
       'image': item.image,
@@ -73,6 +74,7 @@ class WatchHistoryService {
     final history = await getWatchedHistory();
     
     return history.take(limit).map((h) => ContentItem(
+      id: h['id'] ?? '',
       title: h['title'] ?? '',
       url: h['url'] ?? '',
       image: h['image'] ?? '',
@@ -120,6 +122,7 @@ class WatchHistoryService {
     
     // Adiciona no início
     watching.insert(0, {
+      'id': item.id,
       'title': item.title,
       'url': item.url,
       'image': item.image,
@@ -163,6 +166,7 @@ class WatchHistoryService {
     
     return watching.take(limit).map((w) => WatchingItem(
       item: ContentItem(
+        id: w['id'] ?? '',
         title: w['title'] ?? '',
         url: w['url'] ?? '',
         image: w['image'] ?? '',
