@@ -39,6 +39,7 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> {
 
     return CachedNetworkImage(
       imageUrl: widget.url,
+      cacheManager: AppImageCacheManager.instance,
       maxWidthDiskCache: 600,
       maxHeightDiskCache: 800,
       errorListener: (err) {

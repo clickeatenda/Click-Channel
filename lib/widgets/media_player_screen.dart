@@ -204,7 +204,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                 _buildTopButton(
                   icon: Icons.arrow_back,
                   label: 'Voltar',
-                  onPressed: _handleBackAction,
+                  onPressed: _exitPlayer,
                   onDownPressed: () => _rewindFocusNode.requestFocus(),
                 ),
                 const SizedBox(width: 12),
@@ -800,10 +800,22 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     super.dispose();
   }
 
+  bool _forceExit = false;
+
+  void _exitPlayer() {
+    setState(() {
+      _forceExit = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool trapBack = !_forceExit && (_isAnyPanelOpen() || _showControls);
     return PopScope(
-      canPop: false,
+      canPop: !trapBack,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _handleBackAction();
       },
@@ -869,8 +881,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       setState(() => _showControls = false);
       return;
     }
-
-    Navigator.pop(context);
   }
 
   Widget _buildPlayerView() {
@@ -887,7 +897,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         if (key == LogicalKeyboardKey.escape || 
             key == LogicalKeyboardKey.backspace ||
             key == LogicalKeyboardKey.gameButtonB) {
-          _handleBackAction();
+          
+          final bool trapBack = !_forceExit && (_isAnyPanelOpen() || _showControls);
+          if (trapBack) {
+            _handleBackAction();
+          } else {
+            _exitPlayer();
+          }
           return KeyEventResult.handled;
         }
 
