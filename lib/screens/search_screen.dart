@@ -102,9 +102,9 @@ class _SearchScreenState extends State<SearchScreen> {
   List<ContentItem> _applyFilters(List<ContentItem> items) {
     return items.where((item) {
       if (_typeFilter == 'all') return true;
-      if (_typeFilter == 'movie' && item.type == ContentType.movie) return true;
-      if (_typeFilter == 'series' && item.type == ContentType.series) return true;
-      if (_typeFilter == 'channel' && item.type == ContentType.live) return true;
+      if (_typeFilter == 'movie' && item.type == 'movie') return true;
+      if (_typeFilter == 'series' && item.type == 'series') return true;
+      if (_typeFilter == 'channel' && item.type == 'channel') return true;
       return false;
     }).toList();
   }
@@ -382,16 +382,16 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _openDetails(ContentItem item) async {
     // Ao abrir detalhes, podemos setar o background
-    if (item.backdrop != null) {
-      topBackgroundNotifier.value = item.backdrop;
+    if (item.image.isNotEmpty) {
+      topBackgroundNotifier.value = item.image;
     }
 
-    if (item.type == ContentType.movie) {
+    if (item.type == 'movie') {
       await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => MovieDetailScreen(item: item)),
       );
-    } else if (item.type == ContentType.series) {
+    } else if (item.type == 'series') {
       await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => SeriesDetailScreen(item: item)),
@@ -489,7 +489,7 @@ class _SearchResultCardState extends State<_SearchResultCard> {
       },
       onFocusChange: (hasFocus) {
         if (hasFocus) {
-          topBackgroundNotifier.value = widget.item.backdrop ?? widget.item.poster;
+          topBackgroundNotifier.value = widget.item.image;
         }
       },
       child: GestureDetector(
@@ -522,10 +522,10 @@ class _SearchResultCardState extends State<_SearchResultCard> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(9),
                         child: CachedNetworkImage(
-                          imageUrl: widget.item.poster ?? '',
+                          imageUrl: widget.item.image,
                           fit: BoxFit.cover,
                           width: double.infinity,
-                          placeholder: (context, url) => Container(color: Colors.white05),
+                          placeholder: (context, url) => Container(color: Colors.white.withOpacity(0.05)),
                           errorWidget: (context, url, error) => Container(
                             color: Colors.white10,
                             child: const Icon(Icons.movie, color: Colors.white24),
@@ -536,7 +536,7 @@ class _SearchResultCardState extends State<_SearchResultCard> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.item.name,
+                    widget.item.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
