@@ -84,7 +84,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final results = await M3uService.search(query);
+      final results = await M3uService.searchAllContent(query);
       if (mounted) {
         setState(() {
           _rawResults = results;
