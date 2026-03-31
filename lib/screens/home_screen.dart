@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'detail_screens.dart' hide SeriesDetailScreen;
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
-import 'search_screen.dart';
 import '../data/watch_history_service.dart';
 import '../data/m3u_service.dart';
 import '../data/jellyfin_service.dart';
@@ -176,44 +175,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // (Seção "Continuar Assistindo" removida; não utilizada e estava corrompida)
 
-// =====================
-// APP LOGO WIDGET
-// =====================
-
-class _AppLogo extends StatelessWidget {
-  const _AppLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Image.asset(
-        'assets/images/logo.png',
-        width: 40,
-        height: 40,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary, 
-                  AppColors.primaryLight,
-                ],
-              ),
-            ),
-            child: const Icon(Icons.live_tv, color: Colors.white, size: 24),
-          );
-        },
-      ),
-    );
-  }
-}
 
 // =====================
 // TEST PANEL
@@ -983,7 +944,6 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
 
   @override
   Widget build(BuildContext context) {
-    final featuredList = featuredItems;
     final latest = latestItems;
 
     if (loading && movies.isEmpty) {
@@ -1086,7 +1046,6 @@ class _MoviesLibraryBodyState extends State<MoviesLibraryBody> {
                       physics: const NeverScrollableScrollPhysics(),
                       childAspectRatio: 3.8,
                       children: filteredCategories.map((cat) {
-                        final count = categoryCounts[cat];
                         final thumb = categoryThumbs[cat] ?? '';
                         return _CategoryImageCard(
                           label: cat,
@@ -2092,9 +2051,8 @@ class _SharkflixBodyState extends State<_SharkflixBody> {
 class _WatchingCarousel extends StatelessWidget {
   final List<WatchingItem> items;
   final VoidCallback? onRefresh;
-  final bool autofocus;
   
-  const _WatchingCarousel({required this.items, this.onRefresh, this.autofocus = false});
+  const _WatchingCarousel({required this.items, this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -2130,7 +2088,7 @@ class _WatchingCarousel extends StatelessWidget {
               return _WatchingCard(
                 watching: watching,
                 onRefresh: onRefresh,
-                autofocus: autofocus && index == 0,
+                autofocus: false,
               );
             },
           ),
@@ -2143,9 +2101,8 @@ class _WatchingCarousel extends StatelessWidget {
 // Carrossel "Últimos assistidos"
 class _WatchedCarousel extends StatelessWidget {
   final List<ContentItem> items;
-  final bool autofocus;
   
-  const _WatchedCarousel({required this.items, this.autofocus = false});
+  const _WatchedCarousel({required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -2183,7 +2140,7 @@ class _WatchedCarousel extends StatelessWidget {
                 width: 110,
                 child: Padding(
                   padding: const EdgeInsets.only(right: 12),
-                  child: _MovieThumb(item: item, autofocus: autofocus && index == 0),
+                  child: _MovieThumb(item: item, autofocus: false),
                 ),
               );
             },
@@ -2737,14 +2694,12 @@ class _CategoryImageCard extends StatefulWidget {
   final String info;
   final String image;
   final VoidCallback onTap;
-  final bool autofocus;
 
   const _CategoryImageCard({
     required this.label,
     required this.info,
     required this.image,
     required this.onTap,
-    this.autofocus = false,
   });
 
   @override
@@ -2763,10 +2718,9 @@ class _CategoryImageCardState extends State<_CategoryImageCard> {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = _focused ? Colors.white.withOpacity(0.16) : const Color(0x33111B2B);
     return Focus(
       focusNode: _focusNode,
-      autofocus: widget.autofocus,
+      autofocus: false,
       onFocusChange: (f) {
         setState(() => _focused = f);
         if (f) {
@@ -2866,21 +2820,7 @@ class _CategoryImageCardState extends State<_CategoryImageCard> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle({required this.title});
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-}
+// Unused _SectionTitle removed
 
 // Widget de botão EPG
 class _EpgButton extends StatelessWidget {

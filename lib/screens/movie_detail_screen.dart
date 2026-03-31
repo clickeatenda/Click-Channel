@@ -9,6 +9,7 @@ import '../data/tmdb_service.dart';
 import '../utils/content_enricher.dart';
 import '../core/config.dart';
 import '../data/favorites_service.dart';
+import '../data/watch_history_service.dart';
 import 'dart:ui';
 
 /// Tela de detalhes completa de filme com todas as informações otimizada para TV
@@ -29,6 +30,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   bool loadingMetadata = true;
   bool loadingTmdb = true;
   bool isFavorite = false;
+  bool isWatched = false; // NOVO: Controle de status assistido
 
   ContentItem get _displayItem => enrichedItem ?? widget.item;
 
@@ -42,9 +44,50 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   void initState() {
     super.initState();
     isFavorite = FavoritesService.isFavorite(widget.item);
+    _checkWatchedStatus(); // NOVO
     _loadMetadata();
     _loadTmdbMetadata(); 
     _loadSimilarItems();
+  }
+
+  Future<void> _checkWatchedStatus() async {
+    final watched = await WatchHistoryService.isWatched(widget.item.url);
+    if (mounted) {
+      setState(() {
+        isWatched = watched;
+      });
+    }
+  }
+
+  Future<void> _toggleWatched() async {
+    if (isWatched) {
+      await WatchHistoryService.removeFromWatched(widget.item.url);
+    } else {
+      await WatchHistoryService.addToWatched(widget.item);
+    }
+    
+    setState(() {
+      isWatched = !isWatched;
+    });
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(isWatched ? Icons.visibility : Icons.visibility_off, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(isWatched ? 'Marcado como assistido' : 'Removido dos assistidos'),
+            ],
+          ),
+          backgroundColor: isWatched ? Colors.green : Colors.orange,
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+          width: 300,
+        ),
+      );
+    }
   }
 
   Future<void> _toggleFavorite() async {
@@ -212,10 +255,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                            alignment: Alignment.centerLeft,
                            child: Padding(
                              padding: const EdgeInsets.only(bottom: 16),
-                             child: FloatingActionButton.small(
+                             child: IconButton(
                                onPressed: () => Navigator.pop(context),
-                               backgroundColor: Colors.white10,
-                               child: const Icon(Icons.arrow_back, color: Colors.white),
+                               icon: const Icon(Icons.arrow_back, color: Colors.white),
+                               style: IconButton.styleFrom(
+                                 backgroundColor: Colors.white10,
+                                 padding: const EdgeInsets.all(12),
+                               ),
                              ),
                            ),
                          ),
@@ -310,6 +356,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                            runSpacing: 12,
                            children: [
                              ElevatedButton.icon(
+                               autofocus: true,
                                onPressed: _playMovie,
                                icon: const Icon(Icons.play_arrow),
                                label: const Text('Assistir'),
@@ -324,6 +371,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                icon: Icon(isFavorite ? Icons.check : Icons.add, size: 18),
                                label: Text(isFavorite ? 'Salvo' : 'Minha Lista'),
                                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: isFavorite ? AppColors.primary : Colors.white38)),
+                             ),
+                             OutlinedButton.icon(
+                               onPressed: _toggleWatched,
+                               icon: Icon(isWatched ? Icons.visibility : Icons.visibility_off, size: 18),
+                               label: Text(isWatched ? 'Assistido' : 'Marcar Assistido'),
+                               style: OutlinedButton.styleFrom(
+                                 foregroundColor: isWatched ? AppColors.primary : Colors.white, 
+                                 side: BorderSide(color: isWatched ? AppColors.primary.withOpacity(0.5) : Colors.white12)
+                               ),
                              ),
                            ],
                           ),
@@ -498,10 +554,10 @@ class _SimilarMovieCardState extends State<_SimilarMovieCard> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _isFocused ? AppColors.primary : Colors.white.withOpacity(0.05),
-              width: 1,
+              width: _isFocused ? 3 : 1,
             ),
             boxShadow: _isFocused 
-                ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
+                ? [BoxShadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 24, spreadRadius: 4)] 
                 : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(

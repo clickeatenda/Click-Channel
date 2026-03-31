@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shimmer/shimmer.dart';
 import '../core/image_cache_manager.dart';
 
 /// Widget de imagem com lazy loading, fade-in animation e cache otimizado
@@ -36,10 +35,13 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> {
 
     // OTIMIZAÇÃO DE MEMÓRIA PARA FIRESTICK
     const int optimizeMemCacheHeight = 400;
+    const int optimizeMemCacheWidth = 300;
 
     return CachedNetworkImage(
       imageUrl: widget.url,
       cacheManager: AppImageCacheManager.instance,
+      memCacheWidth: optimizeMemCacheWidth,
+      memCacheHeight: optimizeMemCacheHeight,
       maxWidthDiskCache: 600,
       maxHeightDiskCache: 800,
       errorListener: (err) {

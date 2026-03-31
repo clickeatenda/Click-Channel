@@ -18,7 +18,9 @@ class XtreamService {
       cleanHost = 'http://$cleanHost';
     }
 
-    final url = '$cleanHost/player_api.php?username=$username&password=$password';
+    final encodedUser = Uri.encodeComponent(username);
+    final encodedPass = Uri.encodeComponent(password);
+    final url = '$cleanHost/player_api.php?username=$encodedUser&password=$encodedPass';
     print('🔑 XtreamService: Validando credenciais em $cleanHost...');
 
     try {
@@ -28,13 +30,17 @@ class XtreamService {
         final data = jsonDecode(response.body);
         
         // Verifica se login falhou (API retorna JSON mesmo no erro, mas user_info.auth pode ser 0)
-        if (data['user_info'] != null && data['user_info']['auth'] != 0) {
-          print('✅ XtreamService: Login realizado com sucesso! (Status: ${data['user_info']['status']})');
-          return data;
-        } else {
-          print('❌ XtreamService: Login falhou (Credenciais inválidas ou expiradas)');
-          throw Exception('Login falhou. Verifique usuário e senha.');
+        if (data['user_info'] != null) {
+          final auth = data['user_info']['auth'];
+          final isAuthenticated = auth == 1 || auth == '1';
+          if (isAuthenticated) {
+            print('✅ XtreamService: Login realizado com sucesso! (Status: ${data['user_info']['status']})');
+            return data;
+          }
         }
+        
+        print('❌ XtreamService: Login falhou (Credenciais inválidas ou expiradas)');
+        throw Exception('Login falhou. Verifique usuário e senha.');
       } else {
         print('❌ XtreamService: Erro HTTP ${response.statusCode}');
         throw Exception('Erro ao conectar no servidor (${response.statusCode})');
@@ -59,6 +65,8 @@ class XtreamService {
       cleanHost = 'http://$cleanHost';
     }
 
-    return '$cleanHost/get.php?username=$username&password=$password&type=m3u_plus&output=$output';
+    final encodedUser = Uri.encodeComponent(username);
+    final encodedPass = Uri.encodeComponent(password);
+    return '$cleanHost/get.php?username=$encodedUser&password=$encodedPass&type=m3u_plus&output=$output';
   }
 }

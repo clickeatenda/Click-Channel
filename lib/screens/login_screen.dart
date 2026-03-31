@@ -157,13 +157,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                               bottom: BorderSide(
                                                 color: _selectedTab == 0
                                                     ? AppColors.primary
-                                                    : _loginTabFocused ? Colors.white.withOpacity(0.5) : Colors.transparent,
-                                                width: 2,
+                                                    : _loginTabFocused ? Colors.white : Colors.transparent,
+                                                width: _selectedTab == 0 || _loginTabFocused ? 3 : 2,
                                               ),
                                             ),
                                             color: _selectedTab == 0
                                                 ? Colors.white.withOpacity(0.05)
-                                                : _loginTabFocused ? Colors.white.withOpacity(0.02) : Colors.transparent,
+                                                : _loginTabFocused ? Colors.white.withOpacity(0.15) : Colors.transparent,
                                           ),
                                           child: Center(
                                             child: Text(
@@ -201,13 +201,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                               bottom: BorderSide(
                                                 color: _selectedTab == 1
                                                     ? AppColors.primary
-                                                    : _registerTabFocused ? Colors.white.withOpacity(0.5) : Colors.transparent,
-                                                width: 2,
+                                                    : _registerTabFocused ? Colors.white : Colors.transparent,
+                                                width: _selectedTab == 1 || _registerTabFocused ? 3 : 2,
                                               ),
                                             ),
                                             color: _selectedTab == 1
                                                 ? Colors.white.withOpacity(0.05)
-                                                : _registerTabFocused ? Colors.white.withOpacity(0.02) : Colors.transparent,
+                                                : _registerTabFocused ? Colors.white.withOpacity(0.15) : Colors.transparent,
                                           ),
                                           child: Center(
                                             child: Text(
@@ -271,6 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
         GlassInput(
           hintText: 'Email',
           controller: _emailController,
+          autofocus: true,
           keyboardType: TextInputType.emailAddress,
           prefixIcon: Icons.mail_outline,
         ),

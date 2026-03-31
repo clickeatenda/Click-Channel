@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/content_item.dart';
-import '../core/utils/logger.dart';
 
 /// Serviço para integração com API do Jellyfin
 /// Permite buscar e reproduzir conteúdo de um servidor Jellyfin
@@ -255,7 +254,7 @@ class JellyfinService {
         // but we'll leave it out or explicitly false if needed.
       }
 
-      final fields = 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
+      const fields = 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
       params['Fields'] = fields;
 
       if (libId != null && libId.isNotEmpty) {

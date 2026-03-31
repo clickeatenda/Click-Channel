@@ -1,0 +1,20 @@
+178	OPEN	Homologa├º├úo e Testes Navega├º├úo TV da Nova UI Premium (Fase 5)		2026-02-20T23:02:55Z
+171	OPEN	Adicionar Configura├º├Áes Avan├ºadas de Player (Decoder/Buffer/HLS)		2026-02-09T14:46:55Z
+108	OPEN	Monitoramento de performance	Tarefa, Aplica├º├úo Mobile, ­ƒƒí M├®dia	2025-12-22T12:59:36Z
+107	OPEN	Analytics (Firebase Mixpanel)	Tarefa, Aplica├º├úo Mobile, ­ƒƒí M├®dia	2025-12-22T12:59:38Z
+106	OPEN	Firebase Crashlytics integration	Tarefa, Aplica├º├úo Mobile, ­ƒƒí M├®dia	2025-12-22T12:59:39Z
+103	OPEN	Testes de widget	Tarefa, Aplica├º├úo Mobile, ­ƒƒí M├®dia	2025-12-22T12:59:44Z
+102	OPEN	Testes unitarios (coverage > 70%)	Tarefa, Aplica├º├úo Mobile, ­ƒƒí M├®dia	2025-12-22T12:59:45Z
+101	OPEN	Watch Next integration		2025-12-21T12:40:38Z
+100	OPEN	Channel Shortcuts		2025-12-21T12:40:40Z
+99	OPEN	Recomendacoes na home do Android TV		2025-12-21T12:40:42Z
+98	OPEN	Suporte a comandos de voz		2025-12-21T12:40:44Z
+97	OPEN	Integracao com Leanback launcher		2025-12-21T12:40:46Z
+94	OPEN	Cast para Chromecast AirPlay		2025-12-21T12:40:51Z
+93	OPEN	Sincronizacao de favoritos na nuvem		2025-12-21T12:40:52Z
+91	OPEN	Controle parental com PIN		2025-12-21T12:40:56Z
+90	OPEN	Multiplos perfis de usuario		2025-12-21T12:40:57Z
+89	OPEN	Download para assistir offline		2025-12-21T12:40:59Z
+88	OPEN	Modo picture in picture (PiP)		2025-12-21T12:41:01Z
+87	OPEN	Animacoes de transicao entre telas		2025-12-21T12:41:02Z
+85	OPEN	Feedback sonoro na navegacao TV		2025-12-21T12:41:06Z

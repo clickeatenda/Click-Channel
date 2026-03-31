@@ -8,16 +8,10 @@ import '../models/content_item.dart';
 import '../widgets/optimized_gridview.dart';
 import '../widgets/media_player_screen.dart';
 import '../data/m3u_service.dart';
-import '../data/epg_service.dart';
-import '../data/tmdb_service.dart';
-import '../models/epg_program.dart';
-import '../core/config.dart';
-import '../core/utils/logger.dart';
 import '../data/jellyfin_service.dart';
 import '../utils/content_enricher.dart'; 
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
-import '../widgets/hero_carousel.dart';
 import '../widgets/app_sidebar.dart';
 import 'home_screen.dart' show topBackgroundNotifier;
 
@@ -44,7 +38,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   List<ContentItem> featuredItems = [];
   List<ContentItem> filteredItems = [];
   int visibleCount = 0;
-  final int pageSize = 240;
+  final int pageSize = 60; // Reduzido drasticamente para evitar OOM no Firestick
   bool loading = true;
   ContentItem? bannerItem;
   bool _epgLoaded = false;

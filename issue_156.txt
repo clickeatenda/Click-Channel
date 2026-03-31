@@ -1,0 +1,22 @@
+title:	[UX] Melhorar navegação de configuração de legendas para TV (Firestick)
+state:	OPEN
+author:	clickeatenda
+labels:	platform/android-tv, priority/alta, status/in-progress, type/fix
+comments:	0
+assignees:	
+projects:	
+milestone:	
+number:	156
+--
+## 📺 UX Improvement
+### Problema
+O widget `Slider` nativo do Flutter aprisiona o foco de navegação em controles D-pad (TV Remote), impedindo que o usuário saia do seletor de tamanho de legenda.
+
+### Solução Proposta
+- Substituir `Slider` por botões manuais `[ - ]` e `[ + ]`.
+- Implementar visualização personalizada de barra de progresso.
+- Garantir que focos sejam transitáveis via D-pad (Up/Down).
+
+### Status
+🚧 Em andamento.
+

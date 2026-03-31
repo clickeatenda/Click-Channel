@@ -13,6 +13,7 @@ class GlassInput extends StatefulWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
   final int maxLines;
+  final bool autofocus;
 
   const GlassInput({
     super.key,
@@ -26,6 +27,7 @@ class GlassInput extends StatefulWidget {
     this.validator,
     this.onChanged,
     this.maxLines = 1,
+    this.autofocus = false,
   });
 
   @override
@@ -69,20 +71,21 @@ class _GlassInputState extends State<GlassInput> {
               color: _isFocused
                   ? AppColors.primary
                   : const Color.fromARGB(128, 59, 67, 84),
-              width: 1,
+              width: _isFocused ? 3 : 1,
             ),
             borderRadius: const BorderRadius.all(Radius.circular(12)),
             boxShadow: _isFocused ? [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.2),
-                blurRadius: 12,
-                spreadRadius: 0,
+                color: AppColors.primary.withOpacity(0.4),
+                blurRadius: 16,
+                spreadRadius: 2,
               ),
             ] : null,
           ),
           child: TextFormField(
             controller: widget.controller,
             focusNode: _focusNode,
+            autofocus: widget.autofocus,
             keyboardType: widget.keyboardType,
             obscureText: widget.obscureText,
             maxLines: widget.obscureText ? 1 : widget.maxLines,

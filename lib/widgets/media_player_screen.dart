@@ -7,14 +7,12 @@ import '../data/watch_history_service.dart';
 import '../data/epg_service.dart';
 import '../models/epg_program.dart';
 
+import '../core/prefs.dart';
 import '../data/favorites_service.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // NOVO import para bypassar erro de build
-import '../data/jellyfin_service.dart'; // Garantir import do service
-import 'dart:async'; // Para o timer de auto-reconnect
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../data/jellyfin_service.dart';
+import 'dart:async';
 import 'dart:ui';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
@@ -65,6 +63,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   String _currentSubtitle = 'Desativado';
   List<AudioTrack> _audioTracks = [];
   List<SubtitleTrack> _subtitleTracks = [];
+  List<SubtitleTrack> _externalSubtitles = []; // NOVO: Armazena legendas externas (Jellyfin)
   int _selectedAudioIndex = 0;
   int _selectedSubtitleIndex = -1;
   
@@ -95,15 +94,34 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   bool _isPlaying = false;
   bool _isBuffering = false;
   
+  // Controle de gravação
+  int _lastSavedSeconds = -1;
+  bool _autoSubtitleSelected = false;
+  
   // FocusNodes
   final FocusNode _playPauseFocusNode = FocusNode();
   final FocusNode _rootFocusNode = FocusNode(); // Root for keyboard listener
   final FocusNode _rewindFocusNode = FocusNode();
   final FocusNode _forwardFocusNode = FocusNode();
+  final FocusNode _backFocusNode = FocusNode();
+  final FocusNode _favoriteFocusNode = FocusNode();
+  final FocusNode _infoTopFocusNode = FocusNode();
   final FocusNode _audioFocusNode = FocusNode();
   final FocusNode _subtitleFocusNode = FocusNode();
   final FocusNode _fitFocusNode = FocusNode();
   final FocusNode _infoFocusNode = FocusNode();
+  
+  // Panel Focus Nodes
+  List<FocusNode> _audioNodes = [];
+  List<FocusNode> _subtitleNodes = [];
+  final FocusNode _firstFitOptionNode = FocusNode();
+
+  void _updateListFocusNodes() {
+    for (var node in _audioNodes) { node.dispose(); }
+    for (var node in _subtitleNodes) { node.dispose(); }
+    _audioNodes = List.generate(_audioTracks.isNotEmpty ? _audioTracks.length : 1, (i) => FocusNode());
+    _subtitleNodes = List.generate(_subtitleTracks.length + 1, (i) => FocusNode());
+  }
 
   @override
   void initState() {
@@ -202,6 +220,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               children: [
                 // VOLTAR
                 _buildTopButton(
+                  focusNode: _backFocusNode,
                   icon: Icons.arrow_back,
                   label: 'Voltar',
                   onPressed: _exitPlayer,
@@ -212,6 +231,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                 // FAVORITOS
                 if (widget.item != null)
                   _buildTopButton(
+                    focusNode: _favoriteFocusNode,
                     icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                     label: 'Favorito',
                     color: isFavorite ? Colors.red : Colors.white,
@@ -222,6 +242,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                 
                 // INFORMAÇÃO
                 _buildTopButton(
+                  focusNode: _infoTopFocusNode,
                   icon: Icons.info_outline,
                   label: 'Info',
                   color: _showInfo ? Colors.blueAccent : Colors.white,
@@ -244,6 +265,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
   
   Widget _buildTopButton({
+    required FocusNode focusNode,
     required IconData icon,
     required String label,
     required VoidCallback onPressed,
@@ -251,6 +273,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     Color color = Colors.white,
   }) {
     return Focus(
+      focusNode: focusNode,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
           // Enter/Select - ativa o botão
@@ -314,13 +337,49 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       // Cleanup anterior se houver (retry)
       await _player?.dispose();
       
-      // Criar player com configurações otimizadas (buffer aumentado e Hardware Acceleration)
+      // Apply Buffer Size Preference
+      final prefsBuffer = Prefs.getBufferSize();
+      int bufferBytes = 32 * 1024 * 1024; // Default medium
+      if (prefsBuffer == 'low') {
+        bufferBytes = 8 * 1024 * 1024;
+      } else if (prefsBuffer == 'high') {
+        bufferBytes = 64 * 1024 * 1024;
+      }
+      
+      // Override for channels to keep them snappy if not requested otherwise
+      if (widget.item?.type == 'channel' && prefsBuffer == 'medium') {
+        bufferBytes = 16 * 1024 * 1024;
+      }
+      
       _player = Player(
-        configuration: const PlayerConfiguration(
-          bufferSize: 64 * 1024 * 1024, // 64MB buffer para estabilidade
-          vo: 'gpu', // Hardware Acceleration (Vital para performance no Firestick)
+        configuration: PlayerConfiguration(
+          bufferSize: bufferBytes,
         ),
       );
+      
+      // Ajustes de Performance para Android TV:
+      if (widget.item?.type != 'channel') {
+         try {
+           dynamic nativePlayer = _player!.platform;
+           
+           // Aplica Preferência de Decodificador (Hardware ou Software)
+           final decoder = Prefs.getDecoder();
+           if (decoder == 'sw') {
+             print('⚙️ Forçando Decodificador de Software (SW)');
+             nativePlayer.setProperty('hwdec', 'no');
+           } else {
+             // Hardware é padrão do media_kit, mas podemos forçar explicita para Android:
+             // nativePlayer.setProperty('hwdec', 'mediacodec-copy');
+           }
+           
+           // 1. Permite que áudios pesados (Dolby/DTS) passem direto pela HDMI para a TV decodificar, poupando a CPU da Firestick
+           nativePlayer.setProperty('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd');
+           // 2. Se a GPU da Firestick atrasar os quadros 4K, force o player a pular o framerate na exibição em vez de engasgar/desincronizar o áudio ou causar buffer loop infinito
+           nativePlayer.setProperty('framedrop', 'vo');
+         } catch (e) {
+           print('Aviso: Não foi possível aplicar libmpv properties: $e');
+         }
+      }
       
       _controller = VideoController(_player!);
       
@@ -331,7 +390,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       
       _player!.stream.position.listen((position) {
         if (mounted) {
-          setState(() => _position = position);
+          // Sem setState global para evitar FPS insano na Engine do Flutter que rouba CPU do decodificador!
+          _position = position;
           _saveProgress();
         }
       });
@@ -349,9 +409,9 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             if (buffering) {
               // Iniciar timer de stall
               _stallTimer?.cancel();
-              _stallTimer = Timer(const Duration(seconds: 15), () {
+              _stallTimer = Timer(const Duration(seconds: 10), () { // Reduzido timeout de 15s para 10s
                 if (mounted && _isBuffering) {
-                  print('🔄 Canal travado em buffering há 5s. Forçando reconexão imediata...');
+                  print('🔄 Canal travado em buffering há 10s. Forçando reconexão imediata...');
                   _initPlayer();
                 }
               });
@@ -392,7 +452,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             );
             
             // Reabre o vídeo na posição atual
-            final currentPos = _position;
             Future.delayed(const Duration(seconds: 1), () {
                if (mounted) _initPlayer(); // Re-inicia o fluxo completo
             });
@@ -427,7 +486,10 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           setState(() {
             // Filtrar tracks vazias (a primeira geralmente é "no" track)
             _audioTracks = tracks.audio.where((t) => t.id != 'no' && t.id != 'auto').toList();
-            _subtitleTracks = tracks.subtitle.where((t) => t.id != 'no' && t.id != 'auto').toList();
+            _subtitleTracks = [
+              ...tracks.subtitle.where((t) => t.id != 'no' && t.id != 'auto'),
+              ..._externalSubtitles,
+            ];
             
             // Debug
             print('🎵 Audio tracks: ${_audioTracks.length}');
@@ -438,6 +500,27 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             for (var t in _subtitleTracks) {
               print('   - ${t.id}: ${t.title ?? t.language ?? "unknown"}');
             }
+            
+            // Auto seleção de legenda em português quando as faixas carregam
+            if (!_autoSubtitleSelected && _subtitleTracks.isNotEmpty) {
+               _autoSubtitleSelected = true;
+               try {
+                 final ptTrack = _subtitleTracks.firstWhere(
+                   (t) => (t.language?.toLowerCase().contains('pt') == true || 
+                           t.language?.toLowerCase().contains('por') == true ||
+                           t.title?.toLowerCase().contains('portugu') == true ||
+                           t.title?.toLowerCase().contains('pt-br') == true)
+                 );
+                 _player!.setSubtitleTrack(ptTrack);
+               } catch (_) {
+                 // Se não achar português mas tiver externas, pega a primeira externa, senão deixa o default do mpv
+                 if (_externalSubtitles.isNotEmpty) {
+                   _player!.setSubtitleTrack(_externalSubtitles.first);
+                 }
+               }
+            }
+            
+            _updateListFocusNodes();
           });
         }
       });
@@ -521,15 +604,23 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           ? const {}
           : const {'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18'};
 
+      // Aplica Preferência: Forçar HLS
+      String finalUrl = _playlist[_currentIndex].url;
+      if (Prefs.getForceHls() && !finalUrl.toLowerCase().contains('.m3u8')) {
+         print('⚙️ Forçando fluxo HLS (adicionando .m3u8 na URL)');
+         // Na maioria dos servidores Xtream, basta adicionar .m3u8 no final do link ts/mp4
+         finalUrl = '$finalUrl.m3u8';
+      }
+
       // Mídia Principal
       final media = Media(
-        _playlist[_currentIndex].url,
+        finalUrl,
         httpHeaders: mediaHeaders,
       );
       
       // CRÍTICO: Abre sem dar play imediatamente para configurar buffer e seek com segurança
       await _player!.open(media, play: false).timeout(
-        const Duration(seconds: 45), // Aumentado timeout para conexões lentas
+        const Duration(seconds: 25), // Reduzido de 45s para 25s para falhar rápido na TV
         onTimeout: () {
           print('⏱️ Timeout ao abrir mídia');
           throw Exception('Timeout ao carregar vídeo. Verifique sua conexão.');
@@ -544,18 +635,29 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             final source = mediaInfo['MediaSources'][0]; // Assume primeira fonte
             if (source['MediaStreams'] != null) {
               final streams = source['MediaStreams'] as List;
-              final subtitles = streams.where((s) => s['Type'] == 'Subtitle').toList();
+              // Apenas legendas externas! Legendas embutidas (IsExternal == false) 
+              // já são reproduzidas nativamente pelo libmpv na URL principal do vídeo.
+              final subtitles = streams.where((s) => 
+                s['Type'] == 'Subtitle' && 
+                (s['IsExternal'] == true || s['DeliveryUrl'] != null)
+              ).toList();
               
               print('📝 Encontradas ${subtitles.length} legendas externas no Jellyfin');
+              _externalSubtitles.clear(); // Limpa legendas anteriores
               
               for (var sub in subtitles) {
                 final index = (sub['Index'] as num?)?.toInt() ?? 0;
                 final title = sub['Title'] ?? sub['Language'] ?? 'Legenda $index';
                 final codec = sub['Codec'] ?? 'vtt';
                 
-                // Prioriza VTT e SRT
-                String format = 'vtt';
-                if (codec == 'srt' || codec == 'subrip') format = 'srt';
+                // Prioriza o formato original se suportado, senão converte
+                String format = codec.toLowerCase();
+                if (format == 'subrip') format = 'srt';
+                if (format == 'vtt' || format == 'srt' || format == 'ass' || format == 'ssa') {
+                  // OK
+                } else {
+                  format = 'srt'; // Fallback default suportado pelo MPV
+                }
                 
                 // BYPASS: Ler credenciais direto do storage para evitar erro de build
                 const storage = FlutterSecureStorage();
@@ -563,27 +665,59 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                 final token = await storage.read(key: 'jellyfin_access_token') ?? '';
                 
                 if (baseUrl.isNotEmpty && token.isNotEmpty) {
-                    final subUrl = '$baseUrl/Videos/${widget.item!.id}/$index/Subtitles.$format?api_key=$token';
+                    final sourceId = source['Id'] ?? widget.item!.id;
+                    final deliveryUrl = sub['DeliveryUrl'];
                     
-                    // Verifica se a legenda existe antes de enviar ao media_kit
-                    // Evita crash fatal no MPV ("Can not open external file") em caso de 404
-                    try {
-                      final headRes = await http.head(Uri.parse(subUrl)).timeout(
-                        const Duration(seconds: 3),
-                        onTimeout: () => http.Response('', 408),
-                      );
-                      if (headRes.statusCode == 200) {
-                        print('➕ Legenda válida: $title ($format)');
-                        await _player!.setSubtitleTrack(
-                          SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
-                        );
-                      } else {
-                        print('➖ Legenda ignorada (HTTP ${headRes.statusCode}): $subUrl');
-                      }
-                    } catch (e) {
-                      print('➖ Legenda ignorada (erro): $e');
+                    String subUrl;
+                    if (deliveryUrl != null && deliveryUrl.toString().isNotEmpty) {
+                       String dUrl = deliveryUrl.toString();
+                       if (!dUrl.startsWith('http')) {
+                         if (!dUrl.startsWith('/')) dUrl = '/$dUrl';
+                         subUrl = '$baseUrl$dUrl';
+                       } else {
+                         subUrl = dUrl;
+                       }
+                       if (!subUrl.contains('?')) {
+                         subUrl += '?api_key=$token';
+                       } else {
+                         subUrl += '&api_key=$token';
+                       }
+                    } else {
+                       subUrl = '$baseUrl/Videos/${widget.item!.id}/$sourceId/Subtitles/$index/0/Stream.$format?api_key=$token';
                     }
+                    
+                    // O media_kit/mpv gerencia falhas de carregamento silenciosamente.
+                    // Adiciona a legenda diretamente sem bloquear a UI com http.head
+                    print('➕ Legenda adicionada via Jellyfin API: $title ($format) -> $subUrl');
+                    _externalSubtitles.add(
+                      SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
+                    );
                 }
+              }
+              
+              if (mounted && _externalSubtitles.isNotEmpty) {
+                 setState(() {
+                    _subtitleTracks = [
+                        ..._player!.state.tracks.subtitle.where((t) => t.id != 'no' && t.id != 'auto'),
+                        ..._externalSubtitles
+                    ];
+                 });
+                 
+                 // Se a API trouxe legendas depois da flag pular, ou se nunca pegou PT, iteramos novamente
+                 if (!_autoSubtitleSelected || _selectedSubtitleIndex <= 0) {
+                     _autoSubtitleSelected = true;
+                     try {
+                         final ptTrack = _subtitleTracks.firstWhere(
+                           (t) => (t.language?.toLowerCase().contains('pt') == true || 
+                                   t.language?.toLowerCase().contains('por') == true ||
+                                   t.title?.toLowerCase().contains('portugu') == true ||
+                                   t.title?.toLowerCase().contains('pt-br') == true)
+                         );
+                         _player!.setSubtitleTrack(ptTrack);
+                     } catch (_) {
+                         _player!.setSubtitleTrack(_externalSubtitles.first);
+                     }
+                 }
               }
             }
           }
@@ -693,8 +827,14 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
   
   void _saveProgress() {
-    if (widget.item != null && widget.item!.type != 'channel' && _position.inSeconds % 10 == 0 && _duration.inSeconds > 0) {
-      WatchHistoryService.saveProgress(widget.item!, _position, _duration);
+    if (widget.item != null && widget.item!.type != 'channel' && _duration.inSeconds > 0) {
+      final currentSeconds = _position.inSeconds;
+      
+      // Salva a cada 30 segundos para evitar eventuais engasgos de gravação em disco durante o vídeo
+      if (currentSeconds > 0 && currentSeconds % 30 == 0 && currentSeconds != _lastSavedSeconds) {
+        _lastSavedSeconds = currentSeconds;
+        WatchHistoryService.saveProgress(widget.item!, _position, _duration);
+      }
     }
   }
   
@@ -795,8 +935,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     _subtitleFocusNode.dispose();
     _fitFocusNode.dispose();
     _infoFocusNode.dispose();
-    // Desativa o bloqueio de tela ao sair do player
-    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -867,6 +1005,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   void _handleBackAction() {
     print('🔙 _handleBackAction: panels=${_isAnyPanelOpen()}, controls=$_showControls');
     
+    // Se algum painel extra estiver aberto, fecha esse painel primeiro
     if (_isAnyPanelOpen()) {
       setState(() {
         _showInfo = false;
@@ -971,6 +1110,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                       controller: _controller!,
                       controls: NoVideoControls,
                       fit: _videoFit,
+                      filterQuality: FilterQuality.none, // Otimização extrema de FPS para Android TV
                     )
                   : const CircularProgressIndicator(color: Colors.blueAccent),
             ),
@@ -1026,7 +1166,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               size: 44,
               onPressed: _seekBackward,
               // Navegação vertical
-              onUpPressed: () {}, // Vai para TopBar - deixar vazio por enquanto, navegação natural
+              onUpPressed: () => _backFocusNode.requestFocus(),
               onDownPressed: () => _audioFocusNode.requestFocus(),
             ),
             const SizedBox(width: 48),
@@ -1037,7 +1177,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               size: 64,
               onPressed: _togglePlayPause,
               isPrimary: true,
-              onUpPressed: () {}, // Navegação natural para cima
+              onUpPressed: () => widget.item != null ? _favoriteFocusNode.requestFocus() : _backFocusNode.requestFocus(),
               onDownPressed: () => _subtitleFocusNode.requestFocus(),
             ),
             const SizedBox(width: 48),
@@ -1047,7 +1187,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               icon: Icons.forward_10,
               size: 44,
               onPressed: _seekForward,
-              onUpPressed: () {}, // Navegação natural para cima
+              onUpPressed: () => _infoTopFocusNode.requestFocus(),
               onDownPressed: () => _fitFocusNode.requestFocus(),
             ),
           ],
@@ -1076,6 +1216,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             onPressed();
             return KeyEventResult.handled;
           }
+          // Seta para cima - volta para camada superior (TopBar)
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            onUpPressed();
+            return KeyEventResult.handled;
+          }
           // Seta para baixo - vai para camada inferior (BottomBar)
           if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
             onDownPressed();
@@ -1090,8 +1235,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             _seekForward();
             return KeyEventResult.handled;
           }
-          // Seta para cima - volta para camada superior (natural focus traversal)
-          // Deixamos o sistema lidar com isso
         }
         return KeyEventResult.ignored;
       },
@@ -1142,30 +1285,37 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Progress bar
-            Row(
-              children: [
-                Text(
-                  _formatDuration(_position),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-                Expanded(
-                  child: Slider(
-                    value: _duration.inSeconds > 0
-                        ? _position.inSeconds.toDouble().clamp(0, _duration.inSeconds.toDouble())
-                        : 0,
-                    max: _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1,
-                    activeColor: Colors.blueAccent,
-                    inactiveColor: Colors.white30,
-                    onChanged: (value) {
-                      _player?.seek(Duration(seconds: value.toInt()));
-                    },
-                  ),
-                ),
-                Text(
-                  _formatDuration(_duration),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ],
+            // Progress bar
+            StreamBuilder<Duration>(
+              stream: _player?.stream.position,
+              builder: (context, snapshot) {
+                final currentPosition = snapshot.data ?? _position;
+                return Row(
+                  children: [
+                    Text(
+                      _formatDuration(currentPosition),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    Expanded(
+                      child: Slider(
+                        value: _duration.inSeconds > 0
+                            ? currentPosition.inSeconds.toDouble().clamp(0, _duration.inSeconds.toDouble())
+                            : 0,
+                        max: _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1,
+                        activeColor: Colors.blueAccent,
+                        inactiveColor: Colors.white30,
+                        onChanged: (value) {
+                          _player?.seek(Duration(seconds: value.toInt()));
+                        },
+                      ),
+                    ),
+                    Text(
+                      _formatDuration(_duration),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                );
+              }
             ),
             const SizedBox(height: 12),
             // Botões de opções
@@ -1177,12 +1327,19 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                   focusNode: _audioFocusNode,
                   icon: Icons.audiotrack,
                   label: _currentAudio,
-                  onTap: () => setState(() {
-                    _showAudioOptions = !_showAudioOptions;
-                    _showSubtitleOptions = false;
-                    _showFitOptions = false;
-                    _showInfo = false;
-                  }),
+                  onTap: () {
+                    setState(() {
+                      _showAudioOptions = !_showAudioOptions;
+                      _showSubtitleOptions = false;
+                      _showFitOptions = false;
+                      _showInfo = false;
+                    });
+                    if (_showAudioOptions) {
+                      Future.delayed(const Duration(milliseconds: 50), () {
+                        if (mounted && _audioNodes.isNotEmpty) _audioNodes[0].requestFocus();
+                      });
+                    }
+                  },
                   isActive: _showAudioOptions,
                   onUpPressed: () => _rewindFocusNode.requestFocus(),
                   onRightPressed: () => _subtitleFocusNode.requestFocus(),
@@ -1192,12 +1349,19 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                   focusNode: _subtitleFocusNode,
                   icon: Icons.subtitles,
                   label: _currentSubtitle,
-                  onTap: () => setState(() {
-                    _showSubtitleOptions = !_showSubtitleOptions;
-                    _showAudioOptions = false;
-                    _showFitOptions = false;
-                    _showInfo = false;
-                  }),
+                  onTap: () {
+                    setState(() {
+                      _showSubtitleOptions = !_showSubtitleOptions;
+                      _showAudioOptions = false;
+                      _showFitOptions = false;
+                      _showInfo = false;
+                    });
+                    if (_showSubtitleOptions) {
+                      Future.delayed(const Duration(milliseconds: 50), () {
+                        if (mounted && _subtitleNodes.isNotEmpty) _subtitleNodes[0].requestFocus();
+                      });
+                    }
+                  },
                   isActive: _showSubtitleOptions,
                   onUpPressed: () => _playPauseFocusNode.requestFocus(),
                   onLeftPressed: () => _audioFocusNode.requestFocus(),
@@ -1208,12 +1372,19 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                   focusNode: _fitFocusNode,
                   icon: _fitOptions[_fitIndex]['icon'] as IconData,
                   label: _fitOptions[_fitIndex]['label'] as String,
-                  onTap: () => setState(() {
-                    _showFitOptions = !_showFitOptions;
-                    _showAudioOptions = false;
-                    _showSubtitleOptions = false;
-                    _showInfo = false;
-                  }),
+                  onTap: () {
+                    setState(() {
+                      _showFitOptions = !_showFitOptions;
+                      _showAudioOptions = false;
+                      _showSubtitleOptions = false;
+                      _showInfo = false;
+                    });
+                    if (_showFitOptions) {
+                      Future.delayed(const Duration(milliseconds: 50), () {
+                        if (mounted) _firstFitOptionNode.requestFocus();
+                      });
+                    }
+                  },
                   isActive: _showFitOptions,
                   onUpPressed: () => _forwardFocusNode.requestFocus(),
                   onLeftPressed: () => _subtitleFocusNode.requestFocus(),
@@ -1330,209 +1501,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     );
   }
   
-  Widget _buildOptionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool isActive = false,
-  }) {
-    return Focus(
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            (event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.enter ||
-             event.logicalKey == LogicalKeyboardKey.space || 
-             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-          onTap();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Builder(
-        builder: (context) {
-          final hasFocus = Focus.of(context).hasFocus;
-          return GestureDetector(
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: hasFocus 
-                    ? Colors.white.withOpacity(0.3) 
-                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: hasFocus 
-                      ? Colors.white 
-                      : (isActive ? Colors.blueAccent : Colors.transparent),
-                  width: hasFocus ? 2 : 2,
-                ),
-                boxShadow: hasFocus ? [
-                   BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 4, spreadRadius: 1)
-                ] : null,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white), size: 20),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-      ),
-    );
-  }
-  
-  /// Botão de opção simples com FocusNode dedicado
-  Widget _buildSimpleOptionButton({
-    required FocusNode focusNode,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool isActive = false,
-  }) {
-    return Focus(
-      focusNode: focusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            (event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.enter ||
-             event.logicalKey == LogicalKeyboardKey.space || 
-             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-          onTap();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Builder(
-        builder: (context) {
-          final hasFocus = Focus.of(context).hasFocus;
-          return GestureDetector(
-            onTap: onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: hasFocus 
-                    ? Colors.white.withOpacity(0.35) 
-                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: hasFocus 
-                      ? Colors.white 
-                      : (isActive ? Colors.blueAccent : Colors.white24),
-                  width: hasFocus ? 3 : 1,
-                ),
-                boxShadow: hasFocus ? [
-                   const BoxShadow(color: Colors.white24, blurRadius: 8, spreadRadius: 2)
-                ] : null,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70), size: 22),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70),
-                      fontSize: 13,
-                      fontWeight: hasFocus ? FontWeight.bold : FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-      ),
-    );
-  }
-  
-  /// Option button with explicit FocusNode and up navigation support
-  Widget _buildOptionButtonWithFocus({
-    required FocusNode focusNode,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required VoidCallback onUpPressed,
-    bool isActive = false,
-  }) {
-    return Focus(
-      focusNode: focusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent) {
-          // Enter/Select - ativa o botão
-          if (event.logicalKey == LogicalKeyboardKey.select ||
-              event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.space || 
-              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
-            onTap();
-            return KeyEventResult.handled;
-          }
-          // Seta para cima - volta aos controles centrais
-          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            onUpPressed();
-            return KeyEventResult.handled;
-          }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Builder(
-        builder: (context) {
-          final hasFocus = Focus.of(context).hasFocus;
-          return GestureDetector(
-            onTap: onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: hasFocus 
-                    ? Colors.white.withOpacity(0.4) 
-                    : (isActive ? Colors.blueAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: hasFocus 
-                      ? Colors.white 
-                      : (isActive ? Colors.blueAccent : Colors.white24),
-                  width: hasFocus ? 3 : 1,
-                ),
-                boxShadow: hasFocus ? [
-                   const BoxShadow(color: Colors.white30, blurRadius: 8, spreadRadius: 2)
-                ] : null,
-              ),
-              transform: hasFocus ? Matrix4.identity().scaled(1.1) : Matrix4.identity(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70), size: 22),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: hasFocus ? Colors.white : (isActive ? Colors.blueAccent : Colors.white70),
-                      fontSize: 13,
-                      fontWeight: hasFocus ? FontWeight.bold : FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-      ),
-    );
-  }
-  
+
   Widget _buildInfoPanel() {
     final isChannel = widget.item != null && widget.item!.type == 'channel';
     return Positioned(
@@ -1701,16 +1670,107 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     );
   }
   
+  Widget _buildFocusableOptionItem({
+    required FocusNode focusNode,
+    required String title,
+    String? subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+    VoidCallback? onUp,
+    VoidCallback? onDown,
+    bool autofocus = false,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      autofocus: autofocus,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.select || 
+              event.logicalKey == LogicalKeyboardKey.enter || 
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onTap();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown && onDown != null) {
+            onDown();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp && onUp != null) {
+            onUp();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(builder: (ctx) {
+        final hasFocus = Focus.of(ctx).hasFocus;
+        return GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            margin: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: hasFocus ? Colors.blueAccent.withOpacity(0.6) : (isSelected ? Colors.white.withOpacity(0.1) : Colors.transparent),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: hasFocus ? Colors.white : Colors.transparent,
+                width: hasFocus ? 2 : 0,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isSelected ? Icons.check_circle : Icons.circle_outlined,
+                  color: hasFocus ? Colors.white : (isSelected ? Colors.blueAccent : Colors.white54),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: hasFocus || isSelected ? Colors.white : Colors.white70,
+                          fontWeight: hasFocus || isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: hasFocus ? Colors.white : Colors.white54,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildAudioOptionsPanel() {
     return Positioned(
       bottom: 120,
       left: 16,
       right: 16,
       child: Container(
-        constraints: const BoxConstraints(maxHeight: 200),
+        constraints: const BoxConstraints(maxHeight: 250),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.9),
+          color: Colors.black.withOpacity(0.95),
+          border: Border.all(color: Colors.white24),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -1724,9 +1784,12 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                   'Opções de Áudio',
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                  onPressed: () => setState(() => _showAudioOptions = false),
+                Focus(
+                  canRequestFocus: false, // Prevents stealing TV focus naturally
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    onPressed: () => setState(() => _showAudioOptions = false),
+                  ),
                 ),
               ],
             ),
@@ -1736,33 +1799,37 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                   ? const Center(
                       child: Text('Nenhuma faixa de áudio disponível', style: TextStyle(color: Colors.white70)),
                     )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _audioTracks.length,
-                      itemBuilder: (context, index) {
-                        final track = _audioTracks[index];
-                        final title = track.title ?? track.language ?? 'Faixa ${index + 1}';
-                        final isSelected = index == _selectedAudioIndex;
-                        return ListTile(
-                          dense: true,
-                          leading: Icon(
-                            isSelected ? Icons.check_circle : Icons.circle_outlined,
-                            color: isSelected ? Colors.blueAccent : Colors.white54,
-                            size: 20,
-                          ),
-                          title: Text(
-                            title,
-                            style: TextStyle(
-                              color: isSelected ? Colors.blueAccent : Colors.white,
-                              fontSize: 13,
-                            ),
-                          ),
-                          subtitle: track.language != null
-                              ? Text(track.language!, style: const TextStyle(color: Colors.white54, fontSize: 11))
-                              : null,
-                          onTap: () => _setAudioTrack(index),
-                        );
-                      },
+                  : SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: _audioTracks.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final track = entry.value;
+                          final title = track.title ?? track.language ?? 'Faixa ${index + 1}';
+                          final isSelected = index == _selectedAudioIndex;
+                          return _buildFocusableOptionItem(
+                            focusNode: _audioNodes[index],
+                            autofocus: index == 0,
+                            title: title,
+                            subtitle: track.language,
+                            isSelected: isSelected,
+                            onTap: () => _setAudioTrack(index),
+                            onDown: () {
+                              if (index < _audioTracks.length - 1) {
+                                _audioNodes[index + 1].requestFocus();
+                              }
+                            },
+                            onUp: () {
+                              if (index > 0) {
+                                _audioNodes[index - 1].requestFocus();
+                              } else {
+                                _audioFocusNode.requestFocus();
+                                setState(() => _showAudioOptions = false);
+                              }
+                            }
+                          );
+                        }).toList(),
+                      ),
                     ),
             ),
           ],
@@ -1777,10 +1844,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       left: 16,
       right: 16,
       child: Container(
-        constraints: const BoxConstraints(maxHeight: 200),
+        constraints: const BoxConstraints(maxHeight: 250),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.9),
+          color: Colors.black.withOpacity(0.95),
+          border: Border.all(color: Colors.white24),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -1794,66 +1862,67 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                   'Opções de Legenda',
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                  onPressed: () => setState(() => _showSubtitleOptions = false),
+                Focus(
+                  canRequestFocus: false, // Prevents stealing TV focus
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    onPressed: () => setState(() => _showSubtitleOptions = false),
+                  ),
                 ),
               ],
             ),
             const Divider(color: Colors.white24, height: 8),
-            // Opção para desativar legenda
-            ListTile(
-              dense: true,
-              leading: Icon(
-                _selectedSubtitleIndex == -1 ? Icons.check_circle : Icons.circle_outlined,
-                color: _selectedSubtitleIndex == -1 ? Colors.blueAccent : Colors.white54,
-                size: 20,
-              ),
-              title: Text(
-                'Desativado',
-                style: TextStyle(
-                  color: _selectedSubtitleIndex == -1 ? Colors.blueAccent : Colors.white,
-                  fontSize: 13,
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Opção para desativar legenda
+                    _buildFocusableOptionItem(
+                      focusNode: _subtitleNodes.isNotEmpty ? _subtitleNodes[0] : FocusNode(),
+                      autofocus: true,
+                      title: 'Desativado',
+                      isSelected: _selectedSubtitleIndex == -1,
+                      onTap: () => _setSubtitleTrack(-1),
+                      onUp: () {
+                        _subtitleFocusNode.requestFocus();
+                        setState(() => _showSubtitleOptions = false);
+                      },
+                      onDown: () {
+                        if (_subtitleTracks.isNotEmpty && _subtitleNodes.length > 1) {
+                          _subtitleNodes[1].requestFocus();
+                        }
+                      }
+                    ),
+                    if (_subtitleTracks.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      ..._subtitleTracks.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final mapIndex = index + 1;
+                        final track = entry.value;
+                        final title = track.title ?? track.language ?? 'Legenda ${index + 1}';
+                        final isSelected = index == _selectedSubtitleIndex;
+                        return _buildFocusableOptionItem(
+                          focusNode: _subtitleNodes[mapIndex],
+                          title: title,
+                          subtitle: track.language,
+                          isSelected: isSelected,
+                          onTap: () => _setSubtitleTrack(index),
+                          onUp: () {
+                            if (mapIndex > 0) _subtitleNodes[mapIndex - 1].requestFocus();
+                          },
+                          onDown: () {
+                            if (mapIndex < _subtitleNodes.length - 1) {
+                              _subtitleNodes[mapIndex + 1].requestFocus();
+                            }
+                          }
+                        );
+                      }),
+                    ],
+                  ],
                 ),
               ),
-              onTap: () => _setSubtitleTrack(-1),
             ),
-            if (_subtitleTracks.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text('Nenhuma legenda disponível', style: TextStyle(color: Colors.white70)),
-              )
-            else
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _subtitleTracks.length,
-                  itemBuilder: (context, index) {
-                    final track = _subtitleTracks[index];
-                    final title = track.title ?? track.language ?? 'Legenda ${index + 1}';
-                    final isSelected = index == _selectedSubtitleIndex;
-                    return ListTile(
-                      dense: true,
-                      leading: Icon(
-                        isSelected ? Icons.check_circle : Icons.circle_outlined,
-                        color: isSelected ? Colors.blueAccent : Colors.white54,
-                        size: 20,
-                      ),
-                      title: Text(
-                        title,
-                        style: TextStyle(
-                          color: isSelected ? Colors.blueAccent : Colors.white,
-                          fontSize: 13,
-                        ),
-                      ),
-                      subtitle: track.language != null
-                          ? Text(track.language!, style: const TextStyle(color: Colors.white54, fontSize: 11))
-                          : null,
-                      onTap: () => _setSubtitleTrack(index),
-                    );
-                  },
-                ),
-              ),
           ],
         ),
       ),
@@ -1868,7 +1937,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.9),
+          color: Colors.black.withOpacity(0.95),
+          border: Border.all(color: Colors.white24),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -1882,9 +1952,12 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                   'Ajuste de Tela',
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                  onPressed: () => setState(() => _showFitOptions = false),
+                Focus(
+                  canRequestFocus: false, // Prevents stealing TV focus
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    onPressed: () => setState(() => _showFitOptions = false),
+                  ),
                 ),
               ],
             ),
@@ -1895,35 +1968,57 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               children: List.generate(_fitOptions.length, (index) {
                 final option = _fitOptions[index];
                 final isSelected = index == _fitIndex;
-                return GestureDetector(
-                  onTap: () => _setFit(index),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: isSelected ? null : Border.all(color: Colors.white24),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          option['icon'] as IconData,
-                          color: isSelected ? Colors.white : Colors.white70,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          option['label'] as String,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.white70,
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                
+                return Focus(
+                  focusNode: index == 0 ? _firstFitOptionNode : null,
+                  autofocus: index == 0,
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent && 
+                        (event.logicalKey == LogicalKeyboardKey.select || 
+                         event.logicalKey == LogicalKeyboardKey.enter || 
+                         event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+                      _setFit(index);
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: Builder(builder: (ctx) {
+                    final hasFocus = Focus.of(ctx).hasFocus;
+                    return GestureDetector(
+                      onTap: () => _setFit(index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: hasFocus ? Colors.blueAccent.withOpacity(0.8) : (isSelected ? Colors.blueAccent : Colors.white.withOpacity(0.1)),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: hasFocus ? Colors.white : (isSelected ? Colors.transparent : Colors.white24),
+                            width: hasFocus ? 2 : (isSelected ? 0 : 1),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              option['icon'] as IconData,
+                              color: hasFocus || isSelected ? Colors.white : Colors.white70,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              option['label'] as String,
+                              style: TextStyle(
+                                color: hasFocus || isSelected ? Colors.white : Colors.white70,
+                                fontSize: 13,
+                                fontWeight: hasFocus || isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
                 );
               }),
             ),

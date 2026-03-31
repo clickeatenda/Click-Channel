@@ -1,0 +1,11 @@
+title:	Adicionar botão manual para marcar conteúdo como assistido
+state:	OPEN
+author:	clickeatenda
+labels:	
+comments:	0
+assignees:	
+projects:	
+milestone:	
+number:	165
+--
+Adicionar botão na interface de detalhes para permitir que o usuário marque/desmarque filmes e episódios como assistidos manualmente.

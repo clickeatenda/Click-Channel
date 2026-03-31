@@ -1,0 +1,61 @@
+Showing AFTMM logs:
+I/flutter (17872): VideoOutput.Resize
+I/flutter (17872): {rect: {height: 1080, width: 1920, top: 0, left: 0}, wid: 0, handle: 1708039600, id: 18}
+I/flutter (17872): 🎬 Iniciando player para: http://playfacil.net:80/JV20251121/JV21112025/61949
+I/flutter (17872): ✅ EPG carregado para canal "Warner Channel FHD": The Big Bang Theory
+I/flutter (17872): 🎬 Abrindo mídia: http://playfacil.net:80/JV20251121/JV21112025/61949
+I/flutter (17872): 🎵 Audio tracks: 0
+I/flutter (17872): 📝 Subtitle tracks: 0
+I/flutter (17872): ✅ Mídia pronta. Iniciando playback...
+I/flutter (17872): ✅ Player inicializado
+I/flutter (17872): 🎵 Audio tracks: 1
+I/flutter (17872):    - 1: unknown
+I/flutter (17872): 📝 Subtitle tracks: 0
+I/flutter (17872): VideoOutput.Resize
+I/flutter (17872): {rect: {height: 1080, width: 1920, top: 0, left: 0}, wid: 2342, handle: 1810413744, id: 19}
+I/flutter (17872): 🔄 Canal "encerrou". Tentando reconectar imediatamente...
+I/flutter (17872): 🎵 Audio tracks: 0
+I/flutter (17872): 📝 Subtitle tracks: 0
+I/flutter (17872): 🎬 Iniciando player para: http://playfacil.net:80/JV20251121/JV21112025/61949
+I/flutter (17872): VideoOutput.Resize
+I/flutter (17872): {rect: {height: 1080, width: 1920, top: 0, left: 0}, wid: 0, handle: 1810413744, id: 19}
+I/flutter (17872): ✅ EPG carregado para canal "Warner Channel FHD": The Big Bang Theory
+I/flutter (17872): 🎬 Abrindo mídia: http://playfacil.net:80/JV20251121/JV21112025/61949
+I/flutter (17872): 🎵 Audio tracks: 0
+I/flutter (17872): 📝 Subtitle tracks: 0
+I/flutter (17872): ✅ Mídia pronta. Iniciando playback...
+I/flutter (17872): ✅ Player inicializado
+I/flutter (17872): 🎵 Audio tracks: 1
+I/flutter (17872):    - 1: unknown
+I/flutter (17872): 📝 Subtitle tracks: 0
+I/flutter (17872): VideoOutput.Resize
+I/flutter (17872): {rect: {height: 1080, width: 1920, top: 0, left: 0}, wid: 2099470, handle: 1478461360, id: 20}
+I/flutter (17872): VideoOutput.Resize
+I/flutter (17872): {rect: {height: 1080, width: 1920, top: 0, left: 0}, wid: 0, handle: 1478461360, id: 20}
+I/flutter (17872): ⚡ M3uService: fetchCategoryMetaFromEnv - Retornando categorias de cache instantaneamente
+I/flutter (17872): ⚡ _ensureMovieCache: Cache já pronto (263510 séries). Skip!
+I/flutter (17872): ⚡ _ensureMovieCache: Cache já pronto (263510 séries). Skip!
+I/flutter (17872): ⚡ _ensureMovieCache: Cache já pronto (263510 séries). Skip!
+I/flutter (17872): 📺 getDailyFeaturedByType(channel): base tem 4468 items
+I/flutter (17872): 📺 getDailyFeaturedByType(channel): 4468 candidates após filtro
+I/flutter (17872): ⚡ _ensureMovieCache: Cache já pronto (263510 séries). Skip!
+I/flutter (17872): 📌 Categoria focada: 24H ANIMES
+I/flutter (17872): 📌 Categoria focada: 24H SERIES
+I/flutter (17872): 📌 Categoria focada: DOCUMENTÁRIOS | ARTE
+I/flutter (17872): 🎯 Abrindo categoria: DOCUMENTÁRIOS | ARTE
+I/flutter (17872): 🔍 fetchCategoryItemsFromEnv: category="DOCUMENTÁRIOS | ARTE", typeFilter="channel"
+I/flutter (17872): ⚡ _ensureMovieCache: Cache já pronto (263510 séries). Skip!
+I/flutter (17872): 🔍 Cache state: _movieCache=18484, _seriesCache=263510, _channelCache=4468
+I/flutter (17872): 📂 fetchCategoryItemsFromEnv(DOCUMENTÁRIOS | ARTE, channel): 47 itens (via Índices), 47 com imagem
+I/flutter (17872): 🎬 Iniciando player para: http://playfacil.net:80/JV20251121/JV21112025/62095
+I/flutter (17872): ✅ EPG carregado para canal "Discovery Channel FHD": Largados e Pelados
+I/flutter (17872): 🎬 Abrindo mídia: http://playfacil.net:80/JV20251121/JV21112025/62095
+I/flutter (17872): 🎵 Audio tracks: 0
+I/flutter (17872): 📝 Subtitle tracks: 0
+I/flutter (17872): ✅ Mídia pronta. Iniciando playback...
+I/flutter (17872): ✅ Player inicializado
+I/flutter (17872): 🎵 Audio tracks: 1
+I/flutter (17872):    - 1: eng
+I/flutter (17872): 📝 Subtitle tracks: 0
+I/flutter (17872): VideoOutput.Resize
+I/flutter (17872): {rect: {height: 720, width: 1280, top: 0, left: 0}, wid: 1050918, handle: 1707702192, id: 21}

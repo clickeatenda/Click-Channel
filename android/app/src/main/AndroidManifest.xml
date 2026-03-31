@@ -5,7 +5,7 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <application
-        android:label="Click Channel"
+        android:label="Click Channel Premium"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:banner="@mipmap/ic_launcher"

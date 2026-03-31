@@ -326,9 +326,6 @@ class _SidebarItemState extends State<_SidebarItem> {
 
   @override
   Widget build(BuildContext context) {
-    const primary = AppColors.primary; // Muted glowing blue
-    final active = widget.selected || _focused;
-
     return Focus(
       focusNode: widget.focusNode,
       autofocus: widget.autofocus,
@@ -353,8 +350,8 @@ class _SidebarItemState extends State<_SidebarItem> {
       },
       child: InkWell(
         onTap: () {
-          if (!widget.selected && widget.onTap != null) {
-            widget.onTap!();
+          if (!widget.selected) {
+            widget.onTap();
           }
         },
         borderRadius: BorderRadius.circular(10),
@@ -369,8 +366,8 @@ class _SidebarItemState extends State<_SidebarItem> {
             border: Border.all(
               color: widget.selected 
                   ? AppColors.primary.withOpacity(0.5) 
-                  : (_focused ? Colors.white24 : Colors.transparent),
-              width: 1,
+                  : (_focused ? AppColors.primary : Colors.transparent),
+              width: widget.selected || _focused ? 2 : 1,
             ),
           ),
           child: Row(

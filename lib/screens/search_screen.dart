@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/content_item.dart';
 import '../data/m3u_service.dart';
-import '../data/tmdb_service.dart';
+import '../data/search_history_service.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/app_sidebar.dart';
 import 'home_screen.dart' show topBackgroundNotifier;
-import 'detail_screens.dart' hide SeriesDetailScreen; 
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
 import 'dart:ui';
@@ -26,9 +25,12 @@ class _SearchScreenState extends State<SearchScreen> {
   
   List<ContentItem> _rawResults = [];
   List<ContentItem> _results = [];
+  List<String> _searchHistory = [];
   bool _loading = false;
   String _lastQuery = '';
   String _typeFilter = 'all'; // all, movie, series, channel
+  String _genreFilter = 'all';
+  String _yearFilter = 'all';
   bool _isInputActive = false;
 
   @override
@@ -38,6 +40,13 @@ class _SearchScreenState extends State<SearchScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _placeholderFocus.requestFocus();
     });
+  }
+
+  Future<void> _loadSearchHistory() async {
+    final history = await SearchHistoryService.getSearchHistory();
+    if (mounted) {
+      setState(() => _searchHistory = history);
+    }
   }
 
   @override
@@ -83,6 +92,11 @@ class _SearchScreenState extends State<SearchScreen> {
       _lastQuery = query;
     });
 
+    if (query.length >= 2) {
+      await SearchHistoryService.addQuery(query);
+      _loadSearchHistory(); // Recarrega histórico a cada busca nova
+    }
+
     try {
       final results = await M3uService.searchAllContent(query);
       if (mounted) {
@@ -99,6 +113,29 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  List<String> get _availableGenres {
+    final genres = <String>{};
+    for (var item in _rawResults) {
+      if (item.genre.isNotEmpty) {
+        final splitted = item.genre.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty);
+        genres.addAll(splitted);
+      }
+    }
+    final sorted = genres.toList()..sort();
+    return ['all', ...sorted];
+  }
+
+  List<String> get _availableYears {
+    final years = <String>{};
+    for (var item in _rawResults) {
+      if (item.year.isNotEmpty) {
+        years.add(item.year.trim());
+      }
+    }
+    final sorted = years.toList()..sort((a, b) => b.compareTo(a)); // desc
+    return ['all', ...sorted];
+  }
+
   List<ContentItem> _applyFilters(List<ContentItem> items) {
     return items.where((item) {
       if (_typeFilter == 'all') return true;
@@ -107,6 +144,39 @@ class _SearchScreenState extends State<SearchScreen> {
       if (_typeFilter == 'channel' && item.type == 'channel') return true;
       return false;
     }).toList();
+  }
+
+  void _showFilterDialog(String title, List<String> options, String currentValue, ValueChanged<String> onSelected) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.backgroundDark,
+          title: Text(title, style: const TextStyle(color: Colors.white)),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: ListView.builder(
+              itemCount: options.length,
+              itemBuilder: (context, index) {
+                final option = options[index];
+                final label = option == 'all' ? 'Todos' : option;
+                final isSelected = option == currentValue;
+                
+                return ListTile(
+                  title: Text(label, style: TextStyle(color: isSelected ? AppColors.primary : Colors.white70)),
+                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                  onTap: () {
+                    onSelected(option);
+                    Navigator.pop(context);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _updateFilters() {
@@ -190,6 +260,28 @@ class _SearchScreenState extends State<SearchScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: _buildSearchField(),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  child: Text('|', style: TextStyle(color: Colors.white30)),
+                                ),
+                                _DropdownFilterChip(
+                                  label: 'Gênero: ${_genreFilter == 'all' ? 'Todos' : _genreFilter}',
+                                  onTap: () {
+                                    _showFilterDialog('Selecionar Gênero', _availableGenres, _genreFilter, (val) {
+                                      setState(() => _genreFilter = val);
+                                      _updateFilters();
+                                    });
+                                  },
+                                ),
+                                _DropdownFilterChip(
+                                  label: 'Ano: ${_yearFilter == 'all' ? 'Todos' : _yearFilter}',
+                                  onTap: () {
+                                    _showFilterDialog('Selecionar Ano', _availableYears, _yearFilter, (val) {
+                                      setState(() => _yearFilter = val);
+                                      _updateFilters();
+                                    });
+                                  },
                                 ),
                               ],
                             ),
@@ -457,6 +549,72 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _DropdownFilterChip extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _DropdownFilterChip({
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  State<_DropdownFilterChip> createState() => _DropdownFilterChipState();
+}
+
+class _DropdownFilterChipState extends State<_DropdownFilterChip> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Focus(
+        onFocusChange: (f) => setState(() => _focused = f),
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent &&
+              (event.logicalKey == LogicalKeyboardKey.enter ||
+               event.logicalKey == LogicalKeyboardKey.select ||
+               event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+            widget.onTap();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _focused ? Colors.white : Colors.white12,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.label,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SearchResultCard extends StatefulWidget {
   final ContentItem item;
   final VoidCallback onTap;
@@ -580,5 +738,83 @@ class _BlinkingCursorPlaceholderState extends State<_BlinkingCursorPlaceholder> 
   @override
   Widget build(BuildContext context) {
     return FadeTransition(opacity: _controller, child: Container(width: 2, height: 20, color: AppColors.primary));
+  }
+}
+
+class _HistoryChip extends StatefulWidget {
+  final String query;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _HistoryChip({
+    required this.query,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  State<_HistoryChip> createState() => _HistoryChipState();
+}
+
+class _HistoryChipState extends State<_HistoryChip> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            widget.onTap();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 4),
+          decoration: BoxDecoration(
+            color: _focused ? AppColors.primary.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _focused ? AppColors.primary : Colors.transparent,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.history, size: 14, color: Colors.white54),
+              const SizedBox(width: 6),
+              Text(
+                widget.query,
+                style: TextStyle(
+                  color: _focused ? Colors.white : Colors.white70,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.close, size: 14),
+                color: Colors.white54,
+                onPressed: widget.onDelete,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                hoverColor: Colors.transparent,
+                focusColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

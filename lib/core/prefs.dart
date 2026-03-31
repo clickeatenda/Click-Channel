@@ -9,6 +9,11 @@ class Prefs {
   // TMDB API key stored at runtime (set via Settings) - optional
   static const String keyTmdbApiKey = 'tmdb_api_key';
 
+  // Advanced Player Settings (Issue #171)
+  static const String keyPlayerDecoder = 'player_decoder';
+  static const String keyPlayerBufferSize = 'player_buffer_size';
+  static const String keyPlayerForceHls = 'player_force_hls';
+
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
     // Sanitize playlist override in case a previous APK or a restore left
@@ -163,5 +168,37 @@ class Prefs {
 
   static String getSubtitleLanguage() {
     return _prefs?.getString(keySubtitleLanguage) ?? 'por';
+  }
+
+  // --- ADVANCED PLAYER SETTINGS ---
+  
+  static Future<void> setDecoder(String decoder) async {
+    if (_prefs == null) await init();
+    await _prefs!.setString(keyPlayerDecoder, decoder);
+  }
+
+  static String getDecoder() {
+    // Default to 'hw' (Hardware Decoding)
+    return _prefs?.getString(keyPlayerDecoder) ?? 'hw';
+  }
+
+  static Future<void> setBufferSize(String size) async {
+    if (_prefs == null) await init();
+    await _prefs!.setString(keyPlayerBufferSize, size);
+  }
+
+  static String getBufferSize() {
+    // Default to 'medium' (32MB)
+    return _prefs?.getString(keyPlayerBufferSize) ?? 'medium';
+  }
+
+  static Future<void> setForceHls(bool force) async {
+    if (_prefs == null) await init();
+    await _prefs!.setBool(keyPlayerForceHls, force);
+  }
+
+  static bool getForceHls() {
+    // Default to false
+    return _prefs?.getBool(keyPlayerForceHls) ?? false;
   }
 }

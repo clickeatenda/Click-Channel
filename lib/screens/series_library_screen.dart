@@ -40,21 +40,21 @@ class _SeriesLibraryScreenState extends State<SeriesLibraryScreen> {
       
       // Converte TmdbMetadata em ContentItem
       List<ContentItem> data = [];
-      for (final series_item in tmdbSeriesList) {
+      for (final seriesItem in tmdbSeriesList) {
         data.add(ContentItem(
-          title: series_item.title,
-          url: series_item.backdropUrl ?? series_item.posterUrl ?? '',
-          image: series_item.posterUrl ?? '',
+          title: seriesItem.title,
+          url: seriesItem.backdropUrl ?? seriesItem.posterUrl ?? '',
+          image: seriesItem.posterUrl ?? '',
           group: 'TMDB Popular',
           type: 'series',
           isSeries: true,
-          rating: series_item.rating,
-          popularity: series_item.popularity,
-          releaseDate: series_item.releaseDate,
-          genre: series_item.genres.join(', '),
-          description: series_item.overview ?? '',
-          director: series_item.director,
-          originalTitle: series_item.originalTitle,
+          rating: seriesItem.rating,
+          popularity: seriesItem.popularity,
+          releaseDate: seriesItem.releaseDate,
+          genre: seriesItem.genres.join(', '),
+          description: seriesItem.overview ?? '',
+          director: seriesItem.director,
+          originalTitle: seriesItem.originalTitle,
         ));
       }
       

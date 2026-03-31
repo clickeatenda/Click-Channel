@@ -1,0 +1,100 @@
+03-05 19:44:50.712   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:50.712 21003 21003 I FeaturedRotatorFragment: Eventbus posting HomePageComponentLoadedEvent
+03-05 19:44:50.712 21003 21003 I HomeActivity_vNext: Received a onHomePageComponentLoaded from node: FR
+03-05 19:44:50.712   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:50.712 21003 21003 I HomeActivity_vNext: Scene Nodes in home page have not loaded
+03-05 19:44:50.725 21003 21574 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:50.727 21003 21575 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:50.741 21003 21827 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:50.752 21003 21319 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:50.762   892 21831 I ...n.imp/CorPfmLogic[0]: COR is empty: false, PFM is empty: false
+03-05 19:44:50.762   892 21831 I ...n.imp/CorPfmLogic[0]: Current time: 1772750690762 
+03-05 19:44:50.762   892 21831 I ...n.imp/CorPfmLogic[0]:  cor/pfm last updated time: 1772746155829 
+03-05 19:44:50.762   892 21831 I ...n.imp/CorPfmLogic[0]:  TTL: 86400000 
+03-05 19:44:50.762   892 21831 I ...n.imp/CorPfmLogic[0]:  Jitter: -7641151
+03-05 19:44:50.762   892 21831 I ...n.imp/CorPfmLogic[0]: COR or PFM isn't expired.
+03-05 19:44:50.762   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:50.763   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:50.767   892 21831 I ...n.imp/CorPfmLogic[0]: COR is empty: false, PFM is empty: false
+03-05 19:44:50.769   892 21831 I ...n.imp/CorPfmLogic[0]: Current time: 1772750690768 
+03-05 19:44:50.769   892 21831 I ...n.imp/CorPfmLogic[0]:  cor/pfm last updated time: 1772746155829 
+03-05 19:44:50.769   892 21831 I ...n.imp/CorPfmLogic[0]:  TTL: 86400000 
+03-05 19:44:50.769   892 21831 I ...n.imp/CorPfmLogic[0]:  Jitter: -22309667
+03-05 19:44:50.770   892 21831 I ...n.imp/CorPfmLogic[0]: COR or PFM isn't expired.
+03-05 19:44:50.771   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:50.778   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:50.946 21003 21015 I art     : Background partial concurrent mark sweep GC freed 41335(2MB) AllocSpace objects, 0(0B) LOS objects, 20% free, 15MB/19MB, paused 3.339ms total 187.215ms
+03-05 19:44:51.388 21003 21003 I FrameworkUtils: isAppInteractive: displayId=0, displayState=2, isInteractive=true, isTvOn=true, isAppInteractive=true, isAmbientOn=false, isAmbientCheckOn=true
+03-05 19:44:51.739 21003 21003 I FrameworkUtils: isAppInteractive: displayId=0, displayState=2, isInteractive=true, isTvOn=true, isAppInteractive=true, isAmbientOn=false, isAmbientCheckOn=true
+03-05 19:44:51.741 21003 21003 I FeaturedRotatorImpressi: Reporting FR ImpressionAdEvent to AdManager
+03-05 19:44:51.748 21003 21574 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:51.753 21003 21574 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:51.756 21003 21827 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:51.766   892 21831 I ...n.imp/CorPfmLogic[0]: COR is empty: false, PFM is empty: false
+03-05 19:44:51.766   892 21831 I ...n.imp/CorPfmLogic[0]: Current time: 1772750691766 
+03-05 19:44:51.766   892 21831 I ...n.imp/CorPfmLogic[0]:  cor/pfm last updated time: 1772746155829 
+03-05 19:44:51.766   892 21831 I ...n.imp/CorPfmLogic[0]:  TTL: 86400000 
+03-05 19:44:51.766   892 21831 I ...n.imp/CorPfmLogic[0]:  Jitter: 33020231
+03-05 19:44:51.766   892 21831 I ...n.imp/CorPfmLogic[0]: COR or PFM isn't expired.
+03-05 19:44:51.766   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:51.767   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:51.775 21003 21574 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:51.778 21003 21827 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:51.789   892 21831 I ...n.imp/CorPfmLogic[0]: COR is empty: false, PFM is empty: false
+03-05 19:44:51.789   892 21831 I ...n.imp/CorPfmLogic[0]: Current time: 1772750691789 
+03-05 19:44:51.789   892 21831 I ...n.imp/CorPfmLogic[0]:  cor/pfm last updated time: 1772746155829 
+03-05 19:44:51.789   892 21831 I ...n.imp/CorPfmLogic[0]:  TTL: 86400000 
+03-05 19:44:51.789   892 21831 I ...n.imp/CorPfmLogic[0]:  Jitter: -29708371
+03-05 19:44:51.789   892 21831 I ...n.imp/CorPfmLogic[0]: COR or PFM isn't expired.
+03-05 19:44:51.789   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:51.789   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:52.390 21003 21003 I FrameworkUtils: isAppInteractive: displayId=0, displayState=2, isInteractive=true, isTvOn=true, isAppInteractive=true, isAmbientOn=false, isAmbientCheckOn=true
+03-05 19:44:52.391 21003 21003 I FeaturedRotatorGroupMVi: Reporting FR ViewabilityAdEvent to AdManager
+03-05 19:44:52.392 21003 21003 I FrameworkUtils: isAppInteractive: displayId=0, displayState=2, isInteractive=true, isTvOn=true, isAppInteractive=true, isAmbientOn=false, isAmbientCheckOn=true
+03-05 19:44:52.394 21003 21003 I FeaturedRotatorMRCViewa: Reporting FR ViewabilityAdEvent to AdManager
+03-05 19:44:52.401 21003 21575 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.403 21003 21574 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.406 21003 21575 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.410 21003 21319 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.416 21003 21574 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.422   892 21831 I ...n.imp/CorPfmLogic[0]: COR is empty: false, PFM is empty: false
+03-05 19:44:52.423   892 21831 I ...n.imp/CorPfmLogic[0]: Current time: 1772750692422 
+03-05 19:44:52.423   892 21831 I ...n.imp/CorPfmLogic[0]:  cor/pfm last updated time: 1772746155829 
+03-05 19:44:52.423   892 21831 I ...n.imp/CorPfmLogic[0]:  TTL: 86400000 
+03-05 19:44:52.423   892 21831 I ...n.imp/CorPfmLogic[0]:  Jitter: -14096287
+03-05 19:44:52.423   892 21831 I ...n.imp/CorPfmLogic[0]: COR or PFM isn't expired.
+03-05 19:44:52.423   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:52.423   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:52.423 21003 21827 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.431 21003 21575 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.435   892 21831 I ...n.imp/CorPfmLogic[0]: COR is empty: false, PFM is empty: false
+03-05 19:44:52.435   892 21831 I ...n.imp/CorPfmLogic[0]: Current time: 1772750692435 
+03-05 19:44:52.435   892 21831 I ...n.imp/CorPfmLogic[0]:  cor/pfm last updated time: 1772746155829 
+03-05 19:44:52.435   892 21831 I ...n.imp/CorPfmLogic[0]:  TTL: 86400000 
+03-05 19:44:52.435   892 21831 I ...n.imp/CorPfmLogic[0]:  Jitter: -6533936
+03-05 19:44:52.436   892 21831 I ...n.imp/CorPfmLogic[0]: COR or PFM isn't expired.
+03-05 19:44:52.436   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:52.436   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:52.440 21003 21827 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.444 21003 21574 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.450 21003 21319 I ...atformDependencyImpl: isAmazonDevice() in ClientSideAmazonPlatformDependencyImpl is called
+03-05 19:44:52.449   892 21831 I ...n.imp/CorPfmLogic[0]: COR is empty: false, PFM is empty: false
+03-05 19:44:52.451   892 21831 I ...n.imp/CorPfmLogic[0]: Current time: 1772750692451 
+03-05 19:44:52.451   892 21831 I ...n.imp/CorPfmLogic[0]:  cor/pfm last updated time: 1772746155829 
+03-05 19:44:52.451   892 21831 I ...n.imp/CorPfmLogic[0]:  TTL: 86400000 
+03-05 19:44:52.451   892 21831 I ...n.imp/CorPfmLogic[0]:  Jitter: -23033144
+03-05 19:44:52.451   892 21831 I ...n.imp/CorPfmLogic[0]: COR or PFM isn't expired.
+03-05 19:44:52.451   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:52.452   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:52.464   892 21831 I ...n.imp/CorPfmLogic[0]: COR is empty: false, PFM is empty: false
+03-05 19:44:52.465   892 21831 I ...n.imp/CorPfmLogic[0]: Current time: 1772750692465 
+03-05 19:44:52.465   892 21831 I ...n.imp/CorPfmLogic[0]:  cor/pfm last updated time: 1772746155829 
+03-05 19:44:52.465   892 21831 I ...n.imp/CorPfmLogic[0]:  TTL: 86400000 
+03-05 19:44:52.465   892 21831 I ...n.imp/CorPfmLogic[0]:  Jitter: -39398859
+03-05 19:44:52.465   892 21831 I ...n.imp/CorPfmLogic[0]: COR or PFM isn't expired.
+03-05 19:44:52.465   892 21831 I ...n.imp/CorPfmLogic[0]: COR PFM has already been fetched. Returning current COR/PFM
+03-05 19:44:52.465   892 21831 I ...tributeStoreLogic[0]: Callback with value empty: false
+03-05 19:44:53.242  1395  1395 I Vizzini_3.0.16038.0:SimApplication: onLowMemory
+03-05 19:44:53.243  1395  1395 W Vizzini_3.0.16038.0:OverlayControllerLifetimeProxy: Tearing down UI overlay without preload due to low memory
+03-05 19:44:53.243  1395  1395 I Vizzini_3.0.16038.0:OverlayControllerLifetimeProxy: Tearing down overlay controller
+03-05 19:44:53.243  1395  1395 W Vizzini_3.0.16038.0:ShortcutPanelOverlayProxy: Tearing down shortcut panel due to DISMISS_MEMORY_LOW

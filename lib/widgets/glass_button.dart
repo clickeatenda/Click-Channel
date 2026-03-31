@@ -61,15 +61,15 @@ class _GlassButtonState extends State<GlassButton> {
               decoration: BoxDecoration(
                 color: widget.backgroundColor ?? Colors.white.withOpacity(isActive ? 0.08 : 0.03),
                 border: Border.all(
-                  color: Colors.white.withOpacity(isActive ? 0.15 : 0.04),
-                  width: 1,
+                  color: isActive ? AppColors.primary : Colors.white.withOpacity(0.04),
+                  width: isActive ? 3 : 1,
                 ),
                 borderRadius: const BorderRadius.all(Radius.circular(12)),
                 boxShadow: isActive ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 12,
-                    spreadRadius: 0,
+                    color: AppColors.primary.withOpacity(0.5),
+                    blurRadius: 16,
+                    spreadRadius: 2,
                   ),
                 ] : null,
               ),
@@ -176,11 +176,12 @@ class _SolidButtonState extends State<SolidButton> {
           decoration: BoxDecoration(
             color: widget.backgroundColor ?? AppColors.primary,
             borderRadius: const BorderRadius.all(Radius.circular(12)),
+            border: isActive ? Border.all(color: Colors.white, width: 3) : null,
             boxShadow: isActive ? [
               BoxShadow(
-                color: (widget.backgroundColor ?? AppColors.primary).withOpacity(0.4),
-                blurRadius: 20,
-                spreadRadius: 0,
+                color: Colors.white.withOpacity(0.6),
+                blurRadius: 24,
+                spreadRadius: 2,
               ),
             ] : null,
           ),

@@ -7,6 +7,7 @@ import 'package:media_kit/media_kit.dart';
 import 'core/theme/app_colors.dart';
 import 'core/api/api_client.dart';
 import 'core/prefs.dart';
+import 'core/security_context_manager.dart'; // NOVO: Certificate Pinning Manager
 import 'providers/auth_provider.dart';
 import 'routes/app_routes.dart';
 import 'core/config.dart';
@@ -15,18 +16,32 @@ import 'data/m3u_service.dart';
 import 'data/tmdb_service.dart';
 import 'data/favorites_service.dart';
 import 'screens/splash_screen.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Variáveis globais para compartilhar estado entre main e app
 bool _hasPlaylist = false;
 String? _savedPlaylistUrl;
 
-void main() {
+void main() async {
   // CRÍTICO: Inicializa o binding PRIMEIRO e chama runApp() IMEDIATAMENTE
   // Isso garante que a splash screen nativa seja substituída pelo Flutter o mais rápido possível
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Limpar cache temporário de imagens do memory killer da tv
+  PaintingBinding.instance.imageCache.maximumSize = 2000; // ≈ 100MB de imagens no cache nativo em memória
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 1000 << 20;
+
+  // Carrega configurações (dotenv, override playlist, debug status)
+  // Config.init() foi removido pois a inicialização foi movida para o bootstrap
+  
+  // Inicialização do Certificate Pinning para chamadas API Internas seguras
+  await SecurityContextManager.init();
+  
   // Inicializar MediaKit (síncrono, rápido)
   MediaKit.ensureInitialized();
+  
+  // Impede que o tablet ou celular desligue a tela em qualquer lugar do app (ex: na Home)
+  WakelockPlus.enable();
   
   // Configurar UI mode (síncrono, rápido)
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -126,8 +141,8 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
         await M3uService.loadMetaCache(_savedPlaylistUrl!);
         
         // 2. Inicia o preload pesado (parse do arquivo) em background
-        M3uService.preloadCategories(_savedPlaylistUrl!).catchError((_) {});
-        EpgService.loadFromCache().catchError((_) {});
+        M3uService.preloadCategories(_savedPlaylistUrl!).catchError((_) => false);
+        EpgService.loadFromCache().catchError((_) => false);
       }
       
       await _authProvider.initialize();
@@ -257,101 +272,4 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
     );
   }
 }
-
-/// Splash screen simples para o bootstrap
-class _BootstrapSplash extends StatelessWidget {
-  const _BootstrapSplash();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.5),
-                    blurRadius: 30,
-                    spreadRadius: 10,
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: const Icon(
-                        Icons.play_circle_filled,
-                        size: 80,
-                        color: Colors.white,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
-            
-            // Nome do app
-            const Text(
-              'Click Channel',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Streaming IPTV',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 60),
-            
-            // Loading indicator
-            const SizedBox(
-              width: 40,
-              height: 40,
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                strokeWidth: 3,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Inicializando...',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+

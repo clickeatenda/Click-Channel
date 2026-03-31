@@ -25,6 +25,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _darkMode = true;
   bool _autoplay = true;
   bool _notifications = true;
+
+  // Advanced Player Settings (Issue #171)
+  String _playerDecoder = 'hw';
+  String _playerBufferSize = 'medium';
+  bool _playerForceHls = false;
+
   late TextEditingController _playlistController;
   final FocusNode _urlFocusNode = FocusNode();
   final FocusNode _buttonFocusNode = FocusNode();
@@ -60,6 +66,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _jfTestFocusNode.addListener(update);
 
     _loadJellyfinConfig();
+
+    // Load advanced player settings
+    _playerDecoder = Prefs.getDecoder();
+    _playerBufferSize = Prefs.getBufferSize();
+    _playerForceHls = Prefs.getForceHls();
   }
 
   // Jellyfin Controllers & FocusNodes
@@ -459,7 +470,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: _tmdbHasFocus ? AppColors.primary : Colors.white.withOpacity(0.05),
-                                  width: 1,
+                                  width: _tmdbHasFocus ? 3 : 1,
                                 ),
                                 boxShadow: _tmdbHasFocus ? [
                                   BoxShadow(
@@ -569,7 +580,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: _urlHasFocus ? AppColors.primary : Colors.white.withOpacity(0.05),
-                                  width: 1,
+                                  width: _urlHasFocus ? 3 : 1,
                                 ),
                                 boxShadow: _urlHasFocus ? [
                                   BoxShadow(
@@ -678,7 +689,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _buttonHasFocus ? Colors.white : Colors.transparent,
-                                    width: 1,
+                                    width: _buttonHasFocus ? 3 : 1,
                                   ),
                                   boxShadow: _buttonHasFocus ? [
                                     BoxShadow(
@@ -754,7 +765,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: _jfUrlFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
-                                      width: 1
+                                      width: _jfUrlFocusNode.hasFocus ? 3 : 1
                                     ),
                                     boxShadow: _jfUrlFocusNode.hasFocus ? [
                                       BoxShadow(
@@ -791,7 +802,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: _jfUserFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
-                                      width: 1
+                                      width: _jfUserFocusNode.hasFocus ? 3 : 1
                                     ),
                                     boxShadow: _jfUserFocusNode.hasFocus ? [
                                       BoxShadow(
@@ -826,7 +837,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: _jfPassFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
-                                      width: 1
+                                      width: _jfPassFocusNode.hasFocus ? 3 : 1
                                     ),
                                     boxShadow: _jfPassFocusNode.hasFocus ? [
                                       BoxShadow(
@@ -982,6 +993,117 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _notifications,
                         (value) =>
                             setState(() => _notifications = value),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Advanced Player Settings
+                    const Text(
+                      '⚙️ Player Avançado',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Configurações avançadas de reprodução. Altere apenas se tiver problemas de playback.',
+                      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+                    GlassPanel(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Decoder
+                            const Text('Decodificador de Vídeo', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _buildPlayerOptionButton(
+                                  label: '⚡ Hardware',
+                                  subtitle: 'Recomendado',
+                                  selected: _playerDecoder == 'hw',
+                                  onTap: () async {
+                                    setState(() => _playerDecoder = 'hw');
+                                    await Prefs.setDecoder('hw');
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                _buildPlayerOptionButton(
+                                  label: '🖥️ Software',
+                                  subtitle: 'Fallback (lento)',
+                                  selected: _playerDecoder == 'sw',
+                                  onTap: () async {
+                                    setState(() => _playerDecoder = 'sw');
+                                    await Prefs.setDecoder('sw');
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            // Buffer Size
+                            const Text('Buffer de Rede', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _buildPlayerOptionButton(
+                                  label: '🔻 Baixo',
+                                  subtitle: '8 MB',
+                                  selected: _playerBufferSize == 'low',
+                                  onTap: () async {
+                                    setState(() => _playerBufferSize = 'low');
+                                    await Prefs.setBufferSize('low');
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                _buildPlayerOptionButton(
+                                  label: '▶️ Médio',
+                                  subtitle: '32 MB (padrão)',
+                                  selected: _playerBufferSize == 'medium',
+                                  onTap: () async {
+                                    setState(() => _playerBufferSize = 'medium');
+                                    await Prefs.setBufferSize('medium');
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                _buildPlayerOptionButton(
+                                  label: '🔺 Alto',
+                                  subtitle: '64 MB',
+                                  selected: _playerBufferSize == 'high',
+                                  onTap: () async {
+                                    setState(() => _playerBufferSize = 'high');
+                                    await Prefs.setBufferSize('high');
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            // Force HLS
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Forçar HLS (.m3u8)', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                                    Text('Adiciona .m3u8 na URL. Use só se o canal travar.', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                                  ],
+                                ),
+                                Switch(
+                                  value: _playerForceHls,
+                                  activeColor: AppColors.primary,
+                                  onChanged: (v) async {
+                                    setState(() => _playerForceHls = v);
+                                    await Prefs.setForceHls(v);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -1168,6 +1290,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: onChanged,
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPlayerOptionButton({
+    required String label,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Focus(
+        child: Builder(builder: (ctx) {
+          final hasFocus = Focus.of(ctx).hasFocus;
+          return GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.primary.withOpacity(0.2)
+                    : Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: hasFocus
+                      ? AppColors.primary
+                      : selected
+                          ? AppColors.primary.withOpacity(0.6)
+                          : Colors.white.withOpacity(0.1),
+                  width: hasFocus || selected ? 2 : 1,
+                ),
+                boxShadow: hasFocus
+                    ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12, spreadRadius: 1)]
+                    : [],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: selected ? AppColors.primary : Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
       ),
     );
   }

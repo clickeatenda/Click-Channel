@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config.dart';
 import '../utils/logger.dart';
+import '../security_context_manager.dart';
 
 class ApiClient {
   // Use Config.backendUrl so the base can be set via .env (e.g. http://host:4000)
@@ -23,6 +26,16 @@ class ApiClient {
       contentType: 'application/json',
       responseType: ResponseType.json,
     ));
+    
+    // Configura o adapter seguro com Security Context importado (Certificate Pinning)
+    final securityContext = SecurityContextManager.pinnedContext;
+    if (securityContext != null) {
+      _dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          return HttpClient(context: securityContext);
+        },
+      );
+    }
     
     // Interceptor para adicionar token aos headers
     _dio.interceptors.add(

@@ -1,0 +1,11 @@
+title:	Adicionar Configurações Avançadas de Player (Decoder/Buffer/HLS)
+state:	OPEN
+author:	clickeatenda
+labels:	
+comments:	0
+assignees:	
+projects:	
+milestone:	
+number:	171
+--
+Adicionar UI em Settings para controlar Decoder (HW/SW), Buffer Size (Low/Med/High) e Forçar HLS, permitindo debug de playback em tempo real.

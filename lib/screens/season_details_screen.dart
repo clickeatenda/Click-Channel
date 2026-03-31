@@ -72,19 +72,26 @@ class _SeasonDetailsScreenState extends State<SeasonDetailsScreen> {
              ),
              
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _episodes.length,
-              itemBuilder: (ctx, index) {
-                final ep = _episodes[index];
-                return _EpisodeListTile(
-                  key: ValueKey(ep.url),
-                  episode: ep, 
-                  index: index,
-                  playlist: _episodes, // Passa a lista completa para o player
-                  onReturn: _refresh,
-                );
-              },
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                focusColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+              ),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _episodes.length,
+                itemBuilder: (ctx, index) {
+                  final ep = _episodes[index];
+                  return _EpisodeListTile(
+                    key: ValueKey(ep.url),
+                    episode: ep, 
+                    index: index,
+                    playlist: _episodes, // Passa a lista completa para o player
+                    onReturn: _refresh,
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -115,6 +122,7 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
   late ContentItem _displayItem;
   bool _hasEnriched = false;
   bool _isWatched = false;
+  bool _isFocused = false;
 
   @override
   void initState() {
@@ -145,6 +153,32 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
     final watched = await WatchHistoryService.isWatched(_displayItem.url);
     if (mounted && watched != _isWatched) {
       setState(() => _isWatched = watched);
+    }
+  }
+
+  Future<void> _toggleWatched() async {
+    if (_isWatched) {
+      await WatchHistoryService.removeFromWatched(_displayItem.url);
+    } else {
+      await WatchHistoryService.addToWatched(_displayItem);
+    }
+    
+    // Atualiza o estado local imediatamente
+    if (mounted) {
+      setState(() {
+        _isWatched = !_isWatched;
+      });
+      
+      // Feedback opcional
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isWatched ? 'Episódio marcado como assistido' : 'Episódio removido dos assistidos'),
+          backgroundColor: _isWatched ? Colors.green : Colors.orange,
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
   
@@ -188,6 +222,7 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
     final hasImage = _displayItem.image.isNotEmpty;
 
     return Focus(
+      onFocusChange: (focused) => setState(() => _isFocused = focused),
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent && 
             (event.logicalKey == LogicalKeyboardKey.enter || 
@@ -197,117 +232,129 @@ class _EpisodeListTileState extends State<_EpisodeListTile> {
         }
         return KeyEventResult.ignored;
       },
-      child: Builder(
-        builder: (context) {
-          final focused = Focus.of(context).hasFocus;
-          return GestureDetector(
-            onTap: () => _play(context),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              margin: const EdgeInsets.only(bottom: 12),
-              transform: focused ? (Matrix4.identity()..translate(0, -2)..scale(1.02)) : Matrix4.identity(),
-              transformAlignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFF161b22),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: focused ? AppColors.primary : (_isWatched ? AppColors.primary.withOpacity(0.4) : Colors.white.withOpacity(0.05)),
-                  width: 1,
-                ),
-                boxShadow: focused 
-                    ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
-                    : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
-              ),
-              child: Row(
-                children: [
-                  // Thumb
-                  ClipRRect(
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
-                    child: SizedBox(
-                      width: 120,
-                      height: 68,
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                             child: hasImage 
-                              ? CachedNetworkImage(
-                                  imageUrl: _displayItem.image,
-                                  fit: BoxFit.cover,
-                                  placeholder: (_,__) => Container(color: Colors.grey[900]),
-                                  errorWidget: (_,__,___) => Container(color: Colors.grey[900], child: const Icon(Icons.movie, color: Colors.white24)),
-                                )
-                              : Container(color: Colors.grey[900], child: Center(child: Text("${widget.index+1}", style: const TextStyle(color: Colors.white24, fontSize: 20)))),
-                          ),
-                          // Verificação visual sobre o thumb
-                          if (_isWatched)
-                            Positioned.fill(
-                              child: Container(
-                                color: Colors.black54,
-                                child: const Center(
-                                  child: Icon(Icons.check_circle, color: AppColors.accent, size: 32),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  // Info
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _displayItem.title, 
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: _isWatched ? Colors.white70 : Colors.white,
-                                    fontWeight: _isWatched ? FontWeight.normal : FontWeight.bold,
-                                    fontSize: 14,
-                                    decoration: _isWatched ? TextDecoration.lineThrough : null,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _displayItem.description.isNotEmpty && _displayItem.description != _displayItem.title 
-                                ? _displayItem.description 
-                                : "Episódio ${widget.index + 1}",
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  // Play Icon (ou Restart se watched)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Icon(
-                      _isWatched ? Icons.replay : Icons.play_circle_outline,
-                      color: focused ? Colors.white : (_isWatched ? Colors.white54 : AppColors.primary),
-                      size: 32,
-                    ),
-                  ),
-                ],
-              ),
+      child: GestureDetector(
+        onTap: () => _play(context),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          margin: const EdgeInsets.only(bottom: 12),
+          transform: _isFocused ? (Matrix4.identity()..translate(0.0, -2.0)) : Matrix4.identity(),
+          transformAlignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: _isFocused ? const Color(0xFF1a2233) : const Color(0xFF161b22),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isFocused ? AppColors.primary : (_isWatched ? AppColors.primary.withOpacity(0.4) : Colors.white.withOpacity(0.05)),
+              width: _isFocused ? 2 : 1,
             ),
-          );
-        }
+            boxShadow: _isFocused 
+                ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 12, spreadRadius: 1)] 
+                : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+          ),
+          child: Row(
+            children: [
+              // Thumb
+              ClipRRect(
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                child: SizedBox(
+                  width: 120,
+                  height: 68,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                         child: hasImage 
+                          ? CachedNetworkImage(
+                              imageUrl: _displayItem.image,
+                              fit: BoxFit.cover,
+                              placeholder: (_,__) => Container(color: Colors.grey[900]),
+                              errorWidget: (_,__,___) => Container(color: Colors.grey[900], child: const Icon(Icons.movie, color: Colors.white24)),
+                            )
+                          : Container(color: Colors.grey[900], child: Center(child: Text("${widget.index+1}", style: const TextStyle(color: Colors.white24, fontSize: 20)))),
+                      ),
+                      // Verificação visual sobre o thumb
+                      if (_isWatched)
+                        Positioned.fill(
+                          child: Container(
+                            color: Colors.black54,
+                            child: const Center(
+                              child: Icon(Icons.check_circle, color: AppColors.accent, size: 32),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Info
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _displayItem.title, 
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: _isWatched ? Colors.white70 : Colors.white,
+                                fontWeight: _isWatched ? FontWeight.normal : FontWeight.bold,
+                                fontSize: 14,
+                                decoration: _isWatched ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _displayItem.description.isNotEmpty && _displayItem.description != _displayItem.title 
+                            ? _displayItem.description 
+                            : "Episódio ${widget.index + 1}",
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Botão de Marcar Visto (Focável separadamente pelo controle TV)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: () {
+                    // Evita propagar tap pro container inteiro
+                    _toggleWatched();
+                  },
+                  icon: Icon(
+                    _isWatched ? Icons.visibility : Icons.visibility_off,
+                    color: _isWatched ? AppColors.primary : Colors.white24,
+                    size: 24,
+                  ),
+                  tooltip: _isWatched ? 'Desmarcar' : 'Marcar Assistido',
+                ),
+              ),
+              
+              // Play Icon (ou Restart se watched)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(left: 0),
+                child: Icon(
+                  _isWatched ? Icons.replay : Icons.play_circle_outline,
+                  color: _isFocused ? Colors.white : (_isWatched ? Colors.white54 : AppColors.primary),
+                  size: 32,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

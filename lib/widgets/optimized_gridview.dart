@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'adaptive_cached_image.dart';
+import 'package:clickchannel/core/theme/app_colors.dart';
 import '../models/content_item.dart';
 import '../models/epg_program.dart';
 import '../data/epg_service.dart';
@@ -73,7 +74,7 @@ class _OptimizedGridViewState extends State<OptimizedGridView> {
     return CustomScrollView(
       controller: _scrollController,
       physics: widget.physics ?? const BouncingScrollPhysics(),
-      cacheExtent: 1000.0, // Aumentado para evitar remounts frequentes durante navegação no Firestick
+      cacheExtent: 150.0, // Reduzido para evitar OOM (evita manter dezenas de imagens ocultas em RAM)
       slivers: [
         // Header (Banner)
         if (widget.headerWidget != null)
@@ -214,10 +215,10 @@ class _OptimizedGridCardState extends State<_OptimizedGridCard> {
             color: Colors.black,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: _isFocused ? const Color(0xFF007BFF) : Colors.white.withOpacity(0.08),
-                width: 2),
+                color: _isFocused ? AppColors.primary : Colors.white.withOpacity(0.08),
+                width: _isFocused ? 4 : 2),
             boxShadow: _isFocused 
-                ? [BoxShadow(color: const Color(0xFF007BFF).withOpacity(0.7), blurRadius: 24, spreadRadius: 4)] 
+                ? [BoxShadow(color: AppColors.primary.withOpacity(0.7), blurRadius: 24, spreadRadius: 6)] 
                 : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: ClipRRect(

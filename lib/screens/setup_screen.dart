@@ -7,7 +7,6 @@ import '../data/epg_service.dart';
 import '../data/xtream_service.dart';
 import '../widgets/blinking_cursor_placeholder.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
 
 /// Tela de configuração inicial.
 /// Se não houver playlist configurada, exibe campo para inserir URL.
@@ -216,33 +215,6 @@ class _SetupScreenState extends State<SetupScreen> {
     });
   }
 
-  Future<void> _showDebugInfo() async {
-     final savedUrl = Prefs.getPlaylistOverride();
-     final configUrl = Config.playlistRuntime;
-     // final items = M3uService.getPlaylistItems(); // Metodo nao existe
-     final hasCache = savedUrl != null && await M3uService.hasCachedPlaylist(savedUrl);
-     
-     if (!mounted) return;
-     showDialog(
-       context: context,
-       builder: (ctx) => AlertDialog(
-          title: const Text("Debug Info"),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("Prefs URL: ${savedUrl ?? 'NULO/VAZIO'}"),
-                Text("Config URL: ${configUrl ?? 'NULO/VAZIO'}"),
-                const Text("Memória Items: (Não disponível)"),
-                Text("Has Cache for Prefs URL: $hasCache"), 
-              ],
-            ),
-          ),
-          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK"))]
-       )
-     );
-  }
 
   /// Inicia download da playlist com feedback visual
   Future<void> _downloadPlaylist(String url) async {

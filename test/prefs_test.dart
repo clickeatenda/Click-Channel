@@ -7,8 +7,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await Prefs.init();
 
-    await Prefs.setPlaylistOverride('https://example.com/playlist.m3u');
-    expect(Prefs.getPlaylistOverride(), 'https://example.com/playlist.m3u');
+    await Prefs.setPlaylistOverride('https://myiptv.com/playlist.m3u');
+    expect(Prefs.getPlaylistOverride(), 'https://myiptv.com/playlist.m3u');
 
     await Prefs.setPlaylistOverride(null);
     expect(Prefs.getPlaylistOverride(), null);

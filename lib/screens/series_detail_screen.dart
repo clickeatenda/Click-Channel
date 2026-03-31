@@ -8,7 +8,6 @@ import '../models/series_details.dart';
 import '../data/api_service.dart';
 import '../data/m3u_service.dart';
 import '../widgets/media_player_screen.dart';
-import '../utils/content_enricher.dart';
 
 import '../data/favorites_service.dart'; // NOVO import
 import '../data/jellyfin_service.dart';
@@ -103,25 +102,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
 
 
 
-  Future<void> _loadMetadata() async {
-    // Enriquece o item com dados do TMDB EM BACKGROUND
-    try {
-      final enriched = await ContentEnricher.enrichItem(widget.item);
-      if (mounted) {
-        setState(() {
-          enrichedItem = enriched;
-          loadingMetadata = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          enrichedItem = widget.item;
-          loadingMetadata = false;
-        });
-      }
-    }
-  }
+
 
   Future<void> _loadDetails() async {
     // Carrega detalhes da série (temporadas/episódios) com proteção contra crash
@@ -180,35 +161,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     }
   }
 
-  Future<void> _loadSimilarItems() async {
-    // Carrega séries similares EM BACKGROUND (não é crítico)
-    try {
-      List<ContentItem> items = [];
-      if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
-        items = await M3uService.fetchCategoryItemsFromEnv(
-          category: _displayItem.group,
-          typeFilter: 'series',
-          maxItems: 10,
-        );
-        // Remove o item atual
-        items.removeWhere((i) => i.title == _displayItem.title);
-        
-        // Enriquece itens similares
-        final enriched = await ContentEnricher.enrichItems(items.take(10).toList());
-        items = enriched;
-      }
-      if (mounted) {
-        setState(() {
-          similarItems = items.take(5).toList();
-          loadingSimilar = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => loadingSimilar = false);
-      }
-    }
-  }
+
 
   ContentItem get _displayItem => enrichedItem ?? widget.item;
 
@@ -294,10 +247,13 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                            alignment: Alignment.centerLeft,
                            child: Padding(
                              padding: const EdgeInsets.only(bottom: 16),
-                             child: FloatingActionButton.small(
+                             child: IconButton(
                                onPressed: () => Navigator.pop(context),
-                               backgroundColor: Colors.white10,
-                               child: const Icon(Icons.arrow_back, color: Colors.white),
+                               icon: const Icon(Icons.arrow_back, color: Colors.white),
+                               style: IconButton.styleFrom(
+                                 backgroundColor: Colors.white10,
+                                 padding: const EdgeInsets.all(12),
+                               ),
                              ),
                            ),
                          ),
@@ -431,25 +387,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                               ),
                             ),
                           ),
-                          // Lista de episodios desativada em favor da nova tela
-                          if (false && selectedSeason != null && details != null && details!.seasons.containsKey(selectedSeason))
-                             Builder(
-                               builder: (context) {
-                                 final episodes = details!.seasons[selectedSeason]!;
-                                 const limit = 20; 
-                                 final displayedEpisodes = episodes.take(limit).toList();
-                                 return Column(
-                                   children: [
-                                     ...displayedEpisodes.asMap().entries.map((entry) => _EpisodeItem(episode: entry.value, index: entry.key)).toList(),
-                                      if (episodes.length > limit)
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Text('Mais ${episodes.length - limit} episódios...', style: const TextStyle(color: Colors.white54)),
-                                        ),
-                                   ],
-                                 );
-                               }
-                             ),
+
                        ],
                      ),
                    ),
@@ -555,209 +493,3 @@ class _SeasonChipState extends State<_SeasonChip> {
   }
 }
 
-/// Widget para item de episódio com suporte a foco de controle remoto
-class _EpisodeItem extends StatefulWidget {
-  final ContentItem episode;
-  final int index;
-
-  const _EpisodeItem({
-    required this.episode,
-    required this.index,
-  });
-
-  @override
-  State<_EpisodeItem> createState() => _EpisodeItemState();
-}
-
-class _EpisodeItemState extends State<_EpisodeItem> {
-  bool _isFocused = false;
-
-  void _play() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MediaPlayerScreen(
-          url: widget.episode.url,
-          item: widget.episode,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      onFocusChange: (focused) => setState(() => _isFocused = focused),
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && 
-            (event.logicalKey == LogicalKeyboardKey.enter || 
-             event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-          _play();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: _play,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: _isFocused 
-                ? const Color(0xFF1F2937) 
-                : const Color(0xFF161b22),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isFocused ? AppColors.primary : Colors.white.withOpacity(0.05),
-              width: 1,
-            ),
-            boxShadow: _isFocused ? [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.2),
-                blurRadius: 10,
-                spreadRadius: 2,
-              )
-            ] : null,
-          ),
-          child: ListTile(
-            leading: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: _isFocused ? AppColors.primary : Colors.grey[800],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  '${widget.index + 1}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            title: Text(
-              widget.episode.title,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: _isFocused ? FontWeight.bold : FontWeight.w600,
-              ),
-            ),
-            subtitle: Text(
-              'Episódio ${widget.index + 1}',
-              style: const TextStyle(color: Colors.white54),
-            ),
-            trailing: Icon(
-              Icons.play_circle_fill, 
-              color: _isFocused ? Colors.white : AppColors.primary,
-              size: 32,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Card para série similar com suporte a foco
-class _SimilarSeriesCard extends StatefulWidget {
-  final ContentItem item;
-  const _SimilarSeriesCard({required this.item});
-
-  @override
-  State<_SimilarSeriesCard> createState() => _SimilarSeriesCardState();
-}
-
-class _SimilarSeriesCardState extends State<_SimilarSeriesCard> {
-  bool _isFocused = false;
-
-  void _open() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SeriesDetailScreen(item: widget.item),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      onFocusChange: (focused) => setState(() => _isFocused = focused),
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && 
-            (event.logicalKey == LogicalKeyboardKey.enter || 
-             event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
-          _open();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: _open,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 140,
-          transform: _isFocused ? (Matrix4.identity()..translate(0, -4)..scale(1.02)) : Matrix4.identity(),
-          transformAlignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: const Color(0xFF161b22),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isFocused ? AppColors.primary : Colors.white.withOpacity(0.05),
-              width: 1,
-            ),
-            boxShadow: _isFocused 
-                ? [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)] 
-                : [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 7,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-                  child: CachedNetworkImage(
-                    imageUrl: widget.item.image,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    placeholder: (_, __) => Container(color: const Color(0xFF0F1620)),
-                    errorWidget: (_, __, ___) => Container(
-                      color: const Color(0xFF0F1620),
-                      child: const Icon(Icons.movie, color: Colors.white30),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.item.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: _isFocused ? Colors.white : Colors.white70,
-                          fontSize: 11,
-                          fontWeight: _isFocused ? FontWeight.bold : FontWeight.w500,
-                        ),
-                      ),
-                    ]
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

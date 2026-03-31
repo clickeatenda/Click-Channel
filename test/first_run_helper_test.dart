@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   test('clearOverrideIfNoCache clears override when no cache present', () async {
     SharedPreferences.setMockInitialValues({
-      'flutter.playlist_url_override': 'https://example.com/playlist.m3u',
+      'flutter.playlist_url_override': 'https://myiptv.com/playlist.m3u',
     });
     await Prefs.resetForTests();
 
@@ -24,14 +24,14 @@ void main() {
 
   test('clearOverrideIfNoCache does nothing if cache present', () async {
     SharedPreferences.setMockInitialValues({
-      'flutter.playlist_url_override': 'https://example.com/playlist.m3u',
+      'flutter.playlist_url_override': 'https://myiptv.com/playlist.m3u',
     });
     await Prefs.resetForTests();
 
     M3uService.setTestHasAnyCache(() => true);
     final cleared = await FirstRunHelper.clearOverrideIfNoCache();
     expect(cleared, false);
-    expect(Prefs.getPlaylistOverride(), 'https://example.com/playlist.m3u');
+    expect(Prefs.getPlaylistOverride(), 'https://myiptv.com/playlist.m3u');
     M3uService.setTestHasAnyCache(null);
   });
 }

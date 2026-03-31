@@ -1,0 +1,30 @@
+da85ab1 Fix TV Player and Jellyfin integration issues
+0e35d76 fix(tv): resolve Issue #186 by removing explicit KeyDown handlers from SettingsScreen in favor of native FocusTraversalGroup
+a5f0a86 fix(tv): refactor Jellyfin config UI and AppSidebar focus routing
+a2ac6fa fix(firestick): add autofocus to all content carousels and cards
+592bdee fix(firestick): resolve critical navigation and visual bugs
+ec2b6f1 feat(ui): refatoracao estrutural para app sidebar; focos de D-Pad
+d5342da feat(ui): phase 1 premium redesign - core, splash, login, setup
+2501480 fix: Resolve Firestick Freeze (GH#177) & Jellyfin Playback (GH#176)
+1a051c2 docs: update pending issues status - identified implemented features
+ab7b941 docs: update Issue #027 status to RESOLVED - smart HLS transcoding fix
+e7b8480 fix: smart HLS transcoding for Jellyfin DirectPlay=false content
+77075cb fix: disable forced HLS transcoding and add episode ID debugging #025
+c4a67f8 fix: use Shows/Episodes endpoint for proper episode IDs #025
+85f6c31 Docs: Update ISSUES.md with latest sync status (Features #025/026)
+2e3cca7 Fix: Rick and Morty Playback (Series ID check + Dialog)
+a3d3618 feat: implement Xtream Codes login and update issues #024 #025
+94d9ea1 [fix] Correção de capas e legendas Jellyfin
+9437c8a Backup before refactoring network layer
+c971dfe Update project: Cleanup logs and add new screens/scripts
+c2bb1e7 Merge feature branch: Restore Jellyfin and TMDB integration
+76d80d8 Fix: Add .env asset, fix Splash orientation & Setup build errors
+65abe43 feat: optimize detail screens layout (TV row), reduce memory usage (remove backgrounds, cache), and enable Jellyfin subtitles
+fd0fbcd feat: implement Favorites/My List system
+d504c47 fix: update list items on TMDB enrichment to enable sorting
+8c484dd fix: extract year from titles for better sorting and TMDB matching
+bb1fdbd fix: add debounce to global search and fix movie navigation
+3d1e1ff feat: enhance category filtering and search
+ad85fe0 feat: implement lazy TMDB loading for categories
+11019bb fix: improve splash screen and theme configuration
+a078adc fix: splash screen, TMDB images in categories, increase featured items

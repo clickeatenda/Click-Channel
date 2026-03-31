@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 
 class BlinkingCursorPlaceholder extends StatefulWidget {

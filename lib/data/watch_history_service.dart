@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/content_item.dart';
 
@@ -44,7 +45,8 @@ class WatchHistoryService {
       history.removeRange(_maxHistoryItems, history.length);
     }
     
-    await _prefs!.setString(_watchedKey, jsonEncode(history));
+    final String encoded = await compute(jsonEncode, history);
+    await _prefs!.setString(_watchedKey, encoded);
   }
 
   /// Retorna o histórico de assistidos
@@ -55,7 +57,7 @@ class WatchHistoryService {
     if (data == null || data.isEmpty) return [];
     
     try {
-      final list = jsonDecode(data) as List;
+      final list = await compute(jsonDecode, data) as List;
       return list.cast<Map<String, dynamic>>();
     } catch (_) {
       return [];
@@ -66,6 +68,20 @@ class WatchHistoryService {
   static Future<bool> isWatched(String url) async {
     final history = await getWatchedHistory();
     return history.any((h) => h['url'] == url);
+  }
+
+  /// Remove um item das marcações de assistidos
+  static Future<void> removeFromWatched(String url) async {
+    await _ensureInit();
+    final history = await getWatchedHistory();
+    final initialCount = history.length;
+    
+    history.removeWhere((h) => h['url'] == url);
+    
+    if (history.length != initialCount) {
+      final String encoded = await compute(jsonEncode, history);
+      await _prefs!.setString(_watchedKey, encoded);
+    }
   }
 
 
@@ -113,7 +129,8 @@ class WatchHistoryService {
     if (position.inSeconds < 30 || progress > 0.95) {
       // Se terminou, apenas remove da lista "assistindo"
       if (progress > 0.95) {
-        await _prefs!.setString(_watchingKey, jsonEncode(watching));
+        final String encodedWatchingEnd = await compute(jsonEncode, watching);
+        await _prefs!.setString(_watchingKey, encodedWatchingEnd);
         // Adiciona aos assistidos
         await addToWatched(item);
       }
@@ -142,7 +159,8 @@ class WatchHistoryService {
       watching.removeRange(_maxHistoryItems, watching.length);
     }
     
-    await _prefs!.setString(_watchingKey, jsonEncode(watching));
+    final String encodedWatching = await compute(jsonEncode, watching);
+    await _prefs!.setString(_watchingKey, encodedWatching);
   }
 
   /// Retorna lista de itens em progresso
@@ -153,7 +171,7 @@ class WatchHistoryService {
     if (data == null || data.isEmpty) return [];
     
     try {
-      final list = jsonDecode(data) as List;
+      final list = await compute(jsonDecode, data) as List;
       return list.cast<Map<String, dynamic>>();
     } catch (_) {
       return [];
@@ -201,7 +219,8 @@ class WatchHistoryService {
     
     final watching = await getWatchingProgress();
     watching.removeWhere((w) => w['url'] == url);
-    await _prefs!.setString(_watchingKey, jsonEncode(watching));
+    final String encoded = await compute(jsonEncode, watching);
+    await _prefs!.setString(_watchingKey, encoded);
   }
 
   /// Limpa todo o histórico

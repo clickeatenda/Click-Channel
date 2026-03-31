@@ -173,10 +173,10 @@ packages:
     dependency: "direct main"
     description:
       name: dio_smart_retry
-      sha256: "3d71450c19b4d91ef4c7d726a55a284bfc11eb3634f1f25006cdfab3f8595653"
+      sha256: c8e20da5f49289fa7dce5c9c6b5b120928e3661aefa0fa2d206ea6d93f580928
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.0"
+    version: "7.0.1"
   dio_web_adapter:
     dependency: transitive
     description:
@@ -974,7 +974,7 @@ packages:
     source: hosted
     version: "3.4.1"
   wakelock_plus:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: wakelock_plus
       sha256: "9296d40c9adbedaba95d1e704f4e0b434be446e2792948d0e4aa977048104228"

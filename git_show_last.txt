@@ -1,0 +1,267 @@
+commit da85ab15347069c7ae7a0a3622b42a826be80ab1
+Author: clickeatenda <clickeatenda@gmail.com>
+Date:   Thu Mar 5 11:13:16 2026 -0300
+
+    Fix TV Player and Jellyfin integration issues
+    
+    - Fix Jellyfin Cover Images missing using ImageTags in Fields (Fixes #187)
+    - Fix Series grouping returning loose episodes by filtering formats (Fixes #188)
+    - AdaptiveCachedImage: Remove PC User-Agent to stop TV caching bug (Fixes #189)
+    - TV Player: Handle hardware BACK button with PopScope (Fixes #190)
+    - TV Player: Check HTTP HEAD before injecting subtitles to prevent URL 404 MPV crash (Fixes #191)
+    - TV Player: Wrap Audio/Subtitle Track ListTile items in Focus nodes (Fixes #192)
+
+diff --git a/lib/data/jellyfin_service.dart b/lib/data/jellyfin_service.dart
+index 42b2a3c..d62acc1 100644
+--- a/lib/data/jellyfin_service.dart
++++ b/lib/data/jellyfin_service.dart
+@@ -240,11 +240,23 @@ class JellyfinService {
+     try {
+       final libId = libraryId ?? _libraryId;
+       final params = <String, String>{
+-        'Recursive': 'true',
+         'Limit': limit.toString(),
+-        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources',
+       };
+ 
++      // By default, Jellyfin Items API without Recursive only shows root folders/items.
++      // To get all movies/series, we need Recursive=true, but MUST filter types so we don't get seasons/episodes loosely.
++      if (itemType == null) {
++        params['Recursive'] = 'true';
++        params['IncludeItemTypes'] = 'Movie,Series';
++      } else {
++        params['IncludeItemTypes'] = itemType;
++        // For seasons/episodes, we don't necessarily want recursive if we have a direct parent
++        // but we'll leave it out or explicitly false if needed.
++      }
++
++      final fields = 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
++      params['Fields'] = fields;
++
+       if (libId != null && libId.isNotEmpty) {
+         params['ParentId'] = libId;
+       }
+@@ -291,7 +303,7 @@ class JellyfinService {
+     }
+ 
+     try {
+-      final url = '$_baseUrl/Users/$_userId/Items/Latest?Limit=$count&IncludeItemTypes=Movie,Series&Fields=Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources';
++      final url = '$_baseUrl/Users/$_userId/Items/Latest?Limit=$count&IncludeItemTypes=Movie,Series&Fields=Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
+       final headers = {
+         'X-MediaBrowser-Token': _accessToken!,
+         'Accept-Language': 'pt-BR,pt;q=0.9',
+@@ -329,7 +341,7 @@ class JellyfinService {
+         'IncludeItemTypes': 'Movie,Series',
+         'SortBy': 'CommunityRating,DateCreated',
+         'SortOrder': 'Descending',
+-        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources',
++        'Fields': 'Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags',
+       };
+ 
+       final uri = Uri.parse('$_baseUrl/Items').replace(queryParameters: params);
+@@ -367,6 +379,7 @@ class JellyfinService {
+     // Permite transcoding/remuxing se necessário (mais compatível)
+     final params = {
+       'api_key': _accessToken!,
++      'Static': 'true',
+     };
+ 
+     if (mediaSourceId != null) {
+@@ -446,9 +459,11 @@ class JellyfinService {
+ 
+     // Gerar URL de imagem
+     String imageUrl = '';
++    print('DEBUG-COVER: ${jellyfinItem['Name']} - ImageTags: ${jellyfinItem['ImageTags']}');
+     if (jellyfinItem['ImageTags'] != null && jellyfinItem['ImageTags']['Primary'] != null) {
+       final imageTag = jellyfinItem['ImageTags']['Primary'];
+       imageUrl = getImageUrl(itemId, imageTag);
++      print('DEBUG-COVER: Generated URL -> $imageUrl');
+     }
+ 
+     // Gerar URL de streaming
+diff --git a/lib/widgets/adaptive_cached_image.dart b/lib/widgets/adaptive_cached_image.dart
+index 3ec0aa4..5139412 100644
+--- a/lib/widgets/adaptive_cached_image.dart
++++ b/lib/widgets/adaptive_cached_image.dart
+@@ -39,12 +39,12 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> {
+ 
+     return CachedNetworkImage(
+       imageUrl: widget.url,
+-      cacheManager: AppImageCacheManager.instance,
+-      httpHeaders: const {
+-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+-      },
+       maxWidthDiskCache: 600,
+       maxHeightDiskCache: 800,
++      errorListener: (err) {
++        // Log image load errors explicitly so we can see why TMDB/Jellyfin covers fail.
++        debugPrint('⚠️ ERRO DE IMAGEM na URL ${widget.url}: $err');
++      },
+       fit: widget.fit,
+       width: widget.width,
+       height: widget.height,
+diff --git a/lib/widgets/media_player_screen.dart b/lib/widgets/media_player_screen.dart
+index f3a5d44..e0cb088 100644
+--- a/lib/widgets/media_player_screen.dart
++++ b/lib/widgets/media_player_screen.dart
+@@ -12,6 +12,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // NOVO imp
+ import '../data/jellyfin_service.dart'; // Garantir import do service
+ import 'dart:async'; // Para o timer de auto-reconnect
+ import 'dart:ui';
++import 'dart:io';
++import 'package:path_provider/path_provider.dart';
++import 'package:http/http.dart' as http;
+ 
+ /// Player avançado usando media_kit (libmpv) com suporte completo a 4K/HDR
+ class MediaPlayerScreen extends StatefulWidget {
+@@ -509,12 +512,16 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+       // Abrir mídia com timeout
+       print('🎬 Abrindo mídia: ${_playlist[_currentIndex].url}');
+       
++      // Use empty headers for Jellyfin (avoid User-Agent issues), IPTV sources get VLC mask
++      final isJellyfin = widget.item != null && widget.item!.group == 'Jellyfin';
++      final Map<String, String> mediaHeaders = isJellyfin
++          ? const {}
++          : const {'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18'};
++
+       // Mídia Principal
+       final media = Media(
+         _playlist[_currentIndex].url,
+-        httpHeaders: {
+-          'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18', // User-Agent universal para evitar bloqueios
+-        },
++        httpHeaders: mediaHeaders,
+       );
+       
+       // CRÍTICO: Abre sem dar play imediatamente para configurar buffer e seek com segurança
+@@ -555,12 +562,24 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+                 if (baseUrl.isNotEmpty && token.isNotEmpty) {
+                     final subUrl = '$baseUrl/Videos/${widget.item!.id}/$index/Subtitles.$format?api_key=$token';
+                     
+-                    print('➕ Adicionando legenda externa: $title ($format) -> $subUrl');
+-                    
+-                    // Adiciona como track externa
+-                    await _player!.setSubtitleTrack(
+-                      SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
+-                    );
++                    // Verifica se a legenda existe antes de enviar ao media_kit
++                    // Evita crash fatal no MPV ("Can not open external file") em caso de 404
++                    try {
++                      final headRes = await http.head(Uri.parse(subUrl)).timeout(
++                        const Duration(seconds: 3),
++                        onTimeout: () => http.Response('', 408),
++                      );
++                      if (headRes.statusCode == 200) {
++                        print('➕ Legenda válida: $title ($format)');
++                        await _player!.setSubtitleTrack(
++                          SubtitleTrack.uri(subUrl, title: title, language: sub['Language'])
++                        );
++                      } else {
++                        print('➖ Legenda ignorada (HTTP ${headRes.statusCode}): $subUrl');
++                      }
++                    } catch (e) {
++                      print('➖ Legenda ignorada (erro): $e');
++                    }
+                 }
+               }
+             }
+@@ -778,9 +797,15 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return Scaffold(
+-      backgroundColor: Colors.black,
+-      body: _hasError ? _buildErrorView() : _buildPlayerView(),
++    return PopScope(
++      canPop: false,
++      onPopInvokedWithResult: (didPop, _) {
++        if (!didPop) _handleBackAction();
++      },
++      child: Scaffold(
++        backgroundColor: Colors.black,
++        body: _hasError ? _buildErrorView() : _buildPlayerView(),
++      ),
+     );
+   }
+   
+diff --git a/test_jellyfin.dart b/test_jellyfin.dart
+new file mode 100644
+index 0000000..4b75ec9
+--- /dev/null
++++ b/test_jellyfin.dart
+@@ -0,0 +1,32 @@
++import 'dart:convert';
++import 'dart:io';
++
++void main() async {
++  final baseUrl = 'https://jellyfin.shark.assistant.nom.br';
++  final userId = '8026dbdf93a44d8b9eeb2db5b6faccce';
++  final token = 'bd6fce4d436a439ab825e6c7c00e62ea';
++
++  final url = baseUrl + '/Users/' + userId + '/Items/Latest?Limit=2&IncludeItemTypes=Movie,Series&Fields=Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
++  print('Requesting: ' + url);
++
++  try {
++    final request = await HttpClient().getUrl(Uri.parse(url));
++    request.headers.add('X-MediaBrowser-Token', token);
++    
++    final response = await request.close();
++    final responseBody = await response.transform(utf8.decoder).join();
++    
++    if (response.statusCode == 200) {
++      print('Success!');
++      final items = jsonDecode(responseBody) as List;
++      for (var item in items) {
++        print('Name: ' + item['Name'].toString());
++        print('ImageTags: ' + item['ImageTags'].toString());
++      }
++    } else {
++      print('Error: ' + response.statusCode.toString() + ' - ' + responseBody);
++    }
++  } catch (e) {
++    print('Failed: ' + e.toString());
++  }
++}
+diff --git a/test_jellyfin_http.dart b/test_jellyfin_http.dart
+new file mode 100644
+index 0000000..d570248
+--- /dev/null
++++ b/test_jellyfin_http.dart
+@@ -0,0 +1,37 @@
++import 'dart:convert';
++import 'package:http/http.dart' as http;
++
++void main() async {
++  final baseUrl = 'https://jellyfin.shark.assistant.nom.br';
++  final userId = '8026dbdf93a44d8b9eeb2db5b6faccce';
++  final token = 'bd6fce4d436a439ab825e6c7c00e62ea';
++
++  print('Querying Featured Items...');
++  final url = baseUrl + '/Items?Recursive=true&Limit=3&IncludeItemTypes=Movie,Series&SortBy=CommunityRating,DateCreated&SortOrder=Descending&Fields=Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
++  
++  try {
++    final response = await http.get(
++      Uri.parse(url),
++      headers: {'X-MediaBrowser-Token': token, 'Accept-Language': 'pt-BR'},
++    );
++    
++    if (response.statusCode == 200) {
++      final items = jsonDecode(response.body)['Items'] as List;
++      for (var item in items) {
++        print('---');
++        print('ID: ' + item['Id'].toString());
++        print('Name: ' + item['Name'].toString());
++        print('ImageTags: ' + item['ImageTags'].toString());
++        if (item['ImageTags'] != null && item['ImageTags']['Primary'] != null) {
++            String tag = item['ImageTags']['Primary'].toString();
++            String imgUrl = baseUrl + '/Items/' + item['Id'].toString() + '/Images/Primary?tag=' + tag + '&api_key=' + token;
++            print('Generated URL: ' + imgUrl);
++        }
++      }
++    } else {
++      print('Error: ' + response.statusCode.toString());
++    }
++  } catch (e) {
++    print('Exception: ' + e.toString());
++  }
++}

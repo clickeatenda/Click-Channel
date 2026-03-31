@@ -1737,8 +1737,7 @@ class M3uService {
       return [];
     }
     
-    final normalized = category.trim().toLowerCase();
-    
+
     // Normalização agressiva para evitar problemas de matching
     String normalize(String text) {
       return text
