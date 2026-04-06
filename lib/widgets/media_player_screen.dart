@@ -111,6 +111,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   final FocusNode _fitFocusNode = FocusNode();
   final FocusNode _infoFocusNode = FocusNode();
   
+  // Customização de Legendas
+  bool _showSubtitleCustomizer = false;
+  final FocusNode _subToggleCustomizerNode = FocusNode();
+  final FocusNode _subSizeNode = FocusNode();
+  final FocusNode _subColorNode = FocusNode();
+  final FocusNode _subBgToggleNode = FocusNode();
+  
   // Panel Focus Nodes
   List<FocusNode> _audioNodes = [];
   List<FocusNode> _subtitleNodes = [];
@@ -327,6 +334,40 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     );
   }
   
+  void _applySubtitleStyles() {
+    if (_player == null) return;
+    try {
+      final nativePlayer = _player!.platform;
+      final size = Prefs.getSubtitleSize();
+      final color = Prefs.getSubtitleColor();
+      final hasBg = Prefs.getSubtitleBackground();
+      final bgColor = Prefs.getSubtitleBackgroundColor();
+      
+      // Converte nome de cor para Hex Argb/Rgb esperado pelo mpv
+      String colorHex = '#FFFFFF';
+      switch (color.toLowerCase()) {
+        case 'yellow': colorHex = '#FFFF00'; break;
+        case 'cyan': colorHex = '#00FFFF'; break;
+        case 'green': colorHex = '#00FF00'; break;
+      }
+
+      nativePlayer.setProperty('sub-font-size', size.toInt().toString());
+      nativePlayer.setProperty('sub-color', colorHex);
+      nativePlayer.setProperty('sub-border-size', '2');
+      nativePlayer.setProperty('sub-shadow-offset', '1');
+      
+      if (hasBg) {
+        nativePlayer.setProperty('sub-back-color', bgColor);
+      } else {
+        nativePlayer.setProperty('sub-back-color', '#00000000');
+      }
+      
+      print('📝 Estilos de legenda aplicados: Tam=$size, Cor=$color, Fundo=$hasBg');
+    } catch (e) {
+      print('⚠️ Erro ao aplicar estilos de legenda: $e');
+    }
+  }
+
   Future<void> _initPlayer() async {
     try {
       print('🎬 Iniciando player para: ${widget.url}');
@@ -357,28 +398,47 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         ),
       );
       
-      // Ajustes de Performance para Android TV:
-      if (widget.item?.type != 'channel') {
-         try {
-           dynamic nativePlayer = _player!.platform;
-           
-           // Aplica Preferência de Decodificador (Hardware ou Software)
-           final decoder = Prefs.getDecoder();
-           if (decoder == 'sw') {
-             print('⚙️ Forçando Decodificador de Software (SW)');
-             nativePlayer.setProperty('hwdec', 'no');
-           } else {
-             // Hardware é padrão do media_kit, mas podemos forçar explicita para Android:
-             // nativePlayer.setProperty('hwdec', 'mediacodec-copy');
-           }
-           
-           // 1. Permite que áudios pesados (Dolby/DTS) passem direto pela HDMI para a TV decodificar, poupando a CPU da Firestick
-           nativePlayer.setProperty('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd');
-           // 2. Se a GPU da Firestick atrasar os quadros 4K, force o player a pular o framerate na exibição em vez de engasgar/desincronizar o áudio ou causar buffer loop infinito
-           nativePlayer.setProperty('framedrop', 'vo');
-         } catch (e) {
-           print('Aviso: Não foi possível aplicar libmpv properties: $e');
-         }
+      // Ajustes de Performance — aplicados para TODOS os tipos de mídia:
+      try {
+        dynamic nativePlayer = _player!.platform;
+        final decoder = Prefs.getDecoder();
+
+        if (widget.item?.type == 'channel') {
+          // ─── CANAIS AO VIVO ───────────────────────────────────────────────
+          // Projetores e TVs Android com MediaCodec bugado produzem artefatos
+          // verdes quando o decodificador acessa a GPU diretamente (surface mode).
+          // `mediacodec-copy` usa hardware mas copia os frames de volta à RAM,
+          // eliminando o problema de renderização e os riscos verdes.
+          if (decoder == 'sw') {
+            print('⚙️ [Canal] Decodificador de Software forçado pelo usuário');
+            nativePlayer.setProperty('hwdec', 'no');
+          } else {
+            print('⚙️ [Canal] Usando mediacodec-copy (HW seguro para projetores)');
+            nativePlayer.setProperty('hwdec', 'mediacodec-copy');
+          }
+          // Live streams têm quadros inter-dependentes — framedrop agressivo
+          // pode corrompê-los. Usamos 'decoder' que só descarta se o decoder atrasar.
+          nativePlayer.setProperty('framedrop', 'decoder');
+          // Sem passthrough de áudio em live (pode causar crashes em alguns projetores)
+          nativePlayer.setProperty('audio-spdif', '');
+          // Aumenta tolerância de jitter em live streams
+          nativePlayer.setProperty('demuxer-max-back-bytes', '50MiB');
+        } else {
+          // ─── VOD (Filmes / Séries) ────────────────────────────────────────
+          if (decoder == 'sw') {
+            print('⚙️ [VOD] Decodificador de Software forçado pelo usuário');
+            nativePlayer.setProperty('hwdec', 'no');
+          } else {
+            print('⚙️ [VOD] Usando decodificador padrão (hardware)');
+            // Padrão do media_kit já usa hardware quando disponível
+          }
+          // Passthrough de áudio premium para VOD (Dolby/DTS via HDMI)
+          nativePlayer.setProperty('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd');
+          // VOD: skip de frame na saída de vídeo se a GPU atrasar
+          nativePlayer.setProperty('framedrop', 'vo');
+        }
+      } catch (e) {
+        print('Aviso: Não foi possível aplicar libmpv properties: $e');
       }
       
       _controller = VideoController(_player!);
@@ -742,6 +802,9 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       print('✅ Mídia pronta. Iniciando playback...');
       await _player!.play();
       
+      // Aplicar estilos de legenda após o play para garantir que o renderer está pronto
+      _applySubtitleStyles();
+      
       if (mounted) {
         setState(() => _isInitialized = true);
         print('✅ Player inicializado');
@@ -1048,38 +1111,34 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
 
         // Se controles ocultos
         if (!_showControls) {
-          // Qualquer tecla acorda a UI
-          setState(() => _showControls = true);
-          _startControlsTimer();
-          
-          // Solicita foco para o botão principal (Play/Pause)
-          // Isso permite que a navegação comece imediatamente
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (_playPauseFocusNode.canRequestFocus) {
-              _playPauseFocusNode.requestFocus();
+          // Apenas agir para setas e teclas de ação
+          if (key == LogicalKeyboardKey.arrowLeft ||
+              key == LogicalKeyboardKey.arrowRight ||
+              key == LogicalKeyboardKey.arrowUp ||
+              key == LogicalKeyboardKey.arrowDown ||
+              key == LogicalKeyboardKey.select ||
+              key == LogicalKeyboardKey.enter ||
+              key == LogicalKeyboardKey.space ||
+              key == LogicalKeyboardKey.mediaPlayPause) {
+            
+            setState(() => _showControls = true);
+            _startControlsTimer();
+            
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_playPauseFocusNode.canRequestFocus) {
+                _playPauseFocusNode.requestFocus();
+              }
+            });
+            
+            if (key == LogicalKeyboardKey.arrowLeft) {
+              _seekBackward();
+            } else if (key == LogicalKeyboardKey.arrowRight) {
+              _seekForward();
             }
-          });
-          
-          // Se for setas, executamos a ação E mostramos a UI?
-          // Padrão TV: Setas enquanto oculto = Seek direto (sem mostrar UI focável, talvez info overlay)
-          // Mas aqui decidimos mostrar a UI.
-          // Vamos permitir que o primeiro clique apenas mostre a UI para não causar ação acidental.
-          // EXCETO setas, que usuário espera seek imediato.
-          if (key == LogicalKeyboardKey.arrowLeft) {
-            _seekBackward();
             return KeyEventResult.handled;
-          } 
-          if (key == LogicalKeyboardKey.arrowRight) {
-             _seekForward();
-             return KeyEventResult.handled;
           }
-          if (key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.space) {
-             // Apenas mostra controles, não pausa ainda.
-             return KeyEventResult.handled;
-          }
-          
-          // Outras teclas: apenas mostrou UI
-          return KeyEventResult.handled;
+          // Para outras teclas (incluindo System Back), deixa o Flutter lidar
+          return KeyEventResult.ignored;
         }
         
         // Se controles VISÍVEIS:
@@ -1844,7 +1903,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       left: 16,
       right: 16,
       child: Container(
-        constraints: const BoxConstraints(maxHeight: 250),
+        constraints: BoxConstraints(maxHeight: _showSubtitleCustomizer ? 350 : 250),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.95),
@@ -1858,9 +1917,17 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Opções de Legenda',
-                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Legendas',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 16),
+                    // Botão para alternar entre Faixas e Estilo
+                    _buildSubPanelToggleButton(),
+                  ],
                 ),
                 Focus(
                   canRequestFocus: false, // Prevents stealing TV focus
@@ -1872,60 +1939,245 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               ],
             ),
             const Divider(color: Colors.white24, height: 8),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Opção para desativar legenda
-                    _buildFocusableOptionItem(
-                      focusNode: _subtitleNodes.isNotEmpty ? _subtitleNodes[0] : FocusNode(),
-                      autofocus: true,
-                      title: 'Desativado',
-                      isSelected: _selectedSubtitleIndex == -1,
-                      onTap: () => _setSubtitleTrack(-1),
-                      onUp: () {
-                        _subtitleFocusNode.requestFocus();
-                        setState(() => _showSubtitleOptions = false);
-                      },
-                      onDown: () {
-                        if (_subtitleTracks.isNotEmpty && _subtitleNodes.length > 1) {
-                          _subtitleNodes[1].requestFocus();
-                        }
-                      }
-                    ),
-                    if (_subtitleTracks.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      ..._subtitleTracks.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final mapIndex = index + 1;
-                        final track = entry.value;
-                        final title = track.title ?? track.language ?? 'Legenda ${index + 1}';
-                        final isSelected = index == _selectedSubtitleIndex;
-                        return _buildFocusableOptionItem(
-                          focusNode: _subtitleNodes[mapIndex],
-                          title: title,
-                          subtitle: track.language,
-                          isSelected: isSelected,
-                          onTap: () => _setSubtitleTrack(index),
-                          onUp: () {
-                            if (mapIndex > 0) _subtitleNodes[mapIndex - 1].requestFocus();
-                          },
-                          onDown: () {
-                            if (mapIndex < _subtitleNodes.length - 1) {
-                              _subtitleNodes[mapIndex + 1].requestFocus();
-                            }
+            
+            if (!_showSubtitleCustomizer)
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Opção para desativar legenda
+                      _buildFocusableOptionItem(
+                        focusNode: _subtitleNodes.isNotEmpty ? _subtitleNodes[0] : FocusNode(),
+                        autofocus: true,
+                        title: 'Desativado',
+                        isSelected: _selectedSubtitleIndex == -1,
+                        onTap: () => _setSubtitleTrack(-1),
+                        onUp: () {
+                           _subtitleFocusNode.requestFocus();
+                           setState(() => _showSubtitleOptions = false);
+                        },
+                        onDown: () {
+                          if (_subtitleTracks.isNotEmpty && _subtitleNodes.length > 1) {
+                            _subtitleNodes[1].requestFocus();
                           }
-                        );
-                      }),
+                        }
+                      ),
+                      if (_subtitleTracks.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        ..._subtitleTracks.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final mapIndex = index + 1;
+                          final track = entry.value;
+                          final title = track.title ?? track.language ?? 'Legenda ${index + 1}';
+                          final isSelected = index == _selectedSubtitleIndex;
+                          return _buildFocusableOptionItem(
+                            focusNode: _subtitleNodes[mapIndex],
+                            title: title,
+                            subtitle: track.language,
+                            isSelected: isSelected,
+                            onTap: () => _setSubtitleTrack(index),
+                            onUp: () {
+                              if (mapIndex > 0) _subtitleNodes[mapIndex - 1].requestFocus();
+                            },
+                            onDown: () {
+                              if (mapIndex < _subtitleNodes.length - 1) {
+                                _subtitleNodes[mapIndex + 1].requestFocus();
+                              }
+                            }
+                          );
+                        }),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              )
+            else
+              // UI de Customização de Estilo
+              _buildSubtitleStyleCustomizer(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSubPanelToggleButton() {
+    return Focus(
+      focusNode: _subToggleCustomizerNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent && (event.logicalKey == LogicalKeyboardKey.select || event.logicalKey == LogicalKeyboardKey.enter)) {
+          setState(() => _showSubtitleCustomizer = !_showSubtitleCustomizer);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(builder: (ctx) {
+        final hasFocus = Focus.of(ctx).hasFocus;
+        return GestureDetector(
+          onTap: () => setState(() => _showSubtitleCustomizer = !_showSubtitleCustomizer),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: hasFocus ? Colors.blueAccent : Colors.white10,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(_showSubtitleCustomizer ? Icons.list : Icons.style, color: Colors.white, size: 14),
+                const SizedBox(width: 6),
+                Text(
+                  _showSubtitleCustomizer ? 'Ver Faixas' : 'Ajustar Estilo',
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildSubtitleStyleCustomizer() {
+    final curSize = Prefs.getSubtitleSize();
+    final curColor = Prefs.getSubtitleColor();
+    final curBg = Prefs.getSubtitleBackground();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          // Controle de Tamanho
+          _buildStyleControl(
+            focusNode: _subSizeNode,
+            label: 'Tamanho da Fonte',
+            value: curSize.toInt().toString(),
+            onLeft: () {
+              if (curSize > 16) {
+                Prefs.setSubtitleSize(curSize - 4);
+                setState(() {});
+                _applySubtitleStyles();
+              }
+            },
+            onRight: () {
+              if (curSize < 64) {
+                Prefs.setSubtitleSize(curSize + 4);
+                setState(() {});
+                _applySubtitleStyles();
+              }
+            },
+            onUp: () => _subToggleCustomizerNode.requestFocus(),
+            onDown: () => _subColorNode.requestFocus(),
+          ),
+          
+          // Controle de Cor
+          _buildStyleControl(
+            focusNode: _subColorNode,
+            label: 'Cor do Texto',
+            value: curColor.toUpperCase(),
+            onLeft: () {
+              final colors = ['white', 'yellow', 'cyan', 'green'];
+              final idx = colors.indexOf(curColor);
+              final next = colors[(idx - 1 + colors.length) % colors.length];
+              Prefs.setSubtitleColor(next);
+              setState(() {});
+              _applySubtitleStyles();
+            },
+            onRight: () {
+              final colors = ['white', 'yellow', 'cyan', 'green'];
+              final idx = colors.indexOf(curColor);
+              final next = colors[(idx + 1) % colors.length];
+              Prefs.setSubtitleColor(next);
+              setState(() {});
+              _applySubtitleStyles();
+            },
+            onUp: () => _subSizeNode.requestFocus(),
+            onDown: () => _subBgToggleNode.requestFocus(),
+          ),
+
+          // Controle de Fundo
+          _buildStyleControl(
+            focusNode: _subBgToggleNode,
+            label: 'Fundo (Box)',
+            value: curBg ? 'ATIVADO' : 'DESATIVADO',
+            onLeft: () {
+               Prefs.setSubtitleBackground(!curBg);
+               setState(() {});
+               _applySubtitleStyles();
+            },
+            onRight: () {
+               Prefs.setSubtitleBackground(!curBg);
+               setState(() {});
+               _applySubtitleStyles();
+            },
+            onUp: () => _subColorNode.requestFocus(),
+          ),
+          
+          const SizedBox(height: 16),
+          const Text(
+            'Use as setas Esquerda/Direita para ajustar',
+            style: TextStyle(color: Colors.white54, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyleControl({
+    required FocusNode focusNode,
+    required String label,
+    required String value,
+    required VoidCallback onLeft,
+    required VoidCallback onRight,
+    required VoidCallback onUp,
+    VoidCallback? onDown,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            onLeft(); return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            onRight(); return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            onUp(); return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown && onDown != null) {
+            onDown(); return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(builder: (ctx) {
+        final hasFocus = Focus.of(ctx).hasFocus;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: hasFocus ? Colors.blueAccent.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: hasFocus ? Colors.blueAccent : Colors.transparent),
+          ),
+          child: Row(
+            children: [
+              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              const Spacer(),
+              const Icon(Icons.arrow_left, color: Colors.white24, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                value,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_right, color: Colors.white24, size: 18),
+            ],
+          ),
+        );
+      }),
     );
   }
   
