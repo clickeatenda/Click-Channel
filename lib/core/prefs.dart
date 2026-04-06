@@ -138,10 +138,9 @@ class Prefs {
   }
 
 
-  // --- SUBTITLE PREFS ---
-  static const String keySubtitleSize = 'subtitle_size';
-  static const String keySubtitleColor = 'subtitle_color';
   static const String keySubtitleLanguage = 'subtitle_language'; 
+  static const String keySubtitleBackground = 'subtitle_background';
+  static const String keySubtitleBackgroundColor = 'subtitle_background_color';
   
   static Future<void> setSubtitleSize(double size) async {
     if (_prefs == null) await init();
@@ -149,7 +148,7 @@ class Prefs {
   }
 
   static double getSubtitleSize() {
-    return _prefs?.getDouble(keySubtitleSize) ?? 28.0;
+    return _prefs?.getDouble(keySubtitleSize) ?? 32.0; // Default size increased a bit for TV
   }
   
   static Future<void> setSubtitleColor(String colorName) async {
@@ -159,6 +158,26 @@ class Prefs {
   
   static String getSubtitleColor() {
     return _prefs?.getString(keySubtitleColor) ?? 'white';
+  }
+
+  static Future<void> setSubtitleBackground(bool show) async {
+    if (_prefs == null) await init();
+    await _prefs!.setBool(keySubtitleBackground, show);
+  }
+
+  static bool getSubtitleBackground() {
+    // Default to true as per current behavior, but and allow users to disable it
+    return _prefs?.getBool(keySubtitleBackground) ?? true;
+  }
+
+  static Future<void> setSubtitleBackgroundColor(String colorHex) async {
+    if (_prefs == null) await init();
+    await _prefs!.setString(keySubtitleBackgroundColor, colorHex);
+  }
+
+  static String getSubtitleBackgroundColor() {
+    // Default to black with medium transparency
+    return _prefs?.getString(keySubtitleBackgroundColor) ?? '#80000000';
   }
 
   static Future<void> setSubtitleLanguage(String lang) async {
