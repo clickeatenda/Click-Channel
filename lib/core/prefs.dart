@@ -14,6 +14,12 @@ class Prefs {
   static const String keyPlayerBufferSize = 'player_buffer_size';
   static const String keyPlayerForceHls = 'player_force_hls';
 
+  // Subtitle Settings (Issue #201)
+  static const String keySubtitleSize = 'subtitle_size';
+  static const String keySubtitleColor = 'subtitle_color';
+  static const String keySubtitleBackground = 'subtitle_background';
+  static const String keySubtitleBackgroundColor = 'subtitle_background_color';
+
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
     // Sanitize playlist override in case a previous APK or a restore left
