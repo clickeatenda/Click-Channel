@@ -1,107 +1,27 @@
-Resolving dependencies...
-Downloading packages...
-  archive 4.0.7 (4.0.9 available)
-  characters 1.4.0 (1.4.1 available)
-  dbus 0.7.11 (0.7.12 available)
-  device_info_plus 10.1.2 (12.3.0 available)
-  dio_smart_retry 6.0.0 (7.0.1 available)
-  ffi 2.1.5 (2.2.0 available)
-  flutter_dotenv 5.2.1 (6.0.0 available)
-  flutter_lints 2.0.3 (6.0.0 available)
-  flutter_secure_storage 9.2.4 (10.0.0 available)
-  flutter_secure_storage_linux 1.2.3 (3.0.0 available)
-  flutter_secure_storage_macos 3.1.3 (4.0.0 available)
-  flutter_secure_storage_platform_interface 1.1.2 (2.0.1 available)
-  flutter_secure_storage_web 1.2.1 (2.1.0 available)
-  flutter_secure_storage_windows 3.1.2 (4.1.0 available)
-  google_fonts 6.3.3 (8.0.2 available)
-  image 4.7.2 (4.8.0 available)
-  js 0.6.7 (0.7.2 available)
-  json_annotation 4.10.0 (4.11.0 available)
-  lints 2.1.1 (6.1.0 available)
-  matcher 0.12.17 (0.12.18 available)
-  material_color_utilities 0.11.1 (0.13.0 available)
-  media_kit_video 1.3.1 (2.0.1 available)
-  meta 1.17.0 (1.18.1 available)
-  objective_c 9.2.5 (9.3.0 available)
-  palette_generator 0.3.3+7 (discontinued)
-  petitparser 7.0.1 (7.0.2 available)
-  posix 6.0.3 (6.5.0 available)
-  shared_preferences_android 2.4.20 (2.4.21 available)
-  shimmer 2.0.0 (3.0.0 available)
-  source_span 1.10.1 (1.10.2 available)
-  test_api 0.7.7 (0.7.9 available)
-  uuid 4.5.2 (4.5.3 available)
-  video_player 2.10.1 (2.11.0 available)
-  video_player_android 2.9.1 (2.9.4 available)
-  video_player_avfoundation 2.9.0 (2.9.3 available)
-  win32 5.15.0 (6.0.0 available)
-  win32_registry 1.1.5 (3.0.0 available)
-Got dependencies!
-1 package is discontinued.
-36 packages have newer versions incompatible with dependency constraints.
-Try `flutter pub outdated` for more information.
-Analyzing Click-Channel...                                      
+Analyzing lib...
 
-warning - The value of the local variable 'normalized' isn't used - lib\data\m3u_service.dart:1740:11 - unused_local_variable
-warning - This 'onError' handler must return a value assignable to 'bool', but ends without returning a value - lib\main.dart:130:51 - body_might_complete_normally_catch_error
-warning - The declaration '_BootstrapSplash' isn't referenced - lib\main.dart:262:7 - unused_element
-warning - Unused import: '../data/epg_service.dart' - lib\screens\category_screen.dart:11:8 - unused_import
-warning - Unused import: '../data/tmdb_service.dart' - lib\screens\category_screen.dart:12:8 - unused_import
-warning - Unused import: '../models/epg_program.dart' - lib\screens\category_screen.dart:13:8 - unused_import
-warning - Unused import: '../core/config.dart' - lib\screens\category_screen.dart:14:8 - unused_import
-warning - Unused import: '../core/utils/logger.dart' - lib\screens\category_screen.dart:15:8 - unused_import
-warning - Unused import: '../widgets/hero_carousel.dart' - lib\screens\category_screen.dart:20:8 - unused_import
-  error - The constructor being called isn't a const constructor - lib\screens\category_screen.dart:155:15 - const_with_non_const
-  error - The constructor being called isn't a const constructor - lib\screens\category_screen.dart:156:25 - const_with_non_const
-  error - Expected to find ')' - lib\screens\category_screen.dart:227:13 - expected_token
-warning - Unused import: 'search_screen.dart' - lib\screens\home_screen.dart:7:8 - unused_import
-warning - The declaration '_AppLogo' isn't referenced - lib\screens\home_screen.dart:183:7 - unused_element
-warning - The value of the local variable 'featuredList' isn't used - lib\screens\home_screen.dart:929:11 - unused_local_variable
-warning - The value of the local variable 'count' isn't used - lib\screens\home_screen.dart:1032:31 - unused_local_variable
-warning - A value for optional parameter 'autofocus' isn't ever given - lib\screens\home_screen.dart:2040:70 - unused_element_parameter
-warning - A value for optional parameter 'autofocus' isn't ever given - lib\screens\home_screen.dart:2091:53 - unused_element_parameter
-warning - A value for optional parameter 'autofocus' isn't ever given - lib\screens\home_screen.dart:2690:10 - unused_element_parameter
-warning - The value of the local variable 'activeColor' isn't used - lib\screens\home_screen.dart:2709:11 - unused_local_variable
-warning - The declaration '_SectionTitle' isn't referenced - lib\screens\home_screen.dart:2812:7 - unused_element
-warning - The declaration '_loadMetadata' isn't referenced - lib\screens\series_detail_screen.dart:108:16 - unused_element
-warning - The declaration '_loadSimilarItems' isn't referenced - lib\screens\series_detail_screen.dart:185:16 - unused_element
-warning - Dead code - lib\screens\series_detail_screen.dart:437:37 - dead_code
-warning - Dead code - lib\screens\series_detail_screen.dart:437:63 - dead_code
-warning - Dead code - lib\screens\series_detail_screen.dart:437:82 - dead_code
-warning - Dead code - lib\screens\series_detail_screen.dart:438:30 - dead_code
-   info - The variable name 'series_item' isn't a lowerCamelCase identifier - lib\screens\series_library_screen.dart:43:18 - non_constant_identifier_names
-   info - Don't use 'BuildContext's across async gaps - lib\screens\settings_screen.dart:95:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:110:26 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:118:26 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:125:30 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:126:30 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:137:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:138:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:147:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:148:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:162:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:167:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:186:28 - use_build_context_synchronously
-   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:191:28 - use_build_context_synchronously
-   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\screens\setup_screen.dart:10:8 - unnecessary_import
-warning - The declaration '_showDebugInfo' isn't referenced - lib\screens\setup_screen.dart:219:16 - unused_element
-warning - Unused import: 'package:shimmer/shimmer.dart' - lib\widgets\adaptive_cached_image.dart:3:8 - unused_import
-warning - The value of the local variable 'optimizeMemCacheHeight' isn't used - lib\widgets\adaptive_cached_image.dart:38:15 - unused_local_variable
-warning - The value of the local variable 'primary' isn't used - lib\widgets\app_sidebar.dart:294:11 - unused_local_variable
-warning - The value of the local variable 'active' isn't used - lib\widgets\app_sidebar.dart:295:11 - unused_local_variable
-warning - The operand can't be 'null', so the condition is always 'true' - lib\widgets\app_sidebar.dart:316:48 - unnecessary_null_comparison
-warning - The '!' will have no effect because the receiver can't be null - lib\widgets\app_sidebar.dart:317:25 - unnecessary_non_null_assertion
-  error - Undefined name 'isFocused' - lib\widgets\app_sidebar.dart:327:20 - undefined_identifier
-  error - Undefined name 'isFocused' - lib\widgets\app_sidebar.dart:332:22 - undefined_identifier
-  error - Undefined name 'isFocused' - lib\widgets\app_sidebar.dart:342:63 - undefined_identifier
-  error - Undefined name 'isFocused' - lib\widgets\app_sidebar.dart:350:67 - undefined_identifier
-warning - Unused import: 'dart:async' - lib\widgets\blinking_cursor_placeholder.dart:1:8 - unused_import
-   info - The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\widgets\blinking_cursor_placeholder.dart:3:8 - unnecessary_import
-warning - Unused import: 'package:cached_network_image/cached_network_image.dart' - lib\widgets\content_card.dart:3:8 - unused_import
-warning - The value of the local variable 'currentPos' isn't used - lib\widgets\media_player_screen.dart:389:19 - unused_local_variable
-warning - The declaration '_buildOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1287:10 - unused_element
-warning - The declaration '_buildSimpleOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1350:10 - unused_element
-warning - The declaration '_buildOptionButtonWithFocus' isn't referenced - lib\widgets\media_player_screen.dart:1416:10 - unused_element
+warning - screens\series_detail_screen.dart:11:8 - Unused import: '../utils/content_enricher.dart'. Try removing the import directive. - unused_import
+warning - screens\setup_screen.dart:218:16 - The declaration '_showDebugInfo' isn't referenced. Try removing the declaration of '_showDebugInfo'. - unused_element
+warning - widgets\adaptive_cached_image.dart:37:15 - The value of the local variable 'optimizeMemCacheHeight' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - widgets\adaptive_cached_image.dart:38:15 - The value of the local variable 'optimizeMemCacheWidth' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - widgets\app_sidebar.dart:329:11 - The value of the local variable 'primary' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - widgets\app_sidebar.dart:330:11 - The value of the local variable 'active' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - widgets\media_player_screen.dart:455:19 - The value of the local variable 'currentPos' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - widgets\media_player_screen.dart:1505:10 - The declaration '_buildOptionButton' isn't referenced. Try removing the declaration of '_buildOptionButton'. - unused_element
+warning - widgets\media_player_screen.dart:1568:10 - The declaration '_buildSimpleOptionButton' isn't referenced. Try removing the declaration of '_buildSimpleOptionButton'. - unused_element
+warning - widgets\media_player_screen.dart:1634:10 - The declaration '_buildOptionButtonWithFocus' isn't referenced. Try removing the declaration of '_buildOptionButtonWithFocus'. - unused_element
+   info - screens\settings_screen.dart:110:28 - Don't use 'BuildContext's across async gaps. Try rewriting the code to not use the 'BuildContext', or guard the use with a 'mounted' check. - use_build_context_synchronously
+   info - screens\settings_screen.dart:125:26 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:133:26 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:140:30 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:141:30 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:152:28 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:153:28 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:162:28 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:163:28 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:177:28 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:182:28 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:201:28 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - screens\settings_screen.dart:206:28 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
 
-60 issues found. (ran in 4.4s)
+23 issues found.

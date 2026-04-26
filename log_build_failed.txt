@@ -1,0 +1,315 @@
+build	Set up job	﻿2026-04-06T13:26:13.4442954Z Current runner version: '2.333.1'
+build	Set up job	2026-04-06T13:26:13.4467583Z ##[group]Runner Image Provisioner
+build	Set up job	2026-04-06T13:26:13.4468337Z Hosted Compute Agent
+build	Set up job	2026-04-06T13:26:13.4468874Z Version: 20260213.493
+build	Set up job	2026-04-06T13:26:13.4469533Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+build	Set up job	2026-04-06T13:26:13.4470214Z Build Date: 2026-02-13T00:28:41Z
+build	Set up job	2026-04-06T13:26:13.4470838Z Worker ID: {705edaf0-c8e3-422a-afda-e605edf35179}
+build	Set up job	2026-04-06T13:26:13.4471581Z Azure Region: westus3
+build	Set up job	2026-04-06T13:26:13.4472105Z ##[endgroup]
+build	Set up job	2026-04-06T13:26:13.4473366Z ##[group]Operating System
+build	Set up job	2026-04-06T13:26:13.4474032Z Ubuntu
+build	Set up job	2026-04-06T13:26:13.4474449Z 24.04.4
+build	Set up job	2026-04-06T13:26:13.4474887Z LTS
+build	Set up job	2026-04-06T13:26:13.4475318Z ##[endgroup]
+build	Set up job	2026-04-06T13:26:13.4475848Z ##[group]Runner Image
+build	Set up job	2026-04-06T13:26:13.4476599Z Image: ubuntu-24.04
+build	Set up job	2026-04-06T13:26:13.4477108Z Version: 20260329.72.1
+build	Set up job	2026-04-06T13:26:13.4478144Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260329.72/images/ubuntu/Ubuntu2404-Readme.md
+build	Set up job	2026-04-06T13:26:13.4479763Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260329.72
+build	Set up job	2026-04-06T13:26:13.4480585Z ##[endgroup]
+build	Set up job	2026-04-06T13:26:13.4481609Z ##[group]GITHUB_TOKEN Permissions
+build	Set up job	2026-04-06T13:26:13.4483410Z Contents: read
+build	Set up job	2026-04-06T13:26:13.4483957Z Metadata: read
+build	Set up job	2026-04-06T13:26:13.4484397Z Packages: read
+build	Set up job	2026-04-06T13:26:13.4485007Z ##[endgroup]
+build	Set up job	2026-04-06T13:26:13.4487145Z Secret source: Actions
+build	Set up job	2026-04-06T13:26:13.4487818Z Prepare workflow directory
+build	Set up job	2026-04-06T13:26:13.4867866Z Prepare all required actions
+build	Set up job	2026-04-06T13:26:13.4905541Z Getting action download info
+build	Set up job	2026-04-06T13:26:13.9089403Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+build	Set up job	2026-04-06T13:26:14.0267769Z Download action repository 'subosito/flutter-action@v2' (SHA:1a449444c387b1966244ae4d4f8c696479add0b2)
+build	Set up job	2026-04-06T13:26:14.5972355Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+build	Set up job	2026-04-06T13:26:14.8083460Z Getting action download info
+build	Set up job	2026-04-06T13:26:14.9573087Z Download action repository 'actions/cache@v5' (SHA:668228422ae6a00e4ad889ee87cd7109ec5666a7)
+build	Set up job	2026-04-06T13:26:15.1310833Z Complete job name: build
+build	Run actions/checkout@v4	﻿2026-04-06T13:26:15.2124157Z ##[group]Run actions/checkout@v4
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2125428Z with:
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2126423Z   repository: clickeatenda/Click-Channel
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2127677Z   token: ***
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2128411Z   ssh-strict: true
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2129190Z   ssh-user: git
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2129974Z   persist-credentials: true
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2130844Z   clean: true
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2131621Z   sparse-checkout-cone-mode: true
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2132553Z   fetch-depth: 1
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2133296Z   fetch-tags: false
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2134068Z   show-progress: true
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2134857Z   lfs: false
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2135600Z   submodules: false
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2136565Z   set-safe-directory: true
+build	Run actions/checkout@v4	2026-04-06T13:26:15.2137698Z ##[endgroup]
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3227226Z Syncing repository: clickeatenda/Click-Channel
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3229876Z ##[group]Getting Git version info
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3231192Z Working directory is '/home/runner/work/Click-Channel/Click-Channel'
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3233086Z [command]/usr/bin/git version
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3269769Z git version 2.53.0
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3296000Z ##[endgroup]
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3311029Z Temporarily overriding HOME='/home/runner/work/_temp/aac37a56-9313-406e-8287-b4828e0c97ce' before making global git config changes
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3314102Z Adding repository directory to the temporary git global config as a safe directory
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3317644Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Click-Channel/Click-Channel
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3349634Z Deleting the contents of '/home/runner/work/Click-Channel/Click-Channel'
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3353144Z ##[group]Initializing the repository
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3357112Z [command]/usr/bin/git init /home/runner/work/Click-Channel/Click-Channel
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3471155Z hint: Using 'master' as the name for the initial branch. This default branch name
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3474214Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3477446Z hint: to use in all of your new repositories, which will suppress this warning,
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3479792Z hint: call:
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3480999Z hint:
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3482524Z hint: 	git config --global init.defaultBranch <name>
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3484446Z hint:
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3486516Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3489355Z hint: 'development'. The just-created branch can be renamed via this command:
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3491825Z hint:
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3492615Z hint: 	git branch -m <name>
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3493446Z hint:
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3494527Z hint: Disable this message with "git config set advice.defaultBranchName false"
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3496712Z Initialized empty Git repository in /home/runner/work/Click-Channel/Click-Channel/.git/
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3501814Z [command]/usr/bin/git remote add origin https://github.com/clickeatenda/Click-Channel
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3517970Z ##[endgroup]
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3520383Z ##[group]Disabling automatic garbage collection
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3522052Z [command]/usr/bin/git config --local gc.auto 0
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3551970Z ##[endgroup]
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3554221Z ##[group]Setting up auth
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3559780Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3591548Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3882862Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build	Run actions/checkout@v4	2026-04-06T13:26:15.3912567Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build	Run actions/checkout@v4	2026-04-06T13:26:15.4125006Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build	Run actions/checkout@v4	2026-04-06T13:26:15.4166640Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build	Run actions/checkout@v4	2026-04-06T13:26:15.4444361Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+build	Run actions/checkout@v4	2026-04-06T13:26:15.4513634Z ##[endgroup]
+build	Run actions/checkout@v4	2026-04-06T13:26:15.4515044Z ##[group]Fetching the repository
+build	Run actions/checkout@v4	2026-04-06T13:26:15.4523747Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +d1783f018a9561914b8514973fa149a16eef534a:refs/remotes/origin/master
+build	Run actions/checkout@v4	2026-04-06T13:26:17.0932700Z From https://github.com/clickeatenda/Click-Channel
+build	Run actions/checkout@v4	2026-04-06T13:26:17.0934738Z  * [new ref]         d1783f018a9561914b8514973fa149a16eef534a -> origin/master
+build	Run actions/checkout@v4	2026-04-06T13:26:17.0960899Z ##[endgroup]
+build	Run actions/checkout@v4	2026-04-06T13:26:17.0961338Z ##[group]Determining the checkout info
+build	Run actions/checkout@v4	2026-04-06T13:26:17.0963252Z ##[endgroup]
+build	Run actions/checkout@v4	2026-04-06T13:26:17.0968496Z [command]/usr/bin/git sparse-checkout disable
+build	Run actions/checkout@v4	2026-04-06T13:26:17.1005206Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+build	Run actions/checkout@v4	2026-04-06T13:26:17.1030268Z ##[group]Checking out the ref
+build	Run actions/checkout@v4	2026-04-06T13:26:17.1034643Z [command]/usr/bin/git checkout --progress --force -B master refs/remotes/origin/master
+build	Run actions/checkout@v4	2026-04-06T13:26:17.3361838Z Reset branch 'master'
+build	Run actions/checkout@v4	2026-04-06T13:26:17.3362526Z branch 'master' set up to track 'origin/master'.
+build	Run actions/checkout@v4	2026-04-06T13:26:17.3377711Z ##[endgroup]
+build	Run actions/checkout@v4	2026-04-06T13:26:17.3414032Z [command]/usr/bin/git log -1 --format=%H
+build	Run actions/checkout@v4	2026-04-06T13:26:17.3436303Z d1783f018a9561914b8514973fa149a16eef534a
+build	Setup Flutter	﻿2026-04-06T13:26:17.3853373Z ##[group]Run subosito/flutter-action@v2
+build	Setup Flutter	2026-04-06T13:26:17.3853760Z with:
+build	Setup Flutter	2026-04-06T13:26:17.3853973Z   channel: stable
+build	Setup Flutter	2026-04-06T13:26:17.3854381Z   architecture: X64
+build	Setup Flutter	2026-04-06T13:26:17.3854612Z   cache: false
+build	Setup Flutter	2026-04-06T13:26:17.3854840Z   pub-cache-path: default
+build	Setup Flutter	2026-04-06T13:26:17.3855091Z   dry-run: false
+build	Setup Flutter	2026-04-06T13:26:17.3855384Z   git-source: https://github.com/flutter/flutter.git
+build	Setup Flutter	2026-04-06T13:26:17.3855729Z ##[endgroup]
+build	Setup Flutter	2026-04-06T13:26:17.3971909Z ##[group]Run chmod +x "$GITHUB_ACTION_PATH/setup.sh"
+build	Setup Flutter	2026-04-06T13:26:17.3972378Z [36;1mchmod +x "$GITHUB_ACTION_PATH/setup.sh"[0m
+build	Setup Flutter	2026-04-06T13:26:17.4002231Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+build	Setup Flutter	2026-04-06T13:26:17.4002645Z ##[endgroup]
+build	Setup Flutter	2026-04-06T13:26:17.4138438Z ##[group]Run $GITHUB_ACTION_PATH/setup.sh -p \
+build	Setup Flutter	2026-04-06T13:26:17.4138875Z [36;1m$GITHUB_ACTION_PATH/setup.sh -p \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4139223Z [36;1m  -n '' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4139478Z [36;1m  -f '' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4139708Z [36;1m  -a 'X64' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4139980Z [36;1m  -k '' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4140195Z [36;1m  -c '' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4140419Z [36;1m  -l '' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4140647Z [36;1m  -d 'default' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4140994Z [36;1m  -g 'https://github.com/flutter/flutter.git' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.4141348Z [36;1m  stable[0m
+build	Setup Flutter	2026-04-06T13:26:17.4165362Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+build	Setup Flutter	2026-04-06T13:26:17.4165734Z ##[endgroup]
+build	Setup Flutter	2026-04-06T13:26:17.6160513Z ##[group]Run $GITHUB_ACTION_PATH/setup.sh \
+build	Setup Flutter	2026-04-06T13:26:17.6160898Z [36;1m$GITHUB_ACTION_PATH/setup.sh \[0m
+build	Setup Flutter	2026-04-06T13:26:17.6161201Z [36;1m  -n '3.41.6' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.6161447Z [36;1m  -a 'x64' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.6161773Z [36;1m  -c '/opt/hostedtoolcache/flutter/stable-3.41.6-x64' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.6162164Z [36;1m  -d '/home/runner/.pub-cache' \[0m
+build	Setup Flutter	2026-04-06T13:26:17.6162456Z [36;1m  stable[0m
+build	Setup Flutter	2026-04-06T13:26:17.6188553Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+build	Setup Flutter	2026-04-06T13:26:17.6188950Z ##[endgroup]
+build	Setup Flutter	2026-04-06T13:26:17.8084660Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+build	Setup Flutter	2026-04-06T13:26:17.8085718Z                                  Dload  Upload   Total   Spent    Left  Speed
+build	Setup Flutter	2026-04-06T13:26:17.8086744Z 
+build	Setup Flutter	2026-04-06T13:26:18.1265789Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+build	Setup Flutter	2026-04-06T13:26:19.1264514Z   1 1444M    1 19.4M    0     0  61.0M      0  0:00:23 --:--:--  0:00:23 60.8M
+build	Setup Flutter	2026-04-06T13:26:20.1263684Z  13 1444M   13  198M    0     0   150M      0  0:00:09  0:00:01  0:00:08  150M
+build	Setup Flutter	2026-04-06T13:26:21.1262939Z  25 1444M   25  368M    0     0   158M      0  0:00:09  0:00:02  0:00:07  158M
+build	Setup Flutter	2026-04-06T13:26:22.1262382Z  37 1444M   37  545M    0     0   164M      0  0:00:08  0:00:03  0:00:05  164M
+build	Setup Flutter	2026-04-06T13:26:23.1263903Z  50 1444M   50  726M    0     0   168M      0  0:00:08  0:00:04  0:00:04  168M
+build	Setup Flutter	2026-04-06T13:26:24.1267274Z  62 1444M   62  898M    0     0   169M      0  0:00:08  0:00:05  0:00:03  175M
+build	Setup Flutter	2026-04-06T13:26:25.1266603Z  73 1444M   73 1061M    0     0   167M      0  0:00:08  0:00:06  0:00:02  172M
+build	Setup Flutter	2026-04-06T13:26:26.1268676Z  84 1444M   84 1226M    0     0   167M      0  0:00:08  0:00:07  0:00:01  171M
+build	Setup Flutter	2026-04-06T13:26:26.3605251Z  97 1444M   97 1405M    0     0   168M      0  0:00:08  0:00:08 --:--:--  171M
+build	Setup Flutter	2026-04-06T13:26:26.3606311Z 100 1444M  100 1444M    0     0   168M      0  0:00:08  0:00:08 --:--:--  169M
+build	Install dependencies	﻿2026-04-06T13:27:17.7488071Z ##[group]Run flutter pub get
+build	Install dependencies	2026-04-06T13:27:17.7488354Z [36;1mflutter pub get[0m
+build	Install dependencies	2026-04-06T13:27:17.7517686Z shell: /usr/bin/bash -e {0}
+build	Install dependencies	2026-04-06T13:27:17.7517909Z env:
+build	Install dependencies	2026-04-06T13:27:17.7518186Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.41.6-x64/flutter
+build	Install dependencies	2026-04-06T13:27:17.7518540Z   PUB_CACHE: /home/runner/.pub-cache
+build	Install dependencies	2026-04-06T13:27:17.7518772Z ##[endgroup]
+build	Install dependencies	2026-04-06T13:27:20.8288228Z Resolving dependencies...
+build	Install dependencies	2026-04-06T13:27:21.2763474Z Downloading packages...
+build	Install dependencies	2026-04-06T13:27:25.4972687Z   archive 4.0.7 (4.0.9 available)
+build	Install dependencies	2026-04-06T13:27:25.4973165Z   async 2.13.0 (2.13.1 available)
+build	Install dependencies	2026-04-06T13:27:25.4973550Z > characters 1.4.1 (was 1.4.0)
+build	Install dependencies	2026-04-06T13:27:25.4974282Z   cupertino_icons 1.0.8 (1.0.9 available)
+build	Install dependencies	2026-04-06T13:27:25.4974734Z   dbus 0.7.11 (0.7.12 available)
+build	Install dependencies	2026-04-06T13:27:25.4975150Z   device_info_plus 10.1.2 (12.4.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4975627Z   dio 5.9.1 (5.9.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4976037Z   dio_web_adapter 2.1.1 (2.1.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4976859Z   ffi 2.1.5 (2.2.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4977263Z   flutter_dotenv 5.2.1 (6.0.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4977693Z   flutter_lints 2.0.3 (6.0.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4978178Z   flutter_secure_storage 9.2.4 (10.0.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4978729Z   flutter_secure_storage_linux 1.2.3 (3.0.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4979327Z   flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4980007Z   flutter_secure_storage_platform_interface 1.1.2 (2.0.1 available)
+build	Install dependencies	2026-04-06T13:27:25.4980683Z   flutter_secure_storage_web 1.2.1 (2.1.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4981262Z   flutter_secure_storage_windows 3.1.2 (4.1.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4981848Z   google_fonts 6.3.3 (8.0.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4982273Z   hooks 1.0.1 (1.0.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4982623Z   image 4.7.2 (4.8.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4983007Z   js 0.6.7 (0.7.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4983443Z   json_annotation 4.10.0 (4.11.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4983959Z   lints 2.1.1 (6.1.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4984371Z > matcher 0.12.19 (was 0.12.17)
+build	Install dependencies	2026-04-06T13:27:25.4984834Z > material_color_utilities 0.13.0 (was 0.11.1)
+build	Install dependencies	2026-04-06T13:27:25.4985378Z   media_kit_video 1.3.1 (2.0.1 available)
+build	Install dependencies	2026-04-06T13:27:25.4985862Z   meta 1.17.0 (1.18.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4986562Z   native_toolchain_c 0.17.4 (0.17.6 available)
+build	Install dependencies	2026-04-06T13:27:25.4987053Z   objective_c 9.2.5 (9.3.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4987507Z   package_info_plus 9.0.0 (9.0.1 available)
+build	Install dependencies	2026-04-06T13:27:25.4988008Z   palette_generator 0.3.3+7 (discontinued)
+build	Install dependencies	2026-04-06T13:27:25.4988553Z   path_provider_android 2.2.22 (2.2.23 available)
+build	Install dependencies	2026-04-06T13:27:25.4989136Z   petitparser 7.0.1 (7.0.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4989613Z   posix 6.0.3 (6.5.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4990086Z   shared_preferences 2.5.4 (2.5.5 available)
+build	Install dependencies	2026-04-06T13:27:25.4990637Z   shared_preferences_android 2.4.20 (2.4.23 available)
+build	Install dependencies	2026-04-06T13:27:25.4991275Z   shared_preferences_platform_interface 2.4.1 (2.4.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4991854Z   shimmer 2.0.0 (3.0.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4992262Z   source_span 1.10.1 (1.10.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4992721Z   sqflite_android 2.4.2+2 (2.4.2+3 available)
+build	Install dependencies	2026-04-06T13:27:25.4993218Z > test_api 0.7.10 (was 0.7.7) (0.7.11 available)
+build	Install dependencies	2026-04-06T13:27:25.4993701Z   uuid 4.5.2 (4.5.3 available)
+build	Install dependencies	2026-04-06T13:27:25.4994091Z   vector_math 2.2.0 (2.3.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4994531Z   video_player 2.10.1 (2.11.1 available)
+build	Install dependencies	2026-04-06T13:27:25.4994997Z   video_player_android 2.9.1 (2.9.5 available)
+build	Install dependencies	2026-04-06T13:27:25.4995518Z   video_player_avfoundation 2.9.0 (2.9.4 available)
+build	Install dependencies	2026-04-06T13:27:25.4996041Z   volume_controller 3.4.1 (3.4.4 available)
+build	Install dependencies	2026-04-06T13:27:25.4996792Z   wakelock_plus 1.4.0 (1.5.1 available)
+build	Install dependencies	2026-04-06T13:27:25.4997332Z   wakelock_plus_platform_interface 1.3.0 (1.4.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4998107Z   win32 5.15.0 (6.0.0 available)
+build	Install dependencies	2026-04-06T13:27:25.4998500Z   win32_registry 1.1.5 (3.0.2 available)
+build	Install dependencies	2026-04-06T13:27:25.4999264Z Changed 4 dependencies!
+build	Install dependencies	2026-04-06T13:27:25.4999647Z 1 package is discontinued.
+build	Install dependencies	2026-04-06T13:27:25.5000196Z 47 packages have newer versions incompatible with dependency constraints.
+build	Install dependencies	2026-04-06T13:27:25.5000902Z Try `flutter pub outdated` for more information.
+build	Build release APK	﻿2026-04-06T13:27:25.9902236Z ##[group]Run flutter build apk --release --target-platform android-arm,android-arm64
+build	Build release APK	2026-04-06T13:27:25.9902839Z [36;1mflutter build apk --release --target-platform android-arm,android-arm64[0m
+build	Build release APK	2026-04-06T13:27:25.9929558Z shell: /usr/bin/bash -e {0}
+build	Build release APK	2026-04-06T13:27:25.9929784Z env:
+build	Build release APK	2026-04-06T13:27:25.9930241Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.41.6-x64/flutter
+build	Build release APK	2026-04-06T13:27:25.9930610Z   PUB_CACHE: /home/runner/.pub-cache
+build	Build release APK	2026-04-06T13:27:25.9930844Z ##[endgroup]
+build	Build release APK	2026-04-06T13:29:37.6968096Z Running Gradle task 'assembleRelease'...                        
+build	Build release APK	2026-04-06T13:29:37.6969385Z Downloading file from: https://github.com/media-kit/libmpv-android-video-build/releases/download/v1.1.7/default-arm64-v8a.jar
+build	Build release APK	2026-04-06T13:29:38.0837855Z Downloading file from: https://github.com/media-kit/libmpv-android-video-build/releases/download/v1.1.7/default-armeabi-v7a.jar
+build	Build release APK	2026-04-06T13:29:38.3833426Z Downloading file from: https://github.com/media-kit/libmpv-android-video-build/releases/download/v1.1.7/default-x86_64.jar
+build	Build release APK	2026-04-06T13:29:38.6834345Z Downloading file from: https://github.com/media-kit/libmpv-android-video-build/releases/download/v1.1.7/default-x86.jar
+build	Build release APK	2026-04-06T13:30:43.1889008Z lib/widgets/media_player_screen.dart:343:27: Error: Member not found: 'Prefs.getSubtitleBackground'.
+build	Build release APK	2026-04-06T13:30:43.2003465Z       final hasBg = Prefs.getSubtitleBackground();
+build	Build release APK	2026-04-06T13:30:43.2005248Z                           ^^^^^^^^^^^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2007300Z lib/widgets/media_player_screen.dart:344:29: Error: Member not found: 'Prefs.getSubtitleBackgroundColor'.
+build	Build release APK	2026-04-06T13:30:43.2008663Z       final bgColor = Prefs.getSubtitleBackgroundColor();
+build	Build release APK	2026-04-06T13:30:43.2009258Z                             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2010207Z lib/widgets/media_player_screen.dart:354:20: Error: The method 'setProperty' isn't defined for the type 'PlatformPlayer?'.
+build	Build release APK	2026-04-06T13:30:43.2011955Z  - 'PlatformPlayer' is from 'package:media_kit/src/player/platform_player.dart' ('../../../.pub-cache/hosted/pub.dev/media_kit-1.2.6/lib/src/player/platform_player.dart').
+build	Build release APK	2026-04-06T13:30:43.2013562Z Try correcting the name to the name of an existing method, or defining a method named 'setProperty'.
+build	Build release APK	2026-04-06T13:30:43.2014591Z       nativePlayer.setProperty('sub-font-size', size.toInt().toString());
+build	Build release APK	2026-04-06T13:30:43.2015257Z                    ^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2016577Z lib/widgets/media_player_screen.dart:355:20: Error: The method 'setProperty' isn't defined for the type 'PlatformPlayer?'.
+build	Build release APK	2026-04-06T13:30:43.2018287Z  - 'PlatformPlayer' is from 'package:media_kit/src/player/platform_player.dart' ('../../../.pub-cache/hosted/pub.dev/media_kit-1.2.6/lib/src/player/platform_player.dart').
+build	Build release APK	2026-04-06T13:30:43.2019840Z Try correcting the name to the name of an existing method, or defining a method named 'setProperty'.
+build	Build release APK	2026-04-06T13:30:43.2020716Z       nativePlayer.setProperty('sub-color', colorHex);
+build	Build release APK	2026-04-06T13:30:43.2021217Z                    ^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2022083Z lib/widgets/media_player_screen.dart:356:20: Error: The method 'setProperty' isn't defined for the type 'PlatformPlayer?'.
+build	Build release APK	2026-04-06T13:30:43.2023754Z  - 'PlatformPlayer' is from 'package:media_kit/src/player/platform_player.dart' ('../../../.pub-cache/hosted/pub.dev/media_kit-1.2.6/lib/src/player/platform_player.dart').
+build	Build release APK	2026-04-06T13:30:43.2025353Z Try correcting the name to the name of an existing method, or defining a method named 'setProperty'.
+build	Build release APK	2026-04-06T13:30:43.2026507Z       nativePlayer.setProperty('sub-border-size', '2');
+build	Build release APK	2026-04-06T13:30:43.2027022Z                    ^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2027817Z lib/widgets/media_player_screen.dart:357:20: Error: The method 'setProperty' isn't defined for the type 'PlatformPlayer?'.
+build	Build release APK	2026-04-06T13:30:43.2029401Z  - 'PlatformPlayer' is from 'package:media_kit/src/player/platform_player.dart' ('../../../.pub-cache/hosted/pub.dev/media_kit-1.2.6/lib/src/player/platform_player.dart').
+build	Build release APK	2026-04-06T13:30:43.2030976Z Try correcting the name to the name of an existing method, or defining a method named 'setProperty'.
+build	Build release APK	2026-04-06T13:30:43.2032365Z       nativePlayer.setProperty('sub-shadow-offset', '1');
+build	Build release APK	2026-04-06T13:30:43.2032971Z                    ^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2033815Z lib/widgets/media_player_screen.dart:360:22: Error: The method 'setProperty' isn't defined for the type 'PlatformPlayer?'.
+build	Build release APK	2026-04-06T13:30:43.2036616Z  - 'PlatformPlayer' is from 'package:media_kit/src/player/platform_player.dart' ('../../../.pub-cache/hosted/pub.dev/media_kit-1.2.6/lib/src/player/platform_player.dart').
+build	Build release APK	2026-04-06T13:30:43.2038290Z Try correcting the name to the name of an existing method, or defining a method named 'setProperty'.
+build	Build release APK	2026-04-06T13:30:43.2039200Z         nativePlayer.setProperty('sub-back-color', bgColor);
+build	Build release APK	2026-04-06T13:30:43.2039718Z                      ^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2040585Z lib/widgets/media_player_screen.dart:362:22: Error: The method 'setProperty' isn't defined for the type 'PlatformPlayer?'.
+build	Build release APK	2026-04-06T13:30:43.2042333Z  - 'PlatformPlayer' is from 'package:media_kit/src/player/platform_player.dart' ('../../../.pub-cache/hosted/pub.dev/media_kit-1.2.6/lib/src/player/platform_player.dart').
+build	Build release APK	2026-04-06T13:30:43.2043914Z Try correcting the name to the name of an existing method, or defining a method named 'setProperty'.
+build	Build release APK	2026-04-06T13:30:43.2044859Z         nativePlayer.setProperty('sub-back-color', '#00000000');
+build	Build release APK	2026-04-06T13:30:43.2045418Z                      ^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2832206Z lib/widgets/media_player_screen.dart:2045:25: Error: Member not found: 'Prefs.getSubtitleBackground'.
+build	Build release APK	2026-04-06T13:30:43.2833512Z     final curBg = Prefs.getSubtitleBackground();
+build	Build release APK	2026-04-06T13:30:43.2834047Z                         ^^^^^^^^^^^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2835086Z lib/widgets/media_player_screen.dart:2105:22: Error: Member not found: 'Prefs.setSubtitleBackground'.
+build	Build release APK	2026-04-06T13:30:43.2837879Z                Prefs.setSubtitleBackground(!curBg);
+build	Build release APK	2026-04-06T13:30:43.2838911Z                      ^^^^^^^^^^^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:43.2840213Z lib/widgets/media_player_screen.dart:2110:22: Error: Member not found: 'Prefs.setSubtitleBackground'.
+build	Build release APK	2026-04-06T13:30:43.2841144Z                Prefs.setSubtitleBackground(!curBg);
+build	Build release APK	2026-04-06T13:30:43.2842396Z                      ^^^^^^^^^^^^^^^^^^^^^
+build	Build release APK	2026-04-06T13:30:50.9865966Z Target kernel_snapshot_program failed: Exception
+build	Build release APK	2026-04-06T13:30:50.9868233Z 
+build	Build release APK	2026-04-06T13:30:50.9868818Z 
+build	Build release APK	2026-04-06T13:30:50.9906985Z FAILURE: Build failed with an exception.
+build	Build release APK	2026-04-06T13:30:50.9908818Z 
+build	Build release APK	2026-04-06T13:30:50.9910233Z * What went wrong:
+build	Build release APK	2026-04-06T13:30:50.9911956Z Execution failed for task ':app:compileFlutterBuildRelease'.
+build	Build release APK	2026-04-06T13:30:50.9914319Z > Process 'command '/opt/hostedtoolcache/flutter/stable-3.41.6-x64/flutter/bin/flutter'' finished with non-zero exit value 1
+build	Build release APK	2026-04-06T13:30:50.9917770Z 
+build	Build release APK	2026-04-06T13:30:50.9917931Z * Try:
+build	Build release APK	2026-04-06T13:30:50.9918340Z > Run with --stacktrace option to get the stack trace.
+build	Build release APK	2026-04-06T13:30:50.9918996Z > Run with --info or --debug option to get more log output.
+build	Build release APK	2026-04-06T13:30:50.9919595Z > Run with --scan to get full insights.
+build	Build release APK	2026-04-06T13:30:50.9920092Z > Get more help at https://help.gradle.org.
+build	Build release APK	2026-04-06T13:30:50.9920435Z 
+build	Build release APK	2026-04-06T13:30:50.9920565Z BUILD FAILED in 3m 23s
+build	Build release APK	2026-04-06T13:30:51.4723456Z Running Gradle task 'assembleRelease'...                          204.8s
+build	Build release APK	2026-04-06T13:30:51.4816450Z Gradle task assembleRelease failed with exit code 1
+build	Build release APK	2026-04-06T13:30:51.4884767Z ##[error]Process completed with exit code 1.
+build	Post Setup Flutter	﻿2026-04-06T13:30:51.5037267Z Post job cleanup.
+build	Post Run actions/checkout@v4	﻿2026-04-06T13:30:51.5094376Z Post job cleanup.
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6050722Z [command]/usr/bin/git version
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6086743Z git version 2.53.0
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6131068Z Temporarily overriding HOME='/home/runner/work/_temp/bc1d2fec-e557-495e-a899-26a81f7acacc' before making global git config changes
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6132433Z Adding repository directory to the temporary git global config as a safe directory
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6145119Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Click-Channel/Click-Channel
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6180721Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6212347Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6430231Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6450231Z http.https://github.com/.extraheader
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6462258Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6493944Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6713640Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build	Post Run actions/checkout@v4	2026-04-06T13:30:51.6743206Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build	Complete job	﻿2026-04-06T13:30:51.7082517Z Cleaning up orphan processes
+build	Complete job	2026-04-06T13:30:51.7380526Z Terminate orphan process: pid (2768) (java)
+build	Complete job	2026-04-06T13:30:51.7413401Z Terminate orphan process: pid (2894) (java)
+build	Complete job	2026-04-06T13:30:51.7430071Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

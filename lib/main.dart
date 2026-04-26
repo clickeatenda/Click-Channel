@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -41,7 +42,7 @@ void main() async {
   MediaKit.ensureInitialized();
   
   // Impede que o tablet ou celular desligue a tela em qualquer lugar do app (ex: na Home)
-  WakelockPlus.enable();
+  await WakelockPlus.enable();
   
   // Configurar UI mode (síncrono, rápido)
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -65,15 +66,57 @@ class ClickChannelBootstrap extends StatefulWidget {
   State<ClickChannelBootstrap> createState() => _ClickChannelBootstrapState();
 }
 
-class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
+class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> with WidgetsBindingObserver {
   bool _initialized = false;
   late ApiClient _apiClient;
   late AuthProvider _authProvider;
+  Timer? _wakelockTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Periodic safeguard: some Android TV / Firestick devices
+    // silently reset wakelock after a timeout. Re-check every 2 min.
+    _wakelockTimer = Timer.periodic(
+      const Duration(minutes: 2),
+      (_) => _ensureWakelockEnabled(),
+    );
     _initializeApp();
+  }
+
+  @override
+  void dispose() {
+    _wakelockTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    try { WakelockPlus.disable(); } catch (_) {}
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-enable wakelock when app comes back to foreground.
+    // We intentionally do NOT disable on paused/detached because
+    // Android TV / Firestick can emit paused events while the app
+    // is still visible (e.g. overlay dialogs, system events),
+    // which caused the screen to go to standby (#196).
+    if (state == AppLifecycleState.resumed) {
+      _ensureWakelockEnabled();
+    }
+  }
+
+  /// Ensures wakelock is enabled with error handling.
+  /// Called on init, resume, and periodically as a safeguard.
+  Future<void> _ensureWakelockEnabled() async {
+    try {
+      final isEnabled = await WakelockPlus.enabled;
+      if (!isEnabled) {
+        await WakelockPlus.enable();
+      }
+    } catch (e) {
+      // Fallback: try enabling even if check failed
+      try { await WakelockPlus.enable(); } catch (_) {}
+    }
   }
 
   Future<void> _initializeApp() async {
@@ -141,7 +184,21 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
         await M3uService.loadMetaCache(_savedPlaylistUrl!);
         
         // 2. Inicia o preload pesado (parse do arquivo) em background
-        M3uService.preloadCategories(_savedPlaylistUrl!).catchError((_) => false);
+        M3uService.preloadCategories(_savedPlaylistUrl!).then((_) {
+          // Após o carregamento na memória, verificar se precisa atualizar
+          if (Prefs.needsRefresh()) {
+            print('🔄 Auto-refresh interval reached. Updating playlist in background...');
+            M3uService.downloadAndCachePlaylist(_savedPlaylistUrl!).then((_) async {
+              print('✅ Auto-refresh completed.');
+              await Prefs.setPlaylistReady(true); // Atualiza o timestamp
+              M3uService.clearMemoryCache();
+              M3uService.preloadCategories(_savedPlaylistUrl!);
+            }).catchError((e) {
+              print('⚠️ Erro no auto-refresh: $e');
+            });
+          }
+        }).catchError((_) => false);
+        
         EpgService.loadFromCache().catchError((_) => false);
       }
       

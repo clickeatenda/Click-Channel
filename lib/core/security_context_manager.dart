@@ -13,11 +13,12 @@ class SecurityContextManager {
   /// Inicializa e configura os Root Certificates baseados nos PEM configurados no assets.
   static Future<void> init() async {
     try {
-      // Cria um contexto seguro sem os certificados padrão do S.O/Device
-      final SecurityContext context = SecurityContext(withTrustedRoots: false);
+      // IMPORTANTE: withTrustedRoots: true mantém as CAs padrão do sistema.
+      // Adicionamos o cert extra (pinning) sem remover os root certs do S.O.
+      // withTrustedRoots: false quebra imagens de TMDB, Jellyfin, M3U CDNs etc.
+      final SecurityContext context = SecurityContext(withTrustedRoots: true);
 
-      // Carega o certificado raiz global padrão ou ISRG Root X1 de exemplo
-      // Numa implementação real de server próprio, usar o certificado Root CA do seu servidor.
+      // Adiciona o cert da CA própria do backend SOBRE os root certs do sistema
       final String certStr = await rootBundle.loadString('assets/certificates/isrgrootx1.pem');
       
       final List<int> certBytes = certStr.codeUnits;

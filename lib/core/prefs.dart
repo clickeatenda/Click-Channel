@@ -19,6 +19,10 @@ class Prefs {
   static const String keySubtitleColor = 'subtitle_color';
   static const String keySubtitleBackground = 'subtitle_background';
   static const String keySubtitleBackgroundColor = 'subtitle_background_color';
+  static const String keySubtitleLanguage = 'subtitle_language';
+
+  // Auto Refresh Settings
+  static const String keyAutoRefreshInterval = 'auto_refresh_interval'; // hours (0 = off)
 
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -136,18 +140,17 @@ class Prefs {
     return DateTime.fromMillisecondsSinceEpoch(ts);
   }
 
-  /// Verifica se a playlist precisa ser atualizada (mais de 24h)
-  static bool needsRefresh({Duration maxAge = const Duration(hours: 24)}) {
+  /// Verifica se a playlist precisa ser atualizada de acordo com o intervalo configurado
+  static bool needsRefresh() {
+    final interval = getAutoRefreshInterval();
+    if (interval <= 0) return false; // 0 means off
+    
     final lastDownload = getLastDownloadTime();
     if (lastDownload == null) return true;
-    return DateTime.now().difference(lastDownload) > maxAge;
+    
+    return DateTime.now().difference(lastDownload) > Duration(hours: interval);
   }
 
-
-  static const String keySubtitleLanguage = 'subtitle_language'; 
-  static const String keySubtitleBackground = 'subtitle_background';
-  static const String keySubtitleBackgroundColor = 'subtitle_background_color';
-  
   static Future<void> setSubtitleSize(double size) async {
     if (_prefs == null) await init();
     await _prefs!.setDouble(keySubtitleSize, size);
@@ -225,5 +228,17 @@ class Prefs {
   static bool getForceHls() {
     // Default to false
     return _prefs?.getBool(keyPlayerForceHls) ?? false;
+  }
+
+  // --- AUTO REFRESH SETTINGS ---
+
+  static Future<void> setAutoRefreshInterval(int hours) async {
+    if (_prefs == null) await init();
+    await _prefs!.setInt(keyAutoRefreshInterval, hours);
+  }
+
+  static int getAutoRefreshInterval() {
+    // Default to 0 (off)
+    return _prefs?.getInt(keyAutoRefreshInterval) ?? 0;
   }
 }

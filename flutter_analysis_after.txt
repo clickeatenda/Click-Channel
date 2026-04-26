@@ -1,0 +1,44 @@
+Analyzing Click-Channel...                                      
+
+warning - The value of the local variable 'normalized' isn't used - lib\data\m3u_service.dart:1740:11 - unused_local_variable
+warning - This 'onError' handler must return a value assignable to 'bool', but ends without returning a value - lib\main.dart:145:51 - body_might_complete_normally_catch_error
+warning - The declaration '_BootstrapSplash' isn't referenced - lib\main.dart:277:7 - unused_element
+warning - The declaration '_AppLogo' isn't referenced - lib\screens\home_screen.dart:182:7 - unused_element
+warning - The value of the local variable 'featuredList' isn't used - lib\screens\home_screen.dart:985:11 - unused_local_variable
+warning - The value of the local variable 'count' isn't used - lib\screens\home_screen.dart:1088:31 - unused_local_variable
+  error - All final variables must be initialized, but 'autofocus' isn't - lib\screens\home_screen.dart:2096:9 - final_not_initialized_constructor
+  error - All final variables must be initialized, but 'autofocus' isn't - lib\screens\home_screen.dart:2147:9 - final_not_initialized_constructor
+  error - All final variables must be initialized, but 'autofocus' isn't - lib\screens\home_screen.dart:2741:9 - final_not_initialized_constructor
+warning - The value of the local variable 'activeColor' isn't used - lib\screens\home_screen.dart:2764:11 - unused_local_variable
+warning - The declaration '_SectionTitle' isn't referenced - lib\screens\home_screen.dart:2867:7 - unused_element
+warning - The declaration '_loadMetadata' isn't referenced - lib\screens\series_detail_screen.dart:106:16 - unused_element
+warning - The declaration '_loadSimilarItems' isn't referenced - lib\screens\series_detail_screen.dart:183:16 - unused_element
+warning - Dead code - lib\screens\series_detail_screen.dart:438:37 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:438:63 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:438:82 - dead_code
+warning - Dead code - lib\screens\series_detail_screen.dart:439:30 - dead_code
+   info - The variable name 'series_item' isn't a lowerCamelCase identifier - lib\screens\series_library_screen.dart:43:18 - non_constant_identifier_names
+   info - Don't use 'BuildContext's across async gaps - lib\screens\settings_screen.dart:110:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:125:26 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:133:26 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:140:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:141:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:152:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:153:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:162:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:163:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:177:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:182:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:201:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\settings_screen.dart:206:28 - use_build_context_synchronously
+warning - The declaration '_showDebugInfo' isn't referenced - lib\screens\setup_screen.dart:218:16 - unused_element
+warning - The value of the local variable 'optimizeMemCacheHeight' isn't used - lib\widgets\adaptive_cached_image.dart:37:15 - unused_local_variable
+warning - The value of the local variable 'optimizeMemCacheWidth' isn't used - lib\widgets\adaptive_cached_image.dart:38:15 - unused_local_variable
+warning - The value of the local variable 'primary' isn't used - lib\widgets\app_sidebar.dart:329:11 - unused_local_variable
+warning - The value of the local variable 'active' isn't used - lib\widgets\app_sidebar.dart:330:11 - unused_local_variable
+warning - The value of the local variable 'currentPos' isn't used - lib\widgets\media_player_screen.dart:455:19 - unused_local_variable
+warning - The declaration '_buildOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1505:10 - unused_element
+warning - The declaration '_buildSimpleOptionButton' isn't referenced - lib\widgets\media_player_screen.dart:1568:10 - unused_element
+warning - The declaration '_buildOptionButtonWithFocus' isn't referenced - lib\widgets\media_player_screen.dart:1634:10 - unused_element
+warning - The value of the local variable 'userId' isn't used - test_jellyfin_http.dart:6:9 - unused_local_variable
+

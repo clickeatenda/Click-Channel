@@ -31,6 +31,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _playerBufferSize = 'medium';
   bool _playerForceHls = false;
 
+  // Auto Refresh Playlist
+  int _autoRefreshInterval = 0;
+
   late TextEditingController _playlistController;
   final FocusNode _urlFocusNode = FocusNode();
   final FocusNode _buttonFocusNode = FocusNode();
@@ -71,6 +74,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _playerDecoder = Prefs.getDecoder();
     _playerBufferSize = Prefs.getBufferSize();
     _playerForceHls = Prefs.getForceHls();
+
+    // Load auto refresh interval
+    _autoRefreshInterval = Prefs.getAutoRefreshInterval();
   }
 
   // Jellyfin Controllers & FocusNodes
@@ -438,6 +444,234 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
+                    // Playlist (M3U) Input
+                    const Text(
+                      'Playlist IPTV (M3U)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GlassPanel(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'URL da Playlist',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF161b22),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _urlHasFocus ? AppColors.primary : Colors.white.withOpacity(0.05),
+                                  width: _urlHasFocus ? 3 : 1,
+                                ),
+                                boxShadow: _urlHasFocus ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.5),
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
+                                  ),
+                                ] : [],
+                              ),
+                              child: RawKeyboardListener(
+                                focusNode: FocusNode(),
+                                onKey: (event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).previousFocus();
+                                    } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      _buttonFocusNode.requestFocus();
+                                    }
+                                  }
+                                },
+                                child: TextField(
+                                  controller: _playlistController,
+                                  focusNode: _urlFocusNode,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: 'https://exemplo.com/minha_playlist.m3u',
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                    filled: true,
+                                    fillColor: Colors.white.withOpacity(0.05),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                  onSubmitted: (_) => _buttonFocusNode.requestFocus(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _buttonHasFocus ? Colors.white : Colors.transparent,
+                                        width: _buttonHasFocus ? 3 : 1,
+                                      ),
+                                      boxShadow: _buttonHasFocus ? [
+                                        BoxShadow(
+                                          color: AppColors.primary.withOpacity(0.6),
+                                          blurRadius: 20,
+                                          spreadRadius: 2,
+                                        ),
+                                      ] : [],
+                                    ),
+                                    child: ElevatedButton.icon(
+                                      focusNode: _buttonFocusNode,
+                                      onPressed: _isDownloading ? null : _applyPlaylist,
+                                      icon: Icon(
+                                        Icons.download,
+                                        size: _buttonHasFocus ? 28 : 24,
+                                      ),
+                                      label: Text(
+                                        _buttonHasFocus ? '▶ BAIXAR PLAYLIST ◀' : 'Baixar Playlist',
+                                        style: TextStyle(
+                                          fontSize: _buttonHasFocus ? 16 : 14,
+                                          fontWeight: _buttonHasFocus ? FontWeight.bold : FontWeight.normal,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: _buttonHasFocus 
+                                            ? AppColors.primary
+                                            : AppColors.primary.withOpacity(0.8),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    if (!mounted) return;
+                                    final messenger = ScaffoldMessenger.of(context);
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Confirmar reset'),
+                                        content: const Text('Deseja remover a playlist atual e limpar todos os caches?'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+                                          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Confirmar')),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true && context.mounted) {
+                                      // Reset
+                                      await Prefs.setPlaylistOverride(null);
+                                      await Prefs.setPlaylistReady(false);
+                                      // Clear both memory and disk caches to ensure no stale data
+                                      M3uService.clearMemoryCache();
+                                      await M3uService.clearAllCache(null);
+                                      await EpgService.clearCache();
+                                      Config.setPlaylistOverride(null);
+                                      // Recreate install marker to leave the app in a clean configured state
+                                      await M3uService.writeInstallMarker();
+                                      if (context.mounted) {
+                                        messenger.showSnackBar(const SnackBar(content: Text('Reset realizado: playlist e cache limpos')));
+                                        // Restart initialization to ensure UI reflects cleared state
+                                        Navigator.pushReplacementNamed(context, '/splash', arguments: {'nextRoute': '/settings'});
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.delete_outline),
+                                  label: const Text('Resetar'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.withOpacity(0.2),
+                                    foregroundColor: Colors.redAccent,
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                    side: const BorderSide(color: Colors.redAccent, width: 1),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_isDownloading) ...[
+                              // Progress bar durante download
+                              const SizedBox(height: 16),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: _downloadProgress,
+                                  backgroundColor: Colors.white.withOpacity(0.1),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                  minHeight: 6,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _downloadStatus,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 24),
+                            // Auto Refresh Setting
+                            const Text('Atualização Automática (em segundo plano)', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _buildPlayerOptionButton(
+                                  label: 'Desligado',
+                                  subtitle: 'Manual',
+                                  selected: _autoRefreshInterval == 0,
+                                  onTap: () async {
+                                    setState(() => _autoRefreshInterval = 0);
+                                    await Prefs.setAutoRefreshInterval(0);
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                _buildPlayerOptionButton(
+                                  label: 'A cada 12h',
+                                  subtitle: '2x ao dia',
+                                  selected: _autoRefreshInterval == 12,
+                                  onTap: () async {
+                                    setState(() => _autoRefreshInterval = 12);
+                                    await Prefs.setAutoRefreshInterval(12);
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                _buildPlayerOptionButton(
+                                  label: 'A cada 24h',
+                                  subtitle: '1x ao dia',
+                                  selected: _autoRefreshInterval == 24,
+                                  onTap: () async {
+                                    setState(() => _autoRefreshInterval = 24);
+                                    await Prefs.setAutoRefreshInterval(24);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
                     // TMDB API Key (runtime) - moved to top for visibility
                     const Text(
                       'TMDB (enriquecimento de metadados)',
@@ -548,194 +782,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // Playlist (M3U) Input
-                    const Text(
-                      'Playlist IPTV (M3U)',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    GlassPanel(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'URL da Playlist',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF161b22),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _urlHasFocus ? AppColors.primary : Colors.white.withOpacity(0.05),
-                                  width: _urlHasFocus ? 3 : 1,
-                                ),
-                                boxShadow: _urlHasFocus ? [
-                                  BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.5),
-                                    blurRadius: 20,
-                                    spreadRadius: 2,
-                                  ),
-                                ] : [],
-                              ),
-                              child: RawKeyboardListener(
-                                focusNode: FocusNode(),
-                                onKey: (event) {
-                                  // Seta para cima sai do campo e volta ao menu
-                                  if (event is RawKeyDownEvent && 
-                                      event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                                    FocusScope.of(context).previousFocus();
-                                  }
-                                },
-                                child: TextField(
-                                  controller: _playlistController,
-                                  focusNode: _urlFocusNode,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: InputDecoration(
-                                    hintText: 'https://exemplo.com/minha_playlist.m3u',
-                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                    filled: true,
-                                    fillColor: Colors.white.withOpacity(0.05),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  onSubmitted: (_) => _buttonFocusNode.requestFocus(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),                              Row(
-                                children: [
-                                  Expanded(child: Container()),
-                                  ElevatedButton.icon(
-                                    onPressed: () async {
-                                      if (!mounted) return;
-                                      final messenger = ScaffoldMessenger.of(context);
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: const Text('Confirmar reset'),
-                                          content: const Text('Deseja remover a playlist atual e limpar todos os caches?'),
-                                          actions: [
-                                            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-                                            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Confirmar')),
-                                          ],
-                                        ),
-                                      );
-                                      if (confirm == true && context.mounted) {
-                                        // Reset
-                                        await Prefs.setPlaylistOverride(null);
-                                        await Prefs.setPlaylistReady(false);
-                                        // Clear both memory and disk caches to ensure no stale data
-                                        M3uService.clearMemoryCache();
-                                        await M3uService.clearAllCache(null);
-                                        await EpgService.clearCache();
-                                        Config.setPlaylistOverride(null);
-                                        // Recreate install marker to leave the app in a clean configured state
-                                        await M3uService.writeInstallMarker();
-                                        if (context.mounted) {
-                                          messenger.showSnackBar(const SnackBar(content: Text('Reset realizado: playlist e cache limpos')));
-                                          // Restart initialization to ensure UI reflects cleared state
-                                          Navigator.pushReplacementNamed(context, '/splash', arguments: {'nextRoute': '/settings'});
-                                        }
-                                      }
-                                    },
-                                    icon: const Icon(Icons.restore),
-                                    label: const Text('Reset playlist & cache'),
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                                  ),
-                                ],
-                              ),                            if (_isDownloading) ...[
-                              // Progress bar durante download
-                              const SizedBox(height: 8),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: _downloadProgress,
-                                  backgroundColor: Colors.white.withOpacity(0.1),
-                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                                  minHeight: 6,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _downloadStatus,
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ] else ...[
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 150),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _buttonHasFocus ? Colors.white : Colors.transparent,
-                                    width: _buttonHasFocus ? 3 : 1,
-                                  ),
-                                  boxShadow: _buttonHasFocus ? [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.6),
-                                      blurRadius: 20,
-                                      spreadRadius: 2,
-                                    ),
-                                  ] : [],
-                                ),
-                                child: ElevatedButton.icon(
-                                  focusNode: _buttonFocusNode,
-                                  onPressed: _applyPlaylist,
-                                  icon: Icon(
-                                    Icons.download,
-                                    size: _buttonHasFocus ? 28 : 24,
-                                  ),
-                                  label: Text(
-                                    _buttonHasFocus ? '▶ BAIXAR E SALVAR ◀' : 'Baixar e Salvar',
-                                    style: TextStyle(
-                                      fontSize: _buttonHasFocus ? 16 : 14,
-                                      fontWeight: _buttonHasFocus ? FontWeight.bold : FontWeight.normal,
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _buttonHasFocus 
-                                        ? AppColors.primary
-                                        : AppColors.primary.withOpacity(0.8),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'A lista será salva localmente',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.6),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
                     // Jellyfin Integration
                     const Text(
                       'Jellyfin Integration',
@@ -775,20 +821,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: TextField(
-                                    controller: _jfUrlController,
-                                    focusNode: _jfUrlFocusNode,
-                                    style: const TextStyle(color: Colors.white),
-                                    textInputAction: TextInputAction.next,
-                                    onSubmitted: (_) => _jfUserFocusNode.requestFocus(),
-                                    decoration: InputDecoration(
-                                      labelText: 'Server URL',
-                                      labelStyle: const TextStyle(color: Colors.white70),
-                                      hintText: '192.168.1.100:8096',
-                                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                      filled: true,
-                                      fillColor: Colors.white.withOpacity(0.05),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(),
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                          FocusScope.of(context).previousFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfUserFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfUrlController,
+                                      focusNode: _jfUrlFocusNode,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.next,
+                                      onSubmitted: (_) => _jfUserFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Server URL',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        hintText: '192.168.1.100:8096',
+                                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -812,18 +870,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: TextField(
-                                    controller: _jfUserController,
-                                    focusNode: _jfUserFocusNode,
-                                    style: const TextStyle(color: Colors.white),
-                                    textInputAction: TextInputAction.next,
-                                    onSubmitted: (_) => _jfPassFocusNode.requestFocus(),
-                                    decoration: InputDecoration(
-                                      labelText: 'Username',
-                                      labelStyle: const TextStyle(color: Colors.white70),
-                                      filled: true,
-                                      fillColor: Colors.white.withOpacity(0.05),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(),
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                          _jfUrlFocusNode.requestFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfPassFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfUserController,
+                                      focusNode: _jfUserFocusNode,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.next,
+                                      onSubmitted: (_) => _jfPassFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Username',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -847,19 +917,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ),
                                     ] : [],
                                   ),
-                                  child: TextField(
-                                    controller: _jfPassController,
-                                    focusNode: _jfPassFocusNode,
-                                    obscureText: true,
-                                    style: const TextStyle(color: Colors.white),
-                                    textInputAction: TextInputAction.done,
-                                    onSubmitted: (_) => _jfSaveFocusNode.requestFocus(),
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      labelStyle: const TextStyle(color: Colors.white70),
-                                      filled: true,
-                                      fillColor: Colors.white.withOpacity(0.05),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                  child: RawKeyboardListener(
+                                    focusNode: FocusNode(),
+                                    onKey: (event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                          _jfUserFocusNode.requestFocus();
+                                        } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                          _jfSaveFocusNode.requestFocus();
+                                        }
+                                      }
+                                    },
+                                    child: TextField(
+                                      controller: _jfPassController,
+                                      focusNode: _jfPassFocusNode,
+                                      obscureText: true,
+                                      style: const TextStyle(color: Colors.white),
+                                      textInputAction: TextInputAction.done,
+                                      onSubmitted: (_) => _jfSaveFocusNode.requestFocus(),
+                                      decoration: InputDecoration(
+                                        labelText: 'Password',
+                                        labelStyle: const TextStyle(color: Colors.white70),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                      ),
                                     ),
                                   ),
                                 ),

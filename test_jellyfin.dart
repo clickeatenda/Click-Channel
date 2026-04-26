@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 void main() async {
-  final baseUrl = 'https://jellyfin.shark.assistant.nom.br';
-  final userId = '8026dbdf93a44d8b9eeb2db5b6faccce';
-  final token = 'bd6fce4d436a439ab825e6c7c00e62ea';
+  const baseUrl = 'https://jellyfin.shark.assistant.nom.br';
+  const userId = '8026dbdf93a44d8b9eeb2db5b6faccce';
+  const token = 'bd6fce4d436a439ab825e6c7c00e62ea';
 
-  final url = baseUrl + '/Users/' + userId + '/Items/Latest?Limit=2&IncludeItemTypes=Movie,Series&Fields=Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
-  print('Requesting: ' + url);
+  const url = '$baseUrl/Users/$userId/Items/Latest?Limit=2&IncludeItemTypes=Movie,Series&Fields=Overview,PrimaryImageAspectRatio,ProductionYear,CommunityRating,Genres,MediaSources,ImageTags';
+  print('Requesting: $url');
 
   try {
     final request = await HttpClient().getUrl(Uri.parse(url));
@@ -20,13 +20,13 @@ void main() async {
       print('Success!');
       final items = jsonDecode(responseBody) as List;
       for (var item in items) {
-        print('Name: ' + item['Name'].toString());
-        print('ImageTags: ' + item['ImageTags'].toString());
+        print('Name: ${item['Name']}');
+        print('ImageTags: ${item['ImageTags']}');
       }
     } else {
-      print('Error: ' + response.statusCode.toString() + ' - ' + responseBody);
+      print('Error: ${response.statusCode} - $responseBody');
     }
   } catch (e) {
-    print('Failed: ' + e.toString());
+    print('Failed: $e');
   }
 }

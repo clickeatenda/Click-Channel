@@ -1,0 +1,79 @@
+commit 70497e9c50b04343d06421cf85b7d3f8df66c788
+Author: Antigravity AI <antigravity-ai@google.com>
+Date:   Sun Mar 29 22:16:27 2026 -0300
+
+    Fix PopScope back trap loop and restore image cache manager
+
+diff --git a/lib/widgets/adaptive_cached_image.dart b/lib/widgets/adaptive_cached_image.dart
+index 5139412..d5ccd86 100644
+--- a/lib/widgets/adaptive_cached_image.dart
++++ b/lib/widgets/adaptive_cached_image.dart
+@@ -39,6 +39,7 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> {
+ 
+     return CachedNetworkImage(
+       imageUrl: widget.url,
++      cacheManager: AppImageCacheManager.instance,
+       maxWidthDiskCache: 600,
+       maxHeightDiskCache: 800,
+       errorListener: (err) {
+diff --git a/lib/widgets/media_player_screen.dart b/lib/widgets/media_player_screen.dart
+index 848943a..0a52573 100644
+--- a/lib/widgets/media_player_screen.dart
++++ b/lib/widgets/media_player_screen.dart
+@@ -204,7 +204,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+                 _buildTopButton(
+                   icon: Icons.arrow_back,
+                   label: 'Voltar',
+-                  onPressed: _handleBackAction,
++                  onPressed: _exitPlayer,
+                   onDownPressed: () => _rewindFocusNode.requestFocus(),
+                 ),
+                 const SizedBox(width: 12),
+@@ -800,10 +800,22 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+     super.dispose();
+   }
+ 
++  bool _forceExit = false;
++
++  void _exitPlayer() {
++    setState(() {
++      _forceExit = true;
++    });
++    WidgetsBinding.instance.addPostFrameCallback((_) {
++      if (mounted) Navigator.pop(context);
++    });
++  }
++
+   @override
+   Widget build(BuildContext context) {
++    final bool trapBack = !_forceExit && (_isAnyPanelOpen() || _showControls);
+     return PopScope(
+-      canPop: false,
++      canPop: !trapBack,
+       onPopInvokedWithResult: (didPop, _) {
+         if (!didPop) _handleBackAction();
+       },
+@@ -869,8 +881,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+       setState(() => _showControls = false);
+       return;
+     }
+-
+-    Navigator.pop(context);
+   }
+ 
+   Widget _buildPlayerView() {
+@@ -887,7 +897,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
+         if (key == LogicalKeyboardKey.escape || 
+             key == LogicalKeyboardKey.backspace ||
+             key == LogicalKeyboardKey.gameButtonB) {
+-          _handleBackAction();
++          
++          final bool trapBack = !_forceExit && (_isAnyPanelOpen() || _showControls);
++          if (trapBack) {
++            _handleBackAction();
++          } else {
++            _exitPlayer();
++          }
+           return KeyEventResult.handled;
+         }
+ 

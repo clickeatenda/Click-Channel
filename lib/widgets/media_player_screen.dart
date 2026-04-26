@@ -11,7 +11,9 @@ import '../core/prefs.dart';
 import '../data/favorites_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../data/jellyfin_service.dart';
+import '../data/tv_recommendations_service.dart';
 import 'dart:async';
+
 import 'dart:ui';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -337,7 +339,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   void _applySubtitleStyles() {
     if (_player == null) return;
     try {
-      final nativePlayer = _player!.platform;
+      final dynamic nativePlayer = _player!.platform;
       final size = Prefs.getSubtitleSize();
       final color = Prefs.getSubtitleColor();
       final hasBg = Prefs.getSubtitleBackground();
@@ -981,6 +983,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   @override
   void dispose() {
     _stallTimer?.cancel();
+    // Re-enable global wakelock (managed by main.dart).
+    // DO NOT disable here — that kills the app-wide wakelock and
+    // causes the device to enter standby after leaving the player (#196).
+    try { WakelockPlus.enable(); } catch (_) {}
+    
     // Salvar progresso final
     if (widget.item != null && widget.item!.type != 'channel' && _duration.inSeconds > 0) {
       WatchHistoryService.saveProgress(widget.item!, _position, _duration);
@@ -1007,6 +1014,10 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     setState(() {
       _forceExit = true;
     });
+    
+    // Atualiza o Watch Next da Home do Android TV ao sair
+    TvRecommendationsService.updateWatchNext();
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) Navigator.pop(context);
     });

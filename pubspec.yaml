@@ -1,7 +1,7 @@
 name: clickchannel
 description: Click Channel - App de Streaming IPTV.
 publish_to: 'none'
-version: 1.0.3+11
+version: 1.2.1+1021
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -25,7 +25,7 @@ dependencies:
   shared_preferences: ^2.2.2
   path_provider: ^2.1.4
   device_info_plus: ^10.1.0
-  wakelock_plus: ^1.2.8
+  wakelock_plus: ^1.5.1
   
   # Media Kit - Player avançado com suporte a 4K/HDR
   media_kit: ^1.1.11
