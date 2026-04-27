@@ -337,7 +337,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   void _applySubtitleStyles() {
     if (_player == null) return;
     try {
-      final nativePlayer = _player!.platform;
+      final dynamic nativePlayer = _player!.platform;
       final size = Prefs.getSubtitleSize();
       final color = Prefs.getSubtitleColor();
       final hasBg = Prefs.getSubtitleBackground();

@@ -143,10 +143,7 @@ class Prefs {
     return DateTime.now().difference(lastDownload) > maxAge;
   }
 
-
   static const String keySubtitleLanguage = 'subtitle_language'; 
-  static const String keySubtitleBackground = 'subtitle_background';
-  static const String keySubtitleBackgroundColor = 'subtitle_background_color';
   
   static Future<void> setSubtitleSize(double size) async {
     if (_prefs == null) await init();
