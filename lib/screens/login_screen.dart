@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
-import '../widgets/glass_panel.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/glass_button.dart';
+import '../widgets/glass_panel.dart';
 import '../widgets/glass_input.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,19 +16,15 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   int _selectedTab = 0;
   bool _obscurePassword = true;
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
 
   bool _loginTabFocused = false;
-  bool _registerTabFocused = false;
-  bool _forgotPasswordFocused = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
-    _nameController.dispose();
     super.dispose();
   }
 
@@ -184,43 +182,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   Expanded(
-                                    child: FocusableActionDetector(
-                                      onShowFocusHighlight: (v) => setState(() => _registerTabFocused = v),
-                                      actions: {
-                                        ActivateIntent: CallbackAction<Intent>(
-                                          onInvoke: (_) { setState(() => _selectedTab = 1); return null; },
-                                        ),
-                                      },
-                                      child: GestureDetector(
-                                        onTap: () => setState(() => _selectedTab = 1),
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
-                                          decoration: BoxDecoration(
-                                            border: Border(
-                                              bottom: BorderSide(
-                                                color: _selectedTab == 1
-                                                    ? AppColors.primary
-                                                    : _registerTabFocused ? Colors.white : Colors.transparent,
-                                                width: _selectedTab == 1 || _registerTabFocused ? 3 : 2,
-                                              ),
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _selectedTab = 1),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: _selectedTab == 1 ? AppColors.primary : Colors.transparent,
+                                              width: _selectedTab == 1 ? 3 : 2,
                                             ),
-                                            color: _selectedTab == 1
-                                                ? Colors.white.withOpacity(0.05)
-                                                : _registerTabFocused ? Colors.white.withOpacity(0.15) : Colors.transparent,
                                           ),
-                                          child: Center(
-                                            child: Text(
-                                              'Register',
-                                              style: TextStyle(
-                                                color: _selectedTab == 1 || _registerTabFocused
-                                                    ? Colors.white
-                                                    : Colors.white.withOpacity(0.6),
-                                                fontSize: 14,
-                                                fontWeight: _selectedTab == 1
-                                                    ? FontWeight.w600
-                                                    : FontWeight.w400,
-                                              ),
+                                          color: _selectedTab == 1 ? Colors.white.withOpacity(0.05) : Colors.transparent,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            'Primeiro acesso',
+                                            style: TextStyle(
+                                              color: _selectedTab == 1 ? Colors.white : Colors.white.withOpacity(0.6),
+                                              fontSize: 14,
+                                              fontWeight: _selectedTab == 1 ? FontWeight.w600 : FontWeight.w400,
                                             ),
                                           ),
                                         ),
@@ -236,9 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Tab content
                               Padding(
                                 padding: const EdgeInsets.all(20),
-                                child: _selectedTab == 0
-                                    ? _buildLoginForm()
-                                    : _buildRegisterForm(),
+                                child: _selectedTab == 0 ? _buildLoginForm() : _buildManagedAccessInfo(),
                               ),
                             ],
                           ),
@@ -265,19 +245,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLoginForm() {
+    final auth = context.watch<AuthProvider>();
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         GlassInput(
-          hintText: 'Email',
-          controller: _emailController,
+          hintText: 'Usuário liberado pelo administrador',
+          controller: _usernameController,
           autofocus: true,
-          keyboardType: TextInputType.emailAddress,
-          prefixIcon: Icons.mail_outline,
+          prefixIcon: Icons.person_outline,
         ),
         const SizedBox(height: 12),
         GlassInput(
-          hintText: 'Password',
+          hintText: 'Senha',
           controller: _passwordController,
           obscureText: _obscurePassword,
           prefixIcon: Icons.lock_outline,
@@ -286,138 +267,106 @@ class _LoginScreenState extends State<LoginScreen> {
           onSuffixTap: () =>
               setState(() => _obscurePassword = !_obscurePassword),
         ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: FocusableActionDetector(
-            onShowFocusHighlight: (v) => setState(() => _forgotPasswordFocused = v),
-            actions: {
-              ActivateIntent: CallbackAction<Intent>(
-                onInvoke: (_) { /* handle forgot password */ return null; },
-              ),
-            },
-            child: GestureDetector(
-              onTap: () {},
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _forgotPasswordFocused ? Colors.white.withOpacity(0.1) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'Forgot password?',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+        const SizedBox(height: 16),
+        if (auth.errorMessage != null) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.red.withOpacity(0.2)),
+            ),
+            child: Text(
+              auth.errorMessage!,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        // Login sempre libera acesso
+          const SizedBox(height: 16),
+        ],
         SolidButton(
-          label: 'Sign In',
-          onPressed: () {
-            Navigator.pushReplacementNamed(context, '/home');
-          },
+          label: auth.isLoading ? 'Validando acesso...' : 'Entrar',
+          isLoading: auth.isLoading,
+          onPressed: _handleLogin,
           width: double.infinity,
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: Divider(
-                color: Colors.white.withOpacity(0.1),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                'Or continue with',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Divider(
-                color: Colors.white.withOpacity(0.1),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: GlassButton(
-                label: '',
-                onPressed: () {},
-                icon: Icons.g_mobiledata,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GlassButton(
-                label: '',
-                onPressed: () {},
-                icon: Icons.apple,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GlassButton(
-                label: '',
-                onPressed: () {},
-                icon: Icons.language,
-              ),
-            ),
-          ],
         ),
       ],
     );
   }
 
-  Widget _buildRegisterForm() {
+  void _handleLogin() async {
+    final success = await context.read<AuthProvider>().login(
+          _usernameController.text,
+          _passwordController.text,
+        );
+
+    if (!mounted || !success) return;
+    Navigator.pushReplacementNamed(context, '/setup');
+  }
+
+  Widget _buildManagedAccessInfo() {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GlassInput(
-          hintText: 'Full Name',
-          controller: _nameController,
-          prefixIcon: Icons.person_outline,
+        Text(
+          'Seu primeiro acesso é liberado pelo time no Click SaaS.',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.92),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 16),
-        GlassInput(
-          hintText: 'Email',
-          controller: _emailController,
-          keyboardType: TextInputType.emailAddress,
-          prefixIcon: Icons.mail_outline,
+        Text(
+          'Como funciona:',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.72),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 16),
-        GlassInput(
-          hintText: 'Password',
-          controller: _passwordController,
-          obscureText: _obscurePassword,
-          prefixIcon: Icons.lock_outline,
-          suffixIcon:
-              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-          onSuffixTap: () =>
-              setState(() => _obscurePassword = !_obscurePassword),
+        _InfoItem(text: '1. O administrador cria seu usuário no Click SaaS.',
         ),
-        const SizedBox(height: 24),
-        // Registro também entra direto
-        SolidButton(
-          label: 'Create Account',
-          onPressed: () {
-            Navigator.pushReplacementNamed(context, '/home');
-          },
-          width: double.infinity,
+        const SizedBox(height: 10),
+        _InfoItem(text: '2. O conteúdo é liberado manualmente na plataforma parceira.'),
+        const SizedBox(height: 10),
+        _InfoItem(text: '3. Depois disso, seu acesso já entra com a lista configurada automaticamente.'),
+      ],
+    );
+  }
+}
+
+class _InfoItem extends StatelessWidget {
+  final String text;
+
+  const _InfoItem({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 5),
+          width: 6,
+          height: 6,
+          decoration: const BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.72),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
         ),
       ],
     );

@@ -29,7 +29,25 @@ class Config {
   }
   /// Backend base URL (não utilizado - app opera em modo front-only)
   static String get backendUrl {
+    try {
+      final direct = dotenv_pkg.dotenv.env['BACKEND_URL'];
+      if (direct != null && direct.trim().isNotEmpty) {
+        return direct.trim().replaceAll(RegExp(r'/$'), '');
+      }
+    } catch (_) {}
     return '';
+  }
+
+  static bool get useManagedAccess {
+    try {
+      final v = dotenv_pkg.dotenv.env['USE_CLICK_SAAS_AUTH'];
+      if (v != null) {
+        final s = v.trim().toLowerCase();
+        return s == '1' || s == 'true' || s == 'yes' || s == 'on';
+      }
+    } catch (_) {}
+
+    return backendUrl.isNotEmpty;
   }
 
   /// Optional M3U playlist URL (option B: parsing on the app side)

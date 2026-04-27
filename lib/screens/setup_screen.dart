@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/config.dart';
 import '../core/prefs.dart';
+import '../core/managed_access_storage.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
 import '../data/xtream_service.dart';
@@ -54,6 +55,7 @@ class _SetupScreenState extends State<SetupScreen> {
   // Para foco visual claro na TV
   bool _urlHasFocus = false;
   bool _buttonHasFocus = false;
+  bool _managedAccessBootstrapTried = false;
 
   @override
   void initState() {
@@ -141,6 +143,7 @@ class _SetupScreenState extends State<SetupScreen> {
         _isLoading = false;
         _statusMessage = '';
       });
+      await _tryBootstrapManagedAccess();
       return;
     }
     
@@ -205,6 +208,7 @@ class _SetupScreenState extends State<SetupScreen> {
       _isLoading = false;
       _statusMessage = '';
     });
+    await _tryBootstrapManagedAccess();
     
     // Pequeno delay para garantir que a UI foi construída antes de solicitar foco
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -213,6 +217,31 @@ class _SetupScreenState extends State<SetupScreen> {
         FocusScope.of(context).nextFocus(); // Vai para o primeiro elemento (Geralmente a Tab 1)
       }
     });
+  }
+
+  Future<void> _tryBootstrapManagedAccess() async {
+    if (_managedAccessBootstrapTried || !Config.useManagedAccess) return;
+    _managedAccessBootstrapTried = true;
+
+    final managed = await ManagedAccessStorage.read();
+    final mode = managed['mode'];
+    final url = managed['url'];
+
+    if (mode == null || url == null || url.isEmpty) return;
+
+    if (mode == 'playlist_url') {
+      _urlController.text = url;
+      await _downloadPlaylist(url);
+      return;
+    }
+
+    _xtreamHostController.text = url;
+    _xtreamUserController.text = managed['username'] ?? '';
+    _xtreamPassController.text = managed['password'] ?? '';
+    setState(() {
+      _selectedTab = 1;
+    });
+    await _loginWithXtream();
   }
 
 

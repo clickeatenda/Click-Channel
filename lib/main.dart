@@ -183,11 +183,11 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
     // Determina rota inicial
     String initialRoute;
     final isReady = Prefs.isPlaylistReady();
-    if (!_hasPlaylist) {
+    if (Config.useManagedAccess && !_authProvider.isAuthenticated) {
+      initialRoute = AppRoutes.login;
+    } else if (!_hasPlaylist) {
       initialRoute = AppRoutes.setup;
     } else if (_hasPlaylist && isReady) {
-      initialRoute = AppRoutes.home;
-    } else if (_authProvider.isAuthenticated) {
       initialRoute = AppRoutes.home;
     } else {
       initialRoute = AppRoutes.setup;
@@ -272,4 +272,4 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
     );
   }
 }
-
+
