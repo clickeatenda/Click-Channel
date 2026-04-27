@@ -2,18 +2,35 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart'; // Para ValueNotifier
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/content_item.dart';
+import 'managed_user_preferences_api.dart';
 
 class FavoritesService {
-  static const String _key = 'favorites_list_v1';
+  static const String _baseKey = 'favorites_list_v1';
   static List<ContentItem> _favorites = []; // Cache em memória
+  static String _userScope = 'anonymous';
   
   /// Notifier para atualizações reativas na UI
   static final ValueNotifier<List<ContentItem>> favoritesNotifier = ValueNotifier([]);
 
+  static String _storageKey() => '$_baseKey::$_userScope';
+
+  static String _normalizeScope(String? scope) {
+    final value = scope?.trim();
+    return value == null || value.isEmpty ? 'anonymous' : value;
+  }
+
+  static Future<void> setUserScope(String? scope) async {
+    _userScope = _normalizeScope(scope);
+    await init();
+  }
+
   /// Inicializa carregando do disco
   static Future<void> init() async {
+    _favorites = [];
+    favoritesNotifier.value = const [];
+
     final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_key);
+    final jsonString = prefs.getString(_storageKey());
     if (jsonString != null) {
       try {
         final List<dynamic> decoded = jsonDecode(jsonString);
@@ -45,6 +62,7 @@ class FavoritesService {
     }
     favoritesNotifier.value = List.from(_favorites.reversed); // Notifica ouvintes
     await _saveToDisk();
+    await ManagedUserPreferencesApi.savePreferences(favorites: toPreferencePayload());
   }
 
   /// Gera um ID único para comparação
@@ -57,8 +75,20 @@ class FavoritesService {
   /// Salva a lista atual no disco
   static Future<void> _saveToDisk() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonList = _favorites.map((e) => _toJson(e)).toList();
-    await prefs.setString(_key, jsonEncode(jsonList));
+    await prefs.setString(_storageKey(), jsonEncode(toPreferencePayload()));
+  }
+
+  static Future<void> hydrateFromPreferencePayload(List<dynamic> payload) async {
+    _favorites = payload
+        .whereType<Map>()
+        .map((entry) => ContentItem.fromJson(Map<String, dynamic>.from(entry)))
+        .toList();
+    favoritesNotifier.value = List.from(_favorites.reversed);
+    await _saveToDisk();
+  }
+
+  static List<Map<String, dynamic>> toPreferencePayload() {
+    return _favorites.map((e) => _toJson(e)).toList();
   }
 
   /// Converte ContentItem para JSON simplificado para persistência

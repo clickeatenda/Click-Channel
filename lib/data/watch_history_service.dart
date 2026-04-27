@@ -2,14 +2,29 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/content_item.dart';
+import 'managed_user_preferences_api.dart';
 
 /// Serviço para gerenciar histórico de visualização e progresso
 class WatchHistoryService {
-  static const String _watchedKey = 'watch_history';
-  static const String _watchingKey = 'watching_progress';
+  static const String _watchedKeyBase = 'watch_history';
+  static const String _watchingKeyBase = 'watching_progress';
   static const int _maxHistoryItems = 50;
 
   static SharedPreferences? _prefs;
+  static String _userScope = 'anonymous';
+
+  static String _watchedKey() => '$_watchedKeyBase::$_userScope';
+  static String _watchingKey() => '$_watchingKeyBase::$_userScope';
+
+  static String _normalizeScope(String? scope) {
+    final value = scope?.trim();
+    return value == null || value.isEmpty ? 'anonymous' : value;
+  }
+
+  static Future<void> setUserScope(String? scope) async {
+    _userScope = _normalizeScope(scope);
+    await _ensureInit();
+  }
 
   static Future<void> _ensureInit() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -46,14 +61,15 @@ class WatchHistoryService {
     }
     
     final String encoded = await compute(jsonEncode, history);
-    await _prefs!.setString(_watchedKey, encoded);
+    await _prefs!.setString(_watchedKey(), encoded);
+    await ManagedUserPreferencesApi.savePreferences(watchedHistory: history);
   }
 
   /// Retorna o histórico de assistidos
   static Future<List<Map<String, dynamic>>> getWatchedHistory() async {
     await _ensureInit();
     
-    final data = _prefs!.getString(_watchedKey);
+    final data = _prefs!.getString(_watchedKey());
     if (data == null || data.isEmpty) return [];
     
     try {
@@ -80,7 +96,8 @@ class WatchHistoryService {
     
     if (history.length != initialCount) {
       final String encoded = await compute(jsonEncode, history);
-      await _prefs!.setString(_watchedKey, encoded);
+      await _prefs!.setString(_watchedKey(), encoded);
+      await ManagedUserPreferencesApi.savePreferences(watchedHistory: history);
     }
   }
 
@@ -130,7 +147,7 @@ class WatchHistoryService {
       // Se terminou, apenas remove da lista "assistindo"
       if (progress > 0.95) {
         final String encodedWatchingEnd = await compute(jsonEncode, watching);
-        await _prefs!.setString(_watchingKey, encodedWatchingEnd);
+        await _prefs!.setString(_watchingKey(), encodedWatchingEnd);
         // Adiciona aos assistidos
         await addToWatched(item);
       }
@@ -160,14 +177,14 @@ class WatchHistoryService {
     }
     
     final String encodedWatching = await compute(jsonEncode, watching);
-    await _prefs!.setString(_watchingKey, encodedWatching);
+    await _prefs!.setString(_watchingKey(), encodedWatching);
   }
 
   /// Retorna lista de itens em progresso
   static Future<List<Map<String, dynamic>>> getWatchingProgress() async {
     await _ensureInit();
     
-    final data = _prefs!.getString(_watchingKey);
+    final data = _prefs!.getString(_watchingKey());
     if (data == null || data.isEmpty) return [];
     
     try {
@@ -220,14 +237,28 @@ class WatchHistoryService {
     final watching = await getWatchingProgress();
     watching.removeWhere((w) => w['url'] == url);
     final String encoded = await compute(jsonEncode, watching);
-    await _prefs!.setString(_watchingKey, encoded);
+    await _prefs!.setString(_watchingKey(), encoded);
   }
 
   /// Limpa todo o histórico
   static Future<void> clearAll() async {
     await _ensureInit();
-    await _prefs!.remove(_watchedKey);
-    await _prefs!.remove(_watchingKey);
+    await _prefs!.remove(_watchedKey());
+    await _prefs!.remove(_watchingKey());
+    await ManagedUserPreferencesApi.savePreferences(watchedHistory: const []);
+  }
+
+  static Future<void> hydrateWatchedHistoryFromPreferencePayload(List<dynamic> payload) async {
+    await _ensureInit();
+
+    final history = payload
+        .whereType<Map>()
+        .map((entry) => Map<String, dynamic>.from(entry))
+        .take(_maxHistoryItems)
+        .toList();
+
+    final encoded = await compute(jsonEncode, history);
+    await _prefs!.setString(_watchedKey(), encoded);
   }
 }
 
