@@ -26,6 +26,48 @@ class JellyfinService {
   static bool _initialized = false;
   static bool _authenticated = false;
 
+  static String _baseUrlWithoutTrailingSlash(String value) {
+    return value.endsWith('/') ? value.substring(0, value.length - 1) : value;
+  }
+
+  static List<String> _candidateBaseUrls() {
+    final configured = _baseUrl;
+    if (configured == null || configured.isEmpty) return const [];
+
+    final normalized = _baseUrlWithoutTrailingSlash(configured);
+    final candidates = <String>[normalized];
+    if (!normalized.toLowerCase().endsWith('/emby')) {
+      candidates.add('$normalized/emby');
+    }
+
+    return candidates.toSet().toList();
+  }
+
+  static Map<String, String> _buildAuthHeaders(String deviceId, {bool authorizationHeader = false}) {
+    final authValue =
+        'MediaBrowser Client="ClickChannel", Device="Mobile", DeviceId="$deviceId", Version="1.0"';
+    return {
+      'Content-Type': 'application/json',
+      if (authorizationHeader) 'Authorization': authValue,
+      if (!authorizationHeader) 'X-Emby-Authorization': authValue,
+    };
+  }
+
+  static bool _applyAuthResponse(Map<String, dynamic> data) {
+    final accessToken = data['AccessToken']?.toString();
+    final user = data['User'];
+    final userId = user is Map ? user['Id']?.toString() : null;
+
+    if (accessToken == null || accessToken.isEmpty || userId == null || userId.isEmpty) {
+      return false;
+    }
+
+    _accessToken = accessToken;
+    _userId = userId;
+    _authenticated = true;
+    return true;
+  }
+
   // Getters públicos para acesso externo
   static String get baseUrl => _baseUrl ?? '';
   static String get accessToken => _accessToken ?? '';
@@ -145,46 +187,58 @@ class JellyfinService {
     }
 
     try {
-      final url = '$_baseUrl/Users/AuthenticateByName';
       final deviceId = Platform.isAndroid ? 'clickchannel_android' : 'clickchannel_mobile';
-      
-      final headers = {
-        'Content-Type': 'application/json',
-        'X-Emby-Authorization': 'MediaBrowser Client="ClickChannel", Device="Mobile", DeviceId="$deviceId", Version="1.0"',
-      };
-
-      final body = jsonEncode({
-        'Username': user,
-        'Pw': pass,
-      });
+      final payloads = <Map<String, dynamic>>[
+        {'Username': user, 'Pw': pass},
+        {'Username': user, 'password': pass, 'Pw': pass},
+      ];
+      final headerVariants = <Map<String, String>>[
+        _buildAuthHeaders(deviceId),
+        _buildAuthHeaders(deviceId, authorizationHeader: true),
+      ];
 
       print('🐙 JellyfinService: Tentando autenticar usuário $user...');
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: body,
-      ).timeout(const Duration(seconds: 10));
+      for (final base in _candidateBaseUrls()) {
+        final url = '$base/Users/AuthenticateByName';
+        for (final headers in headerVariants) {
+          for (final payload in payloads) {
+            try {
+              final response = await http
+                  .post(
+                    Uri.parse(url),
+                    headers: headers,
+                    body: jsonEncode(payload),
+                  )
+                  .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _accessToken = data['AccessToken'];
-        _userId = data['User']['Id'];
-        _authenticated = true;
-
-        // Salva token de forma segura
-        await _storage.write(key: _tokenKey, value: _accessToken);
-        await _storage.write(key: _userIdKey, value: _userId);
-
-        print('✅ JellyfinService: Autenticado com sucesso! UserId: $_userId');
-        return true;
-      } else {
-        print('❌ JellyfinService: Falha na autenticação (${response.statusCode}): ${response.body}');
-        return false;
+              if (response.statusCode == 200) {
+                final data = jsonDecode(response.body);
+                if (_applyAuthResponse(Map<String, dynamic>.from(data))) {
+                  _baseUrl = base;
+                  await _storage.write(key: _urlKey, value: base);
+                  await _storage.write(key: _tokenKey, value: _accessToken);
+                  await _storage.write(key: _userIdKey, value: _userId);
+                  print('✅ JellyfinService: Autenticado com sucesso! Base: $base UserId: $_userId');
+                  return true;
+                }
+              } else {
+                final preview = response.body.length > 200
+                    ? '${response.body.substring(0, 200)}...'
+                    : response.body;
+                print('⚠️ JellyfinService: Auth falhou em $url (${response.statusCode}) -> $preview');
+              }
+            } catch (innerError) {
+              print('⚠️ JellyfinService: Tentativa falhou em $url -> $innerError');
+            }
+          }
+        }
       }
     } catch (e) {
       print('❌ JellyfinService: Erro ao autenticar: $e');
-      return false;
     }
+
+    print('❌ JellyfinService: Todas as tentativas de autenticação falharam');
+    return false;
   }
 
   /// Desconecta do servidor e limpa credenciais
@@ -519,17 +573,24 @@ class JellyfinService {
     if (!isConfigured) return false;
 
     try {
-      final url = '$_baseUrl/System/Info/Public';
-      print('🐙 JellyfinService: Testando conexão com $url');
-      
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
-      
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final serverName = data['ServerName'] ?? 'Desconhecido';
-        final version = data['Version'] ?? 'Desconhecida';
-        print('✅ JellyfinService: Conectado ao servidor $serverName (v$version)');
-        return true;
+      for (final base in _candidateBaseUrls()) {
+        final url = '$base/System/Info/Public';
+        print('🐙 JellyfinService: Testando conexão com $url');
+
+        try {
+          final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body);
+            final serverName = data['ServerName'] ?? 'Desconhecido';
+            final version = data['Version'] ?? 'Desconhecida';
+            _baseUrl = base;
+            await _storage.write(key: _urlKey, value: base);
+            print('✅ JellyfinService: Conectado ao servidor $serverName (v$version) via $base');
+            return true;
+          }
+        } catch (innerError) {
+          print('⚠️ JellyfinService: Falha ao testar $url -> $innerError');
+        }
       }
       return false;
     } catch (e) {
