@@ -71,6 +71,7 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
   bool _initialized = false;
   late ApiClient _apiClient;
   late AuthProvider _authProvider;
+  bool _forceLoginScreen = false;
 
   @override
   void initState() {
@@ -87,6 +88,7 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
       // Init API client and auth
       _apiClient = ApiClient();
       _authProvider = AuthProvider(_apiClient);
+      _forceLoginScreen = kIsWeb && Uri.base.queryParameters['screen'] == 'login';
       
       // Init preferences
       await Prefs.init();
@@ -145,6 +147,10 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
       }
       
       await _authProvider.initialize();
+
+      if (_forceLoginScreen && _authProvider.isAuthenticated) {
+        await _authProvider.logout();
+      }
       
       // CRÍTICO: Espera no mínimo 5 segundos na splash para o vídeo de abertura
       // O vídeo tem 8 segundos, então 5 segundos é um bom mínimo
@@ -182,7 +188,9 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
     // Determina rota inicial
     String initialRoute;
     final isReady = Prefs.isPlaylistReady();
-    if (Config.useManagedAccess && !_authProvider.isAuthenticated) {
+    if (_forceLoginScreen) {
+      initialRoute = AppRoutes.login;
+    } else if (Config.useManagedAccess && !_authProvider.isAuthenticated) {
       initialRoute = AppRoutes.login;
     } else if (!_hasPlaylist) {
       initialRoute = AppRoutes.setup;

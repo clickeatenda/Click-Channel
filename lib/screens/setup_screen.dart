@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../core/config.dart';
 import '../core/prefs.dart';
@@ -6,6 +7,7 @@ import '../core/managed_access_storage.dart';
 import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
 import '../data/xtream_service.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/blinking_cursor_placeholder.dart';
 import 'package:flutter/services.dart';
 
@@ -56,6 +58,8 @@ class _SetupScreenState extends State<SetupScreen> {
   bool _urlHasFocus = false;
   bool _buttonHasFocus = false;
   bool _managedAccessBootstrapTried = false;
+  bool _managedAccessDetected = false;
+  String? _managedAccessError;
 
   @override
   void initState() {
@@ -227,7 +231,18 @@ class _SetupScreenState extends State<SetupScreen> {
     final mode = managed['mode'];
     final url = managed['url'];
 
-    if (mode == null || url == null || url.isEmpty) return;
+    if (mode == null || url == null || url.isEmpty) {
+      setState(() {
+        _managedAccessDetected = true;
+        _managedAccessError = 'Seu acesso foi autenticado, mas a entrega da playlist ainda não chegou ao app. Tente entrar novamente em alguns instantes.';
+      });
+      return;
+    }
+
+    setState(() {
+      _managedAccessDetected = true;
+      _managedAccessError = null;
+    });
 
     if (mode == 'playlist_url') {
       _urlController.text = url;
@@ -404,6 +419,9 @@ class _SetupScreenState extends State<SetupScreen> {
       print('❌ SetupScreen: Erro ao baixar playlist: $e');
       setState(() {
         _isLoading = false;
+        _managedAccessError = Config.useManagedAccess
+            ? 'Não foi possível carregar sua lista gerenciada. Tente novamente daqui a pouco.'
+            : null;
         _errorMessage = 'Erro ao baixar: $e';
         _statusMessage = '';
         _progress = 0.0;
@@ -485,6 +503,9 @@ class _SetupScreenState extends State<SetupScreen> {
       print('❌ Setup: Erro no login Xtream: $e');
       setState(() {
         _isLoading = false;
+        _managedAccessError = Config.useManagedAccess
+            ? 'A lista gerenciada não conseguiu concluir a validação do provedor. Tente novamente ou saia para autenticar de novo.'
+            : null;
         _errorMessage = 'Falha no login: $e';
         _statusMessage = '';
         _progress = 0.0;
@@ -607,6 +628,8 @@ class _SetupScreenState extends State<SetupScreen> {
                     
                     if (_isLoading) ...[
                       _buildLoadingState(),
+                    ] else if (Config.useManagedAccess && _managedAccessDetected) ...[
+                      _buildManagedAccessState(),
                     ] else ...[
                       _buildTabSwitcher(),
                       const SizedBox(height: 24),
@@ -699,6 +722,94 @@ class _SetupScreenState extends State<SetupScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildManagedAccessState() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 560),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.08)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Acesso gerenciado pelo Click SaaS',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _managedAccessError ??
+                      'Estamos concluindo a configuração automática da sua lista para abrir o player.',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.76),
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    setState(() {
+                      _managedAccessError = null;
+                    });
+                    _managedAccessBootstrapTried = false;
+                    await _tryBootstrapManagedAccess();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(56),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    'Tentar novamente',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    await context.read<AuthProvider>().logout();
+                    if (!mounted) return;
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(56),
+                    side: BorderSide(color: Colors.white.withOpacity(0.22)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    'Voltar ao login',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
