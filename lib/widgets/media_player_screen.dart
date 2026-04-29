@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/content_item.dart';
@@ -8,11 +9,13 @@ import '../data/watch_history_service.dart';
 import '../data/epg_service.dart';
 import '../models/epg_program.dart';
 
+import '../core/config.dart';
 import '../core/prefs.dart';
 import '../data/favorites_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../data/jellyfin_service.dart';
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -393,6 +396,48 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     }
   }
 
+  Future<String> _resolveManagedWebPlaybackUrl(String sourceUrl) async {
+    if (!kIsWeb || !Config.useManagedAccess || Config.backendUrl.isEmpty) {
+      return sourceUrl;
+    }
+
+    try {
+      const storage = FlutterSecureStorage();
+      final authToken = await storage.read(key: 'auth_token');
+      if (authToken == null || authToken.isEmpty) {
+        return sourceUrl;
+      }
+
+      final uri = Uri.parse('${Config.backendUrl}/api/auth/stream/ticket').replace(
+        queryParameters: {
+          'access_token': authToken,
+          'upstream_url': sourceUrl,
+        },
+      );
+
+      final response = await http.get(uri, headers: const {
+        'Accept': 'application/json',
+      });
+
+      if (response.statusCode != 200) {
+        print('⚠️ Falha ao resolver proxy web do Click SaaS: ${response.statusCode} ${response.body}');
+        return sourceUrl;
+      }
+
+      final data = jsonDecode(response.body);
+      final resolved = data is Map ? data['url']?.toString() : null;
+      if (resolved == null || resolved.isEmpty) {
+        return sourceUrl;
+      }
+
+      print('🌐 Proxy web do Click SaaS resolvido para playback');
+      return resolved;
+    } catch (e) {
+      print('⚠️ Erro ao resolver proxy web do Click SaaS: $e');
+      return sourceUrl;
+    }
+  }
+
   Future<void> _initPlayer() async {
     try {
       print('🎬 Iniciando player para: ${widget.url}');
@@ -701,6 +746,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
          // Na maioria dos servidores Xtream, basta adicionar .m3u8 no final do link ts/mp4
          finalUrl = '$finalUrl.m3u8';
       }
+
+      finalUrl = await _resolveManagedWebPlaybackUrl(finalUrl);
 
       // Mídia Principal
       final media = Media(
