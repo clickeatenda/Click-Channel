@@ -29,7 +29,7 @@ class ApiClient {
     
     // Configura o adapter seguro com Security Context importado (Certificate Pinning)
     final securityContext = SecurityContextManager.pinnedContext;
-    if (securityContext != null) {
+    if (!kIsWeb && securityContext != null) {
       _dio.httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           return HttpClient(context: securityContext);

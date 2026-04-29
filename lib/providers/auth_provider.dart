@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/config.dart';
 import '../core/api/api_client.dart';
@@ -43,6 +44,11 @@ class AuthProvider with ChangeNotifier {
   Future<void> initialize() async {
     try {
       _token = await _secureStorage.read(key: 'auth_token');
+      final inboundToken = _getInboundAccessToken();
+      if (inboundToken != null && inboundToken.isNotEmpty) {
+        _token = inboundToken;
+        await _secureStorage.write(key: 'auth_token', value: inboundToken);
+      }
       await _loadCachedIdentity();
       await FavoritesService.setUserScope(_userId);
       await WatchHistoryService.setUserScope(_userId);
@@ -159,6 +165,18 @@ class AuthProvider with ChangeNotifier {
 
     if (mode == null || url == null || url.isEmpty) return;
 
+    if (kIsWeb && Config.backendUrl.isNotEmpty && _token != null && _token!.isNotEmpty) {
+      final proxyUrl =
+          '${Config.backendUrl}/api/auth/stream/playlist.m3u?access_token=${Uri.encodeComponent(_token!)}';
+
+      await ManagedAccessStorage.save(
+        mode: 'playlist_url',
+        url: proxyUrl,
+        providerLabel: delivery['providerLabel']?.toString(),
+      );
+      return;
+    }
+
     await ManagedAccessStorage.save(
       mode: mode,
       url: url,
@@ -218,5 +236,15 @@ class AuthProvider with ChangeNotifier {
     if (watchedHistory is List) {
       await WatchHistoryService.hydrateWatchedHistoryFromPreferencePayload(watchedHistory);
     }
+  }
+
+  String? _getInboundAccessToken() {
+    if (!kIsWeb) return null;
+
+    final token = Uri.base.queryParameters['access_token']?.trim() ??
+        Uri.base.queryParameters['token']?.trim();
+
+    if (token == null || token.isEmpty) return null;
+    return token;
   }
 }

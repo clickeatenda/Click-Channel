@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -122,6 +123,30 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   List<FocusNode> _audioNodes = [];
   List<FocusNode> _subtitleNodes = [];
   final FocusNode _firstFitOptionNode = FocusNode();
+
+  bool _shouldForceHlsForUrl(String value) {
+    final lower = value.toLowerCase();
+    if (lower.contains('.m3u8')) return false;
+    if (lower.contains('/api/auth/stream/media')) return false;
+    if (lower.contains('format=direct')) return false;
+    if (lower.endsWith('.mp4') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.mp3') ||
+        lower.endsWith('.m4a') ||
+        lower.endsWith('.aac') ||
+        lower.endsWith('.ogg') ||
+        lower.endsWith('.ogv')) {
+      return false;
+    }
+
+    return lower.contains('/live/') ||
+        lower.endsWith('.ts') ||
+        lower.endsWith('.m2ts') ||
+        lower.endsWith('.mpegts') ||
+        !lower.contains('.');
+  }
 
   void _updateListFocusNodes() {
     for (var node in _audioNodes) { node.dispose(); }
@@ -666,8 +691,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
 
       // Aplica Preferência: Forçar HLS
       String finalUrl = _playlist[_currentIndex].url;
-      if (Prefs.getForceHls() && !finalUrl.toLowerCase().contains('.m3u8')) {
-         print('⚙️ Forçando fluxo HLS (adicionando .m3u8 na URL)');
+      final shouldForceHls = Prefs.getForceHls() || (kIsWeb && _shouldForceHlsForUrl(finalUrl));
+      if (shouldForceHls && !finalUrl.toLowerCase().contains('.m3u8')) {
+         if (kIsWeb) {
+           print('🌐 Web: forçando fluxo HLS (.m3u8) para compatibilidade do navegador');
+         } else {
+           print('⚙️ Forçando fluxo HLS (adicionando .m3u8 na URL)');
+         }
          // Na maioria dos servidores Xtream, basta adicionar .m3u8 no final do link ts/mp4
          finalUrl = '$finalUrl.m3u8';
       }

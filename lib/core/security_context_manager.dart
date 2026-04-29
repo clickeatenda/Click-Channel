@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Gerenciador de Segurança (Certificate Pinning)
@@ -12,6 +13,12 @@ class SecurityContextManager {
 
   /// Inicializa e configura os Root Certificates baseados nos PEM configurados no assets.
   static Future<void> init() async {
+    if (kIsWeb) {
+      _pinnedContext = null;
+      print('ℹ️ SecurityContextManager: Certificate pinning desabilitado na Web.');
+      return;
+    }
+
     try {
       // Cria um contexto seguro sem os certificados padrão do S.O/Device
       final SecurityContext context = SecurityContext(withTrustedRoots: false);
@@ -27,8 +34,12 @@ class SecurityContextManager {
       print('🔒 SecurityContextManager: Certificate pinning habilitado com sucesso.');
     } catch (e) {
       print('❌ SecurityContextManager: Erro ao carregar certificados do Pinning: $e');
-      // Fallback: em caso de erro crítico, usar as roots padrão
-      _pinnedContext = SecurityContext(withTrustedRoots: true);
+      try {
+        _pinnedContext = SecurityContext(withTrustedRoots: true);
+      } catch (fallbackError) {
+        print('⚠️ SecurityContextManager: Fallback de pinning indisponível: $fallbackError');
+        _pinnedContext = null;
+      }
     }
   }
 }

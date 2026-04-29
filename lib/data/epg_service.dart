@@ -250,6 +250,7 @@ class EpgService {
 
   /// Salva cache em disco
   static Future<void> _saveCacheToDisk(String xmlContent) async {
+    if (kIsWeb) return;
     try {
       final dir = await getApplicationSupportDirectory();
       final file = File('${dir.path}/epg_cache.xml');
@@ -265,6 +266,10 @@ class EpgService {
     try {
       final prefs = await SharedPreferences.getInstance();
       _epgUrl = prefs.getString('epg_url');
+
+      if (kIsWeb) {
+        return false;
+      }
       
       final dir = await getApplicationSupportDirectory();
       final file = File('${dir.path}/epg_cache.xml');
@@ -356,14 +361,15 @@ class EpgService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('epg_url');
     
-    // Remove arquivo de cache
-    try {
-      final dir = await getApplicationSupportDirectory();
-      final cacheFile = File('${dir.path}/epg_cache.xml');
-      if (await cacheFile.exists()) {
-        await cacheFile.delete();
-      }
-    } catch (_) {}
+    if (!kIsWeb) {
+      try {
+        final dir = await getApplicationSupportDirectory();
+        final cacheFile = File('${dir.path}/epg_cache.xml');
+        if (await cacheFile.exists()) {
+          await cacheFile.delete();
+        }
+      } catch (_) {}
+    }
   }
 
   // ==================== FAVORITOS ====================

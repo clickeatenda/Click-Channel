@@ -41,7 +41,9 @@ void main() async {
   MediaKit.ensureInitialized();
   
   // Impede que o tablet ou celular desligue a tela em qualquer lugar do app (ex: na Home)
-  WakelockPlus.enable();
+  if (!kIsWeb) {
+    WakelockPlus.enable();
+  }
   
   // Configurar UI mode (síncrono, rápido)
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -78,12 +80,9 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
 
   Future<void> _initializeApp() async {
     try {
-      // Load .env
-      if (!kIsWeb) {
-        try {
-          await dotenv.load(fileName: '.env');
-        } catch (_) {}
-      }
+      try {
+        await dotenv.load(fileName: '.env');
+      } catch (_) {}
       
       // Init API client and auth
       _apiClient = ApiClient();

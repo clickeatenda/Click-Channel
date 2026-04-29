@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../core/config.dart';
+import '../core/prefs.dart';
 import '../models/content_item.dart';
 import '../models/series_details.dart';
 import '../utils/content_enricher.dart';
@@ -15,6 +16,8 @@ import '../utils/content_enricher.dart';
 /// Serviço para ler e normalizar playlists M3U diretamente no app (opção B).
 /// Suporta tanto URL (HTTP/HTTPS) quanto caminho de arquivo local (file:// ou caminho absoluto).
 class M3uService {
+  static final Map<String, String> _webPlaylistTextCache = {};
+
   // CRÍTICO: Inicializa como null, não como lista vazia
   // Isso garante que sem playlist configurada, o cache não será usado
   static List<ContentItem>? _movieCache;
@@ -97,6 +100,17 @@ class M3uService {
     
     // Limpa memória
     clearMemoryCache();
+
+    if (kIsWeb) {
+      final keepKey = newSource != null && newSource.isNotEmpty ? _normalizeSource(newSource) : null;
+      final cached = keepKey != null ? _webPlaylistTextCache[keepKey] : null;
+      _webPlaylistTextCache.clear();
+      if (keepKey != null && cached != null && cached.isNotEmpty) {
+        _webPlaylistTextCache[keepKey] = cached;
+      }
+      print('✅ M3uService: Cache web em memória limpo');
+      return;
+    }
     
     // Limpa TODOS os arquivos de cache M3U no disco
     // EXCETO se newSource for fornecido e o cache corresponder a essa URL
@@ -151,6 +165,10 @@ class M3uService {
       } catch (e) {
         print('⚠️ M3uService: test override error: $e');
       }
+    }
+
+    if (kIsWeb) {
+      return _webPlaylistTextCache.isNotEmpty;
     }
 
     try {
@@ -256,6 +274,7 @@ class M3uService {
   /// Salva os nomes das categorias e contagens em um arquivo JSON leve.
   /// Isso permite que o app exiba as categorias instantaneamente sem abrir o M3U de 100MB+.
   static Future<void> _saveMetaCache(String source) async {
+    if (kIsWeb) return;
     try {
       final file = await _getMetaCacheFile(source);
       final data = {
@@ -279,6 +298,7 @@ class M3uService {
 
   /// Carrega os nomes das categorias do disco (Rápido).
   static Future<bool> loadMetaCache(String source) async {
+    if (kIsWeb) return false;
     try {
       if (source.isEmpty) return false;
       final file = await _getMetaCacheFile(source);
@@ -318,6 +338,9 @@ class M3uService {
 
   /// Returns whether the install marker file exists
   static Future<bool> hasInstallMarker() async {
+    if (kIsWeb) {
+      return !(await Prefs.isFirstRun());
+    }
     try {
       final file = await _getInstallMarkerFile();
       return await file.exists();
@@ -329,6 +352,10 @@ class M3uService {
 
   /// Write the install marker file (used after performing first-run cleanup)
   static Future<void> writeInstallMarker() async {
+    if (kIsWeb) {
+      await Prefs.setFirstRunDone();
+      return;
+    }
     try {
       final file = await _getInstallMarkerFile();
       await file.writeAsString(DateTime.now().toIso8601String(), flush: true);
@@ -340,6 +367,7 @@ class M3uService {
 
   /// Deleta o install marker (usado para forçar limpeza completa)
   static Future<void> deleteInstallMarker() async {
+    if (kIsWeb) return;
     try {
       final file = await _getInstallMarkerFile();
       if (await file.exists()) {
@@ -356,6 +384,10 @@ class M3uService {
   /// Verifica se existe cache local válido para a URL
   /// IMPORTANTE: Cache é permanente - sempre válido se existir e não estiver corrompido
   static Future<bool> hasCachedPlaylist(String source) async {
+    if (kIsWeb) {
+      final cached = _webPlaylistTextCache[_normalizeSource(source)];
+      return cached != null && cached.trim().isNotEmpty;
+    }
     try {
       final file = await _getCacheFile(source);
       print('🔍 M3uService: Verificando cache em: ${file.path}');
@@ -450,6 +482,28 @@ class M3uService {
       int received = 0;
       int lineCount = 0;
 
+      if (kIsWeb) {
+        final bytes = <int>[];
+        await for (final chunk in response.stream) {
+          bytes.addAll(chunk);
+          received += chunk.length;
+          if (contentLength > 0) {
+            final downloadProgress = received / contentLength;
+            onProgress?.call(
+              0.1 + (downloadProgress * 0.7),
+              'Baixando... ${(received / 1024 / 1024).toStringAsFixed(1)} MB',
+            );
+          }
+        }
+
+        final content = utf8.decode(bytes, allowMalformed: true);
+        lineCount = '\n'.allMatches(content).length;
+        _webPlaylistTextCache[_normalizeSource(source)] = content;
+        print('💾 M3uService: Playlist mantida em memória para Web (~$lineCount linhas, ${(received / 1024 / 1024).toStringAsFixed(1)} MB)');
+        onProgress?.call(0.85, 'Playlist carregada com sucesso!');
+        return;
+      }
+
       // Streaming direto para arquivo - não acumula na memória
       final file = await _getCacheFile(source);
       fileSink = file.openWrite();
@@ -539,6 +593,37 @@ class M3uService {
     print('🧹 M3uService: Limpando caches de itens pesados antes de preload...');
     
     try {
+    if (kIsWeb) {
+      final content = _webPlaylistTextCache[_normalizeSource(source)];
+      if (content == null || content.isEmpty) {
+        print('⚠️ M3uService: Cache web não encontrado para preload');
+        return;
+      }
+
+      final parsedItems = _parseLines(const LineSplitter().convert(content), limit: 999999);
+      final movieItems = parsedItems.where((i) => i.type == 'movie').toList();
+      final seriesItems = parsedItems.where((i) => i.type == 'series').toList();
+      final channelItems = parsedItems.where((i) => i.type != 'movie' && i.type != 'series').toList();
+
+      _movieCache = movieItems;
+      _seriesCache = seriesItems;
+      _channelCache = channelItems;
+      _movieCacheSource = source;
+      _movieCacheMaxItems = 999999;
+
+      _extractCategories(movieItems, _movieCategories, _movieCategoryCounts, _movieCategoryThumb, _movieItemsByCategory);
+      _extractCategories(seriesItems, _seriesCategories, _seriesCategoryCounts, _seriesCategoryThumb, _seriesItemsByCategory);
+      _extractCategories(channelItems, _channelCategories, _channelCategoryCounts, _channelCategoryThumb, _channelItemsByCategory);
+
+      _preloadDone = true;
+      _preloadSource = source;
+
+      final c = _preloadCompleters[source.trim()];
+      if (c != null && !c.isCompleted) c.complete();
+      print('✅ M3uService: Preload web concluído - ${movieItems.length} filmes, ${seriesItems.length} séries, ${channelItems.length} canais');
+      return;
+    }
+
     final file = await _getCacheFile(source);
     if (!await file.exists()) {
       print('⚠️ M3uService: Cache não encontrado para preload');
@@ -763,6 +848,23 @@ class M3uService {
 
   static Future<List<String>> _loadLinesInternal(String source) async {
     if (source.startsWith('http')) {
+      if (kIsWeb) {
+        final normalizedSource = _normalizeSource(source);
+        final cached = _webPlaylistTextCache[normalizedSource];
+        if (cached != null && cached.isNotEmpty) {
+          print('⚡ M3uService: Usando cache web em memória');
+          return const LineSplitter().convert(cached);
+        }
+
+        final response = await http.get(Uri.parse(source));
+        if (response.statusCode != 200) {
+          throw Exception('Erro HTTP ${response.statusCode}');
+        }
+        final content = utf8.decode(response.bodyBytes, allowMalformed: true);
+        _webPlaylistTextCache[normalizedSource] = content;
+        return const LineSplitter().convert(content);
+      }
+
       // CRÍTICO: Verifica se a URL atual corresponde à URL salva em Prefs
       // Se não corresponder, NÃO usa cache antigo (pode ser de lista diferente)
       final savedUrl = Config.playlistRuntime;
@@ -908,6 +1010,10 @@ class M3uService {
     }
 
     return items;
+  }
+
+  static String _normalizeSource(String source) {
+    return source.trim().replaceAll(RegExp(r'/+$'), '');
   }
 
   /// Buckets and categorization helpers
