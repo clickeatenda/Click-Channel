@@ -483,10 +483,10 @@ class M3uService {
       int lineCount = 0;
 
       if (kIsWeb) {
-        final bytes = <int>[];
-        await for (final chunk in response.stream) {
-          bytes.addAll(chunk);
-          received += chunk.length;
+        final textBuffer = StringBuffer();
+        await for (final chunk in response.stream.transform(utf8.decoder)) {
+          textBuffer.write(chunk);
+          received += utf8.encode(chunk).length;
           if (contentLength > 0) {
             final downloadProgress = received / contentLength;
             onProgress?.call(
@@ -496,7 +496,7 @@ class M3uService {
           }
         }
 
-        final content = utf8.decode(bytes, allowMalformed: true);
+        final content = textBuffer.toString();
         lineCount = '\n'.allMatches(content).length;
         _webPlaylistTextCache[_normalizeSource(source)] = content;
         print('💾 M3uService: Playlist mantida em memória para Web (~$lineCount linhas, ${(received / 1024 / 1024).toStringAsFixed(1)} MB)');
@@ -860,7 +860,7 @@ class M3uService {
         if (response.statusCode != 200) {
           throw Exception('Erro HTTP ${response.statusCode}');
         }
-        final content = utf8.decode(response.bodyBytes, allowMalformed: true);
+        final content = response.body;
         _webPlaylistTextCache[normalizedSource] = content;
         return const LineSplitter().convert(content);
       }
