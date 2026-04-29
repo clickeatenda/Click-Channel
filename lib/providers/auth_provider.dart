@@ -7,6 +7,7 @@ import '../core/config.dart';
 import '../core/api/api_client.dart';
 import '../core/device_session.dart';
 import '../core/managed_access_storage.dart';
+import '../core/web_logout_hook.dart';
 import '../data/favorites_service.dart';
 import '../data/watch_history_service.dart';
 import '../data/managed_user_preferences_api.dart';
@@ -71,6 +72,7 @@ class AuthProvider with ChangeNotifier {
           await _persistIdentityCache();
           await _hydrateManagedPreferences();
           _startSessionKeepAlive();
+          _syncWebLogoutHook();
         }
       }
     } catch (e) {
@@ -111,6 +113,7 @@ class AuthProvider with ChangeNotifier {
         await _persistManagedDelivery(response.data['delivery']);
         await _hydrateManagedPreferences();
         _startSessionKeepAlive();
+        _syncWebLogoutHook();
         
         _isLoading = false;
         notifyListeners();
@@ -154,6 +157,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _sessionKeepAliveTimer?.cancel();
     _sessionKeepAliveTimer = null;
+    unregisterManagedWebLogoutHook();
     final currentToken = _token;
     if (currentToken != null && currentToken.isNotEmpty) {
       try {
@@ -308,6 +312,17 @@ class AuthProvider with ChangeNotifier {
     });
   }
 
+  void _syncWebLogoutHook() {
+    if (!kIsWeb) return;
+
+    if (!Config.useManagedAccess || _token == null || _token!.isEmpty || Config.backendUrl.isEmpty) {
+      unregisterManagedWebLogoutHook();
+      return;
+    }
+
+    registerManagedWebLogoutHook(Config.backendUrl, _token!);
+  }
+
   int? _asInt(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;
@@ -317,6 +332,7 @@ class AuthProvider with ChangeNotifier {
   @override
   void dispose() {
     _sessionKeepAliveTimer?.cancel();
+    unregisterManagedWebLogoutHook();
     super.dispose();
   }
 }
