@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/config.dart';
 import '../core/api/api_client.dart';
+import '../core/device_session.dart';
 import '../core/managed_access_storage.dart';
 import '../data/favorites_service.dart';
 import '../data/watch_history_service.dart';
@@ -21,8 +24,11 @@ class AuthProvider with ChangeNotifier {
   String? _signedAt;
   String? _expiresAt;
   String? _accessStatus;
+  int? _concurrentLimit;
+  int? _activeSessions;
   bool _isLoading = false;
   String? _errorMessage;
+  Timer? _sessionKeepAliveTimer;
   
   AuthProvider(this._apiClient);
   
@@ -36,6 +42,8 @@ class AuthProvider with ChangeNotifier {
   String? get signedAt => _signedAt;
   String? get expiresAt => _expiresAt;
   String? get accessStatus => _accessStatus;
+  int? get concurrentLimit => _concurrentLimit;
+  int? get activeSessions => _activeSessions;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _token != null;
   String? get errorMessage => _errorMessage;
@@ -62,6 +70,7 @@ class AuthProvider with ChangeNotifier {
           await _persistManagedDelivery(response.data['delivery']);
           await _persistIdentityCache();
           await _hydrateManagedPreferences();
+          _startSessionKeepAlive();
         }
       }
     } catch (e) {
@@ -78,9 +87,16 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     
     try {
+      final deviceContext = await DeviceSession.getOrCreate();
       final response = await _apiClient.post(
         '/auth/login',
-        data: {'username': username, 'password': password},
+        data: {
+          'username': username,
+          'password': password,
+          'device_id': deviceContext.deviceId,
+          'device_label': deviceContext.deviceLabel,
+          'platform': deviceContext.platform,
+        },
       );
       
       if (response.statusCode == 200) {
@@ -94,6 +110,7 @@ class AuthProvider with ChangeNotifier {
         await WatchHistoryService.setUserScope(_userId);
         await _persistManagedDelivery(response.data['delivery']);
         await _hydrateManagedPreferences();
+        _startSessionKeepAlive();
         
         _isLoading = false;
         notifyListeners();
@@ -135,6 +152,14 @@ class AuthProvider with ChangeNotifier {
   
   // Logout
   Future<void> logout() async {
+    _sessionKeepAliveTimer?.cancel();
+    _sessionKeepAliveTimer = null;
+    final currentToken = _token;
+    if (currentToken != null && currentToken.isNotEmpty) {
+      try {
+        await _apiClient.post('/auth/logout', data: {});
+      } catch (_) {}
+    }
     _token = null;
     _userId = null;
     _userName = null;
@@ -144,7 +169,21 @@ class AuthProvider with ChangeNotifier {
     _signedAt = null;
     _expiresAt = null;
     _accessStatus = null;
-    await _secureStorage.deleteAll();
+    _concurrentLimit = null;
+    _activeSessions = null;
+    for (final key in const [
+      'auth_token',
+      'user_id',
+      'user_name',
+      'user_email',
+      'username',
+      'plan_name',
+      'signed_at',
+      'expires_at',
+      'access_status',
+    ]) {
+      await _secureStorage.delete(key: key);
+    }
     await ManagedAccessStorage.clear();
     await FavoritesService.setUserScope(null);
     await WatchHistoryService.setUserScope(null);
@@ -221,6 +260,8 @@ class AuthProvider with ChangeNotifier {
     _signedAt = user['signedAt']?.toString();
     _expiresAt = user['expiresAt']?.toString();
     _accessStatus = user['accessStatus']?.toString();
+    _concurrentLimit = _asInt(user['concurrentLimit']);
+    _activeSessions = _asInt(user['activeSessions']);
   }
 
   Future<void> _hydrateManagedPreferences() async {
@@ -246,5 +287,36 @@ class AuthProvider with ChangeNotifier {
 
     if (token == null || token.isEmpty) return null;
     return token;
+  }
+
+  void _startSessionKeepAlive() {
+    _sessionKeepAliveTimer?.cancel();
+    if (!Config.useManagedAccess || _token == null || _token!.isEmpty) {
+      return;
+    }
+
+    _sessionKeepAliveTimer = Timer.periodic(const Duration(minutes: 2), (_) async {
+      try {
+        final response = await _apiClient.get('/auth/me');
+        if (response.statusCode == 200) {
+          _applySessionUser(response.data['user']);
+          await _persistManagedDelivery(response.data['delivery']);
+          await _persistIdentityCache();
+          notifyListeners();
+        }
+      } catch (_) {}
+    });
+  }
+
+  int? _asInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
+  }
+
+  @override
+  void dispose() {
+    _sessionKeepAliveTimer?.cancel();
+    super.dispose();
   }
 }

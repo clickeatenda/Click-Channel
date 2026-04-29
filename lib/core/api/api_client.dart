@@ -5,6 +5,7 @@ import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config.dart';
+import '../device_session.dart';
 import '../utils/logger.dart';
 import '../security_context_manager.dart';
 
@@ -48,6 +49,11 @@ class ApiClient {
             if (token != null) {
               options.headers['Authorization'] = 'Bearer $token';
             }
+
+            final deviceContext = await DeviceSession.getOrCreate();
+            options.headers['X-Click-Channel-Device-Id'] = deviceContext.deviceId;
+            options.headers['X-Click-Channel-Device-Label'] = deviceContext.deviceLabel;
+            options.headers['X-Click-Channel-Platform'] = deviceContext.platform;
             
             // Log da requisição (sanitizado)
             AppLogger.httpRequest(
@@ -220,18 +226,24 @@ class ApiClient {
         AppLogger.error('Bad certificate', error: e.message);
         break;
       case DioExceptionType.badResponse:
+        final responseData = e.response?.data;
+        final responseError = responseData is Map
+            ? (responseData['error'] ?? responseData['message'])?.toString()
+            : null;
         if (statusCode == 400) {
-          message = 'Dados inválidos';
+          message = responseError ?? 'Dados inválidos';
         } else if (statusCode == 401) {
-          message = 'Não autorizado';
+          message = responseError ?? 'Não autorizado';
         } else if (statusCode == 403) {
-          message = 'Acesso proibido';
+          message = responseError ?? 'Acesso proibido';
         } else if (statusCode == 404) {
-          message = 'Não encontrado';
+          message = responseError ?? 'Não encontrado';
+        } else if (statusCode == 409) {
+          message = responseError ?? 'Limite do plano atingido';
         } else if (statusCode == 500) {
-          message = 'Erro do servidor';
+          message = responseError ?? 'Erro do servidor';
         } else {
-          message = e.response?.data['message'] ?? 'Erro do servidor';
+          message = responseError ?? 'Erro do servidor';
         }
         AppLogger.error('Bad response: $statusCode', error: message);
         break;
