@@ -600,7 +600,7 @@ class M3uService {
         return;
       }
 
-      final parsedItems = _parseLines(const LineSplitter().convert(content), limit: 999999);
+      final parsedItems = _parseLines(_iterateLines(content), limit: 999999);
       final movieItems = parsedItems.where((i) => i.type == 'movie').toList();
       final seriesItems = parsedItems.where((i) => i.type == 'series').toList();
       final channelItems = parsedItems.where((i) => i.type != 'movie' && i.type != 'series').toList();
@@ -986,7 +986,7 @@ class M3uService {
     return await stream.toList();
   }
 
-  static List<ContentItem> _parseLines(List<String> lines, {int limit = 500}) {
+  static List<ContentItem> _parseLines(Iterable<String> lines, {int limit = 500}) {
     final items = <ContentItem>[];
     String? pendingExtInf;
 
@@ -1010,6 +1010,29 @@ class M3uService {
     }
 
     return items;
+  }
+
+  static Iterable<String> _iterateLines(String content) sync* {
+    if (content.isEmpty) return;
+
+    int start = 0;
+    for (int index = 0; index < content.length; index++) {
+      final codeUnit = content.codeUnitAt(index);
+      if (codeUnit != 10 && codeUnit != 13) {
+        continue;
+      }
+
+      yield content.substring(start, index);
+
+      if (codeUnit == 13 && index + 1 < content.length && content.codeUnitAt(index + 1) == 10) {
+        index++;
+      }
+      start = index + 1;
+    }
+
+    if (start <= content.length) {
+      yield content.substring(start);
+    }
   }
 
   static String _normalizeSource(String source) {
