@@ -12,6 +12,9 @@ class GlassInput extends StatefulWidget {
   final bool obscureText;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
+  final void Function(String)? onFieldSubmitted;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
   final int maxLines;
   final bool autofocus;
 
@@ -26,6 +29,9 @@ class GlassInput extends StatefulWidget {
     this.obscureText = false,
     this.validator,
     this.onChanged,
+    this.onFieldSubmitted,
+    this.focusNode,
+    this.textInputAction,
     this.maxLines = 1,
     this.autofocus = false,
   });
@@ -36,19 +42,39 @@ class GlassInput extends StatefulWidget {
 
 class _GlassInputState extends State<GlassInput> {
   late FocusNode _focusNode;
+  bool _ownsFocusNode = false;
   bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
+    _focusNode = widget.focusNode ?? FocusNode();
+    _ownsFocusNode = widget.focusNode == null;
     _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant GlassInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode == widget.focusNode) return;
+
+    _focusNode.removeListener(_handleFocusChange);
+    if (_ownsFocusNode) {
+      _focusNode.dispose();
+    }
+
+    _focusNode = widget.focusNode ?? FocusNode();
+    _ownsFocusNode = widget.focusNode == null;
+    _focusNode.addListener(_handleFocusChange);
+    _isFocused = _focusNode.hasFocus;
   }
 
   @override
   void dispose() {
     _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
+    if (_ownsFocusNode) {
+      _focusNode.dispose();
+    }
     super.dispose();
   }
 
@@ -88,9 +114,11 @@ class _GlassInputState extends State<GlassInput> {
             autofocus: widget.autofocus,
             keyboardType: widget.keyboardType,
             obscureText: widget.obscureText,
+            textInputAction: widget.textInputAction,
             maxLines: widget.obscureText ? 1 : widget.maxLines,
             validator: widget.validator,
             onChanged: widget.onChanged,
+            onFieldSubmitted: widget.onFieldSubmitted,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,

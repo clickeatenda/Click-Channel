@@ -50,10 +50,12 @@ class ApiClient {
               options.headers['Authorization'] = 'Bearer $token';
             }
 
-            final deviceContext = await DeviceSession.getOrCreate();
-            options.headers['X-Click-Channel-Device-Id'] = deviceContext.deviceId;
-            options.headers['X-Click-Channel-Device-Label'] = deviceContext.deviceLabel;
-            options.headers['X-Click-Channel-Platform'] = deviceContext.platform;
+            if (!kIsWeb) {
+              final deviceContext = await DeviceSession.getOrCreate();
+              options.headers['X-Click-Channel-Device-Id'] = deviceContext.deviceId;
+              options.headers['X-Click-Channel-Device-Label'] = deviceContext.deviceLabel;
+              options.headers['X-Click-Channel-Platform'] = deviceContext.platform;
+            }
             
             // Log da requisição (sanitizado)
             AppLogger.httpRequest(

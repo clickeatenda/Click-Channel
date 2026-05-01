@@ -11,6 +11,7 @@ $envFile = Join-Path $root ".env"
 $backupFile = Join-Path $root ".env.codex-backup"
 $webBuildDir = Join-Path $root "build\web"
 $vercelConfigPath = Join-Path $webBuildDir "vercel.json"
+$flutterBuildCacheDir = Join-Path $root ".dart_tool\flutter_build"
 
 function Set-Or-AddEnvLine {
   param(
@@ -37,6 +38,37 @@ function Set-Or-AddEnvLine {
   return ,$result
 }
 
+function Restore-MainDartJsIfMissing {
+  param(
+    [string]$WebBuildDir,
+    [string]$FlutterBuildCacheDir
+  )
+
+  $mainJsTarget = Join-Path $WebBuildDir "main.dart.js"
+  if (Test-Path $mainJsTarget) {
+    return
+  }
+
+  if (-not (Test-Path $FlutterBuildCacheDir)) {
+    throw "main.dart.js não encontrado em $WebBuildDir e cache Flutter ausente em $FlutterBuildCacheDir"
+  }
+
+  $candidate = Get-ChildItem $FlutterBuildCacheDir -Directory |
+    Sort-Object LastWriteTime -Descending |
+    ForEach-Object {
+      $file = Join-Path $_.FullName "main.dart.js"
+      if (Test-Path $file) { Get-Item $file }
+    } |
+    Select-Object -First 1
+
+  if (-not $candidate) {
+    throw "main.dart.js não encontrado em $WebBuildDir nem no cache Flutter"
+  }
+
+  Copy-Item $candidate.FullName $mainJsTarget -Force
+  Write-Host "Restaurado main.dart.js a partir de $($candidate.FullName)"
+}
+
 if (-not (Test-Path $envFile)) {
   throw "Arquivo .env não encontrado em $envFile"
 }
@@ -52,6 +84,8 @@ try {
   Push-Location $root
   flutter build web --release --base-href /
   Pop-Location
+
+  Restore-MainDartJsIfMissing -WebBuildDir $webBuildDir -FlutterBuildCacheDir $flutterBuildCacheDir
 
   $vercelConfig = @'
 {

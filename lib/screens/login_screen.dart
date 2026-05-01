@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/blinking_cursor_placeholder.dart';
 import '../widgets/glass_button.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/glass_input.dart';
@@ -18,14 +20,145 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _usernameFocusNode = FocusNode(debugLabel: 'login_username');
+  final _passwordFocusNode = FocusNode(debugLabel: 'login_password');
+  final _submitFocusNode = FocusNode(debugLabel: 'login_submit');
+  final _usernameEditFocusNode = FocusNode(debugLabel: 'login_username_edit');
+  final _passwordEditFocusNode = FocusNode(debugLabel: 'login_password_edit');
 
   bool _loginTabFocused = false;
+  bool _usernameActive = false;
+  bool _passwordActive = false;
+
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_handleRemoteKey);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _usernameFocusNode.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleRemoteKey);
     _usernameController.dispose();
     _passwordController.dispose();
+    _usernameFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _submitFocusNode.dispose();
+    _usernameEditFocusNode.dispose();
+    _passwordEditFocusNode.dispose();
     super.dispose();
+  }
+
+  bool _handleRemoteKey(KeyEvent event) {
+    if (event is! KeyDownEvent || _selectedTab != 0) return false;
+
+    final key = event.logicalKey;
+    final primaryFocus = FocusManager.instance.primaryFocus;
+
+    if (key == LogicalKeyboardKey.arrowDown) {
+      if (primaryFocus == _usernameFocusNode || primaryFocus == _usernameEditFocusNode) {
+        if (_usernameActive) {
+          setState(() => _usernameActive = false);
+        }
+        _passwordFocusNode.requestFocus();
+        return true;
+      }
+      if (primaryFocus == _passwordFocusNode || primaryFocus == _passwordEditFocusNode) {
+        if (_passwordActive) {
+          setState(() => _passwordActive = false);
+        }
+        _submitFocusNode.requestFocus();
+        return true;
+      }
+      return false;
+    }
+
+    if (key == LogicalKeyboardKey.arrowUp) {
+      if (primaryFocus == _submitFocusNode) {
+        _passwordFocusNode.requestFocus();
+        return true;
+      }
+      if (primaryFocus == _passwordFocusNode || primaryFocus == _passwordEditFocusNode) {
+        if (_passwordActive) {
+          setState(() => _passwordActive = false);
+        }
+        _usernameFocusNode.requestFocus();
+        return true;
+      }
+      return false;
+    }
+
+    if (key == LogicalKeyboardKey.escape ||
+        key == LogicalKeyboardKey.goBack ||
+        key == LogicalKeyboardKey.browserBack) {
+      if (_usernameActive) {
+        setState(() => _usernameActive = false);
+        _usernameFocusNode.requestFocus();
+        return true;
+      }
+      if (_passwordActive) {
+        setState(() => _passwordActive = false);
+        _passwordFocusNode.requestFocus();
+        return true;
+      }
+    }
+
+    final isActivate = key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.gameButtonA;
+
+    if (isActivate && primaryFocus == _usernameFocusNode) {
+      _activateUsernameField();
+      return true;
+    }
+
+    if (isActivate && primaryFocus == _passwordFocusNode) {
+      _activatePasswordField();
+      return true;
+    }
+
+    if (isActivate && primaryFocus == _submitFocusNode) {
+      final auth = context.read<AuthProvider>();
+      if (!auth.isLoading) _handleLogin();
+      return true;
+    }
+
+    return false;
+  }
+
+  void _activateUsernameField() {
+    _activateRemoteTextField(
+      setActive: () => setState(() => _usernameActive = true),
+      editFocusNode: _usernameEditFocusNode,
+    );
+  }
+
+  void _activatePasswordField() {
+    _activateRemoteTextField(
+      setActive: () => setState(() => _passwordActive = true),
+      editFocusNode: _passwordEditFocusNode,
+    );
+  }
+
+  void _activateRemoteTextField({
+    required VoidCallback setActive,
+    required FocusNode editFocusNode,
+  }) {
+    setActive();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      editFocusNode.requestFocus();
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted && editFocusNode.hasFocus) {
+          SystemChannels.textInput.invokeMethod('TextInput.show');
+        }
+      });
+    });
   }
 
   @override
@@ -89,42 +222,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Logo and title
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      AppColors.primary,
-                                      AppColors.primary.withOpacity(0.7),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.live_tv, color: Colors.white, size: 28),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                        const _OfficialAppMark(),
+                        const SizedBox(height: 20),
                         const Text(
                           'Click Channel',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 24,
+                            fontSize: 28,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.015,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Entre com sua conta oficial do aplicativo',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.68),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
                         // Auth Card
@@ -250,18 +367,36 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        GlassInput(
+        _buildRemoteTextField(
           hintText: 'Usuário liberado pelo administrador',
           controller: _usernameController,
-          autofocus: true,
+          placeholderFocusNode: _usernameFocusNode,
+          editFocusNode: _usernameEditFocusNode,
+          active: _usernameActive,
+          onActivateField: _activateUsernameField,
           prefixIcon: Icons.person_outline,
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) {
+            setState(() => _usernameActive = false);
+            _passwordFocusNode.requestFocus();
+          },
         ),
         const SizedBox(height: 12),
-        GlassInput(
+        _buildRemoteTextField(
           hintText: 'Senha',
           controller: _passwordController,
+          placeholderFocusNode: _passwordFocusNode,
+          editFocusNode: _passwordEditFocusNode,
+          active: _passwordActive,
+          onActivateField: _activatePasswordField,
           obscureText: _obscurePassword,
           prefixIcon: Icons.lock_outline,
+          keyboardType: TextInputType.visiblePassword,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            setState(() => _passwordActive = false);
+            _submitFocusNode.requestFocus();
+          },
           suffixIcon:
               _obscurePassword ? Icons.visibility_off : Icons.visibility,
           onSuffixTap: () =>
@@ -288,9 +423,91 @@ class _LoginScreenState extends State<LoginScreen> {
           label: auth.isLoading ? 'Validando acesso...' : 'Entrar',
           isLoading: auth.isLoading,
           onPressed: _handleLogin,
+          focusNode: _submitFocusNode,
           width: double.infinity,
         ),
       ],
+    );
+  }
+
+  Widget _buildRemoteTextField({
+    required String hintText,
+    required TextEditingController controller,
+    required FocusNode placeholderFocusNode,
+    required FocusNode editFocusNode,
+    required bool active,
+    required VoidCallback onActivateField,
+    required IconData prefixIcon,
+    required TextInputAction textInputAction,
+    required ValueChanged<String> onSubmitted,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    IconData? suffixIcon,
+    VoidCallback? onSuffixTap,
+  }) {
+    if (active) {
+      return GlassInput(
+        hintText: hintText,
+        controller: controller,
+        focusNode: editFocusNode,
+        autofocus: true,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        onSuffixTap: onSuffixTap,
+        textInputAction: textInputAction,
+        onFieldSubmitted: onSubmitted,
+      );
+    }
+
+    return Focus(
+      focusNode: placeholderFocusNode,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+        final key = event.logicalKey;
+        if (key == LogicalKeyboardKey.arrowDown) {
+          if (placeholderFocusNode == _usernameFocusNode) {
+            _passwordFocusNode.requestFocus();
+            return KeyEventResult.handled;
+          }
+          if (placeholderFocusNode == _passwordFocusNode) {
+            _submitFocusNode.requestFocus();
+            return KeyEventResult.handled;
+          }
+        }
+
+        if (key == LogicalKeyboardKey.arrowUp &&
+            placeholderFocusNode == _passwordFocusNode) {
+          _usernameFocusNode.requestFocus();
+          return KeyEventResult.handled;
+        }
+
+        if (key == LogicalKeyboardKey.enter ||
+            key == LogicalKeyboardKey.select ||
+            key == LogicalKeyboardKey.gameButtonA) {
+          onActivateField();
+          return KeyEventResult.handled;
+        }
+
+        return KeyEventResult.ignored;
+      },
+      onFocusChange: (_) {
+        if (mounted) setState(() {});
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+      },
+      child: GestureDetector(
+        onTap: onActivateField,
+        child: BlinkingCursorPlaceholder(
+          text: obscureText && controller.text.isNotEmpty ? '********' : controller.text,
+          hintText: hintText,
+          isFocused: placeholderFocusNode.hasFocus,
+          onActivate: onActivateField,
+          prefixIcon: prefixIcon,
+          focusedColor: AppColors.primary,
+        ),
+      ),
     );
   }
 
@@ -327,12 +544,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        _InfoItem(text: '1. O administrador cria seu usuário no Click SaaS.',
+        const _InfoItem(text: '1. O administrador cria seu usuário no Click SaaS.',
         ),
         const SizedBox(height: 10),
-        _InfoItem(text: '2. O conteúdo é liberado manualmente na plataforma parceira.'),
+        const _InfoItem(text: '2. O conteúdo é liberado manualmente na plataforma parceira.'),
         const SizedBox(height: 10),
-        _InfoItem(text: '3. Depois disso, seu acesso já entra com a lista configurada automaticamente.'),
+        const _InfoItem(text: '3. Depois disso, seu acesso já entra com a lista configurada automaticamente.'),
       ],
     );
   }
@@ -369,6 +586,50 @@ class _InfoItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _OfficialAppMark extends StatelessWidget {
+  const _OfficialAppMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 92,
+      height: 92,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            AppColors.primaryLight,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.35),
+            blurRadius: 32,
+            spreadRadius: 4,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Image.asset(
+          'assets/images/logo.png',
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: AppColors.primary,
+              child: const Icon(Icons.live_tv_rounded, color: Colors.white, size: 42),
+            );
+          },
+        ),
+      ),
     );
   }
 }

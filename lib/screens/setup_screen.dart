@@ -8,7 +8,7 @@ import '../data/m3u_service.dart';
 import '../data/epg_service.dart';
 import '../data/xtream_service.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/blinking_cursor_placeholder.dart';
+import '../widgets/remote_text_field.dart';
 import 'package:flutter/services.dart';
 
 /// Tela de configuração inicial.
@@ -814,57 +814,20 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Widget _buildUrlInput() {
-    if (_urlActive) {
-      return Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: Focus(
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-              setState(() => _urlActive = false);
-              _urlPlaceholderFocus.requestFocus();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: TextField(
-            controller: _urlController,
-            focusNode: _urlFocusNode,
-            autofocus: true,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: _inputDecoration('URL da Playlist M3U', Icons.link),
-            onSubmitted: (_) => _onSubmit(),
-          ),
-        ),
-      );
-    }
-
     return Container(
       constraints: const BoxConstraints(maxWidth: 500),
       child: Column(
         children: [
-          Focus(
-            focusNode: _urlPlaceholderFocus,
-            onFocusChange: (f) {
-              if (mounted) setState(() => _urlHasFocus = f);
-              if (f) SystemChannels.textInput.invokeMethod('TextInput.hide');
-            },
-            onKeyEvent: (node, event) => _handleNavigation(event, () {
-              setState(() => _urlActive = true);
-              Future.delayed(const Duration(milliseconds: 50), () => _urlFocusNode.requestFocus());
-            }, _urlFocusNode),
-            child: GestureDetector(
-              onTap: () {
-                setState(() => _urlActive = true);
-                Future.delayed(const Duration(milliseconds: 50), () => _urlFocusNode.requestFocus());
-              },
-              child: BlinkingCursorPlaceholder(
-                text: _urlController.text,
-                hintText: 'https://exemplo.com/playlist.m3u',
-                isFocused: _urlHasFocus,
-                onActivate: () => setState(() => _urlActive = true),
-                prefixIcon: Icons.link,
-              ),
-            ),
+          RemoteTextField(
+            controller: _urlController,
+            hintText: 'https://exemplo.com/playlist.m3u',
+            prefixIcon: Icons.link,
+            placeholderFocusNode: _urlPlaceholderFocus,
+            editFocusNode: _urlFocusNode,
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _onSubmit(),
+            onArrowDown: () => _buttonFocusNode.requestFocus(),
           ),
           const SizedBox(height: 32),
           _buildSubmitButton(),
@@ -948,11 +911,42 @@ class _SetupScreenState extends State<SetupScreen> {
       constraints: const BoxConstraints(maxWidth: 500),
       child: Column(
         children: [
-          _buildXtreamField(_xtreamHostController, _xtreamHostPlaceholderFocus, _xtreamHostFocusNode, 'URL do Servidor', Icons.dns, _xtreamHostActive, (v) => setState(() => _xtreamHostActive = v), action: TextInputAction.next),
+          _buildXtreamField(
+            controller: _xtreamHostController,
+            placeholderFocus: _xtreamHostPlaceholderFocus,
+            editFocus: _xtreamHostFocusNode,
+            label: 'URL do Servidor',
+            icon: Icons.dns,
+            action: TextInputAction.next,
+            onSubmitted: () => _xtreamUserPlaceholderFocus.requestFocus(),
+            onArrowDown: () => _xtreamUserPlaceholderFocus.requestFocus(),
+          ),
           const SizedBox(height: 16),
-          _buildXtreamField(_xtreamUserController, _xtreamUserPlaceholderFocus, _xtreamUserFocusNode, 'Usuário', Icons.person, _xtreamUserActive, (v) => setState(() => _xtreamUserActive = v), action: TextInputAction.next),
+          _buildXtreamField(
+            controller: _xtreamUserController,
+            placeholderFocus: _xtreamUserPlaceholderFocus,
+            editFocus: _xtreamUserFocusNode,
+            label: 'Usuário',
+            icon: Icons.person,
+            action: TextInputAction.next,
+            onSubmitted: () => _xtreamPassPlaceholderFocus.requestFocus(),
+            onArrowUp: () => _xtreamHostPlaceholderFocus.requestFocus(),
+            onArrowDown: () => _xtreamPassPlaceholderFocus.requestFocus(),
+          ),
           const SizedBox(height: 16),
-          _buildXtreamField(_xtreamPassController, _xtreamPassPlaceholderFocus, _xtreamPassFocusNode, 'Senha', Icons.lock, _xtreamPassActive, (v) => setState(() => _xtreamPassActive = v), obscure: true, action: TextInputAction.done),
+          _buildXtreamField(
+            controller: _xtreamPassController,
+            placeholderFocus: _xtreamPassPlaceholderFocus,
+            editFocus: _xtreamPassFocusNode,
+            label: 'Senha',
+            icon: Icons.lock,
+            obscure: true,
+            keyboardType: TextInputType.visiblePassword,
+            action: TextInputAction.done,
+            onSubmitted: () => _buttonFocusNode.requestFocus(),
+            onArrowUp: () => _xtreamUserPlaceholderFocus.requestFocus(),
+            onArrowDown: () => _buttonFocusNode.requestFocus(),
+          ),
           const SizedBox(height: 24),
           _buildSubmitButton(),
         ],
@@ -960,93 +954,32 @@ class _SetupScreenState extends State<SetupScreen> {
     );
   }
 
-  Widget _buildXtreamField(TextEditingController controller, FocusNode pFocus, FocusNode fFocus, String label, IconData icon, bool isActive, Function(bool) setActive, {bool obscure = false, TextInputAction action = TextInputAction.next}) {
-    if (isActive) {
-      return Focus(
-        onFocusChange: (f) {
-          print('DEBUG: Field Active Focus Change: $f (label: $label)');
-          // REMOVIDO: Desativação agressiva que cancelava o clique no botão
-          // setActive(false); 
-        },
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent && 
-              (event.logicalKey == LogicalKeyboardKey.escape || 
-               event.logicalKey == LogicalKeyboardKey.goBack)) {
-            setActive(false);
-            pFocus.requestFocus();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: TextField(
-          controller: controller,
-          focusNode: fFocus,
-          autofocus: true,
-          obscureText: obscure,
-          textInputAction: action,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-          decoration: _inputDecoration(label, icon),
-          onSubmitted: (_) {
-            if (action == TextInputAction.done) {
-              _onSubmit();
-            } else {
-              // Próximo campo
-              FocusScope.of(context).nextFocus();
-            }
-          },
-        ),
-      );
-    }
-
-    return Focus(
-      focusNode: pFocus,
-      onFocusChange: (f) {
-        if (mounted) setState(() {});
-        if (f) SystemChannels.textInput.invokeMethod('TextInput.hide');
-      },
-      onKeyEvent: (node, event) => _handleNavigation(event, () {
-        setActive(true);
-        Future.delayed(const Duration(milliseconds: 50), () => fFocus.requestFocus());
-      }, fFocus),
-      child: GestureDetector(
-        onTap: () {
-          setActive(true);
-          Future.delayed(const Duration(milliseconds: 50), () => fFocus.requestFocus());
-        },
-        child: BlinkingCursorPlaceholder(
-          text: obscure && controller.text.isNotEmpty ? '********' : controller.text,
-          hintText: label,
-          isFocused: pFocus.hasFocus,
-          onActivate: () => setActive(true),
-          prefixIcon: icon,
-          focusedColor: AppColors.primary,
-        ),
-      ),
+  Widget _buildXtreamField({
+    required TextEditingController controller,
+    required FocusNode placeholderFocus,
+    required FocusNode editFocus,
+    required String label,
+    required IconData icon,
+    VoidCallback? onSubmitted,
+    VoidCallback? onArrowUp,
+    VoidCallback? onArrowDown,
+    bool obscure = false,
+    TextInputType keyboardType = TextInputType.text,
+    TextInputAction action = TextInputAction.next,
+  }) {
+    return RemoteTextField(
+      controller: controller,
+      hintText: label,
+      prefixIcon: icon,
+      placeholderFocusNode: placeholderFocus,
+      editFocusNode: editFocus,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      textInputAction: action,
+      onSubmitted: (_) => onSubmitted?.call(),
+      onArrowUp: onArrowUp,
+      onArrowDown: onArrowDown,
     );
-  }
-
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.1),
-      prefixIcon: Icon(icon, color: AppColors.primary),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-    );
-  }
-
-  KeyEventResult _handleNavigation(KeyEvent event, VoidCallback onActive, FocusNode next) {
-    if (event is KeyDownEvent) {
-      final isChar = event.logicalKey.keyLabel.length == 1 && RegExp(r'^[a-zA-Z0-9]$').hasMatch(event.logicalKey.keyLabel);
-      if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.select || isChar) {
-        onActive();
-        return isChar ? KeyEventResult.ignored : KeyEventResult.handled;
-      }
-    }
-    return KeyEventResult.ignored;
   }
 
   Widget _buildSubmitButton() {

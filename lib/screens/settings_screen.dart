@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../core/config.dart';
 import '../core/prefs.dart';
@@ -11,6 +10,7 @@ import '../data/tmdb_service.dart';
 import '../data/jellyfin_service.dart';
 import '../widgets/glass_panel.dart';
 import '../widgets/app_sidebar.dart';
+import '../widgets/remote_text_field.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -32,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _playerForceHls = false;
 
   late TextEditingController _playlistController;
+  final FocusNode _urlPlaceholderFocusNode = FocusNode();
   final FocusNode _urlFocusNode = FocusNode();
   final FocusNode _buttonFocusNode = FocusNode();
   bool _urlHasFocus = false;
@@ -78,6 +79,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _jfUserController = TextEditingController();
   final _jfPassController = TextEditingController();
   
+  final _jfUrlPlaceholderFocusNode = FocusNode();
+  final _jfUserPlaceholderFocusNode = FocusNode();
+  final _jfPassPlaceholderFocusNode = FocusNode();
   final _jfUrlFocusNode = FocusNode();
   final _jfUserFocusNode = FocusNode();
   final _jfPassFocusNode = FocusNode();
@@ -210,9 +214,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _playlistController.dispose();
+    _urlPlaceholderFocusNode.dispose();
     _urlFocusNode.dispose();
     _buttonFocusNode.dispose();
     _tmdbController.dispose();
+    _tmdbPlaceholderFocusNode.dispose();
     _tmdbFocusNode.dispose();
     _tmdbSaveFocusNode.dispose();
     _tmdbTestFocusNode.dispose();
@@ -220,6 +226,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _jfUrlController.dispose();
     _jfUserController.dispose();
     _jfPassController.dispose();
+    _jfUrlPlaceholderFocusNode.dispose();
+    _jfUserPlaceholderFocusNode.dispose();
+    _jfPassPlaceholderFocusNode.dispose();
     _jfUrlFocusNode.dispose();
     _jfUserFocusNode.dispose();
     _jfPassFocusNode.dispose();
@@ -233,6 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _downloadStatus = '';
   
   late TextEditingController _tmdbController;
+  final FocusNode _tmdbPlaceholderFocusNode = FocusNode();
   final FocusNode _tmdbFocusNode = FocusNode();
   bool _tmdbHasFocus = false;
   // Focus nodes para botões TMDB (suporte Fire TV / DPAD)
@@ -463,52 +473,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF161b22),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _tmdbHasFocus ? AppColors.primary : Colors.white.withOpacity(0.05),
-                                  width: _tmdbHasFocus ? 3 : 1,
-                                ),
-                                boxShadow: _tmdbHasFocus ? [
-                                  BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.5),
-                                    blurRadius: 20,
-                                    spreadRadius: 2,
-                                  ),
-                                ] : [],
-                              ),
-                              child: RawKeyboardListener(
-                                focusNode: FocusNode(),
-                                onKey: (event) {
-                                  if (event is RawKeyDownEvent) {
-                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                                      FocusScope.of(context).previousFocus();
-                                    } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                      // Move focus to the Save button for TV remotes
-                                      _tmdbSaveFocusNode.requestFocus();
-                                    }
-                                  }
-                                },
-                                child: TextField(
-                                  controller: _tmdbController,
-                                  focusNode: _tmdbFocusNode,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: InputDecoration(
-                                    hintText: 'Insira a TMDB API key (opcional)',
-                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                    filled: true,
-                                    fillColor: Colors.white.withOpacity(0.03),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  onSubmitted: (_) => _tmdbSaveFocusNode.requestFocus(),
-                                ),
-                              ),
+                            RemoteTextField(
+                              controller: _tmdbController,
+                              hintText: 'Insira a TMDB API key (opcional)',
+                              prefixIcon: Icons.vpn_key_outlined,
+                              placeholderFocusNode: _tmdbPlaceholderFocusNode,
+                              editFocusNode: _tmdbFocusNode,
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (_) => _tmdbSaveFocusNode.requestFocus(),
+                              onArrowDown: () => _tmdbSaveFocusNode.requestFocus(),
                             ),
                             const SizedBox(height: 12),
                             Row(
@@ -573,53 +546,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF161b22),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _urlHasFocus ? AppColors.primary : Colors.white.withOpacity(0.05),
-                                  width: _urlHasFocus ? 3 : 1,
-                                ),
-                                boxShadow: _urlHasFocus ? [
-                                  BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.5),
-                                    blurRadius: 20,
-                                    spreadRadius: 2,
-                                  ),
-                                ] : [],
-                              ),
-                              child: RawKeyboardListener(
-                                focusNode: FocusNode(),
-                                onKey: (event) {
-                                  // Seta para cima sai do campo e volta ao menu
-                                  if (event is RawKeyDownEvent && 
-                                      event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                                    FocusScope.of(context).previousFocus();
-                                  }
-                                },
-                                child: TextField(
-                                  controller: _playlistController,
-                                  focusNode: _urlFocusNode,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: InputDecoration(
-                                    hintText: 'https://exemplo.com/minha_playlist.m3u',
-                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                    filled: true,
-                                    fillColor: Colors.white.withOpacity(0.05),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                  onSubmitted: (_) => _buttonFocusNode.requestFocus(),
-                                ),
-                              ),
+                            RemoteTextField(
+                              controller: _playlistController,
+                              hintText: 'https://exemplo.com/minha_playlist.m3u',
+                              prefixIcon: Icons.link,
+                              placeholderFocusNode: _urlPlaceholderFocusNode,
+                              editFocusNode: _urlFocusNode,
+                              keyboardType: TextInputType.url,
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (_) => _buttonFocusNode.requestFocus(),
+                              onArrowUp: () => _tmdbClearFocusNode.requestFocus(),
+                              onArrowDown: () => _buttonFocusNode.requestFocus(),
                             ),
                             const SizedBox(height: 12),                              Row(
                                 children: [
@@ -757,111 +694,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             FocusTraversalGroup(
                               child: Column(
                               children: [
-                                // URL
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 150),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF161b22),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _jfUrlFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
-                                      width: _jfUrlFocusNode.hasFocus ? 3 : 1
-                                    ),
-                                    boxShadow: _jfUrlFocusNode.hasFocus ? [
-                                      BoxShadow(
-                                        color: AppColors.primary.withOpacity(0.5),
-                                        blurRadius: 20,
-                                        spreadRadius: 2,
-                                      ),
-                                    ] : [],
-                                  ),
-                                  child: TextField(
-                                    controller: _jfUrlController,
-                                    focusNode: _jfUrlFocusNode,
-                                    style: const TextStyle(color: Colors.white),
-                                    textInputAction: TextInputAction.next,
-                                    onSubmitted: (_) => _jfUserFocusNode.requestFocus(),
-                                    decoration: InputDecoration(
-                                      labelText: 'Server URL',
-                                      labelStyle: const TextStyle(color: Colors.white70),
-                                      hintText: '192.168.1.100:8096',
-                                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                                      filled: true,
-                                      fillColor: Colors.white.withOpacity(0.05),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                    ),
-                                  ),
+                                RemoteTextField(
+                                  controller: _jfUrlController,
+                                  hintText: 'Server URL',
+                                  prefixIcon: Icons.dns,
+                                  placeholderFocusNode: _jfUrlPlaceholderFocusNode,
+                                  editFocusNode: _jfUrlFocusNode,
+                                  keyboardType: TextInputType.url,
+                                  textInputAction: TextInputAction.next,
+                                  onSubmitted: (_) => _jfUserPlaceholderFocusNode.requestFocus(),
+                                  onArrowDown: () => _jfUserPlaceholderFocusNode.requestFocus(),
                                 ),
                                 const SizedBox(height: 12),
                                 
-                                // User
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 150),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF161b22),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _jfUserFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
-                                      width: _jfUserFocusNode.hasFocus ? 3 : 1
-                                    ),
-                                    boxShadow: _jfUserFocusNode.hasFocus ? [
-                                      BoxShadow(
-                                        color: AppColors.primary.withOpacity(0.5),
-                                        blurRadius: 20,
-                                        spreadRadius: 2,
-                                      ),
-                                    ] : [],
-                                  ),
-                                  child: TextField(
-                                    controller: _jfUserController,
-                                    focusNode: _jfUserFocusNode,
-                                    style: const TextStyle(color: Colors.white),
-                                    textInputAction: TextInputAction.next,
-                                    onSubmitted: (_) => _jfPassFocusNode.requestFocus(),
-                                    decoration: InputDecoration(
-                                      labelText: 'Username',
-                                      labelStyle: const TextStyle(color: Colors.white70),
-                                      filled: true,
-                                      fillColor: Colors.white.withOpacity(0.05),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                    ),
-                                  ),
+                                RemoteTextField(
+                                  controller: _jfUserController,
+                                  hintText: 'Username',
+                                  prefixIcon: Icons.person_outline,
+                                  placeholderFocusNode: _jfUserPlaceholderFocusNode,
+                                  editFocusNode: _jfUserFocusNode,
+                                  textInputAction: TextInputAction.next,
+                                  onSubmitted: (_) => _jfPassPlaceholderFocusNode.requestFocus(),
+                                  onArrowUp: () => _jfUrlPlaceholderFocusNode.requestFocus(),
+                                  onArrowDown: () => _jfPassPlaceholderFocusNode.requestFocus(),
                                 ),
                                 const SizedBox(height: 12),
                                 
-                                // Pass
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 150),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF161b22),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _jfPassFocusNode.hasFocus ? AppColors.primary : Colors.white.withOpacity(0.05), 
-                                      width: _jfPassFocusNode.hasFocus ? 3 : 1
-                                    ),
-                                    boxShadow: _jfPassFocusNode.hasFocus ? [
-                                      BoxShadow(
-                                        color: AppColors.primary.withOpacity(0.5),
-                                        blurRadius: 20,
-                                        spreadRadius: 2,
-                                      ),
-                                    ] : [],
-                                  ),
-                                  child: TextField(
-                                    controller: _jfPassController,
-                                    focusNode: _jfPassFocusNode,
-                                    obscureText: true,
-                                    style: const TextStyle(color: Colors.white),
-                                    textInputAction: TextInputAction.done,
-                                    onSubmitted: (_) => _jfSaveFocusNode.requestFocus(),
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      labelStyle: const TextStyle(color: Colors.white70),
-                                      filled: true,
-                                      fillColor: Colors.white.withOpacity(0.05),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                    ),
-                                  ),
+                                RemoteTextField(
+                                  controller: _jfPassController,
+                                  hintText: 'Password',
+                                  prefixIcon: Icons.lock_outline,
+                                  placeholderFocusNode: _jfPassPlaceholderFocusNode,
+                                  editFocusNode: _jfPassFocusNode,
+                                  obscureText: true,
+                                  keyboardType: TextInputType.visiblePassword,
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => _jfSaveFocusNode.requestFocus(),
+                                  onArrowUp: () => _jfUserPlaceholderFocusNode.requestFocus(),
+                                  onArrowDown: () => _jfSaveFocusNode.requestFocus(),
                                 ),
                                 const SizedBox(height: 16),
                                 Row(

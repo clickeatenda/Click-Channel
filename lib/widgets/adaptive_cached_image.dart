@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../core/click_channel_web_proxy.dart';
 import '../core/image_cache_manager.dart';
 
 /// Widget de imagem com lazy loading, fade-in animation e cache otimizado
@@ -37,8 +38,10 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> {
     const int optimizeMemCacheHeight = 400;
     const int optimizeMemCacheWidth = 300;
 
+    final imageUrl = ClickChannelWebProxy.resolveImageUrl(widget.url);
+
     return CachedNetworkImage(
-      imageUrl: widget.url,
+      imageUrl: imageUrl,
       cacheManager: AppImageCacheManager.instance,
       memCacheWidth: optimizeMemCacheWidth,
       memCacheHeight: optimizeMemCacheHeight,
@@ -46,7 +49,7 @@ class _AdaptiveCachedImageState extends State<AdaptiveCachedImage> {
       maxHeightDiskCache: 800,
       errorListener: (err) {
         // Log image load errors explicitly so we can see why TMDB/Jellyfin covers fail.
-        debugPrint('⚠️ ERRO DE IMAGEM na URL ${widget.url}: $err');
+        debugPrint('⚠️ ERRO DE IMAGEM na URL $imageUrl: $err');
       },
       fit: widget.fit,
       width: widget.width,

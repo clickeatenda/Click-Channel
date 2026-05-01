@@ -12,6 +12,7 @@ class GlassButton extends StatefulWidget {
   final double? width;
   final double height;
   final EdgeInsets padding;
+  final FocusNode? focusNode;
 
   const GlassButton({
     super.key,
@@ -24,6 +25,7 @@ class GlassButton extends StatefulWidget {
     this.width,
     this.height = 48,
     this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    this.focusNode,
   });
 
   @override
@@ -38,6 +40,7 @@ class _GlassButtonState extends State<GlassButton> {
   Widget build(BuildContext context) {
     final bool isActive = _isHovering || _isFocused;
     return FocusableActionDetector(
+      focusNode: widget.focusNode,
       onShowFocusHighlight: (hasFocus) => setState(() => _isFocused = hasFocus),
       onShowHoverHighlight: (isHovering) => setState(() => _isHovering = isHovering),
       actions: {
@@ -132,6 +135,7 @@ class SolidButton extends StatefulWidget {
   final Color? foregroundColor;
   final double? width;
   final double height;
+  final FocusNode? focusNode;
 
   const SolidButton({
     super.key,
@@ -143,6 +147,7 @@ class SolidButton extends StatefulWidget {
     this.foregroundColor,
     this.width,
     this.height = 48,
+    this.focusNode,
   });
 
   @override
@@ -157,6 +162,7 @@ class _SolidButtonState extends State<SolidButton> {
   Widget build(BuildContext context) {
     final bool isActive = _isHovering || _isFocused;
     return FocusableActionDetector(
+      focusNode: widget.focusNode,
       onShowFocusHighlight: (hasFocus) => setState(() => _isFocused = hasFocus),
       onShowHoverHighlight: (isHovering) => setState(() => _isHovering = isHovering),
       actions: {

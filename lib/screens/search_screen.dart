@@ -6,6 +6,7 @@ import '../data/m3u_service.dart';
 import '../data/search_history_service.dart';
 import '../core/theme/app_colors.dart';
 import '../widgets/app_sidebar.dart';
+import '../widgets/remote_text_field.dart';
 import 'home_screen.dart' show topBackgroundNotifier;
 import 'series_detail_screen.dart';
 import 'movie_detail_screen.dart';
@@ -384,91 +385,18 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchField() {
-    if (!_isInputActive) {
-      return Focus(
-        focusNode: _placeholderFocus,
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent && 
-              (event.logicalKey == LogicalKeyboardKey.select || 
-               event.logicalKey == LogicalKeyboardKey.enter)) {
-            _activateInput();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: GestureDetector(
-          onTap: _activateInput,
-          child: Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _placeholderFocus.hasFocus ? AppColors.primary : Colors.white10,
-                width: 2,
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.search, color: Colors.white60),
-                const SizedBox(width: 12),
-                Text(
-                  _lastQuery.isEmpty ? 'Pesquisar...' : _lastQuery,
-                  style: const TextStyle(color: Colors.white60, fontSize: 16),
-                ),
-                if (_placeholderFocus.hasFocus) ...[
-                  const Spacer(),
-                  const _BlinkingCursorPlaceholder(),
-                ],
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Focus(
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-          _deactivateInput();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: TextField(
-        focusNode: _searchFocus,
-        controller: _searchController,
-        autofocus: true,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
-        decoration: InputDecoration(
-          hintText: 'Digite aqui...',
-          hintStyle: const TextStyle(color: Colors.white30),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.1),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
-          ),
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white70),
-            onPressed: () {
-              _searchController.clear();
-              _performSearch('');
-            },
-          ),
-        ),
-        onChanged: (val) => _performSearch(val),
-        onSubmitted: (val) => _deactivateInput(),
-      ),
+    return RemoteTextField(
+      controller: _searchController,
+      hintText: _lastQuery.isEmpty ? 'Pesquisar...' : _lastQuery,
+      prefixIcon: Icons.search,
+      placeholderFocusNode: _placeholderFocus,
+      editFocusNode: _searchFocus,
+      textInputAction: TextInputAction.search,
+      onActivated: _activateInput,
+      onCancel: _deactivateInput,
+      onChanged: (val) => _performSearch(val),
+      onSubmitted: (_) => _deactivateInput(),
+      onArrowDown: () => FocusScope.of(context).nextFocus(),
     );
   }
 

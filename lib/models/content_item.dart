@@ -1,3 +1,5 @@
+import '../core/click_channel_web_proxy.dart';
+
 class ContentItem {
   final String title;
   final String url;
@@ -50,7 +52,9 @@ class ContentItem {
     return ContentItem(
       title: json['title'] ?? "Sem Título",
       url: json['url'] ?? "",
-      image: json['logo'] ?? "",
+      image: ClickChannelWebProxy.resolveImageUrl(
+        (json['logo'] ?? json['image'] ?? '').toString(),
+      ),
       group: json['group'] ?? "Geral",
       type: json['type'] ?? "movie",
       isSeries: json['isSeries'] ?? false,

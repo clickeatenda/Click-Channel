@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/content_item.dart';
@@ -39,17 +40,26 @@ class JellyfinService {
     if (!normalized.toLowerCase().endsWith('/emby')) {
       candidates.add('$normalized/emby');
     }
+    if (!normalized.toLowerCase().endsWith('/jellyfin')) {
+      candidates.add('$normalized/jellyfin');
+    }
 
     return candidates.toSet().toList();
   }
 
-  static Map<String, String> _buildAuthHeaders(String deviceId, {bool authorizationHeader = false}) {
+  static Map<String, String> _buildAuthHeaders(
+    String deviceId, {
+    bool authorizationHeader = false,
+    bool includeLegacyAppHeader = false,
+  }) {
     final authValue =
         'MediaBrowser Client="ClickChannel", Device="Mobile", DeviceId="$deviceId", Version="1.0"';
     return {
-      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
       if (authorizationHeader) 'Authorization': authValue,
       if (!authorizationHeader) 'X-Emby-Authorization': authValue,
+      if (includeLegacyAppHeader) 'X-Application': 'ClickChannel/1.0',
     };
   }
 
@@ -187,14 +197,25 @@ class JellyfinService {
     }
 
     try {
-      final deviceId = Platform.isAndroid ? 'clickchannel_android' : 'clickchannel_mobile';
+      final deviceId = kIsWeb
+          ? 'clickchannel_web'
+          : Platform.isAndroid
+              ? 'clickchannel_android'
+              : Platform.isWindows
+                  ? 'clickchannel_windows'
+                  : 'clickchannel_mobile';
       final payloads = <Map<String, dynamic>>[
         {'Username': user, 'Pw': pass},
+        {'Username': user, 'Password': pass},
         {'Username': user, 'password': pass, 'Pw': pass},
+        {'username': user, 'Pw': pass},
+        {'username': user, 'password': pass},
       ];
       final headerVariants = <Map<String, String>>[
         _buildAuthHeaders(deviceId),
         _buildAuthHeaders(deviceId, authorizationHeader: true),
+        _buildAuthHeaders(deviceId, includeLegacyAppHeader: true),
+        _buildAuthHeaders(deviceId, authorizationHeader: true, includeLegacyAppHeader: true),
       ];
 
       print('🐙 JellyfinService: Tentando autenticar usuário $user...');
@@ -442,6 +463,130 @@ class JellyfinService {
 
     final uri = Uri.parse('$_baseUrl/Videos/$itemId/stream').replace(queryParameters: params);
     return uri.toString();
+  }
+
+  /// Busca PlaybackInfo para decidir entre direct play e transcoding no navegador.
+  static Future<Map<String, dynamic>?> getPlaybackInfo(String itemId) async {
+    if (!isAuthenticated || _accessToken == null || _userId == null) {
+      print('❌ JellyfinService: Não autenticado para buscar PlaybackInfo');
+      return null;
+    }
+
+    try {
+      final uri = Uri.parse('$_baseUrl/Items/$itemId/PlaybackInfo').replace(
+        queryParameters: {
+          'UserId': _userId!,
+          'api_key': _accessToken!,
+        },
+      );
+
+      print('🐙 JellyfinService: Buscando PlaybackInfo em $uri');
+      final response = await http.get(uri, headers: {
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 12));
+
+      if (response.statusCode != 200) {
+        final preview = response.body.length > 200
+            ? '${response.body.substring(0, 200)}...'
+            : response.body;
+        print('❌ JellyfinService: PlaybackInfo falhou (${response.statusCode}) -> $preview');
+        return null;
+      }
+
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+      return null;
+    } catch (e) {
+      print('❌ JellyfinService: Erro ao buscar PlaybackInfo: $e');
+      return null;
+    }
+  }
+
+  /// Para web, usa HLS server-side do Jellyfin quando direct play não é suportado.
+  static String getHlsTranscodingUrl(String itemId, {String? mediaSourceId}) {
+    return getHlsTranscodingUrlWithOptions(
+      itemId,
+      mediaSourceId: mediaSourceId,
+    );
+  }
+
+  static String getHlsTranscodingUrlWithOptions(
+    String itemId, {
+    String? mediaSourceId,
+    int? subtitleStreamIndex,
+  }) {
+    if (!isAuthenticated || _accessToken == null || _baseUrl == null) {
+      print('❌ JellyfinService: Não autenticado para gerar URL HLS');
+      return '';
+    }
+
+    final params = <String, String>{
+      'api_key': _accessToken!,
+      'DeviceId': 'ClickChannelWeb',
+      'PlaySessionId': DateTime.now().millisecondsSinceEpoch.toString(),
+      'VideoCodec': 'h264',
+      'AudioCodec': 'aac,mp3',
+      'MaxAudioChannels': '2',
+      'TranscodingMaxAudioChannels': '2',
+      'VideoBitRate': '8000000',
+      'AudioBitRate': '192000',
+      'MaxStreamingBitrate': '10000000',
+      'TranscodingContainer': 'ts',
+      'TranscodingProtocol': 'hls',
+      'SegmentContainer': 'ts',
+      'MinSegments': '2',
+      'BreakOnNonKeyFrames': 'true',
+      'RequireAvc': 'false',
+      'SubtitleMethod': subtitleStreamIndex != null ? 'Encode' : 'Hls',
+    };
+
+    if (mediaSourceId != null && mediaSourceId.isNotEmpty) {
+      params['MediaSourceId'] = mediaSourceId;
+    }
+    if (subtitleStreamIndex != null) {
+      params['SubtitleStreamIndex'] = subtitleStreamIndex.toString();
+    }
+
+    final uri = Uri.parse('$_baseUrl/Videos/$itemId/master.m3u8').replace(queryParameters: params);
+    print('🔄 [JELLYFIN] HLS URL: $uri');
+    return uri.toString();
+  }
+
+  static int? getPreferredSubtitleStreamIndex(Map<String, dynamic>? mediaInfo) {
+    if (mediaInfo == null) return null;
+
+    final mediaSources = mediaInfo['MediaSources'];
+    if (mediaSources is! List || mediaSources.isEmpty) return null;
+
+    final source = mediaSources.first;
+    final mediaStreams = source['MediaStreams'];
+    if (mediaStreams is! List) return null;
+
+    int? fallbackIndex;
+
+    for (final dynamic stream in mediaStreams) {
+      if (stream is! Map) continue;
+      final type = stream['Type']?.toString().toLowerCase();
+      if (type != 'subtitle') continue;
+
+      final index = int.tryParse(stream['Index']?.toString() ?? '');
+      if (index == null) continue;
+
+      fallbackIndex ??= index;
+
+      final language = stream['Language']?.toString().toLowerCase() ?? '';
+      final title = stream['Title']?.toString().toLowerCase() ?? '';
+      if (language.contains('pt') ||
+          language.contains('por') ||
+          title.contains('portugu') ||
+          title.contains('pt-br')) {
+        return index;
+      }
+    }
+
+    return fallbackIndex;
   }
 
   /// Gera URL de imagem para um item

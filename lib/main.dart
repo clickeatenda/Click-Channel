@@ -8,6 +8,7 @@ import 'core/theme/app_colors.dart';
 import 'core/api/api_client.dart';
 import 'core/prefs.dart';
 import 'core/security_context_manager.dart'; // NOVO: Certificate Pinning Manager
+import 'core/device_awake_guard.dart';
 import 'providers/auth_provider.dart';
 import 'routes/app_routes.dart';
 import 'core/config.dart';
@@ -16,7 +17,6 @@ import 'data/m3u_service.dart';
 import 'data/tmdb_service.dart';
 import 'data/favorites_service.dart';
 import 'screens/splash_screen.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Variáveis globais para compartilhar estado entre main e app
 bool _hasPlaylist = false;
@@ -26,25 +26,24 @@ void main() async {
   // CRÍTICO: Inicializa o binding PRIMEIRO e chama runApp() IMEDIATAMENTE
   // Isso garante que a splash screen nativa seja substituída pelo Flutter o mais rápido possível
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Limpar cache temporário de imagens do memory killer da tv
-  PaintingBinding.instance.imageCache.maximumSize = 2000; // ≈ 100MB de imagens no cache nativo em memória
+  PaintingBinding.instance.imageCache.maximumSize =
+      2000; // ≈ 100MB de imagens no cache nativo em memória
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1000 << 20;
 
   // Carrega configurações (dotenv, override playlist, debug status)
   // Config.init() foi removido pois a inicialização foi movida para o bootstrap
-  
+
   // Inicialização do Certificate Pinning para chamadas API Internas seguras
   await SecurityContextManager.init();
-  
+
   // Inicializar MediaKit (síncrono, rápido)
   MediaKit.ensureInitialized();
-  
-  // Impede que o tablet ou celular desligue a tela em qualquer lugar do app (ex: na Home)
-  if (!kIsWeb) {
-    WakelockPlus.enable();
-  }
-  
+
+  // Mantém o dispositivo acordado durante o uso do app e reativa ao voltar do standby/background.
+  DeviceAwakeGuard.instance.start();
+
   // Configurar UI mode (síncrono, rápido)
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   SystemChrome.setPreferredOrientations([
@@ -53,7 +52,7 @@ void main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
-  
+
   // CRÍTICO: Inicia o app IMEDIATAMENTE com a splash screen
   // Todas as inicializações pesadas acontecem DENTRO da splash screen
   runApp(const ClickChannelBootstrap());
@@ -72,6 +71,7 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
   late ApiClient _apiClient;
   late AuthProvider _authProvider;
   bool _forceLoginScreen = false;
+  static const _initTimeout = Duration(seconds: 12);
 
   @override
   void initState() {
@@ -81,90 +81,97 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
 
   Future<void> _initializeApp() async {
     try {
-      try {
-        await dotenv.load(fileName: '.env');
-      } catch (_) {}
-      
-      // Init API client and auth
-      _apiClient = ApiClient();
-      _authProvider = AuthProvider(_apiClient);
-      _forceLoginScreen = kIsWeb && Uri.base.queryParameters['screen'] == 'login';
-      
-      // Init preferences
-      await Prefs.init();
-      
-      // Init favorites
-      await FavoritesService.init();
-      
-      // Load playlist from prefs
-      _savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
-      _hasPlaylist = _savedPlaylistUrl != null && _savedPlaylistUrl!.isNotEmpty;
-      
-      if (_hasPlaylist) {
-        final isReady = Prefs.isPlaylistReady();
-        if (!isReady) {
-          await Prefs.setPlaylistReady(true);
-        }
-      }
-      
-      // Verificação de primeira execução
-      final isFirstRun = !await M3uService.hasInstallMarker() && !_hasPlaylist;
-      
-      if (isFirstRun) {
-        for (int i = 0; i < 3; i++) {
-          await Prefs.setPlaylistOverride(null);
-          await Prefs.setPlaylistReady(false);
-          Config.setPlaylistOverride(null);
-        }
-        M3uService.clearMemoryCache();
-        await M3uService.clearAllCache(null);
-        await EpgService.clearCache();
-        await M3uService.writeInstallMarker();
-      }
-      
-      if (!_hasPlaylist) {
-        M3uService.clearMemoryCache();
-        await M3uService.clearAllCache(null);
-        await EpgService.clearCache();
-      }
-      
-      if (_hasPlaylist && _savedPlaylistUrl != null) {
-        Config.setPlaylistOverride(_savedPlaylistUrl);
-      }
-        
-      // Inicializar TMDB Service
-      TmdbService.init();
-      
-      // Iniciar carregamento em background (não bloqueia a splash screen por muito tempo)
-      if (_hasPlaylist && _savedPlaylistUrl != null) {
-        // 1. Tenta carregar meta-cache do disco primeiro (MUITO RÁPIDO) 
-        // para que a Home tenha categorias imediatamente
-        await M3uService.loadMetaCache(_savedPlaylistUrl!);
-        
-        // 2. Inicia o preload pesado (parse do arquivo) em background
-        M3uService.preloadCategories(_savedPlaylistUrl!).catchError((_) => false);
-        EpgService.loadFromCache().catchError((_) => false);
-      }
-      
-      await _authProvider.initialize();
-
-      if (_forceLoginScreen && _authProvider.isAuthenticated) {
-        await _authProvider.logout();
-      }
-      
-      // CRÍTICO: Espera no mínimo 5 segundos na splash para o vídeo de abertura
-      // O vídeo tem 8 segundos, então 5 segundos é um bom mínimo
-      await Future.delayed(const Duration(seconds: 5));
-      
-      if (mounted) {
-        setState(() => _initialized = true);
-      }
+      await _initializeAppCore().timeout(_initTimeout);
     } catch (e) {
-      print('❌ Erro na inicialização: $e');
+      print('❌ Erro/timeout na inicialização: $e');
+    } finally {
       if (mounted) {
         setState(() => _initialized = true);
       }
     }
+  }
+
+  Future<void> _initializeAppCore() async {
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (_) {}
+
+    // Init API client and auth
+    _apiClient = ApiClient();
+    _authProvider = AuthProvider(_apiClient);
+    _forceLoginScreen = kIsWeb && Uri.base.queryParameters['screen'] == 'login';
+
+    // Init preferences
+    await Prefs.init();
+
+    // Init favorites
+    await FavoritesService.init();
+
+    // Load playlist from prefs
+    _savedPlaylistUrl = await Config.loadPlaylistFromPrefs();
+    _hasPlaylist = _savedPlaylistUrl != null && _savedPlaylistUrl!.isNotEmpty;
+
+    if (_hasPlaylist) {
+      final isReady = Prefs.isPlaylistReady();
+      if (!isReady) {
+        await Prefs.setPlaylistReady(true);
+      }
+    }
+
+    // Verificação de primeira execução
+    final isFirstRun = !await M3uService.hasInstallMarker() && !_hasPlaylist;
+
+    if (isFirstRun) {
+      for (int i = 0; i < 3; i++) {
+        await Prefs.setPlaylistOverride(null);
+        await Prefs.setPlaylistReady(false);
+        Config.setPlaylistOverride(null);
+      }
+      M3uService.clearMemoryCache();
+      await M3uService.clearAllCache(null);
+      await EpgService.clearCache();
+      await M3uService.writeInstallMarker();
+    }
+
+    if (!_hasPlaylist) {
+      M3uService.clearMemoryCache();
+      await M3uService.clearAllCache(null);
+      await EpgService.clearCache();
+    }
+
+    if (_hasPlaylist && _savedPlaylistUrl != null) {
+      Config.setPlaylistOverride(_savedPlaylistUrl);
+    }
+
+    // Inicializar TMDB Service
+    TmdbService.init();
+
+    // Iniciar carregamento em background (não bloqueia a splash screen por muito tempo)
+    if (_hasPlaylist && _savedPlaylistUrl != null) {
+      // 1. Tenta carregar meta-cache do disco primeiro (MUITO RÁPIDO)
+      // para que a Home tenha categorias imediatamente
+      await M3uService.loadMetaCache(_savedPlaylistUrl!);
+
+      // 2. Inicia o preload pesado (parse do arquivo) em background
+      M3uService.preloadCategories(_savedPlaylistUrl!).catchError((_) => false);
+      EpgService.loadFromCache().catchError((_) => false);
+    }
+
+    await _authProvider.initialize().timeout(
+      const Duration(seconds: 6),
+      onTimeout: () {
+        print(
+            '⚠️ AuthProvider.initialize excedeu o tempo limite; continuando abertura.');
+      },
+    );
+
+    if (_forceLoginScreen && _authProvider.isAuthenticated) {
+      await _authProvider.logout();
+    }
+
+    // CRÍTICO: Espera no mínimo 5 segundos na splash para o vídeo de abertura
+    // O vídeo tem 8 segundos, então 5 segundos é um bom mínimo
+    await Future.delayed(const Duration(seconds: 5));
   }
 
   @override
@@ -208,10 +215,14 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
       child: Shortcuts(
         shortcuts: <LogicalKeySet, Intent>{
           LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent(),
-          LogicalKeySet(LogicalKeyboardKey.arrowUp): const DirectionalFocusIntent(TraversalDirection.up),
-          LogicalKeySet(LogicalKeyboardKey.arrowDown): const DirectionalFocusIntent(TraversalDirection.down),
-          LogicalKeySet(LogicalKeyboardKey.arrowLeft): const DirectionalFocusIntent(TraversalDirection.left),
-          LogicalKeySet(LogicalKeyboardKey.arrowRight): const DirectionalFocusIntent(TraversalDirection.right),
+          LogicalKeySet(LogicalKeyboardKey.arrowUp):
+              const DirectionalFocusIntent(TraversalDirection.up),
+          LogicalKeySet(LogicalKeyboardKey.arrowDown):
+              const DirectionalFocusIntent(TraversalDirection.down),
+          LogicalKeySet(LogicalKeyboardKey.arrowLeft):
+              const DirectionalFocusIntent(TraversalDirection.left),
+          LogicalKeySet(LogicalKeyboardKey.arrowRight):
+              const DirectionalFocusIntent(TraversalDirection.right),
         },
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -232,46 +243,46 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
               elevation: 0,
               centerTitle: true,
             ),
-          textTheme: const TextTheme(
-            displayLarge: TextStyle(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              letterSpacing: -0.015,
-            ),
-            displayMedium: TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              letterSpacing: -0.015,
-            ),
-            headlineSmall: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            titleLarge: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-            bodyLarge: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: Colors.white,
-            ),
-            bodyMedium: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: Colors.white,
-            ),
-            labelSmall: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
+            textTheme: const TextTheme(
+              displayLarge: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: -0.015,
+              ),
+              displayMedium: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: -0.015,
+              ),
+              headlineSmall: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              titleLarge: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+              bodyLarge: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: Colors.white,
+              ),
+              bodyMedium: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Colors.white,
+              ),
+              labelSmall: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
             ),
           ),
-        ),
           initialRoute: initialRoute,
           onGenerateRoute: AppRoutes.generateRoute,
         ),
@@ -279,4 +290,3 @@ class _ClickChannelBootstrapState extends State<ClickChannelBootstrap> {
     );
   }
 }
-

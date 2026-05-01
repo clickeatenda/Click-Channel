@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
-import '../core/theme/app_typography.dart';
+import 'remote_text_field.dart';
 
 class CustomSearchBar extends StatefulWidget {
   final ValueChanged<String> onSearch;
@@ -57,15 +57,11 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
           const Icon(Icons.search, color: AppColors.primary, size: 20),
           const SizedBox(width: 8),
           Expanded(
-            child: TextField(
+            child: RemoteTextField(
               controller: _controller,
-              style: AppTypography.bodyMedium.copyWith(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: widget.placeholder,
-                hintStyle: AppTypography.bodyMedium.copyWith(color: Colors.grey),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
+              hintText: widget.placeholder,
+              prefixIcon: Icons.search,
+              textInputAction: TextInputAction.search,
             ),
           ),
           if (_hasText)

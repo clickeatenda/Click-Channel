@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../core/config.dart';
+import '../core/click_channel_web_proxy.dart';
 import '../core/prefs.dart';
 import '../models/content_item.dart';
 import '../models/series_details.dart';
@@ -644,7 +645,7 @@ class M3uService {
     final items = parsedMaps.map((m) => ContentItem(
       title: m['title'] ?? '',
       url: m['url'] ?? '',
-      image: m['image'] ?? '',
+      image: ClickChannelWebProxy.resolveImageUrl(m['image'] ?? ''),
       group: m['group'] ?? 'Geral',
       type: m['type'] ?? 'movie',
       quality: m['quality'] ?? 'sd',
@@ -1117,7 +1118,7 @@ class M3uService {
       logo = '';
     }
     
-    final type = _inferType(group, title);
+    final type = _inferType(group, title, url);
     final quality = _inferQuality(title, group);
     final audioType = _inferAudioType(title);
     final year = _extractYear(title);
@@ -1125,7 +1126,7 @@ class M3uService {
     return ContentItem(
       title: title,
       url: url,
-      image: logo,
+      image: ClickChannelWebProxy.resolveImageUrl(logo),
       group: group,
       type: type,
       isSeries: type == 'series',
@@ -1135,9 +1136,23 @@ class M3uService {
     );
   }
 
-  static String _inferType(String group, String title) {
+  static String _inferType(String group, String title, [String url = '']) {
     final g = group.toLowerCase();
     final t = title.toLowerCase().replaceAll('.', ' ').replaceAll('_', ' ');
+    final u = url.toLowerCase();
+
+    // Mais confiável que título/grupo: o próprio caminho Xtream costuma denunciar o tipo.
+    if (u.contains('/series/')) return 'series';
+    if (u.contains('/movie/')) return 'movie';
+    if (u.contains('/live/')) return 'channel';
+    if (u.contains('type=m3u_plus')) {
+      if (u.contains('output=m3u8') || u.contains('output=ts')) {
+        return 'channel';
+      }
+      if (u.contains('output=mp4') || u.contains('output=mkv')) {
+        return 'movie';
+      }
+    }
 
     // === HEURÍSTICAS DE SEGMENTAÇÃO MELHORADAS ===
     // ORDEM DE PRIORIDADE (do mais específico ao mais genérico)
@@ -1583,7 +1598,7 @@ class M3uService {
         final item = ContentItem(
           title: m['title'] ?? 'Sem título',
           url: m['url'] ?? '',
-          image: m['image'] ?? '',
+          image: ClickChannelWebProxy.resolveImageUrl(m['image'] ?? ''),
           group: m['group'] ?? 'Geral',
           type: m['type'] ?? 'movie',
           isSeries: m['type'] == 'series',
@@ -2598,7 +2613,7 @@ Future<List<Map<String, String>>> _parseFileIsolate(Map<String, dynamic> args) a
           continue;
         }
 
-        final type = M3uService._inferType(groupTitle, title);
+        final type = M3uService._inferType(groupTitle, title, trimmed);
         final quality = M3uService._inferQuality(title, groupTitle);
         final audioType = M3uService._inferAudioType(title);
         final year = M3uService._extractYear(title);

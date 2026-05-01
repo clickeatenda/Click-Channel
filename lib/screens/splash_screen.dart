@@ -20,6 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
   VideoPlayerController? _controller;
   bool _videoReady = false;
   bool _hasError = false;
+  bool _videoFinished = false;
 
   @override
   void initState() {
@@ -40,7 +41,8 @@ class _SplashScreenState extends State<SplashScreen> {
       
       if (mounted && _controller!.value.isInitialized) {
         _controller!.setVolume(0.5);
-        _controller!.setLooping(true); // Loop enquanto carrega
+        _controller!.setLooping(false);
+        _controller!.addListener(_handleVideoProgress);
         _controller!.play();
         
         setState(() => _videoReady = true);
@@ -53,8 +55,22 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
+  void _handleVideoProgress() {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized || _videoFinished) return;
+
+    final duration = controller.value.duration;
+    final position = controller.value.position;
+    if (duration != Duration.zero && position >= duration - const Duration(milliseconds: 250)) {
+      if (mounted) {
+        setState(() => _videoFinished = true);
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _controller?.removeListener(_handleVideoProgress);
     _controller?.dispose();
     super.dispose();
   }
@@ -69,7 +85,7 @@ class _SplashScreenState extends State<SplashScreen> {
   
   Widget _buildContent() {
     // Se vídeo está pronto, mostra ele
-    if (_videoReady && _controller != null && _controller!.value.isInitialized) {
+    if (_videoReady && !_videoFinished && _controller != null && _controller!.value.isInitialized) {
       return SizedBox.expand(
         child: FittedBox(
           fit: BoxFit.cover,
@@ -90,8 +106,9 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 132,
+              height: 132,
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(30),
                 gradient: const LinearGradient(
@@ -110,10 +127,19 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                color: Colors.white,
-                size: 60,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.live_tv_rounded,
+                      color: Colors.white,
+                      size: 60,
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 30),
