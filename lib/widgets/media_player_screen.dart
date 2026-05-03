@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/content_item.dart';
+import '../data/m3u_service.dart';
 import '../data/watch_history_service.dart';
 import '../data/epg_service.dart';
 import '../models/epg_program.dart';
@@ -65,7 +66,14 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   String _errorMessage = '';
   int _retryCount = 0; // Contador para tentativas de recuperação de erro
   Timer? _stallTimer; // Timer para detectar congelamento de buffering
+  Timer? _videoPresenceTimer;
   bool _useFireTvLiveMode = false;
+  bool _usingDirectWebFallback = false;
+  bool _directWebFallbackAttempted = false;
+  bool _usingLiveHlsPreference = false;
+  bool _channelVariantFallbackAttempted = false;
+  bool _webChannelSameSourceRetryAttempted = false;
+  final Set<String> _webChannelAttemptedUrls = <String>{};
   int _playerInitSeq = 0;
   bool _showControls = true;
   bool _showInfo = false;
@@ -114,6 +122,17 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   Duration _duration = Duration.zero;
   bool _isPlaying = false;
   bool _isBuffering = false;
+
+  ContentItem? get _activeItem {
+    if (_playlist.isNotEmpty &&
+        _currentIndex >= 0 &&
+        _currentIndex < _playlist.length) {
+      return _playlist[_currentIndex];
+    }
+    return widget.item;
+  }
+
+  bool get _isActiveChannel => _activeItem?.type == 'channel';
 
   // Controle de gravação
   int _lastSavedSeconds = -1;
@@ -197,8 +216,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           _useFireTvLiveMode = true;
         }
       }
-      _playlist =
-          widget.playlist ?? (widget.item != null ? [widget.item!] : []);
+      _playlist = List<ContentItem>.from(
+          widget.playlist ?? (widget.item != null ? [widget.item!] : []));
       _currentIndex = widget.playlistIndex;
 
       // Delay init para dar tempo ao widget tree estabilizar (importante no Firestick)
@@ -439,7 +458,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     }
   }
 
-  Future<String> _resolveManagedWebPlaybackUrl(String sourceUrl) async {
+  Future<String> _resolveManagedWebPlaybackUrl(
+    String sourceUrl, {
+    bool forceDirect = false,
+    bool preferLiveHls = false,
+  }) async {
     if (!kIsWeb || !Config.useManagedAccess || Config.backendUrl.isEmpty) {
       return sourceUrl;
     }
@@ -464,6 +487,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         queryParameters: {
           'access_token': authToken,
           'upstream_url': sourceUrl,
+          if (preferLiveHls) 'format': 'hls',
+          if (forceDirect) 'format': 'direct',
         },
       );
 
@@ -489,6 +514,135 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       print('⚠️ Erro ao resolver proxy web do Click SaaS: $e');
       return sourceUrl;
     }
+  }
+
+  bool _isRecoverableWebSourceError(String error) {
+    final lower = error.toLowerCase();
+    return lower.contains('supported source') ||
+        lower.contains('src_not_supported') ||
+        lower.contains('media_err_src_not_supported') ||
+        lower.contains('hls') ||
+        lower.contains('manifest') ||
+        lower.contains('failed to load');
+  }
+
+  bool _shouldRetryWithDirectWebFallback(String error) {
+    if (!kIsWeb ||
+        !Config.useManagedAccess ||
+        Config.backendUrl.isEmpty ||
+        _usingDirectWebFallback ||
+        _directWebFallbackAttempted ||
+        widget.item?.type == 'channel') {
+      return false;
+    }
+
+    return _isRecoverableWebSourceError(error);
+  }
+
+  void _retryManagedWebDirectFallback(String reason) {
+    if (_directWebFallbackAttempted || !mounted) return;
+    _directWebFallbackAttempted = true;
+    print(
+        '🌐 Web: manifesto recusado pelo player, tentando mídia direta. Motivo: $reason');
+    Future.microtask(() {
+      if (mounted) _initPlayer(forceDirectWebPlayback: true);
+    });
+  }
+
+  void _scheduleWebChannelVideoPresenceCheck() {
+    _videoPresenceTimer?.cancel();
+    if (!kIsWeb || !_isActiveChannel || _channelVariantFallbackAttempted) {
+      return;
+    }
+
+    _videoPresenceTimer = Timer(const Duration(seconds: 8), () {
+      if (!mounted ||
+          !_isActiveChannel ||
+          _channelVariantFallbackAttempted ||
+          !_isPlaying) {
+        return;
+      }
+
+      final width = _player?.state.width ?? 0;
+      final height = _player?.state.height ?? 0;
+      if (width > 0 && height > 0) return;
+
+      _recoverWebChannelPlayback(
+          'o áudio iniciou, mas o navegador não recebeu vídeo decodificável');
+    });
+  }
+
+  Future<bool> _recoverWebChannelPlayback(String reason) async {
+    if (!kIsWeb || !_isActiveChannel || !mounted) return false;
+
+    if (!_webChannelSameSourceRetryAttempted) {
+      _webChannelSameSourceRetryAttempted = true;
+      _videoPresenceTimer?.cancel();
+      print(
+          '🔄 Web: reabrindo o mesmo canal antes de trocar variante. Motivo: $reason');
+      Future.microtask(() {
+        if (mounted) _initPlayer();
+      });
+      return true;
+    }
+
+    return _retryWebChannelVariant(reason);
+  }
+
+  Future<bool> _retryWebChannelVariant(String reason) async {
+    if (!kIsWeb || _channelVariantFallbackAttempted || !mounted) return false;
+    final currentItem = _activeItem;
+    if (currentItem == null || currentItem.type != 'channel') return false;
+
+    _channelVariantFallbackAttempted = true;
+    final alternatives =
+        await M3uService.getChannelPlaybackAlternatives(currentItem);
+    if (!mounted) return false;
+
+    ContentItem? nextItem;
+    for (final item in alternatives) {
+      if (!_webChannelAttemptedUrls.contains(item.url)) {
+        nextItem = item;
+        break;
+      }
+    }
+
+    if (nextItem == null) {
+      print('⚠️ Sem variante alternativa para ${currentItem.title}: $reason');
+      return false;
+    }
+    final selectedItem = nextItem;
+
+    _webChannelAttemptedUrls.add(currentItem.url);
+    _webChannelAttemptedUrls.add(selectedItem.url);
+    _webChannelSameSourceRetryAttempted = false;
+    _videoPresenceTimer?.cancel();
+
+    print(
+        '🔄 Web: canal sem vídeo, trocando variante "${currentItem.title}" -> "${selectedItem.title}". Motivo: $reason');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Trocando para ${selectedItem.title}...'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    setState(() {
+      _playlist[_currentIndex] = selectedItem;
+      _hasError = false;
+      _errorMessage = '';
+      _isInitialized = false;
+      _isBuffering = true;
+      _position = Duration.zero;
+      _videoQuality = 'Carregando...';
+    });
+
+    Future.microtask(() {
+      if (mounted) _initPlayer();
+    });
+
+    return true;
   }
 
   String? _findJellyfinSubtitleLabel(
@@ -573,10 +727,25 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     return _JellyfinPlaybackPlan(url: item.url);
   }
 
-  Future<void> _initPlayer() async {
+  Future<void> _initPlayer({bool forceDirectWebPlayback = false}) async {
     final initSeq = ++_playerInitSeq;
     try {
       print('🎬 Iniciando player para: ${widget.url}');
+      _usingDirectWebFallback = forceDirectWebPlayback;
+      _usingLiveHlsPreference = kIsWeb &&
+          Config.useManagedAccess &&
+          Config.backendUrl.isNotEmpty &&
+          _isActiveChannel;
+      _channelVariantFallbackAttempted = false;
+      if (!kIsWeb || !_isActiveChannel) {
+        _webChannelAttemptedUrls.clear();
+        _webChannelSameSourceRetryAttempted = false;
+      } else {
+        final activeUrl = _activeItem?.url;
+        if (activeUrl != null && activeUrl.isNotEmpty) {
+          _webChannelAttemptedUrls.add(activeUrl);
+        }
+      }
 
       // Cancelar timers anteriores
       _stallTimer?.cancel();
@@ -603,7 +772,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       }
 
       // Canais FHD/HEVC no Fire TV precisam de margem de buffer para evitar underruns.
-      if (widget.item?.type == 'channel' && prefsBuffer == 'medium') {
+      if (_isActiveChannel && prefsBuffer == 'medium') {
         bufferBytes = 32 * 1024 * 1024;
       }
 
@@ -618,7 +787,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         dynamic nativePlayer = _player!.platform;
         final decoder = Prefs.getDecoder();
 
-        if (widget.item?.type == 'channel') {
+        if (_isActiveChannel) {
           // ─── CANAIS AO VIVO ───────────────────────────────────────────────
           // Projetores e TVs Android com MediaCodec bugado produzem artefatos
           // verdes quando o decodificador acessa a GPU diretamente (surface mode).
@@ -692,13 +861,17 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           setState(() => _isBuffering = buffering);
 
           // Auto-reconnect para Live Channels travados em Buffering
-          if (widget.item?.type == 'channel') {
+          if (_isActiveChannel) {
             if (buffering) {
               // Iniciar timer de stall
               _stallTimer?.cancel();
               _stallTimer = Timer(const Duration(seconds: 10), () {
                 // Reduzido timeout de 15s para 10s
                 if (mounted && _isBuffering) {
+                  if (kIsWeb && _isActiveChannel) {
+                    _recoverWebChannelPlayback('canal ficou carregando no web');
+                    return;
+                  }
                   if (!_useFireTvLiveMode) {
                     _useFireTvLiveMode = true;
                     _retryCount = 0;
@@ -722,7 +895,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       _player!.stream.error.listen((error) {
         if (mounted && error.isNotEmpty) {
           final lowerError = error.toLowerCase();
-          final isChannel = widget.item?.type == 'channel';
+          final isChannel = _isActiveChannel;
           final isDecodeOrAudioError = lowerError.contains('audio') ||
               lowerError.contains('decod') ||
               lowerError.contains('codec');
@@ -730,7 +903,23 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               lowerError.contains('failed to recognize file format') ||
                   lowerError.contains('unrecognized file format');
 
+          if (isChannel && kIsWeb && _isRecoverableWebSourceError(lowerError)) {
+            _recoverWebChannelPlayback(error).then((didRetry) {
+              if (!didRetry && mounted) {
+                setState(() {
+                  _hasError = true;
+                  _errorMessage = error;
+                });
+              }
+            });
+            return;
+          }
+
           if (isChannel && isDecodeOrAudioError && !_useFireTvLiveMode) {
+            if (kIsWeb) {
+              _recoverWebChannelPlayback(error);
+              return;
+            }
             print(
                 '🔄 Erro de codec/áudio em canal FHD. Ativando modo Fire TV FHD: $error');
             _useFireTvLiveMode = true;
@@ -772,6 +961,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           }
 
           print('❌ Player error: $error');
+          if (_shouldRetryWithDirectWebFallback(lowerError)) {
+            _retryManagedWebDirectFallback(error);
+            return;
+          }
+
           // Auto-Retry logic for decoding errors
           if (_retryCount < 3 && _position.inSeconds > 1) {
             _retryCount++;
@@ -800,7 +994,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       _player!.stream.completed.listen((completed) {
         if (completed && mounted) {
           // Auto-reconnect se o fluxo do canal cair (streaming "encerra")
-          if (widget.item?.type == 'channel') {
+          if (_isActiveChannel) {
             print('🔄 Canal "encerrou". Tentando reconectar imediatamente...');
             Future.delayed(const Duration(seconds: 1), () {
               if (mounted) _initPlayer();
@@ -906,7 +1100,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       );
 
       // Carregar EPG se for canal
-      if (widget.item != null && widget.item!.type == 'channel') {
+      final activeItem = _activeItem;
+      if (activeItem != null && activeItem.type == 'channel') {
         try {
           // CRÍTICO: Garante que EPG está carregado antes de buscar
           final epgUrl = EpgService.epgUrl;
@@ -919,14 +1114,14 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             );
           }
 
-          _epgChannel = EpgService.findChannelByName(widget.item!.title);
+          _epgChannel = EpgService.findChannelByName(activeItem.title);
           if (_epgChannel != null) {
             _currentEpgProgram = _epgChannel!.currentProgram;
             _nextEpgProgram = _epgChannel!.nextProgram;
             print(
-                '✅ EPG carregado para canal "${widget.item!.title}": ${_currentEpgProgram?.title ?? "Sem programa"}');
+                '✅ EPG carregado para canal "${activeItem.title}": ${_currentEpgProgram?.title ?? "Sem programa"}');
           } else {
-            print('⚠️ EPG não encontrado para canal "${widget.item!.title}"');
+            print('⚠️ EPG não encontrado para canal "${activeItem.title}"');
           }
           if (mounted) setState(() {});
         } catch (e) {
@@ -979,7 +1174,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         finalUrl = '$finalUrl.m3u8';
       }
 
-      finalUrl = await _resolveManagedWebPlaybackUrl(finalUrl);
+      finalUrl = await _resolveManagedWebPlaybackUrl(
+        finalUrl,
+        forceDirect: forceDirectWebPlayback,
+        preferLiveHls: _usingLiveHlsPreference && !forceDirectWebPlayback,
+      );
 
       // Mídia Principal
       final media = Media(
@@ -988,14 +1187,29 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       );
 
       // CRÍTICO: Abre sem dar play imediatamente para configurar buffer e seek com segurança
-      await _player!.open(media, play: false).timeout(
-        const Duration(
-            seconds: 25), // Reduzido de 45s para 25s para falhar rápido na TV
-        onTimeout: () {
-          print('⏱️ Timeout ao abrir mídia');
-          throw Exception('Timeout ao carregar vídeo. Verifique sua conexão.');
-        },
-      );
+      try {
+        await _player!.open(media, play: false).timeout(
+          const Duration(
+              seconds: 25), // Reduzido de 45s para 25s para falhar rápido na TV
+          onTimeout: () {
+            print('⏱️ Timeout ao abrir mídia');
+            throw Exception(
+                'Timeout ao carregar vídeo. Verifique sua conexão.');
+          },
+        );
+      } catch (e) {
+        if (kIsWeb &&
+            _isActiveChannel &&
+            _isRecoverableWebSourceError(e.toString())) {
+          final didRetry = await _recoverWebChannelPlayback(e.toString());
+          if (didRetry) return;
+        }
+        if (_shouldRetryWithDirectWebFallback(e.toString().toLowerCase())) {
+          _retryManagedWebDirectFallback(e.toString());
+          return;
+        }
+        rethrow;
+      }
 
       // Carregar Legendas do Jellyfin (se for item do Jellyfin)
       if (widget.item != null && widget.item!.group == 'Jellyfin' && !kIsWeb) {
@@ -1115,7 +1329,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       }
 
       // Seek seguro antes de tocar (evita que o player toque do início e pule depois)
-      if (widget.item?.type != 'channel' &&
+      if (!_isActiveChannel &&
           savedPosition != null &&
           savedPosition.inSeconds > 5) {
         // Só resume se > 5s
@@ -1132,6 +1346,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
 
       print('✅ Mídia pronta. Iniciando playback...');
       await _player!.play();
+      _scheduleWebChannelVideoPresenceCheck();
 
       // Aplicar estilos de legenda após o play para garantir que o renderer está pronto
       _applySubtitleStyles();
@@ -1225,6 +1440,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     final height = _player?.state.height;
 
     if (width != null && height != null && width > 0 && height > 0) {
+      _videoPresenceTimer?.cancel();
       String quality;
       if (height >= 2160) {
         quality = '4K UHD ($width×$height)';
@@ -1339,6 +1555,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   @override
   void dispose() {
     _stallTimer?.cancel();
+    _videoPresenceTimer?.cancel();
     // Salvar progresso final
     if (widget.item != null &&
         widget.item!.type != 'channel' &&
