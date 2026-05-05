@@ -137,6 +137,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   // Controle de gravação
   int _lastSavedSeconds = -1;
   bool _autoSubtitleSelected = false;
+  bool _completionHandled = false;
 
   // FocusNodes
   final FocusNode _playPauseFocusNode = FocusNode();
@@ -731,6 +732,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     final initSeq = ++_playerInitSeq;
     try {
       print('🎬 Iniciando player para: ${widget.url}');
+      _completionHandled = false;
       _usingDirectWebFallback = forceDirectWebPlayback;
       _usingLiveHlsPreference = kIsWeb &&
           Config.useManagedAccess &&
@@ -854,6 +856,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           // Sem setState global para evitar FPS insano na Engine do Flutter que rouba CPU do decodificador!
           _position = position;
           _saveProgress();
+          _checkVodCompletionByPosition();
         }
       });
 
@@ -1005,7 +1008,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
               if (mounted) _initPlayer();
             });
           } else {
-            _onVideoCompleted();
+            _handleVideoCompletedOnce();
           }
         }
       });
@@ -1386,6 +1389,25 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     }
   }
 
+  void _handleVideoCompletedOnce() {
+    if (_completionHandled) return;
+    _completionHandled = true;
+    _onVideoCompleted();
+  }
+
+  void _checkVodCompletionByPosition() {
+    if (_completionHandled || _isActiveChannel || _duration.inSeconds <= 0) {
+      return;
+    }
+
+    final remaining = _duration - _position;
+    if (_position.inSeconds > 0 &&
+        !remaining.isNegative &&
+        remaining <= const Duration(milliseconds: 900)) {
+      _handleVideoCompletedOnce();
+    }
+  }
+
   void _markAsWatched() {
     if (_currentIndex < _playlist.length) {
       final item = _playlist[_currentIndex];
@@ -1400,6 +1422,9 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       _hasError = false;
       _errorMessage = '';
       _position = Duration.zero;
+      _duration = Duration.zero;
+      _completionHandled = false;
+      _lastSavedSeconds = -1;
     });
 
     final nextItem = _playlist[_currentIndex];
@@ -1431,13 +1456,18 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       behavior: SnackBarBehavior.floating,
     ));
 
-    _player?.open(Media(nextUrl,
+    await _player?.open(
+      Media(
+        nextUrl,
         httpHeaders: (isJellyfin || kIsWeb)
             ? const {}
             : const {
                 'User-Agent':
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              }));
+              },
+      ),
+      play: true,
+    );
   }
 
   void _updateVideoInfo() {
@@ -1464,8 +1494,9 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
 
   void _saveProgress() {
-    if (widget.item != null &&
-        widget.item!.type != 'channel' &&
+    final activeItem = _activeItem;
+    if (activeItem != null &&
+        activeItem.type != 'channel' &&
         _duration.inSeconds > 0) {
       final currentSeconds = _position.inSeconds;
 
@@ -1474,7 +1505,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           currentSeconds % 30 == 0 &&
           currentSeconds != _lastSavedSeconds) {
         _lastSavedSeconds = currentSeconds;
-        WatchHistoryService.saveProgress(widget.item!, _position, _duration);
+        WatchHistoryService.saveProgress(activeItem, _position, _duration);
       }
     }
   }
@@ -1564,10 +1595,11 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     _stallTimer?.cancel();
     _videoPresenceTimer?.cancel();
     // Salvar progresso final
-    if (widget.item != null &&
-        widget.item!.type != 'channel' &&
+    final activeItem = _activeItem;
+    if (activeItem != null &&
+        activeItem.type != 'channel' &&
         _duration.inSeconds > 0) {
-      WatchHistoryService.saveProgress(widget.item!, _position, _duration);
+      WatchHistoryService.saveProgress(activeItem, _position, _duration);
     }
     _player?.dispose();
     SystemChrome.setPreferredOrientations([

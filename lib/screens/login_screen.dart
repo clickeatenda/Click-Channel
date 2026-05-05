@@ -465,71 +465,75 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLoginForm() {
     final auth = context.watch<AuthProvider>();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildRemoteTextField(
-          hintText: 'Usuário liberado pelo administrador',
-          controller: _usernameController,
-          placeholderFocusNode: _usernameFocusNode,
-          editFocusNode: _usernameEditFocusNode,
-          active: _usernameActive,
-          onActivateField: _activateUsernameField,
-          prefixIcon: Icons.person_outline,
-          textInputAction: TextInputAction.next,
-          onSubmitted: (_) {
-            setState(() => _usernameActive = false);
-            _passwordFocusNode.requestFocus();
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildRemoteTextField(
-          hintText: 'Senha',
-          controller: _passwordController,
-          placeholderFocusNode: _passwordFocusNode,
-          editFocusNode: _passwordEditFocusNode,
-          active: _passwordActive,
-          onActivateField: _activatePasswordField,
-          obscureText: _obscurePassword,
-          prefixIcon: Icons.lock_outline,
-          keyboardType: TextInputType.visiblePassword,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) {
-            setState(() => _passwordActive = false);
-            _submitFocusNode.requestFocus();
-          },
-          suffixIcon:
-              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-          onSuffixTap: () =>
-              setState(() => _obscurePassword = !_obscurePassword),
-        ),
-        const SizedBox(height: 16),
-        _buildRememberCredentialsToggle(),
-        const SizedBox(height: 16),
-        if (auth.errorMessage != null) ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.withOpacity(0.2)),
-            ),
-            child: Text(
-              auth.errorMessage!,
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
+    return AutofillGroup(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildRemoteTextField(
+            hintText: 'Usuário liberado pelo administrador',
+            controller: _usernameController,
+            placeholderFocusNode: _usernameFocusNode,
+            editFocusNode: _usernameEditFocusNode,
+            active: _usernameActive,
+            onActivateField: _activateUsernameField,
+            prefixIcon: Icons.person_outline,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.username],
+            onSubmitted: (_) {
+              setState(() => _usernameActive = false);
+              _passwordFocusNode.requestFocus();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildRemoteTextField(
+            hintText: 'Senha',
+            controller: _passwordController,
+            placeholderFocusNode: _passwordFocusNode,
+            editFocusNode: _passwordEditFocusNode,
+            active: _passwordActive,
+            onActivateField: _activatePasswordField,
+            obscureText: _obscurePassword,
+            prefixIcon: Icons.lock_outline,
+            keyboardType: TextInputType.visiblePassword,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.password],
+            onSubmitted: (_) {
+              setState(() => _passwordActive = false);
+              _rememberFocusNode.requestFocus();
+            },
+            suffixIcon:
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+            onSuffixTap: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
           ),
           const SizedBox(height: 16),
+          _buildRememberCredentialsToggle(),
+          const SizedBox(height: 16),
+          if (auth.errorMessage != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
+              ),
+              child: Text(
+                auth.errorMessage!,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          SolidButton(
+            label: auth.isLoading ? 'Validando acesso...' : 'Entrar',
+            isLoading: auth.isLoading,
+            onPressed: _handleLogin,
+            focusNode: _submitFocusNode,
+            width: double.infinity,
+          ),
         ],
-        SolidButton(
-          label: auth.isLoading ? 'Validando acesso...' : 'Entrar',
-          isLoading: auth.isLoading,
-          onPressed: _handleLogin,
-          focusNode: _submitFocusNode,
-          width: double.infinity,
-        ),
-      ],
+      ),
     );
   }
 
@@ -621,6 +625,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required ValueChanged<String> onSubmitted,
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
+    Iterable<String>? autofillHints,
     IconData? suffixIcon,
     VoidCallback? onSuffixTap,
   }) {
@@ -636,6 +641,7 @@ class _LoginScreenState extends State<LoginScreen> {
         suffixIcon: suffixIcon,
         onSuffixTap: onSuffixTap,
         textInputAction: textInputAction,
+        autofillHints: autofillHints,
         onFieldSubmitted: onSubmitted,
       );
     }
@@ -652,7 +658,7 @@ class _LoginScreenState extends State<LoginScreen> {
             return KeyEventResult.handled;
           }
           if (placeholderFocusNode == _passwordFocusNode) {
-            _submitFocusNode.requestFocus();
+            _rememberFocusNode.requestFocus();
             return KeyEventResult.handled;
           }
         }
@@ -699,9 +705,55 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
     if (!mounted || !success) return;
+
+    if (!_rememberCredentials &&
+        _usernameController.text.trim().isNotEmpty &&
+        _passwordController.text.isNotEmpty) {
+      final shouldSave = await _askToSaveCredentials();
+      if (!mounted) return;
+      setState(() => _rememberCredentials = shouldSave);
+    }
+
     await _persistSavedCredentials();
+    TextInput.finishAutofillContext(shouldSave: _rememberCredentials);
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/setup');
+  }
+
+  Future<bool> _askToSaveCredentials() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF161A22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Salvar acesso?',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Deseja salvar usuário e senha neste aparelho para entrar mais rápido nas próximas vezes?',
+          style: TextStyle(color: Colors.white.withOpacity(0.78)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Agora não',
+              style: TextStyle(color: Colors.white.withOpacity(0.72)),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'Salvar',
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   Widget _buildManagedAccessInfo() {

@@ -47,10 +47,10 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
   void initState() {
     super.initState();
     isFavorite = FavoritesService.isFavorite(widget.item);
-    
+
     // Carrega detalhes básicos (crítico para UI)
     _loadDetails();
-    
+
     // TMDB DESATIVADO TEMPORARIAMENTE PARA TESTE DE PERFORMANCE
     // WidgetsBinding.instance.addPostFrameCallback((_) {
     //   if (mounted) {
@@ -60,7 +60,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     //      });
     //   }
     // });
-    
+
     // Marca como carregado imediatamente (sem esperar TMDB)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -86,9 +86,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
         SnackBar(
           content: Row(
             children: [
-              Icon(isFavorite ? Icons.check_circle : Icons.delete, color: Colors.white),
+              Icon(isFavorite ? Icons.check_circle : Icons.delete,
+                  color: Colors.white),
               const SizedBox(width: 8),
-              Text(isFavorite ? 'Série adicionada aos Favoritos' : 'Série removida dos Favoritos'),
+              Text(isFavorite
+                  ? 'Série adicionada aos Favoritos'
+                  : 'Série removida dos Favoritos'),
             ],
           ),
           backgroundColor: isFavorite ? Colors.green : Colors.red,
@@ -100,37 +103,38 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     }
   }
 
-
-
-
-
   Future<void> _loadDetails() async {
     // Carrega detalhes da série (temporadas/episódios) com proteção contra crash
     SeriesDetails? d;
-    
+
     try {
       if (widget.item.group == 'Jellyfin' || widget.item.id.length > 30) {
         // Lógica JELLYFIN (Prioritária)
         try {
           final seasons = await JellyfinService.getSeasons(widget.item.id);
           final Map<String, List<ContentItem>> seasonsMap = {};
-          
+
           for (final s in seasons) {
-             final seasonName = s.title;
-             final episodes = await JellyfinService.getEpisodes(widget.item.id, s.id);
-             seasonsMap[seasonName] = episodes;
+            final seasonName = s.title;
+            final episodes =
+                await JellyfinService.getEpisodes(widget.item.id, s.id);
+            seasonsMap[seasonName] = episodes;
           }
-          
+
           d = SeriesDetails(seasons: seasonsMap);
         } catch (e) {
           print('❌ Erro ao carregar detalhes Jellyfin: $e');
         }
-      } else if (Config.playlistRuntime != null && Config.playlistRuntime!.isNotEmpty) {
+      } else if (Config.playlistRuntime != null &&
+          Config.playlistRuntime!.isNotEmpty) {
         // Lógica M3U (Fallback) - com timeout para evitar travamento
         try {
-          availableAudioTypes = await M3uService.getAvailableAudioTypesForSeries(widget.item.title, widget.item.group)
-              .timeout(const Duration(seconds: 10), onTimeout: () => []);
-          d = await M3uService.fetchSeriesDetailsFromM3u(widget.item.title, widget.item.group)
+          availableAudioTypes =
+              await M3uService.getAvailableAudioTypesForSeries(
+                      widget.item.title, widget.item.group)
+                  .timeout(const Duration(seconds: 10), onTimeout: () => []);
+          d = await M3uService.fetchSeriesDetailsFromM3u(
+                  widget.item.title, widget.item.group)
               .timeout(const Duration(seconds: 15), onTimeout: () => null);
         } catch (e) {
           print('❌ Erro ao carregar detalhes M3U: $e');
@@ -142,7 +146,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
       print('❌ Erro CRÍTICO ao carregar detalhes da série: $e');
       print(st);
     }
-    
+
     if (mounted) {
       setState(() {
         details = d;
@@ -161,31 +165,28 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     }
   }
 
-
-
   ContentItem get _displayItem => enrichedItem ?? widget.item;
 
   @override
   Widget build(BuildContext context) {
     if (loadingMetadata || loading) {
       return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary))
-      );
+          backgroundColor: AppColors.background,
+          body: Center(
+              child: CircularProgressIndicator(color: AppColors.primary)));
     }
     if (details == null) {
       return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
-        ),
-        body: const Center(
-          child: Text("Série indisponível", style: TextStyle(color: Colors.white))
-        )
-      );
+          body: const Center(
+              child: Text("Série indisponível",
+                  style: TextStyle(color: Colors.white))));
     }
 
     // Ordenação da lista para exibição
@@ -237,160 +238,202 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   // COLUNA DA ESQUERDA: Pôster + Info
-                   SizedBox(
-                     width: 240, 
-                     child: Column(
-                       children: [
-                         // Botão Voltar (Importante!)
-                         Align(
-                           alignment: Alignment.centerLeft,
-                           child: Padding(
-                             padding: const EdgeInsets.only(bottom: 16),
-                             child: IconButton(
-                               onPressed: () => Navigator.pop(context),
-                               icon: const Icon(Icons.arrow_back, color: Colors.white),
-                               style: IconButton.styleFrom(
-                                 backgroundColor: Colors.white10,
-                                 padding: const EdgeInsets.all(12),
-                               ),
-                             ),
-                           ),
-                         ),
-                         
-                         ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: _displayItem.image,
-                              width: 240,
-                              height: 360,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(color: Colors.grey[900], height: 360),
-                            ),
-                         ),
-                         const SizedBox(height: 16),
-                         // Info Panel Glassmorphism
-                         ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
-                                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-                                ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildInfoRow('Temporadas', '${sortedSeasons.length}'), 
-                                if (selectedSeason != null && details != null && details!.seasons[selectedSeason] != null) ...[
-                                  const SizedBox(height: 8),
-                                  _buildInfoRow('Episódios', '${details!.seasons[selectedSeason]!.length}'),
-                                ]
-                              ],
-                            ),
-                          ),
-                        ),
-                     ),
-                       ],
-                     ),
-                   ),
-                   
-                   const SizedBox(width: 32),
-                   
-                   // COLUNA DA DIREITA
-                   Expanded(
-                     child: Column(
-                       crossAxisAlignment: CrossAxisAlignment.start,
-                       children: [
-                          const SizedBox(height: 60), // Espaço topo alinhar com poster
-                          Text(
-                            _displayItem.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              height: 1.1,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Botões
-                          Wrap(
-                           spacing: 12,
-                           runSpacing: 12,
-                           children: [
-                             ElevatedButton.icon(
-                               onPressed: (selectedSeason != null && details != null && details!.seasons.isNotEmpty && details!.seasons[selectedSeason]!.isNotEmpty) 
-                                ? () {
-                                   final firstEpisode = details!.seasons[selectedSeason]!.first;
-                                   Navigator.push(context, MaterialPageRoute(builder: (_) => MediaPlayerScreen(url: firstEpisode.url, item: firstEpisode)));
-                                 }
-                                : null,
-                               icon: const Icon(Icons.play_arrow),
-                               label: const Text('Assistir'),
-                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-                             ),
-                             OutlinedButton.icon(
-                               onPressed: _toggleFavorite,
-                               icon: Icon(isFavorite ? Icons.check : Icons.add, size: 18),
-                               label: Text(isFavorite ? 'Salvo' : 'Minha Lista'),
-                               style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: isFavorite ? AppColors.primary : Colors.white38)),
-                             ),
-                           ],
-                          ),
-                          
-                          const SizedBox(height: 24),
-                          Text(_displayItem.description.isNotEmpty ? _displayItem.description : 'Sem sinopse.', maxLines: 4, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70)),
-                          
-                          const SizedBox(height: 32),
-                          const Divider(color: Colors.white12),
-                          const SizedBox(height: 16),
-                          
-                          // Selector de Temporadas Otimizado
-                          SizedBox(
-                            height: 40,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: sortedSeasons.length,
-                              separatorBuilder: (_, __) => const SizedBox(width: 8),
-                              itemBuilder: (ctx, i) {
-                                final season = sortedSeasons[i];
-                                return _SeasonChip(
-                                  label: season,
-                                  isActive: season == selectedSeason,
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => SeasonDetailsScreen(
-                                          seasonName: season,
-                                          episodes: details!.seasons[season]!,
-                                          seriesTitle: widget.item.title,
-                                          posterUrl: widget.item.image,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                          
-                          const Center(
-                            child: Padding(
-                              padding: EdgeInsets.only(top: 20, bottom: 20),
-                              child: Text(
-                                'Clique na temporada acima para ver os episódios',
-                                style: TextStyle(color: Colors.white54, fontStyle: FontStyle.italic),
+                  // COLUNA DA ESQUERDA: Pôster + Info
+                  SizedBox(
+                    width: 240,
+                    child: Column(
+                      children: [
+                        // Botão Voltar (Importante!)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Colors.white),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white10,
+                                padding: const EdgeInsets.all(12),
                               ),
                             ),
                           ),
+                        ),
 
-                       ],
-                     ),
-                   ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: CachedNetworkImage(
+                            imageUrl: _displayItem.image,
+                            width: 240,
+                            height: 360,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) =>
+                                Container(color: Colors.grey[900], height: 360),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Info Panel Glassmorphism
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildInfoRow(
+                                      'Temporadas', '${sortedSeasons.length}'),
+                                  if (selectedSeason != null &&
+                                      details != null &&
+                                      details!.seasons[selectedSeason] !=
+                                          null) ...[
+                                    const SizedBox(height: 8),
+                                    _buildInfoRow('Episódios',
+                                        '${details!.seasons[selectedSeason]!.length}'),
+                                  ]
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 32),
+
+                  // COLUNA DA DIREITA
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(
+                            height: 60), // Espaço topo alinhar com poster
+                        Text(
+                          _displayItem.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Botões
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: (selectedSeason != null &&
+                                      details != null &&
+                                      details!.seasons.isNotEmpty &&
+                                      details!
+                                          .seasons[selectedSeason]!.isNotEmpty)
+                                  ? () {
+                                      final episodes =
+                                          details!.seasons[selectedSeason]!;
+                                      final firstEpisode = episodes.first;
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => MediaPlayerScreen(
+                                            url: firstEpisode.url,
+                                            item: firstEpisode,
+                                            playlist: episodes,
+                                            playlistIndex: 0,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  : null,
+                              icon: const Icon(Icons.play_arrow),
+                              label: const Text('Assistir'),
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: _toggleFavorite,
+                              icon: Icon(isFavorite ? Icons.check : Icons.add,
+                                  size: 18),
+                              label: Text(isFavorite ? 'Salvo' : 'Minha Lista'),
+                              style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: BorderSide(
+                                      color: isFavorite
+                                          ? AppColors.primary
+                                          : Colors.white38)),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+                        Text(
+                            _displayItem.description.isNotEmpty
+                                ? _displayItem.description
+                                : 'Sem sinopse.',
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white70)),
+
+                        const SizedBox(height: 32),
+                        const Divider(color: Colors.white12),
+                        const SizedBox(height: 16),
+
+                        // Selector de Temporadas Otimizado
+                        SizedBox(
+                          height: 40,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: sortedSeasons.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (ctx, i) {
+                              final season = sortedSeasons[i];
+                              return _SeasonChip(
+                                label: season,
+                                isActive: season == selectedSeason,
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SeasonDetailsScreen(
+                                        seasonName: season,
+                                        episodes: details!.seasons[season]!,
+                                        seriesTitle: widget.item.title,
+                                        posterUrl: widget.item.image,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 20, bottom: 20),
+                            child: Text(
+                              'Clique na temporada acima para ver os episódios',
+                              style: TextStyle(
+                                  color: Colors.white54,
+                                  fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -453,10 +496,10 @@ class _SeasonChipState extends State<_SeasonChip> {
     return Focus(
       onFocusChange: (focused) => setState(() => _isFocused = focused),
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && 
-            (event.logicalKey == LogicalKeyboardKey.enter || 
-             event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.select ||
+                event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
           widget.onPressed();
           return KeyEventResult.handled;
         }
@@ -468,13 +511,13 @@ class _SeasonChipState extends State<_SeasonChip> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: widget.isActive 
-                ? AppColors.primary 
+            color: widget.isActive
+                ? AppColors.primary
                 : (_isFocused ? Colors.white12 : Colors.transparent),
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
-              color: widget.isActive 
-                  ? AppColors.primary 
+              color: widget.isActive
+                  ? AppColors.primary
                   : (_isFocused ? Colors.white : Colors.white24),
               width: _isFocused ? 2 : 1,
             ),
@@ -482,8 +525,12 @@ class _SeasonChipState extends State<_SeasonChip> {
           child: Text(
             widget.label,
             style: TextStyle(
-              color: (widget.isActive || _isFocused) ? Colors.white : Colors.white70,
-              fontWeight: (widget.isActive || _isFocused) ? FontWeight.bold : FontWeight.normal,
+              color: (widget.isActive || _isFocused)
+                  ? Colors.white
+                  : Colors.white70,
+              fontWeight: (widget.isActive || _isFocused)
+                  ? FontWeight.bold
+                  : FontWeight.normal,
               fontSize: 13,
             ),
           ),
@@ -492,4 +539,3 @@ class _SeasonChipState extends State<_SeasonChip> {
     );
   }
 }
-
