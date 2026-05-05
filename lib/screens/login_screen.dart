@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
@@ -16,12 +17,19 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const _secureStorage = FlutterSecureStorage();
+  static const _rememberCredentialsKey = 'login_remember_credentials';
+  static const _savedUsernameKey = 'login_saved_username';
+  static const _savedPasswordKey = 'login_saved_password';
+
   int _selectedTab = 0;
   bool _obscurePassword = true;
+  bool _rememberCredentials = false;
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _usernameFocusNode = FocusNode(debugLabel: 'login_username');
   final _passwordFocusNode = FocusNode(debugLabel: 'login_password');
+  final _rememberFocusNode = FocusNode(debugLabel: 'login_remember');
   final _submitFocusNode = FocusNode(debugLabel: 'login_submit');
   final _usernameEditFocusNode = FocusNode(debugLabel: 'login_username_edit');
   final _passwordEditFocusNode = FocusNode(debugLabel: 'login_password_edit');
@@ -34,6 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_handleRemoteKey);
+    _loadSavedCredentials();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _usernameFocusNode.requestFocus();
     });
@@ -46,6 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordController.dispose();
     _usernameFocusNode.dispose();
     _passwordFocusNode.dispose();
+    _rememberFocusNode.dispose();
     _submitFocusNode.dispose();
     _usernameEditFocusNode.dispose();
     _passwordEditFocusNode.dispose();
@@ -59,17 +69,23 @@ class _LoginScreenState extends State<LoginScreen> {
     final primaryFocus = FocusManager.instance.primaryFocus;
 
     if (key == LogicalKeyboardKey.arrowDown) {
-      if (primaryFocus == _usernameFocusNode || primaryFocus == _usernameEditFocusNode) {
+      if (primaryFocus == _usernameFocusNode ||
+          primaryFocus == _usernameEditFocusNode) {
         if (_usernameActive) {
           setState(() => _usernameActive = false);
         }
         _passwordFocusNode.requestFocus();
         return true;
       }
-      if (primaryFocus == _passwordFocusNode || primaryFocus == _passwordEditFocusNode) {
+      if (primaryFocus == _passwordFocusNode ||
+          primaryFocus == _passwordEditFocusNode) {
         if (_passwordActive) {
           setState(() => _passwordActive = false);
         }
+        _rememberFocusNode.requestFocus();
+        return true;
+      }
+      if (primaryFocus == _rememberFocusNode) {
         _submitFocusNode.requestFocus();
         return true;
       }
@@ -78,10 +94,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (key == LogicalKeyboardKey.arrowUp) {
       if (primaryFocus == _submitFocusNode) {
+        _rememberFocusNode.requestFocus();
+        return true;
+      }
+      if (primaryFocus == _rememberFocusNode) {
         _passwordFocusNode.requestFocus();
         return true;
       }
-      if (primaryFocus == _passwordFocusNode || primaryFocus == _passwordEditFocusNode) {
+      if (primaryFocus == _passwordFocusNode ||
+          primaryFocus == _passwordEditFocusNode) {
         if (_passwordActive) {
           setState(() => _passwordActive = false);
         }
@@ -126,7 +147,55 @@ class _LoginScreenState extends State<LoginScreen> {
       return true;
     }
 
+    if (isActivate && primaryFocus == _rememberFocusNode) {
+      setState(() => _rememberCredentials = !_rememberCredentials);
+      return true;
+    }
+
     return false;
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    try {
+      final remember =
+          await _secureStorage.read(key: _rememberCredentialsKey) == 'true';
+      final username = await _secureStorage.read(key: _savedUsernameKey) ?? '';
+      final password = await _secureStorage.read(key: _savedPasswordKey) ?? '';
+
+      if (!mounted) return;
+      setState(() {
+        _rememberCredentials = remember;
+        if (remember) {
+          _usernameController.text = username;
+          _passwordController.text = password;
+        }
+      });
+    } catch (e) {
+      print('⚠️ Login: erro ao carregar credenciais salvas: $e');
+    }
+  }
+
+  Future<void> _persistSavedCredentials() async {
+    try {
+      if (_rememberCredentials) {
+        await _secureStorage.write(key: _rememberCredentialsKey, value: 'true');
+        await _secureStorage.write(
+          key: _savedUsernameKey,
+          value: _usernameController.text.trim(),
+        );
+        await _secureStorage.write(
+          key: _savedPasswordKey,
+          value: _passwordController.text,
+        );
+        return;
+      }
+
+      await _secureStorage.write(key: _rememberCredentialsKey, value: 'false');
+      await _secureStorage.delete(key: _savedUsernameKey);
+      await _secureStorage.delete(key: _savedPasswordKey);
+    } catch (e) {
+      print('⚠️ Login: erro ao salvar preferência de acesso: $e');
+    }
   }
 
   void _activateUsernameField() {
@@ -217,7 +286,8 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Center(
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 120, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 120, vertical: 24),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -256,37 +326,54 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   Expanded(
                                     child: FocusableActionDetector(
-                                      onShowFocusHighlight: (v) => setState(() => _loginTabFocused = v),
+                                      onShowFocusHighlight: (v) =>
+                                          setState(() => _loginTabFocused = v),
                                       actions: {
                                         ActivateIntent: CallbackAction<Intent>(
-                                          onInvoke: (_) { setState(() => _selectedTab = 0); return null; },
+                                          onInvoke: (_) {
+                                            setState(() => _selectedTab = 0);
+                                            return null;
+                                          },
                                         ),
                                       },
                                       child: GestureDetector(
-                                        onTap: () => setState(() => _selectedTab = 0),
+                                        onTap: () =>
+                                            setState(() => _selectedTab = 0),
                                         child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          duration:
+                                              const Duration(milliseconds: 200),
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 16),
                                           decoration: BoxDecoration(
                                             border: Border(
                                               bottom: BorderSide(
                                                 color: _selectedTab == 0
                                                     ? AppColors.primary
-                                                    : _loginTabFocused ? Colors.white : Colors.transparent,
-                                                width: _selectedTab == 0 || _loginTabFocused ? 3 : 2,
+                                                    : _loginTabFocused
+                                                        ? Colors.white
+                                                        : Colors.transparent,
+                                                width: _selectedTab == 0 ||
+                                                        _loginTabFocused
+                                                    ? 3
+                                                    : 2,
                                               ),
                                             ),
                                             color: _selectedTab == 0
                                                 ? Colors.white.withOpacity(0.05)
-                                                : _loginTabFocused ? Colors.white.withOpacity(0.15) : Colors.transparent,
+                                                : _loginTabFocused
+                                                    ? Colors.white
+                                                        .withOpacity(0.15)
+                                                    : Colors.transparent,
                                           ),
                                           child: Center(
                                             child: Text(
                                               'Login',
                                               style: TextStyle(
-                                                color: _selectedTab == 0 || _loginTabFocused
+                                                color: _selectedTab == 0 ||
+                                                        _loginTabFocused
                                                     ? Colors.white
-                                                    : Colors.white.withOpacity(0.6),
+                                                    : Colors.white
+                                                        .withOpacity(0.6),
                                                 fontSize: 14,
                                                 fontWeight: _selectedTab == 0
                                                     ? FontWeight.w600
@@ -300,26 +387,38 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () => setState(() => _selectedTab = 1),
+                                      onTap: () =>
+                                          setState(() => _selectedTab = 1),
                                       child: AnimatedContainer(
-                                        duration: const Duration(milliseconds: 200),
-                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 16),
                                         decoration: BoxDecoration(
                                           border: Border(
                                             bottom: BorderSide(
-                                              color: _selectedTab == 1 ? AppColors.primary : Colors.transparent,
+                                              color: _selectedTab == 1
+                                                  ? AppColors.primary
+                                                  : Colors.transparent,
                                               width: _selectedTab == 1 ? 3 : 2,
                                             ),
                                           ),
-                                          color: _selectedTab == 1 ? Colors.white.withOpacity(0.05) : Colors.transparent,
+                                          color: _selectedTab == 1
+                                              ? Colors.white.withOpacity(0.05)
+                                              : Colors.transparent,
                                         ),
                                         child: Center(
                                           child: Text(
                                             'Primeiro acesso',
                                             style: TextStyle(
-                                              color: _selectedTab == 1 ? Colors.white : Colors.white.withOpacity(0.6),
+                                              color: _selectedTab == 1
+                                                  ? Colors.white
+                                                  : Colors.white
+                                                      .withOpacity(0.6),
                                               fontSize: 14,
-                                              fontWeight: _selectedTab == 1 ? FontWeight.w600 : FontWeight.w400,
+                                              fontWeight: _selectedTab == 1
+                                                  ? FontWeight.w600
+                                                  : FontWeight.w400,
                                             ),
                                           ),
                                         ),
@@ -335,7 +434,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Tab content
                               Padding(
                                 padding: const EdgeInsets.all(20),
-                                child: _selectedTab == 0 ? _buildLoginForm() : _buildManagedAccessInfo(),
+                                child: _selectedTab == 0
+                                    ? _buildLoginForm()
+                                    : _buildManagedAccessInfo(),
                               ),
                             ],
                           ),
@@ -403,6 +504,8 @@ class _LoginScreenState extends State<LoginScreen> {
               setState(() => _obscurePassword = !_obscurePassword),
         ),
         const SizedBox(height: 16),
+        _buildRememberCredentialsToggle(),
+        const SizedBox(height: 16),
         if (auth.errorMessage != null) ...[
           Container(
             width: double.infinity,
@@ -427,6 +530,82 @@ class _LoginScreenState extends State<LoginScreen> {
           width: double.infinity,
         ),
       ],
+    );
+  }
+
+  Widget _buildRememberCredentialsToggle() {
+    return Focus(
+      focusNode: _rememberFocusNode,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+        final key = event.logicalKey;
+        if (key == LogicalKeyboardKey.arrowUp) {
+          _passwordFocusNode.requestFocus();
+          return KeyEventResult.handled;
+        }
+        if (key == LogicalKeyboardKey.arrowDown) {
+          _submitFocusNode.requestFocus();
+          return KeyEventResult.handled;
+        }
+        if (key == LogicalKeyboardKey.enter ||
+            key == LogicalKeyboardKey.select ||
+            key == LogicalKeyboardKey.gameButtonA) {
+          setState(() => _rememberCredentials = !_rememberCredentials);
+          return KeyEventResult.handled;
+        }
+
+        return KeyEventResult.ignored;
+      },
+      onFocusChange: (_) {
+        if (mounted) setState(() {});
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+      },
+      child: GestureDetector(
+        onTap: () =>
+            setState(() => _rememberCredentials = !_rememberCredentials),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: _rememberFocusNode.hasFocus
+                ? Colors.white.withOpacity(0.12)
+                : Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _rememberFocusNode.hasFocus
+                  ? AppColors.primary
+                  : Colors.white.withOpacity(0.08),
+              width: _rememberFocusNode.hasFocus ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _rememberCredentials
+                    ? Icons.check_box_rounded
+                    : Icons.check_box_outline_blank_rounded,
+                color: _rememberCredentials
+                    ? AppColors.primary
+                    : Colors.white.withOpacity(0.68),
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Salvar usuário e senha neste aparelho',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.86),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -500,7 +679,9 @@ class _LoginScreenState extends State<LoginScreen> {
       child: GestureDetector(
         onTap: onActivateField,
         child: BlinkingCursorPlaceholder(
-          text: obscureText && controller.text.isNotEmpty ? '********' : controller.text,
+          text: obscureText && controller.text.isNotEmpty
+              ? '********'
+              : controller.text,
           hintText: hintText,
           isFocused: placeholderFocusNode.hasFocus,
           onActivate: onActivateField,
@@ -518,6 +699,8 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
     if (!mounted || !success) return;
+    await _persistSavedCredentials();
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/setup');
   }
 
@@ -544,12 +727,17 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        const _InfoItem(text: '1. O administrador cria seu usuário no Click SaaS.',
+        const _InfoItem(
+          text: '1. O administrador cria seu usuário no Click SaaS.',
         ),
         const SizedBox(height: 10),
-        const _InfoItem(text: '2. O conteúdo é liberado manualmente na plataforma parceira.'),
+        const _InfoItem(
+            text:
+                '2. O conteúdo é liberado manualmente na plataforma parceira.'),
         const SizedBox(height: 10),
-        const _InfoItem(text: '3. Depois disso, seu acesso já entra com a lista configurada automaticamente.'),
+        const _InfoItem(
+            text:
+                '3. Depois disso, seu acesso já entra com a lista configurada automaticamente.'),
       ],
     );
   }
@@ -625,7 +813,8 @@ class _OfficialAppMark extends StatelessWidget {
           errorBuilder: (context, error, stackTrace) {
             return Container(
               color: AppColors.primary,
-              child: const Icon(Icons.live_tv_rounded, color: Colors.white, size: 42),
+              child: const Icon(Icons.live_tv_rounded,
+                  color: Colors.white, size: 42),
             );
           },
         ),
