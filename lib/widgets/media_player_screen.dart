@@ -765,15 +765,14 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       // Apply Buffer Size Preference
       final prefsBuffer = Prefs.getBufferSize();
       int bufferBytes = 32 * 1024 * 1024; // Default medium
-      if (prefsBuffer == 'low') {
+      if (_isActiveChannel) {
+        // Live precisa de um buffer curto. Buffer grande no Fire TV faz o player
+        // tentar reaproveitar trechos antigos e pode parecer um loop de replay.
+        bufferBytes = _useFireTvLiveMode ? 12 * 1024 * 1024 : 8 * 1024 * 1024;
+      } else if (prefsBuffer == 'low') {
         bufferBytes = 8 * 1024 * 1024;
       } else if (prefsBuffer == 'high') {
         bufferBytes = 64 * 1024 * 1024;
-      }
-
-      // Canais FHD/HEVC no Fire TV precisam de margem de buffer para evitar underruns.
-      if (_isActiveChannel && prefsBuffer == 'medium') {
-        bufferBytes = 32 * 1024 * 1024;
       }
 
       _player = Player(
@@ -798,17 +797,23 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             nativePlayer.setProperty('hwdec', 'no');
           } else if (_useFireTvLiveMode) {
             print(
-                '⚙️ [Canal] Modo Fire TV FHD: MediaCodec direto + áudio PCM estéreo');
+                '⚙️ [Canal] Modo Fire TV live: MediaCodec direto + buffer curto');
             nativePlayer.setProperty('hwdec', 'mediacodec');
             nativePlayer.setProperty('video-sync', 'audio');
             nativePlayer.setProperty('audio-channels', 'stereo');
             nativePlayer.setProperty('audio-samplerate', '48000');
             nativePlayer.setProperty('cache', 'yes');
-            nativePlayer.setProperty('demuxer-readahead-secs', '20');
+            nativePlayer.setProperty('cache-pause', 'no');
+            nativePlayer.setProperty('demuxer-readahead-secs', '4');
+            nativePlayer.setProperty('demuxer-max-bytes', '12MiB');
           } else {
             print(
                 '⚙️ [Canal] Usando mediacodec-copy (HW seguro para projetores)');
             nativePlayer.setProperty('hwdec', 'mediacodec-copy');
+            nativePlayer.setProperty('cache', 'yes');
+            nativePlayer.setProperty('cache-pause', 'no');
+            nativePlayer.setProperty('demuxer-readahead-secs', '3');
+            nativePlayer.setProperty('demuxer-max-bytes', '8MiB');
           }
           // Live streams têm quadros inter-dependentes — framedrop agressivo
           // pode corrompê-los. Usamos 'decoder' que só descarta se o decoder atrasar.
@@ -817,8 +822,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           // Sem passthrough de áudio em live (pode causar crashes em alguns projetores)
           nativePlayer.setProperty('audio-spdif', '');
           // Aumenta tolerância de jitter em live streams
-          nativePlayer.setProperty('demuxer-max-back-bytes',
-              _useFireTvLiveMode ? '120MiB' : '50MiB');
+          nativePlayer.setProperty('demuxer-max-back-bytes', '1MiB');
+          nativePlayer.setProperty('force-seekable', 'no');
         } else {
           // ─── VOD (Filmes / Séries) ────────────────────────────────────────
           if (decoder == 'sw') {
@@ -1494,11 +1499,13 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   }
 
   void _seekForward() {
+    if (_isActiveChannel) return;
     final newPosition = _position + const Duration(seconds: 10);
     _player?.seek(newPosition);
   }
 
   void _seekBackward() {
+    if (_isActiveChannel) return;
     final newPosition = _position - const Duration(seconds: 10);
     _player?.seek(newPosition.isNegative ? Duration.zero : newPosition);
   }
@@ -1798,17 +1805,17 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // RETROCEDER 10s
-            _buildCenterButton(
-              focusNode: _rewindFocusNode,
-              icon: Icons.replay_10,
-              size: 44,
-              onPressed: _seekBackward,
-              // Navegação vertical
-              onUpPressed: () => _backFocusNode.requestFocus(),
-              onDownPressed: () => _audioFocusNode.requestFocus(),
-            ),
-            const SizedBox(width: 48),
+            if (!_isActiveChannel) ...[
+              _buildCenterButton(
+                focusNode: _rewindFocusNode,
+                icon: Icons.replay_10,
+                size: 44,
+                onPressed: _seekBackward,
+                onUpPressed: () => _backFocusNode.requestFocus(),
+                onDownPressed: () => _audioFocusNode.requestFocus(),
+              ),
+              const SizedBox(width: 48),
+            ],
             // PLAY/PAUSE (principal)
             _buildCenterButton(
               focusNode: _playPauseFocusNode,
@@ -1821,16 +1828,17 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                   : _backFocusNode.requestFocus(),
               onDownPressed: () => _subtitleFocusNode.requestFocus(),
             ),
-            const SizedBox(width: 48),
-            // AVANÇAR 10s
-            _buildCenterButton(
-              focusNode: _forwardFocusNode,
-              icon: Icons.forward_10,
-              size: 44,
-              onPressed: _seekForward,
-              onUpPressed: () => _infoTopFocusNode.requestFocus(),
-              onDownPressed: () => _fitFocusNode.requestFocus(),
-            ),
+            if (!_isActiveChannel) ...[
+              const SizedBox(width: 48),
+              _buildCenterButton(
+                focusNode: _forwardFocusNode,
+                icon: Icons.forward_10,
+                size: 44,
+                onPressed: _seekForward,
+                onUpPressed: () => _infoTopFocusNode.requestFocus(),
+                onDownPressed: () => _fitFocusNode.requestFocus(),
+              ),
+            ],
           ],
         ),
       ),
@@ -1934,44 +1942,78 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Progress bar
-                // Progress bar
-                StreamBuilder<Duration>(
-                    stream: _player?.stream.position,
-                    builder: (context, snapshot) {
-                      final currentPosition = snapshot.data ?? _position;
-                      return Row(
-                        children: [
-                          Text(
-                            _formatDuration(currentPosition),
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 12),
+                if (_isActiveChannel)
+                  Row(
+                    children: [
+                      Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'AO VIVO',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          Expanded(
-                            child: Slider(
-                              value: _duration.inSeconds > 0
-                                  ? currentPosition.inSeconds
-                                      .toDouble()
-                                      .clamp(0, _duration.inSeconds.toDouble())
-                                  : 0,
-                              max: _duration.inSeconds > 0
-                                  ? _duration.inSeconds.toDouble()
-                                  : 1,
-                              activeColor: Colors.blueAccent,
-                              inactiveColor: Colors.white30,
-                              onChanged: (value) {
-                                _player?.seek(Duration(seconds: value.toInt()));
-                              },
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  StreamBuilder<Duration>(
+                      stream: _player?.stream.position,
+                      builder: (context, snapshot) {
+                        final currentPosition = snapshot.data ?? _position;
+                        return Row(
+                          children: [
+                            Text(
+                              _formatDuration(currentPosition),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 12),
                             ),
-                          ),
-                          Text(
-                            _formatDuration(_duration),
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 12),
-                          ),
-                        ],
-                      );
-                    }),
+                            Expanded(
+                              child: Slider(
+                                value: _duration.inSeconds > 0
+                                    ? currentPosition.inSeconds
+                                        .toDouble()
+                                        .clamp(
+                                            0, _duration.inSeconds.toDouble())
+                                    : 0,
+                                max: _duration.inSeconds > 0
+                                    ? _duration.inSeconds.toDouble()
+                                    : 1,
+                                activeColor: Colors.blueAccent,
+                                inactiveColor: Colors.white30,
+                                onChanged: (value) {
+                                  _player
+                                      ?.seek(Duration(seconds: value.toInt()));
+                                },
+                              ),
+                            ),
+                            Text(
+                              _formatDuration(_duration),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 12),
+                            ),
+                          ],
+                        );
+                      }),
                 const SizedBox(height: 12),
                 // Botões de opções
                 Row(
